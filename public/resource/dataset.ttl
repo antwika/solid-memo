@@ -1,0 +1,132 @@
+@prefix ex:    <http://example.org/stuff/1.0/> .
+
+<19df47aa-38cb-420f-823d-afb6b29682cb>
+        a            ex:Card ;
+        ex:deck      <cf6a58d4-49ba-4956-96da-5081d297133e> ;
+        ex:property  <fba6a593-e190-4904-88ec-536f4ac62777> , <817d1e12-5356-49db-a602-779f80ff7438> , <6a80fb3b-0863-44db-8fdb-8dcc5b9a438c> .
+
+<34f76bd8-1137-4979-8907-7e7aa6b33889>
+        a         ex:Property ;
+        ex:name   "Back" ;
+        ex:value  "Ipsum" .
+
+<df731ce4-aa37-4be4-bece-48c85a9bb310>
+        a         ex:Property ;
+        ex:name   "Name" ;
+        ex:value  "The multiplication card" .
+
+<14288b2c-827d-43f3-9015-fae47a14d9c4>
+        a         ex:Property ;
+        ex:name   "Name" ;
+        ex:value  "Dummy texts" .
+
+<077ec189-0c93-40fc-b26c-78b8e2a8481e>
+        a         ex:Property ;
+        ex:name   "Front" ;
+        ex:value  "1 + 2" .
+
+<fa9b356c-7523-498f-be1b-da5cb0e2c8ca>
+        a         ex:Property ;
+        ex:name   "Name" ;
+        ex:value  "My first study" .
+
+<817d1e12-5356-49db-a602-779f80ff7438>
+        a         ex:Property ;
+        ex:name   "Name" ;
+        ex:value  "The foo card" .
+
+<e20bae0a-a2ca-407b-a92e-3fe9ceba0d0d>
+        a         ex:Property ;
+        ex:name   "Name" ;
+        ex:value  "The hello card" .
+
+<fba6a593-e190-4904-88ec-536f4ac62777>
+        a         ex:Property ;
+        ex:name   "Back" ;
+        ex:value  "Bar" .
+
+<e867006c-62e4-465d-88c0-86cc50477355>
+        a         ex:Property ;
+        ex:name   "Back" ;
+        ex:value  "World" .
+
+<2da5a040-40b8-4279-8da8-d342929415d5>
+        a            ex:Deck ;
+        ex:card      <6412151c-00e5-4db6-9631-1fbd9ba65544> , <65ffcd56-bdaa-4840-9e05-3bb234ea35c1> ;
+        ex:property  <7a1f58c2-798b-45c0-9aec-33c66d60acb8> .
+
+<65ffcd56-bdaa-4840-9e05-3bb234ea35c1>
+        a            ex:Card ;
+        ex:deck      <2da5a040-40b8-4279-8da8-d342929415d5> ;
+        ex:property  <c4e3fa82-0c1a-4a88-af80-395e9527d80a> , <908a9d91-e7c9-466b-ab7a-764b9814faab> , <df731ce4-aa37-4be4-bece-48c85a9bb310> .
+
+<217dd6fa-31da-4c9f-94d0-3c3a07f0a1d2>
+        a         ex:Property ;
+        ex:name   "Back" ;
+        ex:value  "3" .
+
+<cf6a58d4-49ba-4956-96da-5081d297133e>
+        a            ex:Deck ;
+        ex:card      <19df47aa-38cb-420f-823d-afb6b29682cb> , <6115f54f-d181-4675-9c00-f8efae7aa417> , <80388272-a9b2-40a4-95a3-ad1ce5ea5827> ;
+        ex:property  <14288b2c-827d-43f3-9015-fae47a14d9c4> ;
+        ex:study     <710500c8-4984-4088-a4ca-202244f050d4> .
+
+<c4e3fa82-0c1a-4a88-af80-395e9527d80a>
+        a         ex:Property ;
+        ex:name   "Front" ;
+        ex:value  "3 * 3" .
+
+<7a1f58c2-798b-45c0-9aec-33c66d60acb8>
+        a         ex:Property ;
+        ex:name   "Name" ;
+        ex:value  "Mathematics" .
+
+<f4af369f-d2d0-42e6-84a1-0fb5463d2295>
+        a         ex:Property ;
+        ex:name   "Front" ;
+        ex:value  "Lorem" .
+
+<908a9d91-e7c9-466b-ab7a-764b9814faab>
+        a         ex:Property ;
+        ex:name   "Back" ;
+        ex:value  "9" .
+
+<55e74d88-0348-4828-ab18-16e94e03ee8b>
+        a         ex:Property ;
+        ex:name   "Front" ;
+        ex:value  "Hello" .
+
+<6115f54f-d181-4675-9c00-f8efae7aa417>
+        a            ex:Card ;
+        ex:deck      <cf6a58d4-49ba-4956-96da-5081d297133e> ;
+        ex:property  <e20bae0a-a2ca-407b-a92e-3fe9ceba0d0d> , <e867006c-62e4-465d-88c0-86cc50477355> , <55e74d88-0348-4828-ab18-16e94e03ee8b> .
+
+<80388272-a9b2-40a4-95a3-ad1ce5ea5827>
+        a            ex:Card ;
+        ex:deck      <cf6a58d4-49ba-4956-96da-5081d297133e> ;
+        ex:property  <f4af369f-d2d0-42e6-84a1-0fb5463d2295> , <de4634d5-f1dc-4670-8a83-d5962543f6d4> , <34f76bd8-1137-4979-8907-7e7aa6b33889> .
+
+<6412151c-00e5-4db6-9631-1fbd9ba65544>
+        a            ex:Card ;
+        ex:deck      <2da5a040-40b8-4279-8da8-d342929415d5> ;
+        ex:property  <077ec189-0c93-40fc-b26c-78b8e2a8481e> , <20d61760-4c00-44b1-a7df-ebfdc54e043d> , <217dd6fa-31da-4c9f-94d0-3c3a07f0a1d2> .
+
+<20d61760-4c00-44b1-a7df-ebfdc54e043d>
+        a         ex:Property ;
+        ex:name   "Name" ;
+        ex:value  "The addition card" .
+
+<6a80fb3b-0863-44db-8fdb-8dcc5b9a438c>
+        a         ex:Property ;
+        ex:name   "Front" ;
+        ex:value  "Foo" .
+
+<710500c8-4984-4088-a4ca-202244f050d4>
+        a            ex:Study ;
+        ex:deck      <cf6a58d4-49ba-4956-96da-5081d297133e> ;
+        ex:property  <fa9b356c-7523-498f-be1b-da5cb0e2c8ca> .
+
+<de4634d5-f1dc-4670-8a83-d5962543f6d4>
+        a         ex:Property ;
+        ex:name   "Name" ;
+        ex:value  "The lorem card" .

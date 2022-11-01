@@ -1,9 +1,11 @@
+import { asyncComponent } from "@/lib/hack";
+
 type Props = {
   icon?: React.ReactNode,
   text: string,
 }
 
-export default function Title({ icon, text }: Props) {
+export default asyncComponent(async function Title({ icon, text }: Props) {
  return (
   <div className="mb-4">
       <div className="flex items-center space-x-1 text-2xl font-bold">
@@ -12,4 +14,4 @@ export default function Title({ icon, text }: Props) {
       </div>
     </div>
   );
-}
+})

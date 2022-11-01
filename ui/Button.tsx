@@ -1,10 +1,10 @@
-'use client'
+import { asyncComponent } from "@/lib/hack";
 
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   children: React.ReactNode;
 };
 
-export default function Button(props: Props) {
+export default asyncComponent(async function Button(props: Props) {
   const { children } = props;
   return (
     <button
@@ -14,4 +14,4 @@ export default function Button(props: Props) {
       { children }
     </button>
   );
-}
+})
