@@ -47,7 +47,7 @@ export type StudyData = {
 
 export type StudySet = Record<StudyUuid, StudyData>;
 
-type Data = {
+export type Data = {
   propertySet: PropertySet,
   cardSet: CardSet,
   deckSet: DeckSet,
@@ -56,7 +56,7 @@ type Data = {
 
 export async function getData(): Promise<Data> {
   // await wait(randomRange(10, 50));
-  const response = await fetch('http://localhost:3000/resource/dataset.ttl');
+  const response = await fetch('http://localhost:4000/alice/solidmemo/data');
   const dataset = await response.text();
   const n3Parser = new N3Parser();
   const n3Store = new N3Store(n3Parser.parse(dataset));
