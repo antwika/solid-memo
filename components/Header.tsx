@@ -1,10 +1,5 @@
-import DeckLink from "./link/DeckLink";
-import HomeLink from "./link/HomeLink";
-import StudyLink from "./link/StudyLink";
-import SyncLink from "./link/SyncLink";
+import Link from "@/ui/Link";
 import SolidMemoBadge from "./badge/SolidMemoBadge";
-import CardLink from "./link/CardLink";
-import PropertyLink from "./link/PropertyLink";
 
 export default function Header() {
   return (
@@ -13,12 +8,8 @@ export default function Header() {
           <SolidMemoBadge />
         </div>
         <div className="flex space-x-2 items-center">
-          <HomeLink />
-          <PropertyLink />
-          <CardLink />
-          <DeckLink />
-          <StudyLink />
-          <SyncLink />
+          <Link uri={'/resource'}>Resource</Link>
+          <Link uri={'/design'}>Design</Link>
         </div>
     </div>
   );

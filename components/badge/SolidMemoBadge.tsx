@@ -10,16 +10,14 @@ export default asyncComponent(async function SolidMemoBadge() {
     <Badge
       className={myLogoFont.className}
     >
-      <div className="flex items-center space-x-2 p-1 bg-white rounded-md shadow-md">
-        <Image
-          src="/logo.svg"
-          className="rounded-lg"
-          width="32"
-          height="32"
-          alt="Solid Memo logotype"
-        />
-        <span className={myLogoFont.className}>Solid Memo</span>
-      </div>
+      <Image
+        src="/logo.svg"
+        className="rounded-lg"
+        width="32"
+        height="32"
+        alt="Solid Memo logotype"
+      />
+      <span className={myLogoFont.className}>Solid Memo</span>
     </Badge>
   );
 })
