@@ -13,6 +13,7 @@ const customJestConfig = {
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/lib/(.*)$': '<rootDir>/lib/$1',
     '^@/ui/(.*)$': '<rootDir>/ui/$1',
+    '^@/hooks/(.*)$': '<rootDir>/hooks/$1',
   },
   // collectCoverage: true,
   // collectCoverageFrom: [
