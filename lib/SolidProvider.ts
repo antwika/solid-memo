@@ -1,4 +1,3 @@
-import { JWK, exportJWK, generateKeyPair } from 'jose';
 import type { OAuthConfig, OAuthUserConfig } from 'next-auth/providers';
 
 export interface SolidProfile extends Record<string, any> {
@@ -9,54 +8,26 @@ export interface SolidProfile extends Record<string, any> {
   azp: string;
   iat: number;
   exp: number;
-  name: string;
-  email: string;
 }
 
-type Extra = {
+export interface SolidProviderOptions<P> extends OAuthUserConfig<P> {
   idpBaseUrl: string,
-  privateKey: JWK;
-  publicKey: JWK;
-};
+}
 
 export default function SolidProvider<P extends SolidProfile>(
-  options: OAuthUserConfig<P>,
-  extra: Extra,
+  options: SolidProviderOptions<P>,
 ): OAuthConfig<P> {
   return {
     id: 'solid',
     name: 'Solid',
     type: 'oauth',
-    wellKnown: new URL('.well-known/openid-configuration', extra.idpBaseUrl).toString(),
+    wellKnown: new URL('.well-known/openid-configuration', options.idpBaseUrl).toString(),
     authorization: { params: { grant_type: 'authorization_code', scope: 'openid offline_access webid' } },
     idToken: true,
-    checks: ['pkce', 'state'], // TODO: Is "state" useful?
+    checks: ['pkce'],
     client: {
       authorization_signed_response_alg: 'ES256',
       id_token_signed_response_alg: 'ES256',
-    },
-    token: {
-      url: new URL('.oidc/token', extra.idpBaseUrl).toString(),
-      async request({ params, checks, client, provider }) {
-        const tokens = await client.grant(
-          {
-            grant_type: 'authorization_code',
-            code: params.code,
-            redirect_uri: provider.callbackUrl,
-            code_verifier: checks.code_verifier,
-          },
-          {
-            DPoP: { key: extra.privateKey, format: 'jwk' },
-          },
-        );
-
-        tokens.keys = {
-          privateKey: extra.privateKey,
-          publicKey: extra.publicKey,
-        };
-
-        return { tokens };
-      },
     },
     profile(profile) {
       return {

@@ -1,33 +1,30 @@
 import NextAuth, { NextAuthOptions, LoggerInstance, EventCallbacks } from 'next-auth';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { JWK, exportJWK, generateKeyPair } from 'jose';
 import SolidProvider from '../../../lib/SolidProvider';
-import { registerClient } from '@/lib/solid';
 import env from '@/lib/env';
+import logger from './logger';
+import events from './events';
+import { lazyRegisterClient } from './register';
 
-type Extra = {
+export type NextAuthOptionsExtraParams = {
   debug: boolean,
   logger?: Partial<LoggerInstance>,
   events?: Partial<EventCallbacks>,
   idpBaseUrl: string,
   clientId: string,
   clientSecret: string,
-  privateKey: JWK,
-  publicKey: JWK,
 };
 
-export function authOptions(req: NextApiRequest, res: NextApiResponse, extra: Extra): NextAuthOptions {
+export function createNextAuthOptions(extra: NextAuthOptionsExtraParams): NextAuthOptions {
+  const { debug, idpBaseUrl, clientId, clientSecret, events, logger } = extra;
   return {
-    debug: extra.debug,
-    secret: process.env.NEXTAUTH_SECRET,
+    debug,
+    secret: env.NEXTAUTH_SECRET,
     providers: [
       SolidProvider({
-        clientId: extra.clientId,
-        clientSecret: extra.clientSecret,
-      }, {
-        idpBaseUrl: extra.idpBaseUrl,
-        privateKey: extra.privateKey,
-        publicKey: extra.publicKey,
+        idpBaseUrl,
+        clientId,
+        clientSecret,
       })
     ],
     callbacks: {
@@ -39,12 +36,6 @@ export function authOptions(req: NextApiRequest, res: NextApiResponse, extra: Ex
           token.dpopTokenExpiresAt = account.expires_at;
           token.keys = account.keys;
         }
-
-        const now = Math.floor(Date.now() / 1000);
-        // console.log(`Token expires in ${(token.dpopTokenExpiresAt as number) - now}`);
-        // if ((token.dpopTokenExpiresAt as number) < now) {
-        //   signOut();
-        // }
 
         return token;
       },
@@ -58,59 +49,24 @@ export function authOptions(req: NextApiRequest, res: NextApiResponse, extra: Ex
         return session;
       },
     },
-    events: extra.events,
-    logger: extra.logger,
+    events,
+    logger,
   };
 }
 
-const customLogger: Partial<LoggerInstance> = {
-  error(code, metadata) {
-    console.log('[NEXTAUTH ERROR] ', metadata, code);
-  },
-  warn(code) {
-    console.log('[NEXTAUTH WARNING] ', code);
-  },
-  debug: env.NODE_ENV !== "production" && env.NEXTAUTH_DEBUG === "1" ? (code, metadata) => {
-    console.log('[NEXTAUTH DEBUG] ', metadata, code);
-  } : undefined,
-};
-
-const customEvents: Partial<EventCallbacks> = {
-  signIn: (user) => {
-    console.log('User successfully signed in:', user.user, 'provider:', user.account!.provider);
-  },
-  signOut: (token) => {
-    console.log('Signing out user:', token.token.webid);
-  },
-};
-
-let options: { clientId: string, clientSecret: string } | undefined;
-let keyPair: { privateKey: JWK, publicKey: JWK } | undefined;
-
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const idpBaseUrl = 'http://localhost:4000'; // Somehow get the webid/idp choice from the client-side
+  const idpBaseUrl = 'http://localhost:4000'; // TODO: Somehow get the webid/idp choice from the client-side
 
-  if (!options) options = await registerClient(idpBaseUrl);
-  if (!keyPair) {
-    const temp = await generateKeyPair('ES256');
-    keyPair = {
-      privateKey: await exportJWK(temp.privateKey),
-      publicKey: await exportJWK(temp.publicKey),
-    };
-  }
+  const { clientId, clientSecret } = await lazyRegisterClient(idpBaseUrl);
 
-  const extra: Extra = {
+  return NextAuth(req, res, createNextAuthOptions({
     debug: env.NODE_ENV !== "production" && env.NEXTAUTH_DEBUG === "1",
-    logger: customLogger,
-    events: customEvents,
-    idpBaseUrl: 'http://localhost:4000',
-    clientId: options.clientId,
-    clientSecret: options.clientSecret,
-    privateKey: keyPair.privateKey,
-    publicKey: keyPair.publicKey,
-  };
-
-  return NextAuth(req, res, authOptions(req, res, extra));
+    logger,
+    events,
+    idpBaseUrl,
+    clientId,
+    clientSecret,
+  }));
 }
 
 export default handler;
