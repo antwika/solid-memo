@@ -74,9 +74,11 @@ export default function Card(props: Props) {
       <div className='space-x-2'>
         <span>Front:</span><strong>{ detail.front }</strong>
       </div>
-      <div className='space-x-2'>
-        <span>Back:</span><strong>{ detail.back }</strong>
-      </div>
+      { revealed && (
+        <div className='space-x-2'>
+          <span>Back:</span><strong>{ detail.back }</strong>
+        </div>
+      )}
       { !revealed && (
         <>
           <Button onClick={() => { setRevealed(true); }}>Reveal</Button>

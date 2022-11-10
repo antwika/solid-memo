@@ -13,9 +13,8 @@ export interface SolidProfile extends Record<string, any> {
   email: string;
 }
 
-const idpBaseUrl = 'http://localhost:4000';
-
 type Extra = {
+  idpBaseUrl: string,
   privateKey: JWK;
   publicKey: JWK;
 };
@@ -28,7 +27,7 @@ export default function SolidProvider<P extends SolidProfile>(
     id: 'solid',
     name: 'Solid',
     type: 'oauth',
-    wellKnown: new URL('.well-known/openid-configuration', idpBaseUrl).toString(),
+    wellKnown: new URL('.well-known/openid-configuration', extra.idpBaseUrl).toString(),
     authorization: { params: { grant_type: 'authorization_code', scope: 'openid offline_access webid' } },
     idToken: true,
     checks: ['pkce', 'state'], // TODO: Is "state" useful?
@@ -37,7 +36,7 @@ export default function SolidProvider<P extends SolidProfile>(
       id_token_signed_response_alg: 'ES256',
     },
     token: {
-      url: new URL('.oidc/token', idpBaseUrl).toString(),
+      url: new URL('.oidc/token', extra.idpBaseUrl).toString(),
       async request({ params, checks, client, provider }) {
         const tokens = await client.grant(
           {

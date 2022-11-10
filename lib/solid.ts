@@ -1,5 +1,31 @@
 import axios from 'axios';
 import { Literal, NamedNode, Parser, Quad, Store } from 'n3';
+import env from '@/lib/env';
+
+export const registerClient = async (idpBaseUrl: string) => {
+  const body = {
+    client_name: 'Solid Memo',
+    application_type: 'web',
+    redirect_uris: [new URL('/api/auth/callback/solid', env.NEXTAUTH_URL).toString()],
+    subject_type: 'public',
+    token_endpoint_auth_method: 'client_secret_basic',
+    id_token_signed_response_alg: 'ES256',
+    grant_types: ['authorization_code', 'refresh_token'],
+  };
+
+  const response = await axios(new URL('.oidc/reg', idpBaseUrl).toString(), {
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+    data: body,
+  });
+  
+  const options = {
+    clientId: response.data.client_id,
+    clientSecret: response.data.client_secret,
+  };
+
+  return options;
+};
 
 export type Card = {
   iri: string,
@@ -72,10 +98,7 @@ export const addCardToStore = async (store: Store, card: Card) => {
 }
 
 export const extractAllCardsFromStore = async (store: Store) => {
-  console.log('store', store);
   const subjects = store.getSubjects('http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://antwika.com/vocab/solidmemo/0.1/Card', null);
-  console.log('subjects', subjects);
-
   const cards = subjects.map(subject => {
     const type = store.getObjects(subject.id, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', null)[0].value;
     const repetition = +store.getObjects(subject.id, 'http://antwika.com/vocab/solidmemo/0.1/repetition', null)[0].value;
