@@ -88,7 +88,9 @@ let options: { clientId: string, clientSecret: string } | undefined;
 let keyPair: { privateKey: JWK, publicKey: JWK } | undefined;
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (!options) options = await registerClient(env.NEXT_PUBLIC_IDP_BASE_URL);
+  const idpBaseUrl = 'http://localhost:4000'; // Somehow get the webid/idp choice from the client-side
+
+  if (!options) options = await registerClient(idpBaseUrl);
   if (!keyPair) {
     const temp = await generateKeyPair('ES256');
     keyPair = {
