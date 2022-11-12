@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Literal, NamedNode, Parser, Quad, Store } from 'n3';
+import { Literal, NamedNode, Parser, Store } from 'n3';
 import env from '@/lib/env';
 
 export const registerClient = async (idpBaseUrl: string) => {
