@@ -1,4 +1,4 @@
-import Title from "@/ui/Title";
+import Title from "src/ui/Title";
 import Form from "./form";
 
 export default async function Page() {

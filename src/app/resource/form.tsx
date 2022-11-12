@@ -1,7 +1,7 @@
 'use client';
 
-import Button from "@/ui/Button";
-import TextField from "@/ui/TextField";
+import Button from "src/ui/Button";
+import TextField from "src/ui/TextField";
 import { useState } from "react";
 
 export default function Form() {

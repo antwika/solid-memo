@@ -1,6 +1,6 @@
 'use client';
 
-import Notice from "@/ui/Notice";
+import Notice from "src/ui/Notice";
 
 type Props = {
   error: Error;

@@ -1,6 +1,6 @@
 import { pascalCase2KebabCase } from "src/lib/convert";
-import Link from "@/ui/Link";
-import Title from "@/ui/Title";
+import Link from "src/ui/Link";
+import Title from "src/ui/Title";
 
 type Props = {
   children: React.ReactNode;

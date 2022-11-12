@@ -1,15 +1,15 @@
 import { kebabCase2PascalCase } from "src/lib/convert";
-import Anchor from "@/ui/Anchor";
-import Badge from "@/ui/Badge";
-import Button from "@/ui/Button";
-import Link from "@/ui/Link";
-import Notice from "@/ui/Notice";
-import Paper from "@/ui/Paper";
-import Table from "@/ui/table/Table";
-import Td from "@/ui/table/Td";
-import Th from "@/ui/table/Th";
-import TextField from "@/ui/TextField";
-import Title from "@/ui/Title";
+import Anchor from "src/ui/Anchor";
+import Badge from "src/ui/Badge";
+import Button from "src/ui/Button";
+import Link from "src/ui/Link";
+import Notice from "src/ui/Notice";
+import Paper from "src/ui/Paper";
+import Table from "src/ui/table/Table";
+import Td from "src/ui/table/Td";
+import Th from "src/ui/table/Th";
+import TextField from "src/ui/TextField";
+import Title from "src/ui/Title";
 import { AiOutlineLink } from 'react-icons/ai';
 
 type Props = {

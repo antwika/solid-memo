@@ -1,6 +1,6 @@
 'use client';
 
-import Link from "@/ui/Link";
+import Link from "src/ui/Link";
 import SessionBadge from "./badge/SessionBadge";
 import SolidMemoBadge from "./badge/SolidMemoBadge";
 

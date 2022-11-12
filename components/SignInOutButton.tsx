@@ -2,7 +2,7 @@
 
 import useWebID from "@/hooks/useWebID";
 import { signIn, signOut } from "next-auth/react"
-import Button from "@/ui/Button";
+import Button from "src/ui/Button";
 
 export default function SignInOutButton() {
   const webID = useWebID();

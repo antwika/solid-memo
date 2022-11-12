@@ -1,6 +1,6 @@
 import { getClientEnv } from "src/lib/env";
 import { asyncComponent } from "src/lib/hack";
-import Link from "@/ui/Link";
+import Link from "src/ui/Link";
 
 type Props = {
   iri: string,

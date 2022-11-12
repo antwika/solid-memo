@@ -1,6 +1,6 @@
 'use client';
 
-import Badge from "@/ui/Badge";
+import Badge from "src/ui/Badge";
 import useWebID from "@/hooks/useWebID";
 import { AiOutlineLock, AiOutlineUnlock } from "react-icons/ai";
 

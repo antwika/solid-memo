@@ -20,7 +20,7 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/ui/*": ["ui/*"],
+      "@/ui/*": ["src/ui/*"],
       "@/components/*": ["components/*"],
       "@/lib/*": ["src/lib/*"],
       "@/styles/*": ["styles/*"],

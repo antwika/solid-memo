@@ -2,8 +2,8 @@
 
 import useSWR from 'swr';
 import { sm2 } from "src/lib/sm2";
-import Badge from "@/ui/Badge";
-import Button from "@/ui/Button";
+import Badge from "src/ui/Badge";
+import Button from "src/ui/Button";
 import { useEffect, useState } from "react";
 import {
   Parser as N3Parser,
