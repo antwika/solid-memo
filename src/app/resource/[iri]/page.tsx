@@ -1,4 +1,4 @@
-import Resource from "@/components/Resource";
+import Resource from "src/components/Resource";
 
 type Props = {
   params?: any;

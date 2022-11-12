@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-head-element */
-import NextAuthSessionProvider from '@/components/NextAuthSessionProvider';
+import NextAuthSessionProvider from 'src/components/NextAuthSessionProvider';
 import '@/styles/globals.css';
-import Header from 'components/Header';
+import Header from 'src/components/Header';
 import { unstable_getServerSession } from "next-auth/next"
 
 export default async function RootLayout({ children }: { children: any }) {

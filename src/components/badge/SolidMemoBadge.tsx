@@ -2,7 +2,7 @@ import Image from "next/image";
 import localFont from '@next/font/local'
 import Badge from "src/ui/Badge";
 
-const myLogoFont = localFont({ src: '../../fonts/PatrickHand-Regular.ttf' })
+const myLogoFont = localFont({ src: '../../../fonts/PatrickHand-Regular.ttf' })
 
 export default function SolidMemoBadge() {
   return (

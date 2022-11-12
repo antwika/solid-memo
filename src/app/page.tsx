@@ -1,6 +1,6 @@
-import SolidMemoBadge from "components/badge/SolidMemoBadge";
+import SolidMemoBadge from "src/components/badge/SolidMemoBadge";
 import Title from "src/ui/Title";
-import SignInOutButton from "@/components/SignInOutButton";
+import SignInOutButton from "src/components/SignInOutButton";
 
 export default function Page() {
   return (
