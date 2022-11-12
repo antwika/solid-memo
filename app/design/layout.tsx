@@ -13,6 +13,7 @@ export default async function Layout({ children }: Props) {
     'Button',
     'Link',
     'Notice',
+    'Table',
     'TextField',
     'Title',
     'Paper',

@@ -6,6 +6,9 @@ import Button from "@/ui/Button";
 import Link from "@/ui/Link";
 import Notice from "@/ui/Notice";
 import Paper from "@/ui/Paper";
+import Table from "@/ui/table/Table";
+import Td from "@/ui/table/Td";
+import Th from "@/ui/table/Th";
 import TextField from "@/ui/TextField";
 import Title from "@/ui/Title";
 import { AiOutlineLink } from 'react-icons/ai';
@@ -37,18 +40,32 @@ export default async function Page({ params }: Props) {
       );
     case 'Paper':
       return <Paper>Paper</Paper>;
+    case 'Table':
+      return (
+        <Table>
+          <thead>
+            <tr>
+              <Th>Property</Th>
+              <Th>Value</Th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <Td>Foo</Td>
+              <Td>Bar</Td>
+            </tr>
+            <tr>
+              <Td>Hello</Td>
+              <Td>World</Td>
+            </tr>
+          </tbody>
+        </Table>
+      );
     case 'TextField':
       return <TextField placeholder="Type here..." />;
     case 'Title':
       return <Title text="Title" />;
     default:
       throw new Error('Unknown design element');
-      break;
   }
-
-  return (
-    <>
-      Unknown design element
-    </>
-  )
 }

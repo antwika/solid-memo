@@ -70,36 +70,4 @@ describe('solid', () => {
     expect(cards).toHaveLength(1);
     expect(cards[0]).toStrictEqual(card);
   });
-  
-  it('can update existing cards', async () => {
-    const resource = '';
-    const store = await parseResourceAsStore(resource);
-    expect(store).toBeDefined();
-
-    const card: Card = {
-      iri: 'http://localhost:4000/alice/solidmemo/data#19df47aa',
-      type: 'http://antwika.com/vocab/solidmemo/0.1/Card',
-      repetition: 0,
-      ease: 2.5,
-      interval: 1,
-      front: 'Foo',
-      back: 'Bar'
-    };
-    await addCardToStore(store, card);
-    
-    const updatedCard: Card = {
-      iri: 'http://localhost:4000/alice/solidmemo/data#19df47aa',
-      type: 'http://antwika.com/vocab/solidmemo/0.1/Card',
-      repetition: 1,
-      ease: 3.5,
-      interval: 3,
-      front: 'Foo',
-      back: 'Bar'
-    };
-    await addCardToStore(store, updatedCard);
-    
-    const cards = await extractAllCardsFromStore(store);
-    expect(cards).toHaveLength(1);
-    expect(cards[0]).toStrictEqual(updatedCard);
-  });
 });

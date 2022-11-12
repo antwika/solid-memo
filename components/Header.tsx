@@ -1,14 +1,10 @@
 'use client';
 
-import useWebID from "@/hooks/useWebID";
-import Badge from "@/ui/Badge";
 import Link from "@/ui/Link";
 import SessionBadge from "./badge/SessionBadge";
 import SolidMemoBadge from "./badge/SolidMemoBadge";
 
 export default function Header() {
-  const webID = useWebID();
-
   return (
     <div className="flex p-2 bg-slate-300 select-none">
         <div className="flex flex-grow space-x-2 items-center">

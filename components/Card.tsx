@@ -4,9 +4,7 @@ import useSWR from 'swr';
 import { sm2 } from "@/lib/sm2";
 import Badge from "@/ui/Badge";
 import Button from "@/ui/Button";
-import Link from "@/ui/Link";
 import { useEffect, useState } from "react";
-import Test from "./Test";
 import {
   Parser as N3Parser,
   Store as N3Store,
