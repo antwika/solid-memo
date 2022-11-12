@@ -19,19 +19,20 @@ const customJestConfig = {
   collectCoverageFrom: [
     'app/**/*{.ts,.tsx}',
     'components/**/*{.ts,.tsx}',
-    'lib/**/*{.ts,.tsx}',
-    'ui/**/*{.ts,.tsx}',
     'hooks/**/*{.ts,.tsx}',
+    'lib/**/*{.ts,.tsx}',
+    'pages/**/*{.ts,.tsx}',
+    'ui/**/*{.ts,.tsx}',
     // 'src/**/*{.ts,.tsx}',
     // '!src/pages/_app.tsx',
   ],
   coverageThreshold: {
-    './src': {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
+    './app': { branches: 80, functions: 80, lines: 80, statements: 80 },
+    './components': { branches: 80, functions: 80, lines: 80, statements: 80 },
+    './hooks': { branches: 80, functions: 80, lines: 80, statements: 80 },
+    './lib': { branches: 80, functions: 80, lines: 80, statements: 80 },
+    './pages': { branches: 80, functions: 80, lines: 80, statements: 80 },
+    './ui': { branches: 80, functions: 80, lines: 80, statements: 80 },
   },
 };
 
