@@ -59,7 +59,6 @@ export default function Card(props: Props) {
     });
   }
 
-  const baseURI = 'http://localhost:3000/';
   return (
     <div className="p-2 rounded-lg bg-slate-200 space-y-2">
       <Badge>IRI:{ props.iri }</Badge>
