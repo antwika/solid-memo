@@ -17,16 +17,13 @@ export default function Resource({ iri, raw }: Props) {
 
   subjects.forEach(subject => {
     const type = store.getObjects(subject.id, 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', null)[0].value;
-    switch (type) {
-      case 'http://antwika.com/vocab/solidmemo/0.1/Card':
-        renderedNodes.push(<Card
-          key={subject.id}
-          iri={subject.id}
-        />)
-        break;
-      default:
-        console.log(`Could not render resource, reason: Unknown type "${type}"`);
-        break;
+    if (type === 'http://antwika.com/vocab/solidmemo/0.1/Card') {
+      renderedNodes.push(<Card
+        key={subject.id}
+        iri={subject.id}
+      />);
+    } else {
+      console.log(`Could not render resource, reason: Unknown type "${type}"`);
     }
   });
 
