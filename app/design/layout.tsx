@@ -19,7 +19,8 @@ export default async function Layout({ children }: Props) {
     'Paper',
   ];
   
-  const links = componentNames.sort().map(name => (
+  const sortedComponentNames = componentNames.sort();
+  const links = sortedComponentNames.map(name => (
     { href: `/design/${pascalCase2KebabCase(name)}`, label: name }
   ));
 
