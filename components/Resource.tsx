@@ -28,9 +28,6 @@ export default function Resource({ iri, raw }: Props) {
         console.log(`Could not render resource, reason: Unknown type "${type}"`);
         break;
     }
-    // const quads = store.getQuads(subject.id, null, null, null);
-    // const subset = new N3Store(quads);
-    // console.log('quads:', quads);
   });
 
   return (
