@@ -10,20 +10,16 @@ const customJestConfig = {
   testEnvironment: "jest-environment-jsdom",
   moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for you soon)
-    '^@/components/(.*)$': '<rootDir>/components/$1',
-    '^@/lib/(.*)$': '<rootDir>/lib/$1',
-    '^@/ui/(.*)$': '<rootDir>/ui/$1',
-    '^@/hooks/(.*)$': '<rootDir>/hooks/$1',
+    '^@/app/(.*)$': '<rootDir>/src/app/$1',
+    '^@/components/(.*)$': '<rootDir>/src/components/$1',
+    '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
+    '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
+    '^@/pages/(.*)$': '<rootDir>/src/pages/$1',
+    '^@/ui/(.*)$': '<rootDir>/src/ui/$1',
   },
   collectCoverage: true,
   collectCoverageFrom: [
-    'app/**/*{.ts,.tsx}',
-    'components/**/*{.ts,.tsx}',
-    'hooks/**/*{.ts,.tsx}',
-    'lib/**/*{.ts,.tsx}',
-    'pages/**/*{.ts,.tsx}',
-    'ui/**/*{.ts,.tsx}',
-    // 'src/**/*{.ts,.tsx}',
+    'src/**/*{.ts,.tsx}',
     // '!src/pages/_app.tsx',
   ],
   coverageThreshold: {
