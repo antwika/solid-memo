@@ -1,6 +1,6 @@
 'use client';
 
-import useWebID from "@/hooks/useWebID";
+import useWebID from "src/hooks/useWebID";
 import { signIn, signOut } from "next-auth/react"
 import Button from "src/ui/Button";
 

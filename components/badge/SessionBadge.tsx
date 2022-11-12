@@ -1,7 +1,7 @@
 'use client';
 
 import Badge from "src/ui/Badge";
-import useWebID from "@/hooks/useWebID";
+import useWebID from "src/hooks/useWebID";
 import { AiOutlineLock, AiOutlineUnlock } from "react-icons/ai";
 
 export default function SessionBadge() {

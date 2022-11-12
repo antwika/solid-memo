@@ -1,6 +1,6 @@
 import NextAuth, { NextAuthOptions, LoggerInstance, EventCallbacks } from 'next-auth';
 import { NextApiRequest, NextApiResponse } from 'next';
-import SolidProvider from '../../../src/lib/SolidProvider';
+import SolidProvider from '../../../lib/SolidProvider';
 import logger from './logger';
 import events from './events';
 import { lazyRegisterClient } from './register';
