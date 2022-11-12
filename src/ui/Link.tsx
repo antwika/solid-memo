@@ -3,6 +3,7 @@
 import Anchor from "./Anchor";
 
 type Props = {
+  dataTestid?: string,
   className?: string,
   uri: string,
   icon?: React.ReactNode,
@@ -10,13 +11,13 @@ type Props = {
   children?: React.ReactNode,
 };
 
-export default function Link(props: Props) {
+export default function Link({ dataTestid, uri, icon, children, className }: Props) {
   return (
-    <div className="flex">
-      <Anchor className="no-select" href={ props.uri }>
-        <div className={["flex items-center space-x-1 underline", props.className].join(' ')}>
-          {props.icon && <div>{ props.icon }</div>}
-          <div>{props.children}</div>
+    <div data-testid={dataTestid} className="flex">
+      <Anchor dataTestid={`${dataTestid}-anchor`} className="no-select" href={ uri }>
+        <div className={["flex items-center space-x-1 underline", className].join(' ')}>
+          {icon && <div>{ icon }</div>}
+          <div>{children}</div>
         </div>
       </Anchor>
     </div>
