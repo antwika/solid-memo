@@ -1,10 +1,10 @@
 import NextAuth, { NextAuthOptions, LoggerInstance, EventCallbacks } from 'next-auth';
 import { NextApiRequest, NextApiResponse } from 'next';
 import SolidProvider from '../../../lib/SolidProvider';
-import env from '@/lib/env';
 import logger from './logger';
 import events from './events';
 import { lazyRegisterClient } from './register';
+import { getServerEnv } from '@/lib/env';
 
 export type NextAuthOptionsExtraParams = {
   debug: boolean,
@@ -19,7 +19,7 @@ export function createNextAuthOptions(extra: NextAuthOptionsExtraParams): NextAu
   const { debug, idpBaseUrl, clientId, clientSecret, events, logger } = extra;
   return {
     debug,
-    secret: env.NEXTAUTH_SECRET,
+    secret: getServerEnv().NEXTAUTH_SECRET,
     providers: [
       SolidProvider({
         idpBaseUrl,
@@ -60,7 +60,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { clientId, clientSecret } = await lazyRegisterClient(idpBaseUrl);
 
   return NextAuth(req, res, createNextAuthOptions({
-    debug: env.NODE_ENV !== "production" && env.NEXTAUTH_DEBUG === "1",
+    debug: getServerEnv().NODE_ENV !== "production" && getServerEnv().NEXTAUTH_DEBUG === "1",
     logger,
     events,
     idpBaseUrl,

@@ -1,4 +1,4 @@
-import env from "@/lib/env";
+import { getClientEnv } from "@/lib/env";
 import { asyncComponent } from "@/lib/hack";
 import Link from "@/ui/Link";
 
@@ -19,7 +19,7 @@ export default asyncComponent(async function Property({
         <span>Entity:</span><strong>Property</strong>
       </div>
       <div className='flex space-x-2'>
-        <span>International resource identifier:</span><strong><Link uri={`${env.BASE_URL}/resource/${encodeURIComponent(iri)}`}>{ iri }</Link></strong>
+        <span>International resource identifier:</span><strong><Link uri={`${getClientEnv().NEXT_PUBLIC_BASE_URL}/resource/${encodeURIComponent(iri)}`}>{ iri }</Link></strong>
       </div>
       <div className='space-x-2'>
         <span>K:</span><strong>{ k }</strong>

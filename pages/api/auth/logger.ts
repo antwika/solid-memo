@@ -1,5 +1,5 @@
+import { getServerEnv } from '@/lib/env';
 import { LoggerInstance } from 'next-auth';
-import env from '@/lib/env';
 
 const logger: Partial<LoggerInstance> & { info: (...params: any[]) => void} = {
   info(...params: string[]) {
@@ -11,7 +11,7 @@ const logger: Partial<LoggerInstance> & { info: (...params: any[]) => void} = {
   warn(code) {
     console.log('[NEXTAUTH WARNING] ', code);
   },
-  debug: env.NODE_ENV !== "production" && env.NEXTAUTH_DEBUG === "1" ? (code, metadata) => {
+  debug: getServerEnv().NODE_ENV !== "production" && getServerEnv().NEXTAUTH_DEBUG === "1" ? (code, metadata) => {
     console.log('[NEXTAUTH DEBUG] ', metadata, code);
   } : undefined,
 };

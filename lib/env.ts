@@ -1,13 +1,19 @@
 import { z } from 'zod';
 
-let envSchema = z.object({
-  NODE_ENV: z.string(),
-  BASE_URL: z.string(),
-  NEXTAUTH_URL: z.string(),
-  NEXTAUTH_SECRET: z.string(),
-  NEXTAUTH_DEBUG: z.string(),
-});
+export const getClientEnv = () => {
+  const envSchema = z.object({
+    NEXT_PUBLIC_BASE_URL: z.string(),
+  });
+  return envSchema.parse(process.env);
+}
 
-const env = envSchema.parse(process.env);
-
-export default env;
+export const getServerEnv = () => {
+  const envSchema = z.object({
+    NODE_ENV: z.string(),
+    NEXT_PUBLIC_BASE_URL: z.string(),
+    NEXTAUTH_URL: z.string(),
+    NEXTAUTH_SECRET: z.string(),
+    NEXTAUTH_DEBUG: z.string(),
+  });
+  return envSchema.parse(process.env);
+}

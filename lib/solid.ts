@@ -1,12 +1,12 @@
 import axios from 'axios';
 import { Literal, NamedNode, Parser, Store } from 'n3';
-import env from '@/lib/env';
+import { getClientEnv } from '@/lib/env';
 
 export const registerClient = async (idpBaseUrl: string) => {
   const body = {
     client_name: 'Solid Memo',
     application_type: 'web',
-    redirect_uris: [new URL('/api/auth/callback/solid', env.NEXTAUTH_URL).toString()],
+    redirect_uris: [new URL('/api/auth/callback/solid', getClientEnv().NEXT_PUBLIC_BASE_URL).toString()],
     subject_type: 'public',
     token_endpoint_auth_method: 'client_secret_basic',
     id_token_signed_response_alg: 'ES256',
