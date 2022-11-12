@@ -1,4 +1,3 @@
-import Resource from "@/components/Resource";
 import { kebabCase2PascalCase } from "@/lib/convert";
 import Anchor from "@/ui/Anchor";
 import Badge from "@/ui/Badge";
