@@ -15,19 +15,24 @@ const customJestConfig = {
     '^@/ui/(.*)$': '<rootDir>/ui/$1',
     '^@/hooks/(.*)$': '<rootDir>/hooks/$1',
   },
-  // collectCoverage: true,
-  // collectCoverageFrom: [
-  //   'src/**/*{.ts,.tsx}',
-  //   '!src/pages/_app.tsx',
-  // ],
-  // coverageThreshold: {
-  //   './src': {
-  //     branches: 80,
-  //     functions: 80,
-  //     lines: 80,
-  //     statements: 80,
-  //   },
-  // },
+  collectCoverage: true,
+  collectCoverageFrom: [
+    'app/**/*{.ts,.tsx}',
+    'components/**/*{.ts,.tsx}',
+    'lib/**/*{.ts,.tsx}',
+    'ui/**/*{.ts,.tsx}',
+    'hooks/**/*{.ts,.tsx}',
+    // 'src/**/*{.ts,.tsx}',
+    // '!src/pages/_app.tsx',
+  ],
+  coverageThreshold: {
+    './src': {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
 };
 
 module.exports = createJestConfig(customJestConfig);
