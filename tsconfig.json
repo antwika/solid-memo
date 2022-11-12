@@ -22,7 +22,7 @@
     "paths": {
       "@/ui/*": ["ui/*"],
       "@/components/*": ["components/*"],
-      "@/lib/*": ["lib/*"],
+      "@/lib/*": ["src/lib/*"],
       "@/styles/*": ["styles/*"],
       "@/hooks/*": ["hooks/*"]
     },

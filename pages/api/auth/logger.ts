@@ -1,4 +1,4 @@
-import { getServerEnv } from '@/lib/env';
+import { getServerEnv } from 'src/lib/env';
 import { LoggerInstance } from 'next-auth';
 
 const logger: Partial<LoggerInstance> & { info: (...params: any[]) => void} = {

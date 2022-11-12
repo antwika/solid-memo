@@ -1,4 +1,4 @@
-import { asyncComponent } from "@/lib/hack";
+import { asyncComponent } from "src/lib/hack";
 
 type Props = {
   label?: string,

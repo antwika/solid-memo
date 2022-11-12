@@ -1,5 +1,5 @@
-import { getClientEnv } from "@/lib/env";
-import { asyncComponent } from "@/lib/hack";
+import { getClientEnv } from "src/lib/env";
+import { asyncComponent } from "src/lib/hack";
 import Link from "@/ui/Link";
 
 type Props = {

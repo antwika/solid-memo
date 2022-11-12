@@ -1,4 +1,4 @@
-import { sm2 } from '@/lib/sm2';
+import { sm2 } from 'src/lib/sm2';
 
 describe('sm2', () => {
   describe('computes the correct outputs', () => {

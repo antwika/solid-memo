@@ -1,7 +1,7 @@
 'use client'
 
 import useSWR from 'swr';
-import { sm2 } from "@/lib/sm2";
+import { sm2 } from "src/lib/sm2";
 import Badge from "@/ui/Badge";
 import Button from "@/ui/Button";
 import { useEffect, useState } from "react";
@@ -9,7 +9,7 @@ import {
   Parser as N3Parser,
   Store as N3Store,
 } from 'n3';
-import { fetcher } from '@/lib/swr';
+import { fetcher } from 'src/lib/swr';
 
 type Detail = {
   repetition: number,

@@ -1,10 +1,10 @@
 import NextAuth, { NextAuthOptions, LoggerInstance, EventCallbacks } from 'next-auth';
 import { NextApiRequest, NextApiResponse } from 'next';
-import SolidProvider from '../../../lib/SolidProvider';
+import SolidProvider from '../../../src/lib/SolidProvider';
 import logger from './logger';
 import events from './events';
 import { lazyRegisterClient } from './register';
-import { getServerEnv } from '@/lib/env';
+import { getServerEnv } from 'src/lib/env';
 
 export type NextAuthOptionsExtraParams = {
   debug: boolean,

@@ -1,4 +1,4 @@
-import { registerClient } from "@/lib/solid";
+import { registerClient } from "src/lib/solid";
 
 let client: { clientId: string, clientSecret: string } | undefined;
 

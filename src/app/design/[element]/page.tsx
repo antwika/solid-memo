@@ -1,4 +1,4 @@
-import { kebabCase2PascalCase } from "@/lib/convert";
+import { kebabCase2PascalCase } from "src/lib/convert";
 import Anchor from "@/ui/Anchor";
 import Badge from "@/ui/Badge";
 import Button from "@/ui/Button";
