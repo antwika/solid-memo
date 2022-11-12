@@ -12,9 +12,8 @@ export const registerClient = async (idpBaseUrl: string) => {
     grant_types: ['authorization_code', 'refresh_token'],
   };
 
-  const response = await axios.post(new URL('.oidc/reg', idpBaseUrl).toString(), {
+  const response = await axios.post(new URL('.oidc/reg', idpBaseUrl).toString(), body, {
     headers: { 'Content-Type': 'application/json' },
-    data: body,
   });
 
   const options = {
