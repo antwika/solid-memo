@@ -23,12 +23,7 @@ const customJestConfig = {
     // '!src/pages/_app.tsx',
   ],
   coverageThreshold: {
-    './app': { branches: 0, functions: 0, lines: 0, statements: 0 },
-    './components': { branches: 0, functions: 0, lines: 0, statements: 0 },
-    './hooks': { branches: 0, functions: 0, lines: 0, statements: 0 },
-    './lib': { branches: 0, functions: 0, lines: 0, statements: 0 },
-    './pages': { branches: 0, functions: 0, lines: 0, statements: 0 },
-    './ui': { branches: 0, functions: 0, lines: 0, statements: 0 },
+    './src': { branches: 0, functions: 0, lines: 0, statements: 0 },
   },
 };
 
