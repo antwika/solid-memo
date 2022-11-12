@@ -1,12 +1,13 @@
 'use client';
 
 type Props = React.TableHTMLAttributes<HTMLTableElement> & {
+  dataTestid?: string,
   children: React.ReactNode;
 };
 
 export default function Table(props: Props) {
-  const { children } = props;
+  const { dataTestid, children, ...tableProps } = props;
   return (
-    <table {...props} className="table-auto shadow-lg bg-white rounded-lg overflow-hidden">{ children }</table>
+    <table data-testid={dataTestid} {...tableProps} className="table-auto shadow-lg bg-white rounded-lg overflow-hidden">{ children }</table>
   );
 }

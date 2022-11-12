@@ -1,12 +1,13 @@
 'use client';
 
 type Props = React.TableHTMLAttributes<HTMLTableCellElement> & {
+  dataTestid?: string,
   children: React.ReactNode;
 };
 
 export default function Th(props: Props) {
-  const { children } = props;
+  const { dataTestid, children, ...thProps } = props;
   return (
-    <th {...props} className="bg-blue-500 border text-left px-2 py-1 text-white select-none">{ children }</th>
+    <th data-testid={dataTestid} {...thProps} className="bg-blue-500 border text-left px-2 py-1 text-white select-none">{ children }</th>
   );
 }
