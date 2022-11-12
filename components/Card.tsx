@@ -22,11 +22,11 @@ type Detail = {
 function parseDetail(iri: string, raw: string) {
   const store = new N3Store(new N3Parser().parse(raw));
   return {
-    repetition: +store.getObjects(iri, 'http://antwika.com/vocab/solidmemo/0.1/repetition', null)[0]?.value,
-    ease: +store.getObjects(iri, 'http://antwika.com/vocab/solidmemo/0.1/ease', null)[0]?.value,
-    interval: +store.getObjects(iri, 'http://antwika.com/vocab/solidmemo/0.1/interval', null)[0]?.value,
-    front: store.getObjects(iri, 'http://antwika.com/vocab/solidmemo/0.1/front', null)[0]?.value,
-    back: store.getObjects(iri, 'http://antwika.com/vocab/solidmemo/0.1/back', null)[0]?.value,
+    repetition: +store.getObjects(iri, 'https://antwika.com/vocab/solidmemo/0.1/repetition', null)[0]?.value,
+    ease: +store.getObjects(iri, 'https://antwika.com/vocab/solidmemo/0.1/ease', null)[0]?.value,
+    interval: +store.getObjects(iri, 'https://antwika.com/vocab/solidmemo/0.1/interval', null)[0]?.value,
+    front: store.getObjects(iri, 'https://antwika.com/vocab/solidmemo/0.1/front', null)[0]?.value,
+    back: store.getObjects(iri, 'https://antwika.com/vocab/solidmemo/0.1/back', null)[0]?.value,
   };
 }
 
