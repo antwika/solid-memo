@@ -1,7 +1,6 @@
 'use client';
 
-type Props = React.ButtonHTMLAttributes<HTMLInputElement> & {
-};
+type Props = React.ButtonHTMLAttributes<HTMLInputElement>;
 
 export default function TextField(props: Props) {
   return (
