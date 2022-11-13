@@ -18,4 +18,10 @@ describe('logger', () => {
     logger.error!('ERROR_CODE_123', new Error('Test error'));
     expect(consoleSpy).toHaveBeenCalledWith('[NEXTAUTH ERROR] ', new Error('Test error'), 'ERROR_CODE_123');
   });
+
+  it('logs debug messages', () => {
+    const consoleSpy = jest.spyOn(global.console, 'log');
+    logger.debug!('DEBUG_CODE_123', 'Metadata');
+    expect(consoleSpy).toHaveBeenCalledWith('[NEXTAUTH DEBUG] ', 'Metadata', 'DEBUG_CODE_123');
+  });
 });
