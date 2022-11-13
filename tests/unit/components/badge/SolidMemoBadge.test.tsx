@@ -20,29 +20,4 @@ describe('SolidMemoBadge', () => {
     expect(solidMemoBadgeText).toBeInTheDocument();
     expect(solidMemoBadgeText).toHaveTextContent('Solid Memo')
   });
-/*
-  it('does not render an "unlock" icon', () => {
-    render(
-      <SolidMemoBadge dataTestid='test-sessionBadge' />
-    );
-
-    const sessionBadge = screen.queryByTestId('test-sessionBadge');
-    expect(sessionBadge).toBeInTheDocument();
-    
-    const sessionBadgeIconLock = within(sessionBadge!).queryByTestId('test-sessionBadge-icon-lock');
-    expect(sessionBadgeIconLock).not.toBeInTheDocument();
-  });
-
-  it('renders the text returned by the useWebID hook: "http://example.com/test/profile/card#me"', () => {
-    render(
-      <SolidMemoBadge dataTestid='test-sessionBadge' />
-    );
-
-    const sessionBadge = screen.queryByTestId('test-sessionBadge');
-    expect(sessionBadge).toBeInTheDocument();
-    
-    const sessionBadgeText = within(sessionBadge!).queryByTestId('test-sessionBadge-text');
-    expect(sessionBadgeText).toBeInTheDocument();
-    expect(sessionBadgeText).toHaveTextContent('http://example.com/test/profile/card#me');
-  }); */
 });
