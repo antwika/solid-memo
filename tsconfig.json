@@ -20,11 +20,13 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/ui/*": ["src/ui/*"],
+      "@/app/*": ["src/app/*"],
       "@/components/*": ["src/components/*"],
+      "@/hooks/*": ["src/hooks/*"],
       "@/lib/*": ["src/lib/*"],
+      "@/pages/*": ["src/pages/*"],
+      "@/ui/*": ["src/ui/*"],
       "@/styles/*": ["styles/*"],
-      "@/hooks/*": ["src/hooks/*"]
     },
     "plugins": [
       {
