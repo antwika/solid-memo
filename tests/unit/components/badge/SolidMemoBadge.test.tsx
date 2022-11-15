@@ -11,6 +11,8 @@ var Image = jest.fn((props) => (
 ));
 jest.mock('next/image', () => (props: any) => Image(props));
 
+jest.mock('@next/font/local', () => () => ({ className: 'className'}));
+
 describe('SessionMemoBadge', () => {
   beforeEach(() => {
     render(<SolidMemoBadge dataTestid='test-solidMemoBadge' />);
