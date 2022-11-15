@@ -14,8 +14,11 @@ jest.mock('next/image', () => (props: any) => Image(props));
 jest.mock('@next/font/local', () => () => ({ className: 'className'}));
 
 describe('SessionMemoBadge', () => {
+  let sessionMemoBadge: HTMLElement;
+
   beforeEach(() => {
     render(<SolidMemoBadge dataTestid='test-solidMemoBadge' />);
+    sessionMemoBadge = screen.queryByTestId('test-solidMemoBadge')!;
   });
 
   afterEach(() => {
@@ -23,6 +26,7 @@ describe('SessionMemoBadge', () => {
   });
 
   it('renders a <Badge> component with expected attributes', () => {
+    expect(sessionMemoBadge).toBeInTheDocument();
     expect(Badge).toHaveBeenCalledTimes(1);
     expect(Badge).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -31,8 +35,6 @@ describe('SessionMemoBadge', () => {
         className: 'className',
       }),
     );
-    const sessionMemoBadge = screen.queryByTestId('test-solidMemoBadge')!;
-    expect(sessionMemoBadge).toBeInTheDocument();
   });
 
   it('renders a nested <Image> component with expected attributes', () => {
@@ -46,13 +48,11 @@ describe('SessionMemoBadge', () => {
         height: '32',
       }),
     );
-    const sessionMemoBadge = screen.queryByTestId('test-solidMemoBadge')!;
     const childImage = within(sessionMemoBadge).queryByTestId('test-solidMemoBadge-image');
     expect(childImage).toBeInTheDocument();
   });
 
   it('renders a nested <span> element with expected attributes', () => {
-    const sessionMemoBadge = screen.queryByTestId('test-solidMemoBadge')!;
     const childText = within(sessionMemoBadge).queryByTestId('test-solidMemoBadge-text');
     expect(childText).toBeInTheDocument();
     expect(childText).toHaveClass('className');
