@@ -1,11 +1,9 @@
 import Title from "src/ui/Title";
 import Form from "./form";
 
-type Props = {
-  dataTestid?: string,
-};
+const dataTestid = 'test-page';
 
-export default function Page({ dataTestid }: Props) {
+export default function Page() {
   return (
     <div data-testid={dataTestid} className="space-y-2">
       <Title dataTestid={`${dataTestid}-title`} text="My resources" />

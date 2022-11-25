@@ -19,7 +19,7 @@ jest.mock('@/components/SignInOutButton', () => (props: any) => SignInOutButton(
 describe('Page', () => {
   it('renders', () => {
     render(
-      <Page dataTestid='test-page' />
+      <Page />
     );
     
     const page = screen.queryByTestId('test-page');

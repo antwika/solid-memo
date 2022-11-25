@@ -14,7 +14,7 @@ jest.mock('@/app/resource/form', () => (props: any) => Form(props));
 describe('Page', () => {
   it('renders', () => {
     render(
-      <Page dataTestid='test-page' />
+      <Page />
     );
     
     const page = screen.queryByTestId('test-page');
