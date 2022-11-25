@@ -1,23 +1,61 @@
 import { render, screen, within } from '@testing-library/react';
 import SolidMemoBadge from '@/components/badge/SolidMemoBadge';
 
-jest.mock('@/hooks/useWebID');
+var Badge = jest.fn((props) => (
+  <div data-testid={props.dataTestid}>{props.children}</div>
+));
+jest.mock('@/ui/Badge', () => (props: any) => Badge(props));
 
-describe('SolidMemoBadge', () => {
-  it('renders a badge that has a logotype image and text "Solid Memo"', () => {
-    render(
-      <SolidMemoBadge dataTestid='test-solidMemoBadge' />
+var Image = jest.fn((props) => (
+  <div data-testid={props['data-testid'] || props.dataTestid}>{props.children}</div>
+));
+jest.mock('next/image', () => (props: any) => Image(props));
+
+jest.mock('@next/font/local', () => () => ({ className: 'className'}));
+
+describe('SessionMemoBadge', () => {
+  let sessionMemoBadge: HTMLElement;
+
+  beforeEach(() => {
+    render(<SolidMemoBadge dataTestid='test-solidMemoBadge' />);
+    sessionMemoBadge = screen.queryByTestId('test-solidMemoBadge')!;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renders a <Badge> component with expected attributes', () => {
+    expect(sessionMemoBadge).toBeInTheDocument();
+    expect(Badge).toHaveBeenCalledTimes(1);
+    expect(Badge).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dataTestid: 'test-solidMemoBadge',
+        children: expect.any(Array),
+        className: 'className',
+      }),
     );
-    
-    const solidMemoBadge = screen.queryByTestId('test-solidMemoBadge');
-    expect(solidMemoBadge).toBeInTheDocument();
+  });
 
-    const solidMemoBadgeImage = within(solidMemoBadge!).queryByTestId('test-solidMemoBadge-image');
-    expect(solidMemoBadgeImage).toBeInTheDocument();
-    expect(solidMemoBadgeImage).toHaveAttribute('src', '/logo.svg');
+  it('renders a nested <Image> component with expected attributes', () => {
+    expect(Image).toHaveBeenCalledTimes(1);
+    expect(Image).toHaveBeenCalledWith(
+      expect.objectContaining({
+        alt: 'Solid Memo logotype',
+        className: 'rounded-lg',
+        src: '/logo.svg',
+        width: '32',
+        height: '32',
+      }),
+    );
+    const childImage = within(sessionMemoBadge).queryByTestId('test-solidMemoBadge-image');
+    expect(childImage).toBeInTheDocument();
+  });
 
-    const solidMemoBadgeText = within(solidMemoBadge!).queryByTestId('test-solidMemoBadge-text');
-    expect(solidMemoBadgeText).toBeInTheDocument();
-    expect(solidMemoBadgeText).toHaveTextContent('Solid Memo')
+  it('renders a nested <span> element with expected attributes', () => {
+    const childText = within(sessionMemoBadge).queryByTestId('test-solidMemoBadge-text');
+    expect(childText).toBeInTheDocument();
+    expect(childText).toHaveClass('className');
+    expect(childText).toHaveTextContent('Solid Memo');
   });
 });
