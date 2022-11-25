@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 type Props = React.TableHTMLAttributes<HTMLTableElement> & {
   dataTestid?: string,
   children: React.ReactNode;

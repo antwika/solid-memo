@@ -1,4 +1,4 @@
-import Spinner from "src/components/Spinner";
+import Spinner from 'src/components/Spinner';
 
 const dataTestid = 'test-loading';
 

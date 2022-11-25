@@ -1,11 +1,13 @@
 'use client';
 
+import React from 'react';
+
 type Props = React.ButtonHTMLAttributes<HTMLInputElement> & {
   dataTestid?: string,
 };
 
 export default function TextField(props: Props) {
-  const { dataTestid, ...inputProps} = props;
+  const { dataTestid, ...inputProps } = props;
   return (
     <input
       data-testid={dataTestid}
@@ -14,4 +16,4 @@ export default function TextField(props: Props) {
       {...inputProps}
     />
   );
-};
+}

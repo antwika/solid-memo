@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { AiOutlineInfoCircle } from 'react-icons/ai';
 
 export type NoticeType = 'error' | 'warning' | 'info';
@@ -15,13 +16,13 @@ export default function Notice({ dataTestid, children, type }: Props) {
     error: 'bg-red-200 border-2 border-red-500',
     warning: 'bg-yellow-200 border-2 border-yellow-500',
     info: 'bg-blue-200 border-2 border-blue-500',
-  }
+  };
 
   const iconContainerStyle: Record<NoticeType, string> = {
     error: 'bg-red-500',
     warning: 'bg-yellow-500',
     info: 'bg-blue-500',
-  }
+  };
 
   return (
     <div data-testid={dataTestid} className={ `flex ${containerStyle[type]} shadow-md` }>
@@ -35,4 +36,4 @@ export default function Notice({ dataTestid, children, type }: Props) {
       </div>
     </div>
   );
-};
+}

@@ -6,7 +6,7 @@ export const getClientEnv = () => {
     NEXT_PUBLIC_BASE_URL: z.string(),
   });
   return envSchema.parse(process.env);
-}
+};
 
 export const getServerEnv = () => {
   const envSchema = z.object({
@@ -17,4 +17,4 @@ export const getServerEnv = () => {
     NEXTAUTH_DEBUG: z.string(),
   });
   return envSchema.parse(process.env);
-}
+};

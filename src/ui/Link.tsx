@@ -1,6 +1,7 @@
-'use client'
+'use client';
 
-import Anchor from "./Anchor";
+import React from 'react';
+import Anchor from './Anchor';
 
 type Props = {
   dataTestid?: string,
@@ -11,11 +12,17 @@ type Props = {
   children?: React.ReactNode,
 };
 
-export default function Link({ dataTestid, uri, icon, children, className }: Props) {
+export default function Link({
+  dataTestid,
+  uri,
+  icon,
+  children,
+  className,
+}: Props) {
   return (
     <div data-testid={dataTestid} className="flex">
       <Anchor dataTestid={`${dataTestid}-anchor`} className="no-select" href={ uri }>
-        <div className={["flex items-center space-x-1 underline", className].join(' ')}>
+        <div className={['flex items-center space-x-1 underline', className].join(' ')}>
           {icon && <div>{ icon }</div>}
           <div>{children}</div>
         </div>

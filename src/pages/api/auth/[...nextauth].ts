@@ -17,7 +17,12 @@ export type NextAuthOptionsExtraParams = {
 export function createNextAuthOptions(extra: NextAuthOptionsExtraParams): NextAuthOptions {
   if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET must be defined');
 
-  const { debug, idpBaseUrl, clientId, clientSecret, events, logger } = extra;
+  const {
+    debug,
+    idpBaseUrl,
+    clientId,
+    clientSecret,
+  } = extra;
   return {
     debug,
     secret: process.env.NEXTAUTH_SECRET,
@@ -26,32 +31,34 @@ export function createNextAuthOptions(extra: NextAuthOptionsExtraParams): NextAu
         idpBaseUrl,
         clientId,
         clientSecret,
-      })
+      }),
     ],
     callbacks: {
       async jwt({ token, account }) {
-        token.webid = token.sub;
+        const processedToken = token;
+        processedToken.webid = token.sub;
 
         if (account) {
-          token.dpopToken = account.access_token;
-          token.dpopTokenExpiresAt = account.expires_at;
-          token.keys = account.keys;
+          processedToken.dpopToken = account.access_token;
+          processedToken.dpopTokenExpiresAt = account.expires_at;
+          processedToken.keys = account.keys;
         }
 
-        return token;
+        return processedToken;
       },
       async session({ session, token, user }) {
-        session.user = user;
+        const processedSession = session;
+        processedSession.user = user;
 
         if (token.webid) {
-          (session as any).webid = token.webid as string;
+          (processedSession as any).webid = token.webid as string;
         }
 
-        return session;
+        return processedSession;
       },
     },
-    events,
-    logger,
+    events: extra.events,
+    logger: extra.logger,
   };
 }
 
@@ -61,7 +68,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { clientId, clientSecret } = await lazyRegisterClient(idpBaseUrl);
 
   return NextAuth(req, res, createNextAuthOptions({
-    debug: process.env.NODE_ENV !== "production" && process.env.NEXTAUTH_DEBUG === "1",
+    debug: process.env.NODE_ENV !== 'production' && process.env.NEXTAUTH_DEBUG === '1',
     logger,
     events,
     idpBaseUrl,

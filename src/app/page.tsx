@@ -1,6 +1,6 @@
-import SolidMemoBadge from "src/components/badge/SolidMemoBadge";
-import Title from "src/ui/Title";
-import SignInOutButton from "src/components/SignInOutButton";
+import SolidMemoBadge from 'src/components/badge/SolidMemoBadge';
+import Title from 'src/ui/Title';
+import SignInOutButton from 'src/components/SignInOutButton';
 
 const dataTestid = 'test-page';
 

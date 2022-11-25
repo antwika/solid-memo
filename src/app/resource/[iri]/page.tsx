@@ -1,4 +1,5 @@
-import Resource from "src/components/Resource";
+import React from 'react';
+import Resource from 'src/components/Resource';
 
 type Props = {
   params?: any;

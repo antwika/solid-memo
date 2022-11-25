@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 type Props = {
   dataTestid?: string,
   children: React.ReactNode,
@@ -11,4 +13,4 @@ export default function Paper({ dataTestid, children }: Props) {
       {children}
     </div>
   );
-};
+}

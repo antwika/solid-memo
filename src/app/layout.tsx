@@ -2,10 +2,10 @@
 import NextAuthSessionProvider from 'src/components/NextAuthSessionProvider';
 import '@/styles/globals.css';
 import Header from 'src/components/Header';
-import { unstable_getServerSession } from "next-auth/next"
+import { unstable_getServerSession as unstableGetServerSession } from 'next-auth/next';
 
 export default async function RootLayout({ children }: { children: any }) {
-  const session = await unstable_getServerSession();
+  const session = await unstableGetServerSession();
 
   return (
     <html>

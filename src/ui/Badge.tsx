@@ -1,6 +1,7 @@
 'use client';
 
-import Link from "./Link";
+import React from 'react';
+import Link from './Link';
 
 type Props = {
   dataTestid?: string,
@@ -10,7 +11,7 @@ type Props = {
 
 export default function Badge({ dataTestid, children, className }: Props) {
   return (
-    <Link dataTestid={dataTestid} uri={"/"} className={["text-xl font-bold no-underline", className].join(' ')}>
+    <Link dataTestid={dataTestid} uri={'/'} className={['text-xl font-bold no-underline', className].join(' ')}>
       <div className="flex items-center space-x-2 p-1 bg-white rounded-md shadow-md">
         {children}
       </div>

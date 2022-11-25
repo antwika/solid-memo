@@ -29,7 +29,7 @@ export default function SolidProvider<P extends SolidProfile>(
       authorization_signed_response_alg: 'ES256',
       id_token_signed_response_alg: 'ES256',
     },
-    profile(profile, tokens) {
+    profile(profile) {
       return {
         id: profile.sub,
         webid: profile.sub,

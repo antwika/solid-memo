@@ -5,27 +5,36 @@ type Sm2Args = {
   interval: number,
 };
 
-export const sm2 = ({ grade, repetition, ease, interval }: Sm2Args) => {
+export const sm2 = ({
+  grade,
+  repetition,
+  ease,
+  interval,
+}: Sm2Args) => {
+  let newRepetition = repetition;
+  let newEase = ease;
+  let newInterval = interval;
+
   if (grade >= 3) {
-    if (repetition === 0) {
-      interval = 1;
-    } else if (repetition === 1) {
-      interval = 6;
+    if (newRepetition === 0) {
+      newInterval = 1;
+    } else if (newRepetition === 1) {
+      newInterval = 6;
     } else {
-      interval = Math.round(interval * ease)
+      newInterval = Math.round(newInterval * newEase);
     }
-    repetition += 1;
+    newRepetition += 1;
   } else {
-    repetition = 0;
-    interval = 1;
+    newRepetition = 0;
+    newInterval = 1;
   }
 
-  ease = ease + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
-  ease = +ease.toFixed(2);
+  newEase += (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
+  newEase = +newEase.toFixed(2);
 
-  if (ease < 1.3) {
-    ease = 1.3;
+  if (newEase < 1.3) {
+    newEase = 1.3;
   }
 
-  return { repetition, ease, interval };
-}
+  return { repetition: newRepetition, ease: newEase, interval: newInterval };
+};

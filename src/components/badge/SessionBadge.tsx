@@ -1,8 +1,8 @@
 'use client';
 
-import Badge from "src/ui/Badge";
-import useWebID from "src/hooks/useWebID";
-import { AiOutlineLock, AiOutlineUnlock } from "react-icons/ai";
+import Badge from 'src/ui/Badge';
+import useWebID from 'src/hooks/useWebID';
+import { AiOutlineLock, AiOutlineUnlock } from 'react-icons/ai';
 
 type Props = {
   dataTestid?: string,
