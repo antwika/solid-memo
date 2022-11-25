@@ -2,18 +2,22 @@ import SolidMemoBadge from "src/components/badge/SolidMemoBadge";
 import Title from "src/ui/Title";
 import SignInOutButton from "src/components/SignInOutButton";
 
-export default function Page() {
+type Props = {
+  dataTestid?: string,
+};
+
+export default function Page({ dataTestid }: Props) {
   return (
-    <div className="space-y-2">
-      <Title text="My home" />
+    <div data-testid={dataTestid} className="space-y-2">
+      <Title dataTestid={`${dataTestid}-title`} text="My home" />
       <div className="flex text-xl space-x-2 justify-center items-center">
-        <div>
+        <div data-testid={`${dataTestid}-header`}>
           Welcome to
         </div>
-        <SolidMemoBadge />
+        <SolidMemoBadge dataTestid={`${dataTestid}-solidMemoBadge`} />
       </div>
       <div className="flex text-xl space-x-2 justify-center items-center">
-        <SignInOutButton />
+        <SignInOutButton dataTestid={`${dataTestid}-signInOutButton`} />
       </div>
     </div>
   );
