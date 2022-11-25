@@ -34,9 +34,5 @@ describe('Header', () => {
     const headerResourceLink = within(header!).queryByTestId('test-header-resourceLink');
     expect(headerResourceLink).toBeInTheDocument();
     expect(headerResourceLink).toHaveTextContent('Resource');
-
-    const headerDesignLink = within(header!).queryByTestId('test-header-designLink');
-    expect(headerDesignLink).toBeInTheDocument();
-    expect(headerDesignLink).toHaveTextContent('Design');
   });
 });

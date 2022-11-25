@@ -17,7 +17,6 @@ export default function Header({ dataTestid }: Props) {
         </div>
         <div className="flex space-x-2 items-center">
           <Link dataTestid={`${dataTestid}-resourceLink`} uri={'/resource'}>Resource</Link>
-          <Link dataTestid={`${dataTestid}-designLink`} uri={'/design'}>Design</Link>
         </div>
     </div>
   );
