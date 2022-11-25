@@ -4,16 +4,20 @@ import Link from "src/ui/Link";
 import SessionBadge from "./badge/SessionBadge";
 import SolidMemoBadge from "./badge/SolidMemoBadge";
 
-export default function Header() {
+type Props = {
+  dataTestid?: string,
+}
+
+export default function Header({ dataTestid }: Props) {
   return (
-    <div className="flex p-2 bg-slate-300 select-none">
+    <div data-testid={dataTestid} className="flex p-2 bg-slate-300 select-none">
         <div className="flex flex-grow space-x-2 items-center">
-          <SolidMemoBadge />
-          <SessionBadge />
+          <SolidMemoBadge dataTestid={`${dataTestid}-solidMemoBadge`} />
+          <SessionBadge dataTestid={`${dataTestid}-sessionBadge`} />
         </div>
         <div className="flex space-x-2 items-center">
-          <Link uri={'/resource'}>Resource</Link>
-          <Link uri={'/design'}>Design</Link>
+          <Link dataTestid={`${dataTestid}-resourceLink`} uri={'/resource'}>Resource</Link>
+          <Link dataTestid={`${dataTestid}-designLink`} uri={'/design'}>Design</Link>
         </div>
     </div>
   );
