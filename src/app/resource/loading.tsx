@@ -1,9 +1,11 @@
 import Spinner from "src/components/Spinner";
 
-export default async function Loading() {
+const dataTestid = 'test-loading';
+
+export default function Loading() {
   return (
-    <div className="flex h-full justify-center items-center">
-      <Spinner label="Loading resources..."/>
+    <div data-testid={dataTestid} className="flex h-full justify-center items-center">
+      <Spinner dataTestid={`${dataTestid}-spinner`} label="Loading resources..."/>
     </div>
   );
 }
