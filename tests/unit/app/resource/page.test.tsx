@@ -9,7 +9,7 @@ jest.mock('@/ui/Title', () => (props: any) => Title(props));
 var Form = jest.fn((props) => (
   <div data-testid={props.dataTestid}>{props.children}</div>
 ));
-jest.mock('@/app/resource/form', () => (props: any) => Form(props));
+jest.mock('@/components/Form', () => (props: any) => Form(props));
 
 describe('Page', () => {
   it('renders', () => {

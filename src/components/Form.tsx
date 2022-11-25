@@ -14,8 +14,8 @@ export default function Form({ dataTestid }: Props) {
   return (
     <div data-testid={dataTestid} className="space-x-2">
       <div>Example: http://localhost:4000/alice/solidmemo/data</div>
-      <TextField placeholder="Enter IRI" value={iri} onChange={evt => setIri((evt.target as HTMLInputElement).value)} />
-      <Button onClick={() => { window.location.href = `/resource/${encodeURIComponent(iri)}`; }}>Look up a resource</Button>
+      <TextField dataTestid={`${dataTestid}-textField`} placeholder="Enter IRI" value={iri} onChange={evt => setIri((evt.target as HTMLInputElement).value)} />
+      <Button dataTestid={`${dataTestid}-button`} onClick={() => { window.location.href = `/resource/${encodeURIComponent(iri)}`; }}>Look up a resource</Button>
     </div>
   );
 }

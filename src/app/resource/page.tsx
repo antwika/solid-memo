@@ -1,5 +1,5 @@
 import Title from "src/ui/Title";
-import Form from "./form";
+import Form from "@/components/Form";
 
 const dataTestid = 'test-page';
 
