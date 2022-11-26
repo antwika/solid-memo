@@ -38,22 +38,22 @@ export default function EditableCard({ dataTestid, iri }: Props) {
   };
 
   return (
-    <div>
+    <div data-testid={dataTestid}>
       <div>
         {!editMode && (
           <>
             <CardView
-              dataTestid={dataTestid}
+              dataTestid={`${dataTestid}-cardView`}
               iri={iri}
-              repetition={cardDetail?.repetition.toString() ?? ''}
-              ease={cardDetail?.ease.toString() ?? ''}
-              interval={cardDetail?.interval.toString() ?? ''}
-              front={cardDetail?.front ?? ''}
-              back={cardDetail?.back ?? ''}
+              repetition={cardDetail.repetition.toString()}
+              ease={cardDetail.ease.toString()}
+              interval={cardDetail.interval.toString()}
+              front={cardDetail.front}
+              back={cardDetail.back}
               revealed={revealed}
               onGrade={onGrade}
             />
-            <Button onClick={() => {
+            <Button dataTestid={`${dataTestid}-revealButton`} onClick={() => {
               setRevealed(!revealed);
             }}>
               {!revealed ? 'Reveal' : 'Hide'}
@@ -61,7 +61,7 @@ export default function EditableCard({ dataTestid, iri }: Props) {
           </>
         )}
         {editMode && <CardForm
-          dataTestid={dataTestid}
+          dataTestid={`${dataTestid}-cardForm`}
           fields={[
             {
               id: 'iri',
@@ -71,27 +71,27 @@ export default function EditableCard({ dataTestid, iri }: Props) {
             {
               id: 'repetition',
               label: 'Repetition',
-              value: cardDetail?.repetition.toString() ?? '',
+              value: cardDetail.repetition.toString(),
             },
             {
               id: 'ease',
               label: 'Ease',
-              value: cardDetail?.ease.toString() ?? '',
+              value: cardDetail.ease.toString(),
             },
             {
               id: 'interval',
               label: 'Interval',
-              value: cardDetail?.interval.toString() ?? '',
+              value: cardDetail.interval.toString(),
             },
             {
               id: 'front',
               label: 'Front',
-              value: cardDetail?.front ?? '',
+              value: cardDetail.front,
             },
             {
               id: 'back',
               label: 'Back',
-              value: cardDetail?.back ?? '',
+              value: cardDetail.back,
             },
           ]}
           onSubmit={(e, values) => {
@@ -108,7 +108,7 @@ export default function EditableCard({ dataTestid, iri }: Props) {
         />}
       </div>
       <div>
-        <Button onClick={() => {
+        <Button dataTestid={`${dataTestid}-editModeButton`} onClick={() => {
           setEditMode(!editMode);
         }}>
           {!editMode ? 'Activate edit mode' : 'Deactivate edit mode'}
