@@ -15,10 +15,10 @@ jest.mock('n3', () => ({
   Store: jest.fn(),
 }));
 
-var Card = jest.fn((props) => (
+var EditableCard = jest.fn((props) => (
   <div data-testid={props.dataTestid}>{props.children}</div>
 ));
-jest.mock('@/components/Card', () => (props: any) => Card(props));
+jest.mock('@/components/EditableCard', () => (props: any) => EditableCard(props));
 
 describe('Resource', () => {
   beforeEach(() => {
