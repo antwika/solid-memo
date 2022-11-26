@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import Card from "@/components/Card";
+import Card from '@/components/Card';
 import * as useCardDetail from '@/hooks/useCardDetail';
 import * as sm2 from '@/lib/sm2';
 
@@ -13,7 +13,7 @@ describe('Card', () => {
   beforeEach(() => {
     useCardDetailSpy = jest.spyOn(useCardDetail, 'default');
   });
-  
+
   afterEach(() => {
     jest.clearAllMocks();
     jest.resetAllMocks();
@@ -23,9 +23,9 @@ describe('Card', () => {
     useCardDetailSpy.mockReturnValue({ cardDetail: undefined, setCardDetail: jest.fn() });
 
     render(
-      <Card dataTestid='test-card' iri='http://test.example.com' />
+      <Card dataTestid='test-card' iri='http://test.example.com' />,
     );
-    
+
     const card = screen.queryByTestId('test-card');
     expect(card).toBeInTheDocument();
     expect(card).toHaveTextContent('Loading card...');
@@ -44,35 +44,30 @@ describe('Card', () => {
     });
 
     render(
-      <Card dataTestid='test-card' iri='http://test.example.com' />
+      <Card dataTestid='test-card' iri='http://test.example.com' />,
     );
-    
+
     const card = screen.queryByTestId('test-card');
     expect(card).toBeInTheDocument();
 
-    expect(within(card!).queryByTestId('test-card-againButton')).not.toBeInTheDocument();
-    expect(within(card!).queryByTestId('test-card-hardButton')).not.toBeInTheDocument();
-    expect(within(card!).queryByTestId('test-card-okayButton')).not.toBeInTheDocument();
-    expect(within(card!).queryByTestId('test-card-easyButton')).not.toBeInTheDocument();
-    
-    const cardRevealButton = within(card!).queryByTestId('test-card-revealButton');
-    expect(cardRevealButton).toBeInTheDocument();
-    expect(cardRevealButton).toHaveTextContent('Reveal');
-    fireEvent.click(cardRevealButton!);
+    const revealButton = within(card!).queryByTestId('test-card-revealButton');
+    expect(revealButton).toBeInTheDocument();
+    expect(revealButton).toHaveTextContent('Reveal');
+    fireEvent.click(revealButton!);
 
-    const cardAgainButton = within(card!).queryByTestId('test-card-againButton');
+    const cardAgainButton = within(card!).queryByTestId('test-card-cardView-againButton');
     expect(cardAgainButton).toBeInTheDocument();
     expect(cardAgainButton).toHaveTextContent('Again');
 
-    const cardHardButton = within(card!).queryByTestId('test-card-hardButton');
+    const cardHardButton = within(card!).queryByTestId('test-card-cardView-hardButton');
     expect(cardHardButton).toBeInTheDocument();
     expect(cardHardButton).toHaveTextContent('Hard');
 
-    const cardOkayButton = within(card!).queryByTestId('test-card-okayButton');
+    const cardOkayButton = within(card!).queryByTestId('test-card-cardView-okayButton');
     expect(cardOkayButton).toBeInTheDocument();
     expect(cardOkayButton).toHaveTextContent('Okay');
 
-    const cardEasyButton = within(card!).queryByTestId('test-card-easyButton');
+    const cardEasyButton = within(card!).queryByTestId('test-card-cardView-easyButton');
     expect(cardEasyButton).toBeInTheDocument();
     expect(cardEasyButton).toHaveTextContent('Easy');
 
