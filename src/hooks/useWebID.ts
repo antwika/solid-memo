@@ -1,9 +1,6 @@
-import { useSession } from 'next-auth/react';
+import useTypedSession from './useTypedSession';
 
 export default function useWebID() {
-  const session = useSession();
-  if (session && session.status === 'authenticated') {
-    return (session.data as any).webid;
-  }
-  return undefined;
+  const session = useTypedSession();
+  return session ? session.data.token.sub : undefined;
 }

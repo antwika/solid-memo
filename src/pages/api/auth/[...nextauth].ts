@@ -34,27 +34,11 @@ export function createNextAuthOptions(extra: NextAuthOptionsExtraParams): NextAu
       }),
     ],
     callbacks: {
-      async jwt({ token, account }) {
-        const processedToken = token;
-        processedToken.webid = token.sub;
-
-        if (account) {
-          processedToken.dpopToken = account.access_token;
-          processedToken.dpopTokenExpiresAt = account.expires_at;
-          processedToken.keys = account.keys;
-        }
-
-        return processedToken;
+      async jwt({ token }) {
+        return token;
       },
-      async session({ session, token, user }) {
-        const processedSession = session;
-        processedSession.user = user;
-
-        if (token.webid) {
-          (processedSession as any).webid = token.webid as string;
-        }
-
-        return processedSession;
+      async session({ session, token }) {
+        return { ...session, token };
       },
     },
     events: extra.events,

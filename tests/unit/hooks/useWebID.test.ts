@@ -1,38 +1,38 @@
-import { renderHook, act, cleanup } from '@testing-library/react'
-import useCounter from '@/hooks/useCounter'
-import useWebID from "@/hooks/useWebID";
-import * as NextAuthReact from "next-auth/react"
+import { renderHook, cleanup } from '@testing-library/react';
+import useWebID from '@/hooks/useWebID';
+import * as useTypedSession from '@/hooks/useTypedSession';
+
+jest.mock('@/hooks/useTypedSession');
 
 describe('useWebID', () => {
-  afterEach(cleanup);
+  let useTypedSessionSpy: jest.SpyInstance<any, []>;
 
-  it('returns undefined when session is "unauthenticated"', () => {
-    jest.spyOn(NextAuthReact, 'useSession').mockReturnValueOnce({
-      data: null,
-      status: "unauthenticated",
-    });
-    const { result } = renderHook(() => useWebID())
+  beforeEach(() => {
+    useTypedSessionSpy = jest.spyOn(useTypedSession, 'default');
+  });
+
+  afterEach(() => {
+    cleanup();
+    jest.clearAllMocks();
+    jest.resetAllMocks();
+  });
+
+  it('returns undefined when session is undefined', () => {
+    useTypedSessionSpy.mockReturnValue(undefined);
+    const { result } = renderHook(() => useWebID());
     expect(result.current).toBeUndefined();
   });
 
-  it('returns undefined when session is "loading"', () => {
-    jest.spyOn(NextAuthReact, 'useSession').mockReturnValueOnce({
-      data: null,
-      status: "loading",
-    });
-    const { result } = renderHook(() => useWebID())
-    expect(result.current).toBeUndefined();
-  });
-
-  it('return the WebID when session is "authenticated"', () => {
-    jest.spyOn(NextAuthReact, 'useSession').mockReturnValueOnce({
+  it('returns the token webid when session exists', () => {
+    useTypedSessionSpy.mockReturnValue({
       data: {
-        webid: 'http://example.com/test/profile/card#me',
-        expires: new Date().toISOString(),
-      } as any,
-      status: "authenticated",
+        token: {
+          sub: 'webid',
+        },
+      },
+      status: 'authenticated',
     });
-    const { result } = renderHook(() => useWebID())
-    expect(result.current).toBe('http://example.com/test/profile/card#me')
+    const { result } = renderHook(() => useWebID());
+    expect(result.current).toBe('webid');
   });
 });
