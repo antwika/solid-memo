@@ -1,4 +1,11 @@
-import { kebabCase2CamelCase, camelCase2KebabCase, pascalCase2CamelCase, pascalCase2KebabCase, camelCase2PascalCase, kebabCase2PascalCase } from "src/lib/convert";
+import {
+  kebabCase2CamelCase,
+  camelCase2KebabCase,
+  pascalCase2CamelCase,
+  pascalCase2KebabCase,
+  camelCase2PascalCase,
+  kebabCase2PascalCase,
+} from 'src/lib/convert';
 
 describe('convert', () => {
   describe('kebabCase2CamelCase', () => {

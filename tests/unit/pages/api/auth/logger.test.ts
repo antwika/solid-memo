@@ -1,4 +1,4 @@
-import logger from "@/pages/api/auth/logger";
+import logger from '@/pages/api/auth/logger';
 
 describe('logger', () => {
   it('logs info messages', () => {

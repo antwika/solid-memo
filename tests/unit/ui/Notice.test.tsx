@@ -13,7 +13,7 @@ describe('Notice', () => {
         type={type as NoticeType}
       >
         <span data-testid="test-notice-children">Foo</span>
-      </Notice>
+      </Notice>,
     );
 
     expect(within(screen.queryByTestId('test-notice')!).queryByTestId('test-notice-children')).toBeInTheDocument();

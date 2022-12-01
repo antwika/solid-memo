@@ -1,12 +1,12 @@
-import { renderHook, act, cleanup } from '@testing-library/react'
-import useCardDetail from "@/hooks/useCardDetail";
-import * as useSWR from "swr";
-import * as n3 from "n3";
+import { renderHook, cleanup } from '@testing-library/react';
+import useCardDetail from '@/hooks/useCardDetail';
+import * as useSWR from 'swr';
+import * as n3 from 'n3';
 
 jest.mock('swr');
 
-var mockParse = jest.fn();
-var mockGetObjects = jest.fn();
+const mockParse = jest.fn();
+const mockGetObjects = jest.fn();
 
 jest.mock('n3', () => ({
   Parser: jest.fn(),
@@ -17,12 +17,12 @@ describe('useCardDetail', () => {
   beforeEach(() => {
     const useSWRSpy = jest.spyOn(useSWR, 'default');
     useSWRSpy.mockReturnValue({ data: 'hello' } as any);
-    
+
     const parserSpy = jest.spyOn(n3, 'Parser');
-    parserSpy.mockImplementation(() => ({ parse: mockParse }))
+    parserSpy.mockImplementation(() => ({ parse: mockParse }));
 
     const storeSpy = jest.spyOn(n3, 'Store');
-    storeSpy.mockImplementation(() => ({ getObjects: mockGetObjects } as any))
+    storeSpy.mockImplementation(() => ({ getObjects: mockGetObjects } as any));
   });
 
   afterEach(() => {
@@ -35,7 +35,7 @@ describe('useCardDetail', () => {
     mockGetObjects.mockReturnValue([{ value: '123' }]);
 
     jest.spyOn(useSWR, 'default').mockReturnValueOnce({ data: 'world' } as any);
-    const { result } = renderHook(() => useCardDetail('https://test.example.com'))
+    const { result } = renderHook(() => useCardDetail('https://test.example.com'));
     expect(result.current.cardDetail).toStrictEqual({
       repetition: 123,
       ease: 123,
@@ -49,7 +49,7 @@ describe('useCardDetail', () => {
     const useSWRSpy = jest.spyOn(useSWR, 'default');
     useSWRSpy.mockReturnValue({ data: undefined } as any);
 
-    const { result } = renderHook(() => useCardDetail('https://test.example.com'))
+    const { result } = renderHook(() => useCardDetail('https://test.example.com'));
     expect(result.current.cardDetail).toBeUndefined();
   });
 });

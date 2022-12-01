@@ -1,10 +1,8 @@
-import { fetcher } from "@/lib/swr";
+import { fetcher } from '@/lib/swr';
 
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    text: () => Promise.resolve('result'),
-  })
-) as jest.Mock;
+global.fetch = jest.fn(() => Promise.resolve({
+  text: () => Promise.resolve('result'),
+})) as jest.Mock;
 
 describe('swr', () => {
   describe('fetcher', () => {

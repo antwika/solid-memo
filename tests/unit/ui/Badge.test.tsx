@@ -8,7 +8,7 @@ describe('Badge', () => {
         dataTestid='test-paper'
       >
         <span data-testid="test-paper-children">Foo</span>
-      </Badge>
+      </Badge>,
     );
     expect(within(screen.queryByTestId('test-paper')!).queryByTestId('test-paper-children')).toBeInTheDocument();
   });

@@ -17,7 +17,7 @@ describe('Table', () => {
             <Td dataTestid='test-td'>Bar</Td>
           </tr>
         </tbody>
-      </Table>
+      </Table>,
     );
     expect(screen.queryByTestId('test-table')).toBeInTheDocument();
     expect(screen.queryByTestId('test-th')).toBeInTheDocument();
