@@ -1,3 +1,5 @@
+/* eslint-disable object-curly-newline */
+/* eslint-disable max-len */
 import { sm2 } from 'src/lib/sm2';
 
 describe('sm2', () => {
