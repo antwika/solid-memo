@@ -1,12 +1,12 @@
 import { render, screen, within } from '@testing-library/react';
-import Page from "@/app/resource/page";
+import Page from '@/app/resource/page';
 
-var Title = jest.fn((props) => (
+const Title = jest.fn((props) => (
   <div data-testid={props.dataTestid}>{props.children}</div>
 ));
 jest.mock('@/ui/Title', () => (props: any) => Title(props));
 
-var Form = jest.fn((props) => (
+const Form = jest.fn((props) => (
   <div data-testid={props.dataTestid}>{props.children}</div>
 ));
 jest.mock('@/components/Form', () => (props: any) => Form(props));
@@ -14,9 +14,9 @@ jest.mock('@/components/Form', () => (props: any) => Form(props));
 describe('Page', () => {
   it('renders', () => {
     render(
-      <Page />
+      <Page />,
     );
-    
+
     const page = screen.queryByTestId('test-page');
     expect(page).toBeInTheDocument();
 
@@ -28,7 +28,7 @@ describe('Page', () => {
         text: 'My resources',
       }),
     );
-    
+
     const pageForm = within(page!).queryByTestId('test-page-form');
     expect(pageForm).toBeInTheDocument();
     expect(Form).toHaveBeenCalledWith(

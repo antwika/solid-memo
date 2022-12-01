@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { registerClient } from "@/lib/solid";
+import { registerClient } from '@/lib/solid';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -25,6 +25,6 @@ describe('solid', () => {
         'Content-Type': 'application/json',
       },
     });
-    expect(client).toStrictEqual({ clientId: 'a', clientSecret: 'b' })
+    expect(client).toStrictEqual({ clientId: 'a', clientSecret: 'b' });
   });
 });

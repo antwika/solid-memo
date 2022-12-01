@@ -7,7 +7,7 @@ describe('Title', () => {
       <Title
         dataTestid='test-title'
         text="Test title"
-      />
+      />,
     );
     expect(screen.queryByTestId('test-title')).toBeInTheDocument();
     expect(screen.queryByTestId('test-title-text')).toBeInTheDocument();
@@ -21,7 +21,7 @@ describe('Title', () => {
         dataTestid='test-title'
         text="Test title"
         icon={<span data-testid="test-icon">Icon</span>}
-      />
+      />,
     );
     expect(screen.queryByTestId('test-title')).toBeInTheDocument();
     expect(screen.queryByTestId('test-title-text')).toBeInTheDocument();

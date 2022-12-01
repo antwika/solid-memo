@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import TextField from '@/ui/TextField';
 
 describe('TextField', () => {
@@ -6,12 +6,12 @@ describe('TextField', () => {
     render(
       <TextField
         dataTestid='test-textField'
-      />
+      />,
     );
     expect(screen.queryByTestId('test-textField')).toBeInTheDocument();
     const textbox = screen.getByRole<HTMLInputElement>('textbox');
     expect(textbox.value).toBe('');
-    fireEvent.change(textbox, { target: { value: 'Foo' }});
+    fireEvent.change(textbox, { target: { value: 'Foo' } });
     expect(textbox.value).toBe('Foo');
   });
 });

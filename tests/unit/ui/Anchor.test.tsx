@@ -9,7 +9,7 @@ describe('Anchor', () => {
         href='/'
       >
         <span data-testid="test-anchor-children">Foo</span>
-      </Anchor>
+      </Anchor>,
     );
     expect(within(screen.queryByTestId('test-anchor')!).queryByTestId('test-anchor-children')).toBeInTheDocument();
   });

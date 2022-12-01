@@ -8,7 +8,7 @@ describe('Button', () => {
       <Button
         dataTestid='test-button'
         onClick={onClick}
-      ><span data-testid='test-children'>Text</span></Button>
+      ><span data-testid='test-children'>Text</span></Button>,
     );
     const button = screen.queryByTestId('test-button');
     expect(button).toBeInTheDocument();

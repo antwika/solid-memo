@@ -1,4 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import EditableCard from '@/components/EditableCard';
 import * as useCardDetail from '@/hooks/useCardDetail';
 import * as sm2 from '@/lib/sm2';

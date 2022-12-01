@@ -1,4 +1,4 @@
-import { getClientEnv, getServerEnv } from "@/lib/env";
+import { getClientEnv, getServerEnv } from '@/lib/env';
 
 describe('env', () => {
   const originalProcessEnv = process.env;

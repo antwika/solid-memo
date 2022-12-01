@@ -1,17 +1,17 @@
 import { render, screen, within } from '@testing-library/react';
 import SolidMemoBadge from '@/components/badge/SolidMemoBadge';
 
-var Badge = jest.fn((props) => (
+const Badge = jest.fn((props) => (
   <div data-testid={props.dataTestid}>{props.children}</div>
 ));
 jest.mock('@/ui/Badge', () => (props: any) => Badge(props));
 
-var Image = jest.fn((props) => (
+const Image = jest.fn((props) => (
   <div data-testid={props['data-testid'] || props.dataTestid}>{props.children}</div>
 ));
 jest.mock('next/image', () => (props: any) => Image(props));
 
-jest.mock('@next/font/local', () => () => ({ className: 'className'}));
+jest.mock('@next/font/local', () => () => ({ className: 'className' }));
 
 describe('SessionMemoBadge', () => {
   let sessionMemoBadge: HTMLElement;

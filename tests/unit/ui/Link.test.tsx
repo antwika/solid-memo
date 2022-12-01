@@ -9,7 +9,7 @@ describe('Link', () => {
         uri='/'
       >
         <span data-testid="test-link-children">Foo</span>
-      </Link>
+      </Link>,
     );
     expect(within(screen.queryByTestId('test-link')!).queryByTestId('test-link-children')).toBeInTheDocument();
   });

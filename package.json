@@ -8,7 +8,9 @@
     "build": "next build",
     "test": "jest",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "npm run lint:src && npm run lint:tests",
+    "lint:src": "next lint --dir src",
+    "lint:tests": "next lint --dir tests",
     "format": "prettier --write \"**/*.{js,ts,tsx,md}\""
   },
   "prettier": {

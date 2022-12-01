@@ -1,4 +1,4 @@
-import SolidProvider from "@/lib/SolidProvider";
+import SolidProvider from '@/lib/SolidProvider';
 
 describe('SolidProvider', () => {
   it('tests', () => {
@@ -11,28 +11,28 @@ describe('SolidProvider', () => {
     expect(oauthConfig).toStrictEqual({
       authorization: {
         params: {
-          grant_type: "authorization_code",
-          scope: "openid offline_access webid",
+          grant_type: 'authorization_code',
+          scope: 'openid offline_access webid',
         },
       },
       checks: [
         'pkce',
       ],
       client: {
-        authorization_signed_response_alg: "ES256",
-        id_token_signed_response_alg: "ES256",
+        authorization_signed_response_alg: 'ES256',
+        id_token_signed_response_alg: 'ES256',
       },
-      id: "solid",
+      id: 'solid',
       idToken: true,
-      name: "Solid",
+      name: 'Solid',
       options: {
-        clientId: "test client id",
-        clientSecret: "test client secret",
-        idpBaseUrl: "http://test.idp.example.com",
+        clientId: 'test client id',
+        clientSecret: 'test client secret',
+        idpBaseUrl: 'http://test.idp.example.com',
       },
       profile: expect.any(Function),
-      type: "oauth",
-      wellKnown: "http://test.idp.example.com/.well-known/openid-configuration",
+      type: 'oauth',
+      wellKnown: 'http://test.idp.example.com/.well-known/openid-configuration',
     });
 
     const user = oauthConfig.profile({

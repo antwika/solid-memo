@@ -1,4 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import CardView from '@/components/CardView';
 import * as useCardDetail from '@/hooks/useCardDetail';
 

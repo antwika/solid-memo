@@ -1,17 +1,17 @@
 import { render, screen, within } from '@testing-library/react';
-import Page from "@/app/page";
+import Page from '@/app/page';
 
-var Title = jest.fn((props) => (
+const Title = jest.fn((props) => (
   <div data-testid={props.dataTestid}>{props.children}</div>
 ));
 jest.mock('@/ui/Title', () => (props: any) => Title(props));
 
-var SolidMemoBadge = jest.fn((props) => (
+const SolidMemoBadge = jest.fn((props) => (
   <div data-testid={props.dataTestid}>{props.children}</div>
 ));
 jest.mock('@/components/badge/SolidMemoBadge', () => (props: any) => SolidMemoBadge(props));
 
-var SignInOutButton = jest.fn((props) => (
+const SignInOutButton = jest.fn((props) => (
   <div data-testid={props.dataTestid}>{props.children}</div>
 ));
 jest.mock('@/components/SignInOutButton', () => (props: any) => SignInOutButton(props));
@@ -19,9 +19,9 @@ jest.mock('@/components/SignInOutButton', () => (props: any) => SignInOutButton(
 describe('Page', () => {
   it('renders', () => {
     render(
-      <Page />
+      <Page />,
     );
-    
+
     const page = screen.queryByTestId('test-page');
     expect(page).toBeInTheDocument();
 
@@ -33,7 +33,7 @@ describe('Page', () => {
         text: 'My home',
       }),
     );
-    
+
     const pageHeader = within(page!).queryByTestId('test-page-header');
     expect(pageHeader).toBeInTheDocument();
 
