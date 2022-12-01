@@ -1,6 +1,7 @@
 import SolidMemoBadge from 'src/components/badge/SolidMemoBadge';
 import Title from 'src/ui/Title';
 import SignInOutButton from 'src/components/SignInOutButton';
+import Counter from '@/components/Counter';
 
 const dataTestid = 'test-page';
 
@@ -13,6 +14,9 @@ export default function Page() {
           Welcome to
         </div>
         <SolidMemoBadge dataTestid={`${dataTestid}-solidMemoBadge`} />
+      </div>
+      <div className="flex text-xl space-x-2 justify-center items-center">
+        <Counter />
       </div>
       <div className="flex text-xl space-x-2 justify-center items-center">
         <SignInOutButton dataTestid={`${dataTestid}-signInOutButton`} />
