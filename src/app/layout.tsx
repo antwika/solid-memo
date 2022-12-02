@@ -3,6 +3,7 @@ import NextAuthSessionProvider from 'src/components/NextAuthSessionProvider';
 import '@/styles/globals.css';
 import Header from 'src/components/Header';
 import { unstable_getServerSession as unstableGetServerSession } from 'next-auth/next';
+import ReduxProvider from '@/components/ReduxProvider';
 
 export default async function RootLayout({ children }: { children: any }) {
   const session = await unstableGetServerSession();
@@ -13,16 +14,18 @@ export default async function RootLayout({ children }: { children: any }) {
         <title>Solid Memo</title>
       </head>
       <body className='flex flex-col h-screen'>
-        <NextAuthSessionProvider session={session}>
-          <header className='w-full'>
-            <Header />
-          </header>
-          <main className='overflow-y-auto flex flex-grow bg-slate-200'>
-            <div className='container mx-auto p-4 bg-slate-50 shadow-2xl'>
-              {children}
-            </div>
-          </main>
-        </NextAuthSessionProvider>
+        <ReduxProvider>
+          <NextAuthSessionProvider session={session}>
+            <header className='w-full'>
+              <Header />
+            </header>
+            <main className='overflow-y-auto flex flex-grow bg-slate-200'>
+              <div className='container mx-auto p-4 bg-slate-50 shadow-2xl'>
+                {children}
+              </div>
+            </main>
+          </NextAuthSessionProvider>
+        </ReduxProvider>
       </body>
     </html>
   );
