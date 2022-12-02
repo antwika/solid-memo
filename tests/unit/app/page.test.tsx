@@ -52,7 +52,7 @@ describe('Page', () => {
 
     const pageCounter = within(page!).queryByTestId('test-page-counter');
     expect(pageCounter).toBeInTheDocument();
-    expect(SolidMemoBadge).toHaveBeenCalledWith(
+    expect(Counter).toHaveBeenCalledWith(
       expect.objectContaining({
         dataTestid: 'test-page-counter',
       }),
