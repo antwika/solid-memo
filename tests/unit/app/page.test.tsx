@@ -11,6 +11,11 @@ const SolidMemoBadge = jest.fn((props) => (
 ));
 jest.mock('@/components/badge/SolidMemoBadge', () => (props: any) => SolidMemoBadge(props));
 
+const Counter = jest.fn((props) => (
+  <div data-testid={props.dataTestid}>{props.children}</div>
+));
+jest.mock('@/components/Counter', () => (props: any) => Counter(props));
+
 const SignInOutButton = jest.fn((props) => (
   <div data-testid={props.dataTestid}>{props.children}</div>
 ));
@@ -42,6 +47,14 @@ describe('Page', () => {
     expect(SolidMemoBadge).toHaveBeenCalledWith(
       expect.objectContaining({
         dataTestid: 'test-page-solidMemoBadge',
+      }),
+    );
+
+    const pageCounter = within(page!).queryByTestId('test-page-counter');
+    expect(pageCounter).toBeInTheDocument();
+    expect(SolidMemoBadge).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dataTestid: 'test-page-counter',
       }),
     );
 

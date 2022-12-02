@@ -5,20 +5,26 @@ import Badge from '@/ui/Badge';
 import Button from '@/ui/Button';
 import { decrement, increment } from '../features/counter/counterSlice';
 
-export default function Counter() {
+type Props = {
+  dataTestid?: string,
+};
+
+export default function Counter({ dataTestid }: Props) {
   const count = useAppSelector((state) => state.counter.value);
   const dispatch = useAppDispatch();
 
   return (
-    <div className='flex flex-row align-items justify-center space-x-2'>
+    <div data-testid={dataTestid} className='flex flex-row align-items justify-center space-x-2'>
       <Button
+        dataTestid={`${dataTestid}-decrementButton`}
         aria-label="Decrement value"
         onClick={() => dispatch(decrement())}
       >
         Decrement
       </Button>
-      <Badge>{count}</Badge>
+      <Badge dataTestid={`${dataTestid}-badge`}>{count}</Badge>
       <Button
+        dataTestid={`${dataTestid}-incrementButton`}
         aria-label="Increment value"
         onClick={() => dispatch(increment())}
       >

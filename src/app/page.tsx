@@ -16,7 +16,7 @@ export default function Page() {
         <SolidMemoBadge dataTestid={`${dataTestid}-solidMemoBadge`} />
       </div>
       <div className="flex text-xl space-x-2 justify-center items-center">
-        <Counter />
+        <Counter dataTestid={`${dataTestid}-counter`} />
       </div>
       <div className="flex text-xl space-x-2 justify-center items-center">
         <SignInOutButton dataTestid={`${dataTestid}-signInOutButton`} />
