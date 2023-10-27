@@ -3905,10 +3905,10 @@ mz@^2.7.0:
     object-assign "^4.0.1"
     thenify-all "^1.0.0"
 
-n3@1.17.1:
-  version "1.17.1"
-  resolved "https://registry.yarnpkg.com/n3/-/n3-1.17.1.tgz#cb42f39507cebebf2c990c2f8a3f5f53232c518c"
-  integrity sha512-HlanMWpvN2kcTrFuU3GPObyY7qrVQWy2Hp7l4GSXJlcQapjQMR7OM4kCr788pTQzNIpiHS3JRvyZ2YUcYJ82rA==
+n3@1.17.2:
+  version "1.17.2"
+  resolved "https://registry.yarnpkg.com/n3/-/n3-1.17.2.tgz#3370b2d07da98a5b2865fa43c2d4e5c563cc65df"
+  integrity sha512-BxSM52wYFqXrbQQT5WUEzKUn6qpYV+2L4XZLfn3Gblz2kwZ09S+QxC33WNdVEQy2djenFL8SNkrjejEKlvI6+Q==
   dependencies:
     queue-microtask "^1.1.2"
     readable-stream "^4.0.0"
