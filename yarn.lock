@@ -4028,10 +4028,10 @@ mz@^2.7.0:
     object-assign "^4.0.1"
     thenify-all "^1.0.0"
 
-n3@1.20.4:
-  version "1.20.4"
-  resolved "https://registry.yarnpkg.com/n3/-/n3-1.20.4.tgz#df003f4e107d941d42100f332199bb74b4384f9e"
-  integrity sha512-tHeX1Q3/+ET38qYMOfErglmr5F2tzb+WCt82sZhCokzSZHe95CkHzyuzCMqcRB8hTpW+zn7HqamGXCWW/xXCHg==
+n3@1.21.0:
+  version "1.21.0"
+  resolved "https://registry.yarnpkg.com/n3/-/n3-1.21.0.tgz#0fc4aa794cc9e3efb1fe2eb145d96ccc9f8cca93"
+  integrity sha512-5hSelZ9bag7T3mBQJ0i4pbbJExRaYn6u7wnc5fnqG0XM2UBksSuIHr8UHy1OSkCkn+gsK93bi6sccaWM/E4nLQ==
   dependencies:
     buffer "^6.0.3"
     queue-microtask "^1.1.2"
