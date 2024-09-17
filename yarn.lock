@@ -4385,10 +4385,10 @@ mz@^2.7.0:
     object-assign "^4.0.1"
     thenify-all "^1.0.0"
 
-n3@1.21.1:
-  version "1.21.1"
-  resolved "https://registry.yarnpkg.com/n3/-/n3-1.21.1.tgz#550919e7fb0c87f35c26098c9002f572c1e2f862"
-  integrity sha512-Mmv+kdO2wERsyBtkPpuLA+KaMlhdoIgUitj46lYz31fybj5dLgiubRMxJMwR35mPBdqxtMKMk3e1MFB4kpWsVA==
+n3@1.21.3:
+  version "1.21.3"
+  resolved "https://registry.yarnpkg.com/n3/-/n3-1.21.3.tgz#19ead2a899c464cc1b963b6afbf18421b4319ad7"
+  integrity sha512-wF691tKoKS8lmKWChBWbO2WSmmv6/LUA1DHp7ZtM6fYlCGmO4FM0eiOnESlYOgkW6xLQZYafuZjoLeI4ADtr5Q==
   dependencies:
     buffer "^6.0.3"
     queue-microtask "^1.1.2"
