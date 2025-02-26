@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@next/font": "13.1.6",
-    "axios": "1.7.9",
+    "axios": "1.8.1",
     "n3": "1.23.1",
     "next": "13.1.6",
     "next-auth": "4.24.11",
