@@ -1,5 +1,5 @@
 import { getPodUrlAll } from "@inrupt/solid-client";
-import type { Session } from "@inrupt/solid-client-authn-browser";
+import { Session, fetch } from "@inrupt/solid-client-authn-browser";
 import { useEffect, useState } from "react";
 
 export default function usePodUrls(session: Session) {
@@ -12,7 +12,7 @@ export default function usePodUrls(session: Session) {
       setPodUrls([]);
       return;
     }
-    const podUrls = await getPodUrlAll(webId);
+    const podUrls = await getPodUrlAll(webId, { fetch });
     setPodUrls(podUrls);
   };
 
