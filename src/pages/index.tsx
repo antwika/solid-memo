@@ -3,13 +3,7 @@ import { useContext } from "react";
 import { SessionContext } from "@src/providers/SessionProvider";
 import Layout from "@src/pages/layout";
 import { Button } from "@src/components/ui";
-import {
-  getSolidDataset,
-  getStringNoLocaleAll,
-  getThingAll,
-  getUrlAll,
-} from "@inrupt/solid-client";
-import { fetch } from "@inrupt/solid-client-authn-browser";
+import { getThingAll, getUrlAll } from "@inrupt/solid-client";
 import useDatasets from "@src/hooks/useDatasets";
 
 export default function Home() {
@@ -37,7 +31,7 @@ export default function Home() {
 
         return predicateUrls.map((predicateUrl) => {
           return (
-            <div>
+            <div key={predicateUrl}>
               <div>
                 Predicate:{" "}
                 <span className="text-[hsl(280,100%,70%)]">{predicateUrl}</span>
