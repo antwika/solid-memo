@@ -1,5 +1,5 @@
 import { getPodUrlAll } from "@inrupt/solid-client";
-import { Session, fetch } from "@inrupt/solid-client-authn-browser";
+import { type Session, fetch } from "@inrupt/solid-client-authn-browser";
 import { useEffect, useState } from "react";
 
 export default function usePodUrls(session: Session) {
@@ -24,7 +24,7 @@ export default function usePodUrls(session: Session) {
       .catch(() => {
         console.log("Failed to fetch pod urls");
       });
-  }, [session]);
+  }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { podUrls };
 }

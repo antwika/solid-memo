@@ -24,7 +24,7 @@ export default function useDatasets(podUrls: UrlString[]) {
         console.error("Failed to fetch datasets, error:", err);
         setDatasets([]);
       });
-  }, [podUrls]);
+  }, [podUrls]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { datasets };
 }
