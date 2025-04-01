@@ -1,4 +1,4 @@
 import Title from "@src/components/ui/Title";
-import Button from "@src/components/ui/Button";
-import Input from "@src/components/ui/Input";
+import { Button } from "@src/components/ui/button";
+import { Input } from "@src/components/ui/input";
 export { Title, Button, Input };

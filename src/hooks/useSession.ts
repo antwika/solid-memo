@@ -11,10 +11,9 @@ import { env } from "@src/env";
 export default function useSession() {
   const [session, setSession] = useState<Session>();
 
-  const tryLogIn = async () => {
+  const tryLogIn = async (oidcIssuer: string) => {
     await login({
-      // oidcIssuer: "https://login.inrupt.com",
-      oidcIssuer: "http://localhost:3000",
+      oidcIssuer,
       redirectUrl: new URL(
         env.NEXT_PUBLIC_BASE_PATH,
         window.location.href,

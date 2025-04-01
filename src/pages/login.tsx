@@ -1,15 +1,14 @@
-import { Button, Input } from "@src/components/ui";
+import { LoginForm } from "@src/components/LoginForm";
 import Layout from "@src/pages/layout";
 
 type Props = {
-  tryLogIn: () => Promise<void>;
+  tryLogIn: (oidcIssuer: string) => Promise<void>;
 };
 
 export default function Login({ tryLogIn }: Props) {
   return (
     <Layout>
-      <Input />
-      <Button onClick={tryLogIn}>Sign in with Solid</Button>
+      <LoginForm onSelectOidcIssuer={tryLogIn} />
     </Layout>
   );
 }

@@ -2,8 +2,8 @@ import usePodUrls from "@src/hooks/usePodUrls";
 import { useContext, useState } from "react";
 import { SessionContext } from "@src/providers/SessionProvider";
 import Layout from "@src/pages/layout";
-import { Button } from "@src/components/ui";
 import { QueryEngine } from "@comunica/query-sparql-solid";
+import { PodForm } from "@src/components/PodForm";
 
 const findPrivateTypeIndex = async (
   queryEngine: QueryEngine,
@@ -215,37 +215,15 @@ export default function Home() {
   const { session, tryLogOut } = useContext(SessionContext);
   const { podUrls } = usePodUrls(session);
 
-  const renderedPodUrls = podUrls.map((podUrl) => (
-    <div key={podUrl} className="rounded-xl bg-white/10 p-4 text-white">
-      Pod: <span className="text-[hsl(280,100%,70%)]">{podUrl}</span>
-    </div>
-  ));
-
-  const renderedDecks = appState.decks.map((deck) => {
-    return (
-      <div key={deck} className="rounded-xl bg-white/10 p-4 text-white">
-        Deck: <span className="text-[hsl(280,100%,70%)]">{deck}</span>
-      </div>
-    );
-  });
-
-  const renderedCards = appState.cards.map((card) => {
-    return (
-      <div key={card} className="rounded-xl bg-white/10 p-4 text-white">
-        Card: <span className="text-[hsl(280,100%,70%)]">{card}</span>
-      </div>
-    );
-  });
-
   return (
     <Layout>
-      <Button onClick={tryLogOut}>
-        Logged in as{" "}
-        <span className="text-[hsl(280,100%,70%)]">{session.info.webId}</span>
-      </Button>
-      {renderedPodUrls}
-      <Button
-        onClick={() => {
+      <PodForm
+        loggedInAs={session.info.webId!}
+        storages={podUrls}
+        decks={appState.decks}
+        cards={appState.cards}
+        onLogOut={tryLogOut}
+        onFetchSolidMemoData={() => {
           fetchAppStateFromPod(session.info.webId!, session.fetch)
             .then((appStateFromPod) => {
               console.info(
@@ -258,11 +236,7 @@ export default function Home() {
               console.error("Failed to fetch app state from pod, error:", err),
             );
         }}
-      >
-        Discover all Solid Memo decks and cards via WebId
-      </Button>
-      {renderedDecks}
-      {renderedCards}
+      />
     </Layout>
   );
 }
