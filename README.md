@@ -14,7 +14,7 @@ If you'd like to contribute, please check out our [Contributing Guidelines](CONT
 
 ## Issues
 
-If you encounter any bugs or have suggestions for improvements, feel free to [open an issue](/issues) and let us know!
+If you encounter any bugs or have suggestions for improvements, feel free to [open an issue](https://github.com/antwika/solid-memo/issues) and let us know!
 
 ## License
 
