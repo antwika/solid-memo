@@ -1,4 +1,4 @@
-import { Button } from "@src/components/ui";
+import { Button, Input } from "@src/components/ui";
 import Layout from "@src/pages/layout";
 
 type Props = {
@@ -8,6 +8,7 @@ type Props = {
 export default function Login({ tryLogIn }: Props) {
   return (
     <Layout>
+      <Input />
       <Button onClick={tryLogIn}>Sign in with Solid</Button>
     </Layout>
   );
