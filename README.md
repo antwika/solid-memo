@@ -1,29 +1,23 @@
-# Create T3 App
+# Welcome to Solid Memo!
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+We're excited to have you here and excited to introduce you to Solid Memo, an open-source project designed for fast and efficient learning.
 
-## What's next? How do I make an app with this?
+As part of our open-source initiative, we invite you to explore the project, contribute to its development, and share your feedback. Together, we can make Solid Memo even better!
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+## Get Started
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+To get started, all the relevant documentation is available on our [Wiki Page](https://github.com/antwika/solid-memo/wiki).
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+## How to Contribute
 
-## Learn More
+If you'd like to contribute, please check out our [Contributing Guidelines](CONTRIBUTING.md) for more information.
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+## Issues
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+If you encounter any bugs or have suggestions for improvements, feel free to [open an issue](https://github.com/antwika/solid-memo/issues) and let us know!
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+## License
 
-## How do I deploy this?
+This project is licensed under the Apache-2.0 license. See the [LICENSE](LICENSE.md) file for full details.
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+We hope you enjoy using Solid Memo, and we look forward to your feedback and contributions!
