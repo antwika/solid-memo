@@ -45,7 +45,7 @@ export function useSolidMemoData(session: Session, queryEngine: QueryEngine) {
         setSolidMemoDataIris(solidMemoDataIris.flat());
       })
       .catch((err) => console.log("Failed to fetch solid memo data iris", err));
-  }, [privateTypeIndexIris]);
+  }, [privateTypeIndexIris, session, queryEngine]);
 
   return { solidMemoDataIris };
 }

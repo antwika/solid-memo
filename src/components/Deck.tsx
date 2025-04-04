@@ -20,7 +20,9 @@ export function Deck({ className, deckIri }: Props) {
     <div className={cn("flex flex-col gap-6", className)}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Deck: "{deck.name}"</CardTitle>
+          <CardTitle className="text-xl">
+            Deck: &quot;{deck.name}&quot;
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           {deck.hasCard.map((hasCardIri) => (

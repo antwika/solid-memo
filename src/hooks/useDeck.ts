@@ -88,7 +88,7 @@ export function useDeck(deckIri: string) {
     fetchDeck(session, queryEngine, deckIri)
       .then((deck) => setDeck(deck))
       .catch((err) => console.log("Failed to fetch deck", err));
-  }, [deckIri]);
+  }, [deckIri, session, queryEngine]);
 
   return { deck };
 }

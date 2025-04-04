@@ -96,7 +96,7 @@ export function usePrivateTypeIndices(
     } else {
       setPrivateTypeIndexIris([]);
     }
-  }, [session.info.webId]);
+  }, [session.info.webId, session, queryEngine]);
 
   return { privateTypeIndexIris };
 }

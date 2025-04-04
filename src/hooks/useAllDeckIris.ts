@@ -1,4 +1,4 @@
-import { QueryEngine } from "@comunica/query-sparql-solid";
+import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { SessionContext } from "@src/providers/SessionProvider";
@@ -40,7 +40,7 @@ export function useAllDeckIris(dataIri: string) {
     fetchAllDeckIris(session, queryEngine, dataIri)
       .then((deckIris) => setDeckIris(deckIris))
       .catch((err) => console.log("Failed to fetch deck iris", err));
-  }, [dataIri]);
+  }, [dataIri, session, queryEngine]);
 
   return { deckIris };
 }

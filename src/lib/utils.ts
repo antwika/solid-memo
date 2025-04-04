@@ -1,4 +1,3 @@
-import { QueryEngine } from "@comunica/query-sparql-solid";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 

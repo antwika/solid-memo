@@ -20,6 +20,7 @@ export default function Home() {
       {solidMemoDataIris.map((solidMemoDataIri) => {
         return (
           <Button
+            key={solidMemoDataIri}
             onClick={() => {
               router.push(`/instance/${encodeURIComponent(solidMemoDataIri)}`);
             }}

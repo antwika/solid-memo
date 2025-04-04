@@ -60,7 +60,7 @@ export function useCard(cardIri: string) {
     fetchCard(session, queryEngine, cardIri)
       .then((card) => setCard(card))
       .catch((err) => console.log("Failed to fetch card", err));
-  }, [cardIri]);
+  }, [cardIri, session, queryEngine]);
 
   return { card };
 }

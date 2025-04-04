@@ -1,4 +1,4 @@
-import { QueryEngine } from "@comunica/query-sparql-solid";
+import type { QueryEngine } from "@comunica/query-sparql-solid";
 import { useQueryEngine } from "@src/hooks/useQueryEngine";
 import { createContext, type ReactNode } from "react";
 

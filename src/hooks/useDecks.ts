@@ -15,7 +15,7 @@ export function useDecks(deckIris: string[]) {
     Promise.all(promises)
       .then((result) => setDecks(result.filter((r) => r !== undefined)))
       .catch((err) => console.log("Failed to fetch all decks", err));
-  }, [deckIris]);
+  }, [deckIris, session, queryEngine]);
 
   return { decks };
 }

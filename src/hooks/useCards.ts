@@ -20,7 +20,7 @@ export function useCards(cardIris: string[]) {
     Promise.all(promises)
       .then((result) => setCards(result.filter((r) => r !== undefined)))
       .catch((err) => console.log("Failed to fetch all cards", err));
-  }, [cardIris]);
+  }, [cardIris, session, queryEngine]);
 
   return { cards };
 }

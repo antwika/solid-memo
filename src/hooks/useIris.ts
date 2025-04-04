@@ -1,4 +1,4 @@
-import { QueryEngine } from "@comunica/query-sparql-solid";
+import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { SessionContext } from "@src/providers/SessionProvider";
@@ -46,7 +46,7 @@ export function useIris(sourceIri: string | undefined, rdfType: string) {
     fetchIris(session, queryEngine, sourceIri, rdfType)
       .then((iris) => setIris(iris))
       .catch((err) => console.log("Failed to fetch iris", err));
-  }, [sourceIri]);
+  }, [sourceIri, session, queryEngine, rdfType]);
 
   return { iris };
 }
