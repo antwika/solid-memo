@@ -12,14 +12,10 @@ import type { ClassValue } from "clsx";
 type Props = {
   className?: ClassValue;
   loggedInAs: string;
-  storages: string[];
-  decks: string[];
-  cards: string[];
   onLogOut: () => void;
-  onFetchSolidMemoData: () => void;
 };
 
-export function PodForm({ className, loggedInAs, onLogOut }: Props) {
+export function LogoutForm({ className, loggedInAs, onLogOut }: Props) {
   return (
     <div className={cn("flex flex-col gap-6", className)}>
       <Card>

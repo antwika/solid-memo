@@ -17,7 +17,7 @@ export default function Layout({ children }: Props) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center">
-        <div className="container flex flex-col items-center justify-center gap-6 px-4 py-16">
+        <div className="container items-center justify-center gap-6 px-4 py-16">
           {children}
         </div>
       </main>
