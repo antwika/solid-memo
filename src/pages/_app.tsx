@@ -4,6 +4,7 @@ import { Geist } from "next/font/google";
 import "@src/styles/globals.css";
 import { SessionProvider } from "@src/providers/SessionProvider";
 import { QueryEngineProvider } from "@src/providers/QueryEngineProvider";
+import { SolidMemoDataProvider } from "@src/providers/SolidMemoDataProvider";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -14,7 +15,9 @@ const MyApp: AppType = ({ Component, pageProps }) => {
     <div className={geist.className}>
       <SessionProvider>
         <QueryEngineProvider>
-          <Component {...pageProps} />
+          <SolidMemoDataProvider>
+            <Component {...pageProps} />
+          </SolidMemoDataProvider>
         </QueryEngineProvider>
       </SessionProvider>
     </div>

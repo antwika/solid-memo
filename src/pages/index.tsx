@@ -1,19 +1,13 @@
 import { useContext } from "react";
-import { SessionContext } from "@src/providers/SessionProvider";
 import Layout from "@src/pages/layout";
 import { useRouter } from "next/navigation";
 import { Button } from "@src/components/ui";
-import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
-import { useSolidMemoDataInstances } from "@src/hooks/useSolidMemoDataInstances";
+import { SolidMemoDataContext } from "@src/providers/SolidMemoDataProvider";
 
 export default function Home() {
   const router = useRouter();
-  const { session, tryLogOut } = useContext(SessionContext);
-  const { queryEngine } = useContext(QueryEngineContext);
-  const { solidMemoDataInstances } = useSolidMemoDataInstances(
-    session,
-    queryEngine,
-  );
+  const { solidMemoDataInstances, selectSolidMemoDataInstance } =
+    useContext(SolidMemoDataContext);
 
   return (
     <Layout>
@@ -23,6 +17,7 @@ export default function Home() {
           <Button
             key={solidMemoDataInstance.iri}
             onClick={() => {
+              selectSolidMemoDataInstance(solidMemoDataInstance);
               router.push(
                 `/instance/${encodeURIComponent(solidMemoDataInstance.iri)}`,
               );

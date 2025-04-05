@@ -3,6 +3,7 @@ import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { DeckData } from "@src/domain/DeckData";
 import type { FlashcardData } from "@src/domain/FlashcardData";
 import type { SolidMemoData } from "@src/domain/SolidMemoData";
+import { v4 as uuid } from "uuid";
 
 export async function fetchSolidMemoDataInstances(
   session: Session,
@@ -48,9 +49,10 @@ export async function fetchSolidMemoDataInstance(
 ) {
   const bindingsStream = await queryEngine.queryBindings(
     `
-        SELECT ?name
+        SELECT ?version ?name
         WHERE {
             ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#SolidMemoData> .
+            ?s <http://antwika.com/ns/solid-memo#version> ?version .
             ?s <http://antwika.com/ns/solid-memo#name> ?name .
         } LIMIT 100`,
     {
@@ -61,10 +63,13 @@ export async function fetchSolidMemoDataInstance(
   const bindings = await bindingsStream.toArray();
   const solidMemoDataInstances = bindings.reduce<SolidMemoData[]>(
     (acc, binding) => {
+      const solidMemoDataInstanceVersion = binding.get("version");
       const solidMemoDataInstanceName = binding.get("name");
+      if (!solidMemoDataInstanceVersion) return acc;
       if (!solidMemoDataInstanceName) return acc;
       acc.push({
         iri: solidMemoDataInstanceIri,
+        version: solidMemoDataInstanceVersion.value,
         name: solidMemoDataInstanceName.value,
       });
       return acc;
@@ -83,6 +88,73 @@ export async function fetchSolidMemoDataInstance(
   }
 }
 
+export async function createFlashcard(
+  session: Session,
+  queryEngine: QueryEngine,
+  solidMemoDataIri: string,
+  deckIri: string,
+  flashcard: Omit<FlashcardData, "iri">,
+) {
+  if (!queryEngine) return;
+
+  const iri = `${solidMemoDataIri}#${uuid().toString()}`;
+
+  const query = `
+    INSERT DATA
+    { 
+      <${deckIri}> <http://antwika.com/ns/solid-memo#hasCard> <${iri}> .
+      <${iri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Flashcard> .
+      <${iri}> <http://antwika.com/ns/solid-memo#version> '${flashcard.version}' .
+      <${iri}> <http://antwika.com/ns/solid-memo#isInDeck> <${deckIri}> .
+      <${iri}> <http://antwika.com/ns/solid-memo#front> '${flashcard.front}' .
+      <${iri}> <http://antwika.com/ns/solid-memo#back> '${flashcard.back}' .
+    }
+  `;
+
+  console.log("Query:", query);
+
+  await queryEngine.queryVoid(query, {
+    sources: [solidMemoDataIri],
+    fetch: session.fetch,
+  });
+
+  const createdFlashcard: FlashcardData = {
+    iri,
+    version: flashcard.version,
+    front: flashcard.front,
+    back: flashcard.back,
+  };
+
+  return createdFlashcard;
+}
+
+export async function deleteFlashcard(
+  session: Session,
+  queryEngine: QueryEngine,
+  solidMemoDataIri: string,
+  cardIri: string,
+) {
+  if (!queryEngine) return;
+
+  const query = `
+    DELETE {
+      ?s <http://antwika.com/ns/solid-memo#hasCard> <${cardIri}> .
+      <${cardIri}> ?p ?o .
+    }
+    WHERE {
+      ?s <http://antwika.com/ns/solid-memo#hasCard> <${cardIri}> .
+      <${cardIri}> ?p ?o .
+    }
+  `;
+
+  await queryEngine.queryVoid(query, {
+    sources: [solidMemoDataIri],
+    fetch: session.fetch,
+  });
+
+  return;
+}
+
 export async function fetchCard(
   session: Session,
   queryEngine: QueryEngine,
@@ -92,9 +164,10 @@ export async function fetchCard(
 
   const bindingsStream = await queryEngine.queryBindings(
     `
-        SELECT ?front ?back
+        SELECT ?version ?front ?back
         WHERE {
             <${cardIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Flashcard> .
+            <${cardIri}> <http://antwika.com/ns/solid-memo#version> ?version .
             <${cardIri}> <http://antwika.com/ns/solid-memo#front> ?front .
             <${cardIri}> <http://antwika.com/ns/solid-memo#back> ?back .
         } LIMIT 100`,
@@ -106,11 +179,18 @@ export async function fetchCard(
 
   const bindings = await bindingsStream.toArray();
   const cards = bindings.reduce<FlashcardData[]>((acc, binding) => {
+    const version = binding.get("version");
     const front = binding.get("front");
     const back = binding.get("back");
+    if (!version) return acc;
     if (!front) return acc;
     if (!back) return acc;
-    acc.push({ iri: cardIri, front: front.value, back: back.value });
+    acc.push({
+      iri: cardIri,
+      version: version.value,
+      front: front.value,
+      back: back.value,
+    });
     return acc;
   }, []);
 
@@ -180,6 +260,65 @@ export async function fetchAllDeckIris(
   return deckIris;
 }
 
+export async function createDeck(
+  session: Session,
+  queryEngine: QueryEngine,
+  solidMemoDataIri: string,
+  deck: Omit<DeckData, "iri">,
+) {
+  if (!queryEngine) return;
+
+  const iri = `${solidMemoDataIri}#${uuid().toString()}`;
+
+  const query = `
+    INSERT DATA
+    {
+      <${iri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
+      <${iri}> <http://antwika.com/ns/solid-memo#version> '${deck.version}' .
+      <${iri}> <http://antwika.com/ns/solid-memo#name> '${deck.name}' .
+    }
+  `;
+
+  await queryEngine.queryVoid(query, {
+    sources: [solidMemoDataIri],
+    fetch: session.fetch,
+  });
+
+  const createdDeck: DeckData = {
+    iri,
+    version: deck.version,
+    name: deck.name,
+    hasCard: [],
+  };
+
+  return createdDeck;
+}
+
+export async function deleteDeck(
+  session: Session,
+  queryEngine: QueryEngine,
+  solidMemoDataIri: string,
+  deckIri: string,
+) {
+  if (!queryEngine) return;
+
+  const query = `
+    DELETE {
+      <${deckIri}> ?p ?o .
+    }
+    WHERE {
+      <${deckIri}> ?p ?o .
+    }
+  `;
+
+  await queryEngine.queryVoid(query, {
+    sources: [solidMemoDataIri],
+    fetch: session.fetch,
+  });
+
+  return;
+}
+
 export const fetchDeck = async (
   session: Session,
   queryEngine: QueryEngine,
@@ -191,9 +330,10 @@ export const fetchDeck = async (
 
   const bindingsStream = await queryEngine.queryBindings(
     `
-        SELECT ?name
+        SELECT ?version ?name
         WHERE {
             <${deckIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
+            <${deckIri}> <http://antwika.com/ns/solid-memo#version> ?version .
             <${deckIri}> <http://antwika.com/ns/solid-memo#name> ?name .
         } LIMIT 100`,
     {
@@ -204,9 +344,16 @@ export const fetchDeck = async (
 
   const bindings = await bindingsStream.toArray();
   const decks = bindings.reduce<DeckData[]>((acc, binding) => {
+    const version = binding.get("version");
     const name = binding.get("name");
+    if (!version) return acc;
     if (!name) return acc;
-    acc.push({ iri: deckIri, name: name.value, hasCard: cardIris });
+    acc.push({
+      iri: deckIri,
+      version: version.value,
+      name: name.value,
+      hasCard: cardIris,
+    });
     return acc;
   }, []);
 
