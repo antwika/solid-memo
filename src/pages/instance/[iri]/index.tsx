@@ -1,4 +1,5 @@
 import { Button } from "@src/components/ui";
+import { useDecks } from "@src/hooks/useDecks";
 import { useIris } from "@src/hooks/useIris";
 import Layout from "@src/pages/layout";
 import { useRouter } from "next/router";
@@ -12,6 +13,8 @@ export default function InstancePage() {
     "http://antwika.com/ns/solid-memo#Deck",
   );
 
+  const { decks } = useDecks(iris);
+
   if (!iri) {
     return <div>Loading instance...</div>;
   }
@@ -23,12 +26,15 @@ export default function InstancePage() {
   return (
     <Layout>
       <div>Choose deck:</div>
-      {iris.map((deckIri) => (
-        <div key={deckIri}>
+      {decks.map((deck) => (
+        <div key={deck.iri}>
           <Button
-            onClick={() => router.push(`/decks/${encodeURIComponent(deckIri)}`)}
+            onClick={() =>
+              router.push(`/decks/${encodeURIComponent(deck.iri)}`)
+            }
+            title={deck.iri}
           >
-            Deck: {deckIri}
+            Deck: {deck.name}
           </Button>
         </div>
       ))}

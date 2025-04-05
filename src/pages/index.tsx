@@ -27,8 +27,9 @@ export default function Home() {
                 `/instance/${encodeURIComponent(solidMemoDataInstance.iri)}`,
               );
             }}
+            title={solidMemoDataInstance.iri}
           >
-            {solidMemoDataInstance.iri}
+            {solidMemoDataInstance.name}
           </Button>
         );
       })}

@@ -30,10 +30,59 @@ export async function fetchSolidMemoDataInstances(
     return acc;
   }, []);
 
-  const solidMemoDataArray = solidMemoDataIris.map<SolidMemoData>((iri) => ({
-    iri,
-  }));
-  return solidMemoDataArray;
+  console.log("solidMemoDataIris", solidMemoDataIris);
+
+  const promises = solidMemoDataIris.map((iri) => {
+    return fetchSolidMemoDataInstance(session, queryEngine, iri);
+  });
+
+  const solidMemoDataInstances = (await Promise.all(promises)).filter(
+    (solidMemoDataInstance) => solidMemoDataInstance !== undefined,
+  );
+
+  return solidMemoDataInstances;
+}
+
+export async function fetchSolidMemoDataInstance(
+  session: Session,
+  queryEngine: QueryEngine,
+  solidMemoDataInstanceIri: string,
+) {
+  const bindingsStream = await queryEngine.queryBindings(
+    `
+        SELECT ?iri ?name
+        WHERE {
+            <${solidMemoDataInstanceIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#SolidMemoData> .
+            <${solidMemoDataInstanceIri}> <http://antwika.com/ns/solid-memo#name> ?name .
+        } LIMIT 100`,
+    {
+      sources: [solidMemoDataInstanceIri],
+      fetch: session.fetch,
+    },
+  );
+  const bindings = await bindingsStream.toArray();
+  const solidMemoDataInstances = bindings.reduce<SolidMemoData[]>(
+    (acc, binding) => {
+      const solidMemoDataInstanceName = binding.get("name");
+      if (!solidMemoDataInstanceName) return acc;
+      acc.push({
+        iri: solidMemoDataInstanceIri,
+        name: solidMemoDataInstanceName.value,
+      });
+      return acc;
+    },
+    [],
+  );
+
+  if (solidMemoDataInstances.length > 1) {
+    throw new Error("Too many cards found for a single iri");
+  }
+
+  if (solidMemoDataInstances.length === 1) {
+    return solidMemoDataInstances[0];
+  } else {
+    return undefined;
+  }
 }
 
 export async function fetchCard(
