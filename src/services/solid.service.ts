@@ -30,8 +30,6 @@ export async function fetchSolidMemoDataInstances(
     return acc;
   }, []);
 
-  console.log("solidMemoDataIris", solidMemoDataIris);
-
   const promises = solidMemoDataIris.map((iri) => {
     return fetchSolidMemoDataInstance(session, queryEngine, iri);
   });
@@ -50,10 +48,10 @@ export async function fetchSolidMemoDataInstance(
 ) {
   const bindingsStream = await queryEngine.queryBindings(
     `
-        SELECT ?iri ?name
+        SELECT ?name
         WHERE {
-            <${solidMemoDataInstanceIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#SolidMemoData> .
-            <${solidMemoDataInstanceIri}> <http://antwika.com/ns/solid-memo#name> ?name .
+            ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#SolidMemoData> .
+            ?s <http://antwika.com/ns/solid-memo#name> ?name .
         } LIMIT 100`,
     {
       sources: [solidMemoDataInstanceIri],
