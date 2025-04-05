@@ -1,17 +1,13 @@
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { SessionContext } from "@src/providers/SessionProvider";
 import { useContext, useEffect, useState } from "react";
-import { fetchCard } from "./useCard";
-
-export type CardData = {
-  front: string;
-  back: string;
-};
+import type { FlashcardData } from "@src/domain/FlashcardData";
+import { fetchCard } from "@src/services/solid.service";
 
 export function useCards(cardIris: string[]) {
   const { session } = useContext(SessionContext);
   const { queryEngine } = useContext(QueryEngineContext);
-  const [cards, setCards] = useState<CardData[]>([]);
+  const [cards, setCards] = useState<FlashcardData[]>([]);
 
   useEffect(() => {
     const promises = cardIris.map((cardIri) =>

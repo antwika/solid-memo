@@ -5,27 +5,32 @@ import { LogoutForm } from "@src/components/LogoutForm";
 import { useRouter } from "next/navigation";
 import { Button } from "@src/components/ui";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
-import { useSolidMemoData } from "@src/hooks/useSolidMemoData";
+import { useSolidMemoDataInstances } from "@src/hooks/useSolidMemoDataInstances";
 
 export default function Home() {
   const router = useRouter();
   const { session, tryLogOut } = useContext(SessionContext);
   const { queryEngine } = useContext(QueryEngineContext);
-  const { solidMemoDataIris } = useSolidMemoData(session, queryEngine);
+  const { solidMemoDataInstances } = useSolidMemoDataInstances(
+    session,
+    queryEngine,
+  );
 
   return (
     <Layout>
       <LogoutForm loggedInAs={session.info.webId!} onLogOut={tryLogOut} />
       <div>Choose Solid Memo Data instance:</div>
-      {solidMemoDataIris.map((solidMemoDataIri) => {
+      {solidMemoDataInstances.map((solidMemoDataInstance) => {
         return (
           <Button
-            key={solidMemoDataIri}
+            key={solidMemoDataInstance.iri}
             onClick={() => {
-              router.push(`/instance/${encodeURIComponent(solidMemoDataIri)}`);
+              router.push(
+                `/instance/${encodeURIComponent(solidMemoDataInstance.iri)}`,
+              );
             }}
           >
-            {solidMemoDataIri}
+            {solidMemoDataInstance.iri}
           </Button>
         );
       })}

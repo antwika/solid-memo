@@ -1,7 +1,8 @@
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { SessionContext } from "@src/providers/SessionProvider";
 import { useContext, useEffect, useState } from "react";
-import { fetchDeck, type DeckData } from "./useDeck";
+import type { DeckData } from "@src/domain/DeckData";
+import { fetchDeck } from "@src/services/solid.service";
 
 export function useDecks(deckIris: string[]) {
   const { session } = useContext(SessionContext);
