@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import { Deck } from "@src/components/Deck";
+import Layout from "@src/pages/layout";
 
 export default function DeckPage() {
   const router = useRouter();
@@ -14,8 +15,8 @@ export default function DeckPage() {
   }
 
   return (
-    <div>
+    <Layout>
       <Deck deckIri={iri} />
-    </div>
+    </Layout>
   );
 }

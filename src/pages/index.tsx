@@ -1,7 +1,6 @@
 import { useContext } from "react";
 import { SessionContext } from "@src/providers/SessionProvider";
 import Layout from "@src/pages/layout";
-import { LogoutForm } from "@src/components/LogoutForm";
 import { useRouter } from "next/navigation";
 import { Button } from "@src/components/ui";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
@@ -18,7 +17,6 @@ export default function Home() {
 
   return (
     <Layout>
-      <LogoutForm loggedInAs={session.info.webId!} onLogOut={tryLogOut} />
       <div>Choose Solid Memo Data instance:</div>
       {solidMemoDataInstances.map((solidMemoDataInstance) => {
         return (
