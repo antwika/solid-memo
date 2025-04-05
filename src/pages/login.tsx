@@ -1,3 +1,4 @@
+import Counter from "@src/components/Counter";
 import { LoginForm } from "@src/components/LoginForm";
 import Layout from "@src/pages/layout";
 
@@ -8,6 +9,7 @@ type Props = {
 export default function Login({ tryLogIn }: Props) {
   return (
     <Layout>
+      <Counter />
       <LoginForm onSelectOidcIssuer={tryLogIn} />
     </Layout>
   );

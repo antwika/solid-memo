@@ -5,6 +5,7 @@ import "@src/styles/globals.css";
 import { SessionProvider } from "@src/providers/SessionProvider";
 import { QueryEngineProvider } from "@src/providers/QueryEngineProvider";
 import { SolidMemoDataProvider } from "@src/providers/SolidMemoDataProvider";
+import { StoreProvider } from "@src/providers/StoreProvider";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -13,13 +14,15 @@ const geist = Geist({
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <div className={geist.className}>
-      <SessionProvider>
-        <QueryEngineProvider>
-          <SolidMemoDataProvider>
-            <Component {...pageProps} />
-          </SolidMemoDataProvider>
-        </QueryEngineProvider>
-      </SessionProvider>
+      <StoreProvider>
+        <SessionProvider>
+          <QueryEngineProvider>
+            <SolidMemoDataProvider>
+              <Component {...pageProps} />
+            </SolidMemoDataProvider>
+          </QueryEngineProvider>
+        </SessionProvider>
+      </StoreProvider>
     </div>
   );
 };
