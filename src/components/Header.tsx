@@ -1,4 +1,4 @@
-import { Button } from "@src/ui";
+import { Button } from "@ui/index";
 
 type Props = {
   onLogOut: () => void;

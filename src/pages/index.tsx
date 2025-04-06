@@ -1,15 +1,15 @@
-import Layout from "@src/pages/layout";
+import Layout from "@pages/layout";
 import { useRouter } from "next/navigation";
-import { Button } from "@src/ui";
-import { useAppDispatch, useAppSelector } from "@src/redux/hooks";
+import { Button } from "@ui/index";
+import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import {
   fetchSolidMemoDataThunk,
   pickInstance,
   selectInstances,
-} from "@src/redux/features/instances.slice";
+} from "@redux/features/instances.slice";
 import { useContext, useEffect } from "react";
-import { SessionContext } from "@src/providers/SessionProvider";
-import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
+import { SessionContext } from "@providers/SessionProvider";
+import { QueryEngineContext } from "@providers/QueryEngineProvider";
 
 export default function Home() {
   const { session } = useContext(SessionContext);

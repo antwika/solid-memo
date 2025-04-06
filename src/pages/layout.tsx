@@ -1,5 +1,5 @@
-import { Header } from "@src/components/Header";
-import { SessionContext } from "@src/providers/SessionProvider";
+import { Header } from "@components/Header";
+import { SessionContext } from "@providers/SessionProvider";
 import Head from "next/head";
 import { useContext, type ReactNode } from "react";
 

@@ -27,7 +27,16 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@src/*": ["./src/*"]
+      "@src/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@domain/*": ["./src/domain/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@providers/*": ["./src/providers/*"],
+      "@redux/*": ["./src/redux/*"],
+      "@services/*": ["./src/services/*"],
+      "@styles/*": ["./src/styles/*"],
+      "@ui/*": ["./src/ui/*"]
     }
   },
   "include": [

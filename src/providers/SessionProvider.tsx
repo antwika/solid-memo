@@ -6,7 +6,7 @@ import {
   type Session,
 } from "@inrupt/solid-client-authn-browser";
 import { env } from "@src/env";
-import Login from "@src/pages/login";
+import Login from "@pages/login";
 import { createContext, useEffect, useState, type ReactNode } from "react";
 
 export const SessionContext = createContext<{

@@ -1,5 +1,5 @@
-import { LoginForm } from "@src/components/LoginForm";
-import Layout from "@src/pages/layout";
+import { LoginForm } from "@components/LoginForm";
+import Layout from "@pages/layout";
 
 type Props = {
   tryLogIn: (oidcIssuer: string) => Promise<void>;

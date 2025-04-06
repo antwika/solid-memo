@@ -1,15 +1,15 @@
-import { Flashcard } from "./Flashcard";
-import { cn } from "@src/lib/utils";
+import { Flashcard } from "@components/Flashcard";
+import { cn } from "@lib/utils";
 import type { ClassValue } from "clsx";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@src/ui";
-import { createFlashcard, deleteDeck } from "@src/services/solid.service";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@ui/index";
+import { createFlashcard, deleteDeck } from "@services/solid.service";
 import { useContext } from "react";
-import { SessionContext } from "@src/providers/SessionProvider";
-import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
-import { selectFlashcardByDeck } from "@src/redux/features/flashcards.slice";
-import { useAppSelector } from "@src/redux/hooks";
-import { selectDeckByIri } from "@src/redux/features/decks.slice";
-import { selectInstance } from "@src/redux/features/instances.slice";
+import { SessionContext } from "@providers/SessionProvider";
+import { QueryEngineContext } from "@providers/QueryEngineProvider";
+import { selectFlashcardByDeck } from "@redux/features/flashcards.slice";
+import { useAppSelector } from "@redux/hooks";
+import { selectDeckByIri } from "@redux/features/decks.slice";
+import { selectInstance } from "@redux/features/instances.slice";
 
 type Props = {
   className?: ClassValue;

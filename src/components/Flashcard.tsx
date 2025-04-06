@@ -1,13 +1,13 @@
-import { cn } from "@src/lib/utils";
+import { cn } from "@lib/utils";
 import type { ClassValue } from "clsx";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@src/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@ui/index";
 import { useContext } from "react";
-import { SessionContext } from "@src/providers/SessionProvider";
-import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
-import { deleteFlashcard } from "@src/services/solid.service";
-import { useAppSelector } from "@src/redux/hooks";
-import { selectFlashcardByIri } from "@src/redux/features/flashcards.slice";
-import { selectInstance } from "@src/redux/features/instances.slice";
+import { SessionContext } from "@providers/SessionProvider";
+import { QueryEngineContext } from "@providers/QueryEngineProvider";
+import { deleteFlashcard } from "@services/solid.service";
+import { useAppSelector } from "@redux/hooks";
+import { selectFlashcardByIri } from "@redux/features/flashcards.slice";
+import { selectInstance } from "@redux/features/instances.slice";
 
 type Props = {
   className?: ClassValue;

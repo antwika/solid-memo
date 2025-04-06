@@ -1,11 +1,11 @@
-import { createAppSlice } from "@src/redux/createAppSlice";
+import { createAppSlice } from "@redux/createAppSlice";
 import {
   fetchAllPrivateTypeIndexIris,
   fetchSolidMemoDataInstances,
-} from "@src/services/solid.service";
+} from "@services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
-import type { InstanceModel } from "@src/domain/instance.model";
+import type { InstanceModel } from "@domain/instance.model";
 import { type PayloadAction } from "@reduxjs/toolkit";
 
 export interface InstancesSliceState {

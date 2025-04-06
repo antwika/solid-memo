@@ -1,4 +1,4 @@
-import { cn } from "@src/lib/utils";
+import { cn } from "@lib/utils";
 import {
   Button,
   Input,
@@ -8,7 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@src/ui";
+} from "@ui/index";
 import type { ClassValue } from "clsx";
 
 type Props = {

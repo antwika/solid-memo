@@ -1,8 +1,8 @@
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { Session } from "@inrupt/solid-client-authn-browser";
-import type { DeckModel } from "@src/domain/deck.model";
-import type { FlashcardModel } from "@src/domain/flashcard.model";
-import type { InstanceModel } from "@src/domain/instance.model";
+import type { DeckModel } from "@domain/deck.model";
+import type { FlashcardModel } from "@domain/flashcard.model";
+import type { InstanceModel } from "@domain/instance.model";
 import { v4 as uuid } from "uuid";
 
 export async function fetchSolidMemoDataInstances(

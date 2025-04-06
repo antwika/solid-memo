@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
-import { Deck } from "@src/components/Deck";
-import Layout from "@src/pages/layout";
+import { Deck } from "@components/Deck";
+import Layout from "@pages/layout";
 
 export default function DeckPage() {
   const router = useRouter();

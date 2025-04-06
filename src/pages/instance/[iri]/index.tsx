@@ -1,12 +1,12 @@
-import { Button } from "@src/ui";
-import Layout from "@src/pages/layout";
-import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
-import { SessionContext } from "@src/providers/SessionProvider";
-import { fetchDecksThunk, selectDecks } from "@src/redux/features/decks.slice";
-import { fetchFlashcardsThunk } from "@src/redux/features/flashcards.slice";
-import { selectInstance } from "@src/redux/features/instances.slice";
-import { useAppDispatch, useAppSelector } from "@src/redux/hooks";
-import { createDeck } from "@src/services/solid.service";
+import { Button } from "@ui/index";
+import Layout from "@pages/layout";
+import { QueryEngineContext } from "@providers/QueryEngineProvider";
+import { SessionContext } from "@providers/SessionProvider";
+import { fetchDecksThunk, selectDecks } from "@redux/features/decks.slice";
+import { fetchFlashcardsThunk } from "@redux/features/flashcards.slice";
+import { selectInstance } from "@redux/features/instances.slice";
+import { useAppDispatch, useAppSelector } from "@redux/hooks";
+import { createDeck } from "@services/solid.service";
 import { useRouter } from "next/router";
 import { useContext, useEffect } from "react";
 
