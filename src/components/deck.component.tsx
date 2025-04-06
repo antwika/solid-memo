@@ -1,11 +1,10 @@
-import { Flashcard } from "@components/Flashcard";
+import { Flashcard } from "@components/index";
 import { cn } from "@lib/utils";
 import type { ClassValue } from "clsx";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@ui/index";
 import { createFlashcard, deleteDeck } from "@services/solid.service";
 import { useContext } from "react";
-import { SessionContext } from "@providers/SessionProvider";
-import { QueryEngineContext } from "@providers/QueryEngineProvider";
+import { SessionContext, QueryEngineContext } from "@providers/index";
 import { selectFlashcardByDeck } from "@redux/features/flashcards.slice";
 import { useAppSelector } from "@redux/hooks";
 import { selectDeckByIri } from "@redux/features/decks.slice";
@@ -61,7 +60,11 @@ export function Deck({ className, deckIri }: Props) {
           </CardTitle>
           <div>Version: {deck.version}</div>
           <div>
-            <Button title={deckIri} onClick={tryDeleteDeck}>
+            <Button
+              title={deckIri}
+              onClick={tryDeleteDeck}
+              variant={"destructive"}
+            >
               Delete this deck
             </Button>
           </div>

@@ -2,7 +2,7 @@ import { createAppSlice } from "@redux/createAppSlice";
 import { fetchAllIriOfRdfType, fetchCard } from "@services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
-import type { FlashcardModel } from "@domain/flashcard.model";
+import type { FlashcardModel } from "@domain/index";
 
 export interface FlashcardSliceState {
   value: FlashcardModel[];

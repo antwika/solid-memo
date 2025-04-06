@@ -2,7 +2,7 @@ import { createAppSlice } from "@redux/createAppSlice";
 import { fetchAllDeckIris, fetchDeck } from "@services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
-import type { DeckModel } from "@domain/deck.model";
+import type { DeckModel } from "@domain/index";
 
 export interface DecksSliceState {
   value: DeckModel[];

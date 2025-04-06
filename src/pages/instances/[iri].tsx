@@ -1,7 +1,6 @@
 import { Button } from "@ui/index";
 import Layout from "@pages/layout";
-import { QueryEngineContext } from "@providers/QueryEngineProvider";
-import { SessionContext } from "@providers/SessionProvider";
+import { QueryEngineContext, SessionContext } from "@providers/index";
 import { fetchDecksThunk, selectDecks } from "@redux/features/decks.slice";
 import { fetchFlashcardsThunk } from "@redux/features/flashcards.slice";
 import { selectInstance } from "@redux/features/instances.slice";
@@ -60,7 +59,6 @@ export default function InstancePage() {
   return (
     <Layout>
       <div>Choose deck:</div>
-      <div>Current instance: {currentInstance.iri}</div>
       <Button onClick={tryCreateDeck}>Create new deck</Button>
       {decks.map((deck) => (
         <div key={deck.iri}>

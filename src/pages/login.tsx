@@ -1,4 +1,4 @@
-import { LoginForm } from "@components/LoginForm";
+import { LoginForm } from "@components/index";
 import Layout from "@pages/layout";
 
 type Props = {

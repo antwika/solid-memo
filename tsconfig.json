@@ -27,7 +27,6 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@src/*": ["./src/*"],
       "@components/*": ["./src/components/*"],
       "@domain/*": ["./src/domain/*"],
       "@lib/*": ["./src/lib/*"],
@@ -40,13 +39,11 @@
     }
   },
   "include": [
-    ".eslintrc.cjs",
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "**/*.cjs",
-    "**/*.js",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "postcss.config.js"
   ],
   "exclude": ["node_modules"]
 }

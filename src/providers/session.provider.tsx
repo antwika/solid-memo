@@ -5,7 +5,7 @@ import {
   logout,
   type Session,
 } from "@inrupt/solid-client-authn-browser";
-import { env } from "@src/env";
+import { env } from "@lib/env";
 import Login from "@pages/login";
 import { createContext, useEffect, useState, type ReactNode } from "react";
 

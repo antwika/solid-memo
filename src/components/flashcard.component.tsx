@@ -2,8 +2,7 @@ import { cn } from "@lib/utils";
 import type { ClassValue } from "clsx";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@ui/index";
 import { useContext } from "react";
-import { SessionContext } from "@providers/SessionProvider";
-import { QueryEngineContext } from "@providers/QueryEngineProvider";
+import { SessionContext, QueryEngineContext } from "@providers/index";
 import { deleteFlashcard } from "@services/solid.service";
 import { useAppSelector } from "@redux/hooks";
 import { selectFlashcardByIri } from "@redux/features/flashcards.slice";
@@ -43,7 +42,11 @@ export function Flashcard({ className, cardIri }: Props) {
           <div>Version: {card.version}</div>
           <div>Front: {card.front}</div>
           <div>Back: {card.back}</div>
-          <Button title={cardIri} onClick={tryDeleteFlashcard}>
+          <Button
+            title={cardIri}
+            onClick={tryDeleteFlashcard}
+            variant={"destructive"}
+          >
             Delete flashcard
           </Button>
         </CardContent>

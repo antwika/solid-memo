@@ -8,8 +8,7 @@ import {
   selectInstances,
 } from "@redux/features/instances.slice";
 import { useContext, useEffect } from "react";
-import { SessionContext } from "@providers/SessionProvider";
-import { QueryEngineContext } from "@providers/QueryEngineProvider";
+import { SessionContext, QueryEngineContext } from "@providers/index";
 
 export default function Home() {
   const { session } = useContext(SessionContext);
@@ -30,9 +29,7 @@ export default function Home() {
 
   return (
     <Layout>
-      <div>
-        Choose Solid Memo Data instance: count: {Object.keys(instances)}
-      </div>
+      <div>Choose instance:</div>
       {Object.keys(instances).map((iri) => {
         const entry = instances[iri];
         if (!entry) return;
@@ -41,7 +38,7 @@ export default function Home() {
             key={entry.iri}
             onClick={() => {
               dispatch(pickInstance(entry));
-              router.push(`/instance/${encodeURIComponent(entry.iri)}`);
+              router.push(`/instances/${encodeURIComponent(entry.iri)}`);
             }}
             title={entry.iri}
           >

@@ -5,7 +5,7 @@ import {
 } from "@services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
-import type { InstanceModel } from "@domain/instance.model";
+import type { InstanceModel } from "@domain/index";
 import { type PayloadAction } from "@reduxjs/toolkit";
 
 export interface InstancesSliceState {

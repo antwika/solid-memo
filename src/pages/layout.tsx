@@ -1,5 +1,5 @@
-import { Header } from "@components/Header";
-import { SessionContext } from "@providers/SessionProvider";
+import { Header } from "@components/index";
+import { SessionContext } from "@providers/index";
 import Head from "next/head";
 import { useContext, type ReactNode } from "react";
 
@@ -20,7 +20,7 @@ export default function Layout({ children }: Props) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="bg-background text-foreground flex min-h-screen flex-col items-center">
-        <div className="container items-center justify-center gap-6 space-y-2 bg-white/80 px-4 py-16">
+        <div className="container items-center justify-center gap-6 space-y-2 bg-white/80 p-6">
           {session.info?.isLoggedIn && <Header onLogOut={tryLogOut} />}
           {children}
         </div>
