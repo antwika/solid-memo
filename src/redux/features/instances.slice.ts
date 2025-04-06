@@ -5,31 +5,33 @@ import {
 } from "@src/services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
-import type { SolidMemoData } from "@src/domain/SolidMemoData";
+import type { InstanceModel } from "@src/domain/instance.model";
 import { type PayloadAction } from "@reduxjs/toolkit";
 
-export interface SolidMemoDataSliceState {
-  value: Record<string, SolidMemoData>;
-  currentInstance: string | undefined;
+export interface InstancesSliceState {
+  value: Record<string, InstanceModel>;
+  instance: InstanceModel | undefined;
   status: "idle" | "loading" | "failed";
 }
 
-const initialState: SolidMemoDataSliceState = {
+const initialState: InstancesSliceState = {
   value: {},
-  currentInstance: undefined,
+  instance: undefined,
   status: "idle",
 };
 
 // If you are not using async thunks you can use the standalone `createSlice`.
-export const solidMemoDataSlice = createAppSlice({
-  name: "solidMemoData",
+export const instancesSlice = createAppSlice({
+  name: "instances",
   // `createSlice` will infer the state type from the `initialState` argument
   initialState,
   // The `reducers` field lets us define reducers and generate associated actions
   reducers: (create) => ({
-    pickInstance: create.reducer((state, action: PayloadAction<string>) => {
-      state.currentInstance = action.payload;
-    }),
+    pickInstance: create.reducer(
+      (state, action: PayloadAction<InstanceModel>) => {
+        state.instance = action.payload;
+      },
+    ),
     fetchSolidMemoDataThunk: create.asyncThunk(
       async ({
         session,
@@ -48,7 +50,7 @@ export const solidMemoDataSlice = createAppSlice({
           webId,
         );
 
-        const solidMemoDataArray = (
+        const instancesArray = (
           await Promise.all(
             privateTypeIndices.map((privateTypeIndex) =>
               fetchSolidMemoDataInstances(
@@ -60,19 +62,19 @@ export const solidMemoDataSlice = createAppSlice({
           )
         ).flat();
 
-        // Merge all solidMemoData records found in various private type indices
-        const solidMemoData = solidMemoDataArray.reduce<
-          Record<string, SolidMemoData>
-        >((acc, solidMemoDataRecord) => {
-          for (const key in solidMemoDataRecord) {
-            const solidMemoData = solidMemoDataRecord[key];
-            if (!solidMemoData) return acc;
-            acc[key] = solidMemoData;
-          }
-          return acc;
-        }, {});
+        const instances = instancesArray.reduce<Record<string, InstanceModel>>(
+          (acc, inst) => {
+            for (const key in inst) {
+              const solidMemoData = inst[key];
+              if (!solidMemoData) return acc;
+              acc[key] = solidMemoData;
+            }
+            return acc;
+          },
+          {},
+        );
 
-        return solidMemoData;
+        return instances;
       },
       {
         pending: (state) => {
@@ -91,26 +93,25 @@ export const solidMemoDataSlice = createAppSlice({
   // You can define your selectors here. These selectors receive the slice
   // state as their first argument.
   selectors: {
-    selectSolidMemoData: (state) => state.value,
-    selectSolidMemoDataByIri: (state, solidMemoDataIri: string) => {
+    selectInstances: (state) => state.value,
+    selectInstanceByIri: (state, solidMemoDataIri: string) => {
       const entry = state.value[solidMemoDataIri];
       if (entry) {
         return entry;
       }
     },
-    selectCurrentInstance: (state) => state.currentInstance,
+    selectInstance: (state) => state.instance,
     selectStatus: (state) => state.status,
   },
 });
 
 // Action creators are generated for each case reducer function.
-export const { pickInstance, fetchSolidMemoDataThunk } =
-  solidMemoDataSlice.actions;
+export const { pickInstance, fetchSolidMemoDataThunk } = instancesSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
 export const {
-  selectSolidMemoData,
-  selectSolidMemoDataByIri,
-  selectCurrentInstance,
+  selectInstances,
+  selectInstanceByIri,
+  selectInstance,
   selectStatus,
-} = solidMemoDataSlice.selectors;
+} = instancesSlice.selectors;

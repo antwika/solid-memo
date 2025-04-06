@@ -7,7 +7,7 @@ import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { deleteFlashcard } from "@src/services/solid.service";
 import { useAppSelector } from "@src/redux/hooks";
 import { selectFlashcardByIri } from "@src/redux/features/flashcards.slice";
-import { selectCurrentInstance } from "@src/redux/features/solidMemoData.slice";
+import { selectInstance } from "@src/redux/features/instances.slice";
 
 type Props = {
   className?: ClassValue;
@@ -18,7 +18,7 @@ export function Flashcard({ className, cardIri }: Props) {
   const { session } = useContext(SessionContext);
   const { queryEngine } = useContext(QueryEngineContext);
   const card = useAppSelector((state) => selectFlashcardByIri(state, cardIri));
-  const currentInstance = useAppSelector(selectCurrentInstance);
+  const currentInstance = useAppSelector(selectInstance);
 
   if (!card) {
     return <div>Loading flashcard...</div>;
@@ -30,7 +30,7 @@ export function Flashcard({ className, cardIri }: Props) {
       return;
     }
 
-    await deleteFlashcard(session, queryEngine, currentInstance, cardIri);
+    await deleteFlashcard(session, queryEngine, currentInstance.iri, cardIri);
   };
 
   return (

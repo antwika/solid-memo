@@ -1,4 +1,4 @@
-export type FlashcardData = {
+export type FlashcardModel = {
   version: string;
   iri: string;
   front: string;

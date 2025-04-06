@@ -1,4 +1,4 @@
-export type SolidMemoData = {
+export type InstanceModel = {
   iri: string;
   version: string;
   name: string;

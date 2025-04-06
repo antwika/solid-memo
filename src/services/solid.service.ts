@@ -1,8 +1,8 @@
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { Session } from "@inrupt/solid-client-authn-browser";
-import type { DeckData } from "@src/domain/DeckData";
-import type { FlashcardData } from "@src/domain/FlashcardData";
-import type { SolidMemoData } from "@src/domain/SolidMemoData";
+import type { DeckModel } from "@src/domain/deck.model";
+import type { FlashcardModel } from "@src/domain/flashcard.model";
+import type { InstanceModel } from "@src/domain/instance.model";
 import { v4 as uuid } from "uuid";
 
 export async function fetchSolidMemoDataInstances(
@@ -66,7 +66,7 @@ export async function fetchSolidMemoDataInstance(
   );
   const bindings = await bindingsStream.toArray();
 
-  const instances = bindings.reduce<Record<string, SolidMemoData>>(
+  const instances = bindings.reduce<Record<string, InstanceModel>>(
     (acc, binding) => {
       const subject = binding.get("subject");
       const version = binding.get("version");
@@ -106,7 +106,7 @@ export async function createFlashcard(
   queryEngine: QueryEngine,
   solidMemoDataIri: string,
   deckIri: string,
-  flashcard: Omit<FlashcardData, "iri">,
+  flashcard: Omit<FlashcardModel, "iri">,
 ) {
   if (!queryEngine) return;
 
@@ -129,7 +129,7 @@ export async function createFlashcard(
     fetch: session.fetch,
   });
 
-  const createdFlashcard: FlashcardData = {
+  const createdFlashcard: FlashcardModel = {
     iri,
     version: flashcard.version,
     front: flashcard.front,
@@ -191,7 +191,7 @@ export async function fetchCard(
   );
 
   const bindings = await bindingsStream.toArray();
-  const cards = bindings.reduce<FlashcardData[]>((acc, binding) => {
+  const cards = bindings.reduce<FlashcardModel[]>((acc, binding) => {
     const version = binding.get("version");
     const front = binding.get("front");
     const back = binding.get("back");
@@ -280,7 +280,7 @@ export async function createDeck(
   session: Session,
   queryEngine: QueryEngine,
   solidMemoDataIri: string,
-  deck: Omit<DeckData, "iri">,
+  deck: Omit<DeckModel, "iri">,
 ) {
   if (!queryEngine) return;
 
@@ -300,7 +300,7 @@ export async function createDeck(
     fetch: session.fetch,
   });
 
-  const createdDeck: DeckData = {
+  const createdDeck: DeckModel = {
     iri,
     version: deck.version,
     name: deck.name,
@@ -361,7 +361,7 @@ export const fetchDeck = async (
   );
 
   const bindings = await bindingsStream.toArray();
-  const decks = bindings.reduce<DeckData[]>((acc, binding) => {
+  const decks = bindings.reduce<DeckModel[]>((acc, binding) => {
     const version = binding.get("version");
     const name = binding.get("name");
     const isInSolidMemoDataInstance = binding.get("isInSolidMemoDataInstance");

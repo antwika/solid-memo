@@ -4,7 +4,7 @@ import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { SessionContext } from "@src/providers/SessionProvider";
 import { fetchDecksThunk, selectDecks } from "@src/redux/features/decks.slice";
 import { fetchFlashcardsThunk } from "@src/redux/features/flashcards.slice";
-import { selectCurrentInstance } from "@src/redux/features/solidMemoData.slice";
+import { selectInstance } from "@src/redux/features/instances.slice";
 import { useAppDispatch, useAppSelector } from "@src/redux/hooks";
 import { createDeck } from "@src/services/solid.service";
 import { useRouter } from "next/router";
@@ -18,7 +18,7 @@ export default function InstancePage() {
 
   const dispatch = useAppDispatch();
   const decks = useAppSelector(selectDecks);
-  const currentInstance = useAppSelector(selectCurrentInstance);
+  const currentInstance = useAppSelector(selectInstance);
 
   useEffect(() => {
     if (!currentInstance) return;
@@ -27,14 +27,14 @@ export default function InstancePage() {
       fetchDecksThunk({
         session,
         queryEngine,
-        solidMemoDataIri: currentInstance,
+        solidMemoDataIri: currentInstance.iri,
       }),
     );
     void dispatch(
       fetchFlashcardsThunk({
         session,
         queryEngine,
-        solidMemoDataIri: currentInstance,
+        solidMemoDataIri: currentInstance.iri,
       }),
     );
   }, [session, queryEngine, currentInstance, dispatch]);
@@ -49,18 +49,18 @@ export default function InstancePage() {
       return;
     }
 
-    await createDeck(session, queryEngine, currentInstance, {
+    await createDeck(session, queryEngine, currentInstance.iri, {
       version: "1",
       name: "A new deck",
       hasCard: [],
-      isInSolidMemoDataInstance: currentInstance,
+      isInSolidMemoDataInstance: currentInstance.iri,
     });
   };
 
   return (
     <Layout>
       <div>Choose deck:</div>
-      <div>Current instance: {currentInstance}</div>
+      <div>Current instance: {currentInstance.iri}</div>
       <Button onClick={tryCreateDeck}>Create new deck</Button>
       {decks.map((deck) => (
         <div key={deck.iri}>

@@ -9,7 +9,7 @@ import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { selectFlashcardByDeck } from "@src/redux/features/flashcards.slice";
 import { useAppSelector } from "@src/redux/hooks";
 import { selectDeckByIri } from "@src/redux/features/decks.slice";
-import { selectCurrentInstance } from "@src/redux/features/solidMemoData.slice";
+import { selectInstance } from "@src/redux/features/instances.slice";
 
 type Props = {
   className?: ClassValue;
@@ -23,7 +23,7 @@ export function Deck({ className, deckIri }: Props) {
   const flashcards = useAppSelector((state) =>
     selectFlashcardByDeck(state, deckIri),
   );
-  const currentInstance = useAppSelector(selectCurrentInstance);
+  const currentInstance = useAppSelector(selectInstance);
 
   if (!deck) {
     return <div>Loading deck...</div>;
@@ -35,7 +35,7 @@ export function Deck({ className, deckIri }: Props) {
       return;
     }
 
-    await createFlashcard(session, queryEngine, currentInstance, deckIri, {
+    await createFlashcard(session, queryEngine, currentInstance.iri, deckIri, {
       version: "1",
       front: "New front",
       back: "New back",
@@ -49,7 +49,7 @@ export function Deck({ className, deckIri }: Props) {
       return;
     }
 
-    await deleteDeck(session, queryEngine, currentInstance, deckIri);
+    await deleteDeck(session, queryEngine, currentInstance.iri, deckIri);
   };
 
   return (

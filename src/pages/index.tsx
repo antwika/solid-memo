@@ -5,8 +5,8 @@ import { useAppDispatch, useAppSelector } from "@src/redux/hooks";
 import {
   fetchSolidMemoDataThunk,
   pickInstance,
-  selectSolidMemoData,
-} from "@src/redux/features/solidMemoData.slice";
+  selectInstances,
+} from "@src/redux/features/instances.slice";
 import { useContext, useEffect } from "react";
 import { SessionContext } from "@src/providers/SessionProvider";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
@@ -15,7 +15,7 @@ export default function Home() {
   const { session } = useContext(SessionContext);
   const { queryEngine } = useContext(QueryEngineContext);
   const router = useRouter();
-  const instances = useAppSelector(selectSolidMemoData);
+  const instances = useAppSelector(selectInstances);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function Home() {
           <Button
             key={entry.iri}
             onClick={() => {
-              dispatch(pickInstance(entry.iri));
+              dispatch(pickInstance(entry));
               router.push(`/instance/${encodeURIComponent(entry.iri)}`);
             }}
             title={entry.iri}

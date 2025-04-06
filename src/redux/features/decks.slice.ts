@@ -2,10 +2,10 @@ import { createAppSlice } from "@src/redux/createAppSlice";
 import { fetchAllDeckIris, fetchDeck } from "@src/services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
-import type { DeckData } from "@src/domain/DeckData";
+import type { DeckModel } from "@src/domain/deck.model";
 
 export interface DecksSliceState {
-  value: DeckData[];
+  value: DeckModel[];
   status: "idle" | "loading" | "failed";
 }
 

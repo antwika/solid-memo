@@ -1,4 +1,4 @@
-export type DeckData = {
+export type DeckModel = {
   iri: string;
   version: string;
   name: string;
