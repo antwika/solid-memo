@@ -93,6 +93,7 @@ export const flashcardsSlice = createAppSlice({
           state.value[createdFlashcard.iri] = createdFlashcard;
 
           state.status = "idle";
+          console.log("Flashcard created", createdFlashcard);
         },
         rejected: (state) => {
           state.status = "failed";
@@ -124,11 +125,12 @@ export const flashcardsSlice = createAppSlice({
           state.status = "loading";
         },
         fulfilled: (state, action) => {
-          const flashcard = action.payload;
+          const deletedFlashcard = action.payload;
 
-          delete state.value[flashcard.iri];
+          delete state.value[deletedFlashcard.iri];
 
           state.status = "idle";
+          console.log("Flashcard deleted", deletedFlashcard);
         },
         rejected: (state) => {
           state.status = "failed";

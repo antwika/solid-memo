@@ -89,6 +89,7 @@ export const decksSlice = createAppSlice({
           state.value[createdDeck.iri] = createdDeck;
 
           state.status = "idle";
+          console.log("Deck created", createdDeck);
         },
         rejected: (state) => {
           state.status = "failed";
@@ -117,9 +118,11 @@ export const decksSlice = createAppSlice({
         fulfilled: (state, action) => {
           const deletedDeck = action.payload;
 
-          delete state.value[deletedDeck.iri];
-
+          if (state.value[deletedDeck.iri]) {
+            delete state.value[deletedDeck.iri];
+          }
           state.status = "idle";
+          console.log("Deck deleted", deletedDeck);
         },
         rejected: (state) => {
           state.status = "failed";
@@ -132,15 +135,20 @@ export const decksSlice = createAppSlice({
       const flashcard = action.payload;
       if (!flashcard) return;
       state.value[flashcard.isInDeck]?.hasCard.push(flashcard.iri);
+      console.log("Updated deck hasCard to include", flashcard.iri);
     });
 
     builder.addCase(deleteFlashcardThunk.fulfilled, (state, action) => {
-      const flashcard = action.payload;
-      const deck = state.value[flashcard.isInDeck];
+      const deletedFlashcard = action.payload;
+      const deck = state.value[deletedFlashcard.isInDeck];
       if (deck) {
-        const index = deck.hasCard.indexOf(flashcard.iri);
+        const index = deck.hasCard.indexOf(deletedFlashcard.iri);
         if (index !== -1) {
           deck.hasCard.splice(index, 1);
+          console.log(
+            "Updated deck hasCard to not include",
+            deletedFlashcard.iri,
+          );
         }
       }
     });

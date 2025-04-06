@@ -6,7 +6,10 @@ import {
   fetchDecksThunk,
   selectDecks,
 } from "@redux/features/decks.slice";
-import { selectInstance } from "@redux/features/instances.slice";
+import {
+  selectInstanceByIri,
+  selectInstanceIri,
+} from "@redux/features/instances.slice";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import { useRouter } from "next/router";
 import { useContext, useEffect } from "react";
@@ -19,7 +22,10 @@ export default function InstancePage() {
 
   const dispatch = useAppDispatch();
   const decks = useAppSelector(selectDecks);
-  const currentInstance = useAppSelector(selectInstance);
+  const currentInstanceIri = useAppSelector(selectInstanceIri);
+  const currentInstance = useAppSelector((state) =>
+    selectInstanceByIri(state, currentInstanceIri),
+  );
 
   useEffect(() => {
     if (!currentInstance) return;

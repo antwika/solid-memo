@@ -74,7 +74,6 @@ export async function fetchSolidMemoDataInstance(
       if (!subject) return acc;
       if (!version) return acc;
       if (!name) return acc;
-      if (!hasDeck) return acc;
 
       acc[subject.value] ??= {
         iri: solidMemoDataInstanceIri,
@@ -83,11 +82,12 @@ export async function fetchSolidMemoDataInstance(
         hasDeck: [],
       };
 
-      const entry = acc[subject.value];
-
-      if (entry) {
-        if (!entry.hasDeck.includes(hasDeck.value)) {
-          entry.hasDeck.push(hasDeck.value);
+      if (hasDeck) {
+        const entry = acc[subject.value];
+        if (entry) {
+          if (!entry.hasDeck.includes(hasDeck.value)) {
+            entry.hasDeck.push(hasDeck.value);
+          }
         }
       }
 
@@ -147,15 +147,13 @@ export async function deleteFlashcard(
   if (!queryEngine) return;
 
   const query = `
-    DELETE {
-      ?s <http://antwika.com/ns/solid-memo#hasCard> <${cardIri}> .
+    DELETE WHERE {
       <${cardIri}> ?p ?o .
-    }
-    WHERE {
       ?s <http://antwika.com/ns/solid-memo#hasCard> <${cardIri}> .
-      <${cardIri}> ?p ?o .
     }
   `;
+
+  console.log("delete query", query);
 
   await queryEngine.queryVoid(query, {
     sources: [solidMemoDataIri],
@@ -283,15 +281,18 @@ export async function createDeck(
   if (!queryEngine) return;
 
   const iri = `${solidMemoDataIri}#${uuid().toString()}`;
-
   const query = `
     INSERT DATA
     {
+      <${solidMemoDataIri}> <http://antwika.com/ns/solid-memo#hasDeck> <${iri}> .
       <${iri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
       <${iri}> <http://antwika.com/ns/solid-memo#version> '${deck.version}' .
       <${iri}> <http://antwika.com/ns/solid-memo#name> '${deck.name}' .
+      <${iri}> <http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance> <${solidMemoDataIri}> .
     }
   `;
+
+  console.log("INSERT DATA", query);
 
   await queryEngine.queryVoid(query, {
     sources: [solidMemoDataIri],
@@ -317,7 +318,25 @@ export async function deleteDeck(
 ) {
   if (!queryEngine) return;
 
-  const query = `
+  console.log("solidMemoDataIri", solidMemoDataIri);
+  try {
+    const query1 = `
+    DELETE {
+      ?s <http://antwika.com/ns/solid-memo#hasDeck> <${deckIri}> .
+    }
+    WHERE {
+      ?s <http://antwika.com/ns/solid-memo#hasDeck> <${deckIri}> .
+    }
+  `;
+
+    console.log("DELETE DATA", query1);
+
+    await queryEngine.queryVoid(query1, {
+      sources: [solidMemoDataIri],
+      fetch: session.fetch,
+    });
+
+    const query2 = `
     DELETE {
       <${deckIri}> ?p ?o .
     }
@@ -326,10 +345,15 @@ export async function deleteDeck(
     }
   `;
 
-  await queryEngine.queryVoid(query, {
-    sources: [solidMemoDataIri],
-    fetch: session.fetch,
-  });
+    console.log("DELETE DATA", query2);
+
+    await queryEngine.queryVoid(query2, {
+      sources: [solidMemoDataIri],
+      fetch: session.fetch,
+    });
+  } catch (err) {
+    console.warn("Some kinda failure?", err);
+  }
 
   return;
 }

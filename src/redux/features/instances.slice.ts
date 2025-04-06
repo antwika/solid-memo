@@ -11,13 +11,13 @@ import { createDeckThunk, deleteDeckThunk } from "./decks.slice";
 
 export interface InstancesSliceState {
   value: Record<string, InstanceModel>;
-  instance: InstanceModel | undefined;
+  instanceIri: string | undefined;
   status: "idle" | "loading" | "failed";
 }
 
 const initialState: InstancesSliceState = {
   value: {},
-  instance: undefined,
+  instanceIri: undefined,
   status: "idle",
 };
 
@@ -30,7 +30,7 @@ export const instancesSlice = createAppSlice({
   reducers: (create) => ({
     pickInstance: create.reducer(
       (state, action: PayloadAction<InstanceModel>) => {
-        state.instance = action.payload;
+        state.instanceIri = action.payload.iri;
       },
     ),
     fetchSolidMemoDataThunk: create.asyncThunk(
@@ -98,6 +98,7 @@ export const instancesSlice = createAppSlice({
       state.value[createdDeck.isInSolidMemoDataInstance]?.hasDeck.push(
         createdDeck.iri,
       );
+      console.log("Updated instance hasDeck to include", createdDeck.iri);
     });
 
     builder.addCase(deleteDeckThunk.fulfilled, (state, action) => {
@@ -107,6 +108,10 @@ export const instancesSlice = createAppSlice({
         const index = instance.hasDeck.indexOf(deletedDeck.iri);
         if (index !== -1) {
           instance.hasDeck.splice(index, 1);
+          console.log(
+            "Updated instance hasDeck to not include",
+            deletedDeck.iri,
+          );
         }
       }
     });
@@ -115,13 +120,14 @@ export const instancesSlice = createAppSlice({
   // state as their first argument.
   selectors: {
     selectInstances: (state) => state.value,
-    selectInstanceByIri: (state, solidMemoDataIri: string) => {
+    selectInstanceByIri: (state, solidMemoDataIri: string | undefined) => {
+      if (!solidMemoDataIri) return;
       const entry = state.value[solidMemoDataIri];
       if (entry) {
         return entry;
       }
     },
-    selectInstance: (state) => state.instance,
+    selectInstanceIri: (state) => state.instanceIri,
     selectStatus: (state) => state.status,
   },
 });
@@ -133,6 +139,6 @@ export const { pickInstance, fetchSolidMemoDataThunk } = instancesSlice.actions;
 export const {
   selectInstances,
   selectInstanceByIri,
-  selectInstance,
+  selectInstanceIri,
   selectStatus,
 } = instancesSlice.selectors;

@@ -7,7 +7,10 @@ import {
   deleteFlashcardThunk,
   selectFlashcardByIri,
 } from "@redux/features/flashcards.slice";
-import { selectInstance } from "@redux/features/instances.slice";
+import {
+  selectInstanceByIri,
+  selectInstanceIri,
+} from "@redux/features/instances.slice";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import { Trash } from "lucide-react";
 
@@ -20,7 +23,10 @@ export function Flashcard({ className, cardIri }: Props) {
   const { session } = useContext(SessionContext);
   const { queryEngine } = useContext(QueryEngineContext);
   const card = useAppSelector((state) => selectFlashcardByIri(state, cardIri));
-  const currentInstance = useAppSelector(selectInstance);
+  const currentInstanceIri = useAppSelector(selectInstanceIri);
+  const currentInstance = useAppSelector((state) =>
+    selectInstanceByIri(state, currentInstanceIri),
+  );
   const dispatch = useAppDispatch();
 
   if (!card) {

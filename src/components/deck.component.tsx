@@ -11,7 +11,10 @@ import {
 } from "@redux/features/flashcards.slice";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import { deleteDeckThunk, selectDeckByIri } from "@redux/features/decks.slice";
-import { selectInstance } from "@redux/features/instances.slice";
+import {
+  selectInstanceByIri,
+  selectInstanceIri,
+} from "@redux/features/instances.slice";
 import { useRouter } from "next/router";
 
 type Props = {
@@ -26,7 +29,10 @@ export function Deck({ className, deckIri }: Props) {
   const flashcards = useAppSelector((state) =>
     selectFlashcardsByIris(state, deck?.hasCard ?? []),
   );
-  const currentInstance = useAppSelector(selectInstance);
+  const currentInstanceIri = useAppSelector(selectInstanceIri);
+  const currentInstance = useAppSelector((state) =>
+    selectInstanceByIri(state, currentInstanceIri),
+  );
   const dispatch = useAppDispatch();
   const router = useRouter();
 
