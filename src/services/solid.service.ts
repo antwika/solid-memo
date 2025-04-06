@@ -10,7 +10,6 @@ export async function fetchSolidMemoDataInstances(
   queryEngine: QueryEngine,
   privateTypeIndex: string,
 ) {
-  console.log("Fetchin.....");
   const bindingsStream = await queryEngine.queryBindings(
     `
         SELECT ?solidMemoDataIri
@@ -31,18 +30,14 @@ export async function fetchSolidMemoDataInstances(
     acc.push(solidMemoDataIri.value);
     return acc;
   }, []);
-  console.log("Found solidMemoDataIris:", solidMemoDataIris);
 
   const promises = solidMemoDataIris.map((iri) => {
     return fetchSolidMemoDataInstance(session, queryEngine, iri);
   });
-  console.log("promises.....", promises);
 
   const solidMemoDataInstances = (await Promise.all(promises)).filter(
     (solidMemoDataInstance) => solidMemoDataInstance !== undefined,
   );
-
-  console.log("Found solidMemoDataInstances:", solidMemoDataInstances);
 
   return solidMemoDataInstances;
 }
@@ -128,8 +123,6 @@ export async function createFlashcard(
       <${iri}> <http://antwika.com/ns/solid-memo#back> '${flashcard.back}' .
     }
   `;
-
-  console.log("Query:", query);
 
   await queryEngine.queryVoid(query, {
     sources: [solidMemoDataIri],
