@@ -2,7 +2,6 @@ import { createAppSlice } from "@redux/createAppSlice";
 import {
   createFlashcard,
   deleteFlashcard,
-  fetchAllIriOfRdfType,
   fetchCard,
 } from "@services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
@@ -30,12 +29,10 @@ export const flashcardsSlice = createAppSlice({
       async ({
         session,
         queryEngine,
-        solidMemoDataIri,
         flashcardIris,
       }: {
         session: Session;
         queryEngine: QueryEngine;
-        solidMemoDataIri: string;
         flashcardIris: string[];
       }) => {
         const flashcards = (
@@ -90,9 +87,10 @@ export const flashcardsSlice = createAppSlice({
           state.status = "loading";
         },
         fulfilled: (state, action) => {
-          const flashcard = action.payload;
-          if (!flashcard) return;
-          state.value[flashcard.iri] = flashcard;
+          const createdFlashcard = action.payload;
+          if (!createdFlashcard) return;
+
+          state.value[createdFlashcard.iri] = createdFlashcard;
 
           state.status = "idle";
         },
@@ -106,13 +104,11 @@ export const flashcardsSlice = createAppSlice({
         session,
         queryEngine,
         solidMemoDataIri,
-        deckIri,
         flashcard,
       }: {
         session: Session;
         queryEngine: QueryEngine;
         solidMemoDataIri: string;
-        deckIri: string;
         flashcard: FlashcardModel;
       }) => {
         await deleteFlashcard(
@@ -144,9 +140,10 @@ export const flashcardsSlice = createAppSlice({
   // state as their first argument.
   selectors: {
     selectFlashcards: (state) => state.value,
-    selectFlashcardByIri: (state, flashcardIri) => state.value[flashcardIri],
+    selectFlashcardByIri: (state, flashcardIri: string) =>
+      state.value[flashcardIri],
     selectFlashcardsByIris: (state, flashcardIris: string[]) => {
-      let subset: Record<string, FlashcardModel> = {};
+      const subset: Record<string, FlashcardModel> = {};
       for (const iri of flashcardIris) {
         if (state.value[iri]) {
           subset[iri] = state.value[iri];

@@ -2,7 +2,6 @@ import { Flashcard } from "@components/index";
 import { cn } from "@lib/utils";
 import type { ClassValue } from "clsx";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@ui/index";
-import { createFlashcard, deleteDeck } from "@services/solid.service";
 import { useContext, useEffect } from "react";
 import { SessionContext, QueryEngineContext } from "@providers/index";
 import {
@@ -11,8 +10,9 @@ import {
   selectFlashcardsByIris,
 } from "@redux/features/flashcards.slice";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
-import { selectDeckByIri } from "@redux/features/decks.slice";
+import { deleteDeckThunk, selectDeckByIri } from "@redux/features/decks.slice";
 import { selectInstance } from "@redux/features/instances.slice";
+import { useRouter } from "next/router";
 
 type Props = {
   className?: ClassValue;
@@ -28,13 +28,14 @@ export function Deck({ className, deckIri }: Props) {
   );
   const currentInstance = useAppSelector(selectInstance);
   const dispatch = useAppDispatch();
-
-  if (!deck) {
-    return <div>Loading deck...</div>;
-  }
+  const router = useRouter();
 
   useEffect(() => {
     if (!currentInstance) {
+      return;
+    }
+
+    if (!deck) {
       return;
     }
 
@@ -42,11 +43,14 @@ export function Deck({ className, deckIri }: Props) {
       fetchFlashcardsThunk({
         session,
         queryEngine,
-        solidMemoDataIri: currentInstance.iri,
         flashcardIris: deck.hasCard,
       }),
     );
   }, [currentInstance, dispatch, session, queryEngine, deck]);
+
+  if (!deck) {
+    return <div>Loading deck...</div>;
+  }
 
   const tryCreateFlashcard = async () => {
     if (!currentInstance) {
@@ -54,7 +58,7 @@ export function Deck({ className, deckIri }: Props) {
       return;
     }
 
-    dispatch(
+    await dispatch(
       createFlashcardThunk({
         session,
         queryEngine,
@@ -76,7 +80,15 @@ export function Deck({ className, deckIri }: Props) {
       return;
     }
 
-    await deleteDeck(session, queryEngine, currentInstance.iri, deckIri);
+    await dispatch(
+      deleteDeckThunk({
+        session,
+        queryEngine,
+        solidMemoDataIri: currentInstance.iri,
+        deck,
+      }),
+    );
+    await router.push(`/instances/${encodeURIComponent(currentInstance.iri)}`);
   };
 
   return (

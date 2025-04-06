@@ -1,9 +1,8 @@
 import { cn } from "@lib/utils";
 import type { ClassValue } from "clsx";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@ui/index";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { SessionContext, QueryEngineContext } from "@providers/index";
-import { deleteFlashcard } from "@services/solid.service";
 import {
   deleteFlashcardThunk,
   selectFlashcardByIri,
@@ -38,7 +37,6 @@ export function Flashcard({ className, cardIri }: Props) {
         session,
         queryEngine,
         solidMemoDataIri: currentInstance.iri,
-        deckIri: card.isInDeck,
         flashcard: card,
       }),
     );

@@ -1,5 +1,10 @@
 import { createAppSlice } from "@redux/createAppSlice";
-import { fetchAllDeckIris, fetchDeck } from "@services/solid.service";
+import {
+  createDeck,
+  deleteDeck,
+  fetchAllDeckIris,
+  fetchDeck,
+} from "@services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { DeckModel } from "@domain/index";
@@ -61,6 +66,66 @@ export const decksSlice = createAppSlice({
         },
       },
     ),
+    createDeckThunk: create.asyncThunk(
+      async ({
+        session,
+        queryEngine,
+        solidMemoDataIri,
+        deck,
+      }: {
+        session: Session;
+        queryEngine: QueryEngine;
+        solidMemoDataIri: string;
+        deck: Omit<DeckModel, "iri">;
+      }) => createDeck(session, queryEngine, solidMemoDataIri, deck),
+      {
+        pending: (state) => {
+          state.status = "loading";
+        },
+        fulfilled: (state, action) => {
+          const createdDeck = action.payload;
+          if (!createdDeck) return;
+
+          state.value[createdDeck.iri] = createdDeck;
+
+          state.status = "idle";
+        },
+        rejected: (state) => {
+          state.status = "failed";
+        },
+      },
+    ),
+    deleteDeckThunk: create.asyncThunk(
+      async ({
+        session,
+        queryEngine,
+        solidMemoDataIri,
+        deck,
+      }: {
+        session: Session;
+        queryEngine: QueryEngine;
+        solidMemoDataIri: string;
+        deck: DeckModel;
+      }) => {
+        await deleteDeck(session, queryEngine, solidMemoDataIri, deck.iri);
+        return deck;
+      },
+      {
+        pending: (state) => {
+          state.status = "loading";
+        },
+        fulfilled: (state, action) => {
+          const deletedDeck = action.payload;
+
+          delete state.value[deletedDeck.iri];
+
+          state.status = "idle";
+        },
+        rejected: (state) => {
+          state.status = "failed";
+        },
+      },
+    ),
   }),
   extraReducers: (builder) => {
     builder.addCase(createFlashcardThunk.fulfilled, (state, action) => {
@@ -84,13 +149,14 @@ export const decksSlice = createAppSlice({
   // state as their first argument.
   selectors: {
     selectDecks: (state) => state.value,
-    selectDeckByIri: (state, deckIri) => state.value[deckIri],
+    selectDeckByIri: (state, deckIri: string) => state.value[deckIri],
     selectStatus: (state) => state.status,
   },
 });
 
 // Action creators are generated for each case reducer function.
-export const { fetchDecksThunk } = decksSlice.actions;
+export const { fetchDecksThunk, createDeckThunk, deleteDeckThunk } =
+  decksSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
 export const { selectDecks, selectDeckByIri, selectStatus } =

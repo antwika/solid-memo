@@ -1,10 +1,13 @@
 import { Button } from "@ui/index";
 import Layout from "@pages/layout";
 import { QueryEngineContext, SessionContext } from "@providers/index";
-import { fetchDecksThunk, selectDecks } from "@redux/features/decks.slice";
+import {
+  createDeckThunk,
+  fetchDecksThunk,
+  selectDecks,
+} from "@redux/features/decks.slice";
 import { selectInstance } from "@redux/features/instances.slice";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
-import { createDeck } from "@services/solid.service";
 import { useRouter } from "next/router";
 import { useContext, useEffect } from "react";
 
@@ -40,12 +43,19 @@ export default function InstancePage() {
       return;
     }
 
-    await createDeck(session, queryEngine, currentInstance.iri, {
-      version: "1",
-      name: "A new deck",
-      hasCard: [],
-      isInSolidMemoDataInstance: currentInstance.iri,
-    });
+    void dispatch(
+      createDeckThunk({
+        session,
+        queryEngine,
+        solidMemoDataIri: currentInstance.iri,
+        deck: {
+          version: "1",
+          name: "A new deck",
+          hasCard: [],
+          isInSolidMemoDataInstance: currentInstance.iri,
+        },
+      }),
+    );
   };
 
   return (

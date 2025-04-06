@@ -7,6 +7,7 @@ import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { InstanceModel } from "@domain/index";
 import { type PayloadAction } from "@reduxjs/toolkit";
+import { createDeckThunk, deleteDeckThunk } from "./decks.slice";
 
 export interface InstancesSliceState {
   value: Record<string, InstanceModel>;
@@ -90,6 +91,26 @@ export const instancesSlice = createAppSlice({
       },
     ),
   }),
+  extraReducers: (builder) => {
+    builder.addCase(createDeckThunk.fulfilled, (state, action) => {
+      const createdDeck = action.payload;
+      if (!createdDeck) return;
+      state.value[createdDeck.isInSolidMemoDataInstance]?.hasDeck.push(
+        createdDeck.iri,
+      );
+    });
+
+    builder.addCase(deleteDeckThunk.fulfilled, (state, action) => {
+      const deletedDeck = action.payload;
+      const instance = state.value[deletedDeck.isInSolidMemoDataInstance];
+      if (instance) {
+        const index = instance.hasDeck.indexOf(deletedDeck.iri);
+        if (index !== -1) {
+          instance.hasDeck.splice(index, 1);
+        }
+      }
+    });
+  },
   // You can define your selectors here. These selectors receive the slice
   // state as their first argument.
   selectors: {
