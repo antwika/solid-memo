@@ -81,8 +81,8 @@ export const instancesSlice = createAppSlice({
           state.status = "loading";
         },
         fulfilled: (state, action) => {
-          state.status = "idle";
           state.value = action.payload;
+          state.status = "idle";
         },
         rejected: (state) => {
           state.status = "failed";

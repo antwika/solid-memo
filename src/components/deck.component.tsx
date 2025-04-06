@@ -3,10 +3,14 @@ import { cn } from "@lib/utils";
 import type { ClassValue } from "clsx";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@ui/index";
 import { createFlashcard, deleteDeck } from "@services/solid.service";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { SessionContext, QueryEngineContext } from "@providers/index";
-import { selectFlashcardByDeck } from "@redux/features/flashcards.slice";
-import { useAppSelector } from "@redux/hooks";
+import {
+  createFlashcardThunk,
+  fetchFlashcardsThunk,
+  selectFlashcardsByIris,
+} from "@redux/features/flashcards.slice";
+import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import { selectDeckByIri } from "@redux/features/decks.slice";
 import { selectInstance } from "@redux/features/instances.slice";
 
@@ -20,13 +24,29 @@ export function Deck({ className, deckIri }: Props) {
   const { queryEngine } = useContext(QueryEngineContext);
   const deck = useAppSelector((state) => selectDeckByIri(state, deckIri));
   const flashcards = useAppSelector((state) =>
-    selectFlashcardByDeck(state, deckIri),
+    selectFlashcardsByIris(state, deck?.hasCard ?? []),
   );
   const currentInstance = useAppSelector(selectInstance);
+  const dispatch = useAppDispatch();
 
   if (!deck) {
     return <div>Loading deck...</div>;
   }
+
+  useEffect(() => {
+    if (!currentInstance) {
+      return;
+    }
+
+    void dispatch(
+      fetchFlashcardsThunk({
+        session,
+        queryEngine,
+        solidMemoDataIri: currentInstance.iri,
+        flashcardIris: deck.hasCard,
+      }),
+    );
+  }, [currentInstance, dispatch, session, queryEngine, deck]);
 
   const tryCreateFlashcard = async () => {
     if (!currentInstance) {
@@ -34,12 +54,20 @@ export function Deck({ className, deckIri }: Props) {
       return;
     }
 
-    await createFlashcard(session, queryEngine, currentInstance.iri, deckIri, {
-      version: "1",
-      front: "New front",
-      back: "New back",
-      isInDeck: deckIri,
-    });
+    dispatch(
+      createFlashcardThunk({
+        session,
+        queryEngine,
+        solidMemoDataIri: currentInstance.iri,
+        deckIri,
+        flashcard: {
+          version: "1",
+          front: "New front",
+          back: "New back",
+          isInDeck: deckIri,
+        },
+      }),
+    );
   };
 
   const tryDeleteDeck = async () => {
@@ -73,7 +101,7 @@ export function Deck({ className, deckIri }: Props) {
           </div>
         </CardHeader>
         <CardContent className="xs:grid-cols-4 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {flashcards.map((flashcard) => (
+          {Object.values(flashcards).map((flashcard) => (
             <Flashcard key={flashcard.iri} cardIri={flashcard.iri} />
           ))}
         </CardContent>

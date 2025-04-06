@@ -2,7 +2,6 @@ import { Button } from "@ui/index";
 import Layout from "@pages/layout";
 import { QueryEngineContext, SessionContext } from "@providers/index";
 import { fetchDecksThunk, selectDecks } from "@redux/features/decks.slice";
-import { fetchFlashcardsThunk } from "@redux/features/flashcards.slice";
 import { selectInstance } from "@redux/features/instances.slice";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import { createDeck } from "@services/solid.service";
@@ -24,13 +23,6 @@ export default function InstancePage() {
 
     void dispatch(
       fetchDecksThunk({
-        session,
-        queryEngine,
-        solidMemoDataIri: currentInstance.iri,
-      }),
-    );
-    void dispatch(
-      fetchFlashcardsThunk({
         session,
         queryEngine,
         solidMemoDataIri: currentInstance.iri,
@@ -60,7 +52,7 @@ export default function InstancePage() {
     <Layout>
       <div>Choose deck:</div>
       <Button onClick={tryCreateDeck}>Create new deck</Button>
-      {decks.map((deck) => (
+      {Object.values(decks).map((deck) => (
         <div key={deck.iri}>
           <Button
             onClick={() =>

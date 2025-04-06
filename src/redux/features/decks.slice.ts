@@ -3,14 +3,15 @@ import { fetchAllDeckIris, fetchDeck } from "@services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { DeckModel } from "@domain/index";
+import { createFlashcardThunk, deleteFlashcardThunk } from "./flashcards.slice";
 
 export interface DecksSliceState {
-  value: DeckModel[];
+  value: Record<string, DeckModel>;
   status: "idle" | "loading" | "failed";
 }
 
 const initialState: DecksSliceState = {
-  value: [],
+  value: {},
   status: "idle",
 };
 
@@ -50,8 +51,10 @@ export const decksSlice = createAppSlice({
           state.status = "loading";
         },
         fulfilled: (state, action) => {
+          for (const deck of action.payload) {
+            state.value[deck.iri] = deck;
+          }
           state.status = "idle";
-          state.value = action.payload;
         },
         rejected: (state) => {
           state.status = "failed";
@@ -59,12 +62,29 @@ export const decksSlice = createAppSlice({
       },
     ),
   }),
+  extraReducers: (builder) => {
+    builder.addCase(createFlashcardThunk.fulfilled, (state, action) => {
+      const flashcard = action.payload;
+      if (!flashcard) return;
+      state.value[flashcard.isInDeck]?.hasCard.push(flashcard.iri);
+    });
+
+    builder.addCase(deleteFlashcardThunk.fulfilled, (state, action) => {
+      const flashcard = action.payload;
+      const deck = state.value[flashcard.isInDeck];
+      if (deck) {
+        const index = deck.hasCard.indexOf(flashcard.iri);
+        if (index !== -1) {
+          deck.hasCard.splice(index, 1);
+        }
+      }
+    });
+  },
   // You can define your selectors here. These selectors receive the slice
   // state as their first argument.
   selectors: {
     selectDecks: (state) => state.value,
-    selectDeckByIri: (state, deckIri) =>
-      state.value.find((deck) => deck.iri === deckIri),
+    selectDeckByIri: (state, deckIri) => state.value[deckIri],
     selectStatus: (state) => state.status,
   },
 });

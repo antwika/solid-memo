@@ -1,12 +1,15 @@
 import { cn } from "@lib/utils";
 import type { ClassValue } from "clsx";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@ui/index";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { SessionContext, QueryEngineContext } from "@providers/index";
 import { deleteFlashcard } from "@services/solid.service";
-import { useAppSelector } from "@redux/hooks";
-import { selectFlashcardByIri } from "@redux/features/flashcards.slice";
+import {
+  deleteFlashcardThunk,
+  selectFlashcardByIri,
+} from "@redux/features/flashcards.slice";
 import { selectInstance } from "@redux/features/instances.slice";
+import { useAppDispatch, useAppSelector } from "@redux/hooks";
 
 type Props = {
   className?: ClassValue;
@@ -18,6 +21,7 @@ export function Flashcard({ className, cardIri }: Props) {
   const { queryEngine } = useContext(QueryEngineContext);
   const card = useAppSelector((state) => selectFlashcardByIri(state, cardIri));
   const currentInstance = useAppSelector(selectInstance);
+  const dispatch = useAppDispatch();
 
   if (!card) {
     return <div>Loading flashcard...</div>;
@@ -29,7 +33,15 @@ export function Flashcard({ className, cardIri }: Props) {
       return;
     }
 
-    await deleteFlashcard(session, queryEngine, currentInstance.iri, cardIri);
+    void dispatch(
+      deleteFlashcardThunk({
+        session,
+        queryEngine,
+        solidMemoDataIri: currentInstance.iri,
+        deckIri: card.isInDeck,
+        flashcard: card,
+      }),
+    );
   };
 
   return (

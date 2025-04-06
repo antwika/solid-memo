@@ -1,16 +1,21 @@
 import { createAppSlice } from "@redux/createAppSlice";
-import { fetchAllIriOfRdfType, fetchCard } from "@services/solid.service";
+import {
+  createFlashcard,
+  deleteFlashcard,
+  fetchAllIriOfRdfType,
+  fetchCard,
+} from "@services/solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { FlashcardModel } from "@domain/index";
 
 export interface FlashcardSliceState {
-  value: FlashcardModel[];
+  value: Record<string, FlashcardModel>;
   status: "idle" | "loading" | "failed";
 }
 
 const initialState: FlashcardSliceState = {
-  value: [],
+  value: {},
   status: "idle",
 };
 
@@ -26,18 +31,13 @@ export const flashcardsSlice = createAppSlice({
         session,
         queryEngine,
         solidMemoDataIri,
+        flashcardIris,
       }: {
         session: Session;
         queryEngine: QueryEngine;
         solidMemoDataIri: string;
+        flashcardIris: string[];
       }) => {
-        const flashcardIris = await fetchAllIriOfRdfType(
-          session,
-          queryEngine,
-          solidMemoDataIri,
-          "http://antwika.com/ns/solid-memo#Flashcard",
-        );
-
         const flashcards = (
           await Promise.all(
             flashcardIris.map((flashcardIri) =>
@@ -53,8 +53,86 @@ export const flashcardsSlice = createAppSlice({
           state.status = "loading";
         },
         fulfilled: (state, action) => {
+          for (const flashcard of action.payload) {
+            state.value[flashcard.iri] = flashcard;
+          }
+
           state.status = "idle";
-          state.value = action.payload;
+        },
+        rejected: (state) => {
+          state.status = "failed";
+        },
+      },
+    ),
+    createFlashcardThunk: create.asyncThunk(
+      async ({
+        session,
+        queryEngine,
+        solidMemoDataIri,
+        deckIri,
+        flashcard,
+      }: {
+        session: Session;
+        queryEngine: QueryEngine;
+        solidMemoDataIri: string;
+        deckIri: string;
+        flashcard: Omit<FlashcardModel, "iri">;
+      }) =>
+        createFlashcard(
+          session,
+          queryEngine,
+          solidMemoDataIri,
+          deckIri,
+          flashcard,
+        ),
+      {
+        pending: (state) => {
+          state.status = "loading";
+        },
+        fulfilled: (state, action) => {
+          const flashcard = action.payload;
+          if (!flashcard) return;
+          state.value[flashcard.iri] = flashcard;
+
+          state.status = "idle";
+        },
+        rejected: (state) => {
+          state.status = "failed";
+        },
+      },
+    ),
+    deleteFlashcardThunk: create.asyncThunk(
+      async ({
+        session,
+        queryEngine,
+        solidMemoDataIri,
+        deckIri,
+        flashcard,
+      }: {
+        session: Session;
+        queryEngine: QueryEngine;
+        solidMemoDataIri: string;
+        deckIri: string;
+        flashcard: FlashcardModel;
+      }) => {
+        await deleteFlashcard(
+          session,
+          queryEngine,
+          solidMemoDataIri,
+          flashcard.iri,
+        );
+        return flashcard;
+      },
+      {
+        pending: (state) => {
+          state.status = "loading";
+        },
+        fulfilled: (state, action) => {
+          const flashcard = action.payload;
+
+          delete state.value[flashcard.iri];
+
+          state.status = "idle";
         },
         rejected: (state) => {
           state.status = "failed";
@@ -66,21 +144,31 @@ export const flashcardsSlice = createAppSlice({
   // state as their first argument.
   selectors: {
     selectFlashcards: (state) => state.value,
-    selectFlashcardByIri: (state, flashcardIri) =>
-      state.value.find((flashcard) => flashcard.iri === flashcardIri),
-    selectFlashcardByDeck: (state, deckIri: string) =>
-      state.value.filter((flashcard) => flashcard.isInDeck.includes(deckIri)),
+    selectFlashcardByIri: (state, flashcardIri) => state.value[flashcardIri],
+    selectFlashcardsByIris: (state, flashcardIris: string[]) => {
+      let subset: Record<string, FlashcardModel> = {};
+      for (const iri of flashcardIris) {
+        if (state.value[iri]) {
+          subset[iri] = state.value[iri];
+        }
+      }
+      return subset;
+    },
     selectStatus: (state) => state.status,
   },
 });
 
 // Action creators are generated for each case reducer function.
-export const { fetchFlashcardsThunk } = flashcardsSlice.actions;
+export const {
+  fetchFlashcardsThunk,
+  createFlashcardThunk,
+  deleteFlashcardThunk,
+} = flashcardsSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
 export const {
   selectFlashcards,
   selectFlashcardByIri,
-  selectFlashcardByDeck,
+  selectFlashcardsByIris,
   selectStatus,
 } = flashcardsSlice.selectors;
