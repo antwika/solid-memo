@@ -9,6 +9,7 @@ import {
 } from "@redux/features/flashcards.slice";
 import { selectInstance } from "@redux/features/instances.slice";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
+import { Trash } from "lucide-react";
 
 type Props = {
   className?: ClassValue;
@@ -46,19 +47,25 @@ export function Flashcard({ className, cardIri }: Props) {
     <div className={cn("flex flex-col gap-6", className)}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Flashcard</CardTitle>
+          <CardTitle className="text-xl">
+            <div className="relative">
+              <div className="absolute top-0 right-0">
+                <Button
+                  title={cardIri}
+                  onClick={tryDeleteFlashcard}
+                  variant={"destructive"}
+                >
+                  <Trash />
+                </Button>
+              </div>
+            </div>
+            Flashcard
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           <div>Version: {card.version}</div>
           <div>Front: {card.front}</div>
           <div>Back: {card.back}</div>
-          <Button
-            title={cardIri}
-            onClick={tryDeleteFlashcard}
-            variant={"destructive"}
-          >
-            Delete flashcard
-          </Button>
         </CardContent>
       </Card>
     </div>

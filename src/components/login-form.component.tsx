@@ -35,7 +35,6 @@ export function LoginForm({ className, onSelectOidcIssuer }: Props) {
                 {oidcIssuers.map((oidcIssuer) => (
                   <Button
                     key={oidcIssuer.url}
-                    variant="outline"
                     className="w-full"
                     onClick={(evt) => {
                       evt.preventDefault();
