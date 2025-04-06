@@ -1,4 +1,3 @@
-import { useDeck } from "@src/hooks/useDeck";
 import { Flashcard } from "./Flashcard";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { cn } from "@src/lib/utils";
@@ -9,6 +8,9 @@ import { useContext } from "react";
 import { SessionContext } from "@src/providers/SessionProvider";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { SolidMemoDataContext } from "@src/providers/SolidMemoDataProvider";
+import { selectFlashcardByDeck } from "@src/redux/features/flashcards.slice";
+import { useAppSelector } from "@src/redux/hooks";
+import { selectDeckByIri } from "@src/redux/features/decks.slice";
 
 type Props = {
   className?: ClassValue;
@@ -16,10 +18,13 @@ type Props = {
 };
 
 export function Deck({ className, deckIri }: Props) {
-  const { deck } = useDeck(deckIri);
   const { session } = useContext(SessionContext);
   const { queryEngine } = useContext(QueryEngineContext);
   const { solidMemoData } = useContext(SolidMemoDataContext);
+  const deck = useAppSelector((state) => selectDeckByIri(state, deckIri));
+  const flashcards = useAppSelector((state) =>
+    selectFlashcardByDeck(state, deckIri),
+  );
 
   if (!deck) {
     return <div>Loading deck...</div>;
@@ -35,6 +40,7 @@ export function Deck({ className, deckIri }: Props) {
       version: "1",
       front: "New front",
       back: "New back",
+      isInDeck: deckIri,
     });
   };
 
@@ -65,8 +71,8 @@ export function Deck({ className, deckIri }: Props) {
           </div>
         </CardHeader>
         <CardContent className="xs:grid-cols-4 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {deck.hasCard.map((hasCardIri) => (
-            <Flashcard key={hasCardIri} cardIri={hasCardIri} />
+          {flashcards.map((flashcard) => (
+            <Flashcard key={flashcard.iri} cardIri={flashcard.iri} />
           ))}
         </CardContent>
       </Card>

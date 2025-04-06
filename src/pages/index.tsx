@@ -11,7 +11,9 @@ export default function Home() {
 
   return (
     <Layout>
-      <div>Choose Solid Memo Data instance:</div>
+      <div>
+        Choose Solid Memo Data instance: count: {solidMemoDataInstances.length}
+      </div>
       {solidMemoDataInstances.map((solidMemoDataInstance) => {
         return (
           <Button

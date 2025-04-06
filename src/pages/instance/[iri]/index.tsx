@@ -1,13 +1,14 @@
 import { Button } from "@src/components/ui";
-import { useDecks } from "@src/hooks/useDecks";
-import { useIris } from "@src/hooks/useIris";
 import Layout from "@src/pages/layout";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { SessionContext } from "@src/providers/SessionProvider";
 import { SolidMemoDataContext } from "@src/providers/SolidMemoDataProvider";
+import { fetchDecksThunk, selectDecks } from "@src/redux/features/decks.slice";
+import { fetchFlashcardsThunk } from "@src/redux/features/flashcards.slice";
+import { useAppDispatch, useAppSelector } from "@src/redux/hooks";
 import { createDeck } from "@src/services/solid.service";
 import { useRouter } from "next/router";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 
 export default function InstancePage() {
   const { session } = useContext(SessionContext);
@@ -16,12 +17,27 @@ export default function InstancePage() {
 
   const router = useRouter();
 
-  const { iris } = useIris(
-    solidMemoData?.iri,
-    "http://antwika.com/ns/solid-memo#Deck",
-  );
+  const dispatch = useAppDispatch();
+  const decks = useAppSelector(selectDecks);
 
-  const { decks } = useDecks(iris);
+  //const deps = [session, queryEngine, solidMemoData!.iri, dispatch];
+
+  useEffect(() => {
+    void dispatch(
+      fetchDecksThunk({
+        session,
+        queryEngine,
+        solidMemoDataIri: solidMemoData!.iri,
+      }),
+    );
+    void dispatch(
+      fetchFlashcardsThunk({
+        session,
+        queryEngine,
+        solidMemoDataIri: solidMemoData!.iri,
+      }),
+    );
+  }, [session, queryEngine, solidMemoData, dispatch]);
 
   if (!solidMemoData) {
     return <div>No solid memo instance selected!</div>;
@@ -53,7 +69,7 @@ export default function InstancePage() {
             }
             title={deck.iri}
           >
-            Deck: {deck.name}
+            Deck: {deck.name} ({deck.hasCard.length} cards)
           </Button>
         </div>
       ))}

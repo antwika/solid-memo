@@ -1,4 +1,3 @@
-import { useCard } from "@src/hooks/useCard";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { cn } from "@src/lib/utils";
 import type { ClassValue } from "clsx";
@@ -8,6 +7,8 @@ import { SessionContext } from "@src/providers/SessionProvider";
 import { SolidMemoDataContext } from "@src/providers/SolidMemoDataProvider";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { deleteFlashcard } from "@src/services/solid.service";
+import { useAppSelector } from "@src/redux/hooks";
+import { selectFlashcardByIri } from "@src/redux/features/flashcards.slice";
 
 type Props = {
   className?: ClassValue;
@@ -18,7 +19,7 @@ export function Flashcard({ className, cardIri }: Props) {
   const { session } = useContext(SessionContext);
   const { queryEngine } = useContext(QueryEngineContext);
   const { solidMemoData } = useContext(SolidMemoDataContext);
-  const { card } = useCard(cardIri);
+  const card = useAppSelector((state) => selectFlashcardByIri(state, cardIri));
 
   if (!card) {
     return <div>Loading flashcard...</div>;

@@ -10,6 +10,7 @@ export async function fetchSolidMemoDataInstances(
   queryEngine: QueryEngine,
   privateTypeIndex: string,
 ) {
+  console.log("Fetchin.....");
   const bindingsStream = await queryEngine.queryBindings(
     `
         SELECT ?solidMemoDataIri
@@ -30,14 +31,18 @@ export async function fetchSolidMemoDataInstances(
     acc.push(solidMemoDataIri.value);
     return acc;
   }, []);
+  console.log("Found solidMemoDataIris:", solidMemoDataIris);
 
   const promises = solidMemoDataIris.map((iri) => {
     return fetchSolidMemoDataInstance(session, queryEngine, iri);
   });
+  console.log("promises.....", promises);
 
   const solidMemoDataInstances = (await Promise.all(promises)).filter(
     (solidMemoDataInstance) => solidMemoDataInstance !== undefined,
   );
+
+  console.log("Found solidMemoDataInstances:", solidMemoDataInstances);
 
   return solidMemoDataInstances;
 }
@@ -123,6 +128,7 @@ export async function createFlashcard(
     version: flashcard.version,
     front: flashcard.front,
     back: flashcard.back,
+    isInDeck: flashcard.isInDeck,
   };
 
   return createdFlashcard;
@@ -164,12 +170,13 @@ export async function fetchCard(
 
   const bindingsStream = await queryEngine.queryBindings(
     `
-        SELECT ?version ?front ?back
+        SELECT ?version ?front ?back ?isInDeck
         WHERE {
             <${cardIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Flashcard> .
             <${cardIri}> <http://antwika.com/ns/solid-memo#version> ?version .
             <${cardIri}> <http://antwika.com/ns/solid-memo#front> ?front .
             <${cardIri}> <http://antwika.com/ns/solid-memo#back> ?back .
+            <${cardIri}> <http://antwika.com/ns/solid-memo#isInDeck> ?isInDeck .
         } LIMIT 100`,
     {
       sources: [cardIri],
@@ -182,14 +189,17 @@ export async function fetchCard(
     const version = binding.get("version");
     const front = binding.get("front");
     const back = binding.get("back");
+    const isInDeck = binding.get("isInDeck");
     if (!version) return acc;
     if (!front) return acc;
     if (!back) return acc;
+    if (!isInDeck) return acc;
     acc.push({
       iri: cardIri,
       version: version.value,
       front: front.value,
       back: back.value,
+      isInDeck: isInDeck.value,
     });
     return acc;
   }, []);
