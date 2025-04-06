@@ -1,7 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { cn } from "@src/lib/utils";
 import type { ClassValue } from "clsx";
-import { Button } from "./ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@src/ui";
 import { useContext } from "react";
 import { SessionContext } from "@src/providers/SessionProvider";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";

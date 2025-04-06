@@ -1,14 +1,14 @@
 import { cn } from "@src/lib/utils";
-import { Button } from "@src/components/ui/button";
 import {
+  Button,
+  Input,
+  Label,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@src/components/ui/card";
-import { Input } from "@src/components/ui/input";
-import { Label } from "@src/components/ui/label";
+} from "@src/ui";
 import type { ClassValue } from "clsx";
 
 type Props = {

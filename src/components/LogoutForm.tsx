@@ -1,12 +1,12 @@
 import { cn } from "@src/lib/utils";
-import { Button } from "@src/components/ui/button";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@src/components/ui/card";
+} from "@src/ui";
 import type { ClassValue } from "clsx";
 
 type Props = {

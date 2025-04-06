@@ -1,4 +1,4 @@
-import { Button } from "@src/components/ui";
+import { Button } from "@src/ui";
 import Layout from "@src/pages/layout";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { SessionContext } from "@src/providers/SessionProvider";

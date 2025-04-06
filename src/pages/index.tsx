@@ -1,6 +1,6 @@
 import Layout from "@src/pages/layout";
 import { useRouter } from "next/navigation";
-import { Button } from "@src/components/ui";
+import { Button } from "@src/ui";
 import { useAppDispatch, useAppSelector } from "@src/redux/hooks";
 import {
   fetchSolidMemoDataThunk,
