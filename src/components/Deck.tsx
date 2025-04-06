@@ -7,10 +7,10 @@ import { createFlashcard, deleteDeck } from "@src/services/solid.service";
 import { useContext } from "react";
 import { SessionContext } from "@src/providers/SessionProvider";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
-import { SolidMemoDataContext } from "@src/providers/SolidMemoDataProvider";
 import { selectFlashcardByDeck } from "@src/redux/features/flashcards.slice";
 import { useAppSelector } from "@src/redux/hooks";
 import { selectDeckByIri } from "@src/redux/features/decks.slice";
+import { selectCurrentInstance } from "@src/redux/features/solidMemoData.slice";
 
 type Props = {
   className?: ClassValue;
@@ -20,23 +20,23 @@ type Props = {
 export function Deck({ className, deckIri }: Props) {
   const { session } = useContext(SessionContext);
   const { queryEngine } = useContext(QueryEngineContext);
-  const { solidMemoData } = useContext(SolidMemoDataContext);
   const deck = useAppSelector((state) => selectDeckByIri(state, deckIri));
   const flashcards = useAppSelector((state) =>
     selectFlashcardByDeck(state, deckIri),
   );
+  const currentInstance = useAppSelector(selectCurrentInstance);
 
   if (!deck) {
     return <div>Loading deck...</div>;
   }
 
   const tryCreateFlashcard = async () => {
-    if (!solidMemoData) {
+    if (!currentInstance) {
       console.error("An instance must be selected");
       return;
     }
 
-    await createFlashcard(session, queryEngine, solidMemoData.iri, deckIri, {
+    await createFlashcard(session, queryEngine, currentInstance, deckIri, {
       version: "1",
       front: "New front",
       back: "New back",
@@ -45,12 +45,12 @@ export function Deck({ className, deckIri }: Props) {
   };
 
   const tryDeleteDeck = async () => {
-    if (!solidMemoData) {
+    if (!currentInstance) {
       console.error("An instance must be selected");
       return;
     }
 
-    await deleteDeck(session, queryEngine, solidMemoData.iri, deckIri);
+    await deleteDeck(session, queryEngine, currentInstance, deckIri);
   };
 
   return (

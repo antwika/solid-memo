@@ -4,7 +4,6 @@ import { Geist } from "next/font/google";
 import "@src/styles/globals.css";
 import { SessionProvider } from "@src/providers/SessionProvider";
 import { QueryEngineProvider } from "@src/providers/QueryEngineProvider";
-import { SolidMemoDataProvider } from "@src/providers/SolidMemoDataProvider";
 import { StoreProvider } from "@src/providers/StoreProvider";
 
 const geist = Geist({
@@ -17,9 +16,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
       <StoreProvider>
         <SessionProvider>
           <QueryEngineProvider>
-            <SolidMemoDataProvider>
-              <Component {...pageProps} />
-            </SolidMemoDataProvider>
+            <Component {...pageProps} />
           </QueryEngineProvider>
         </SessionProvider>
       </StoreProvider>

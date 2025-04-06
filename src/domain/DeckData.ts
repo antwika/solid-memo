@@ -3,4 +3,5 @@ export type DeckData = {
   version: string;
   name: string;
   hasCard: string[];
+  isInSolidMemoDataInstance: string;
 };

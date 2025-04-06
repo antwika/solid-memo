@@ -54,43 +54,56 @@ export async function fetchSolidMemoDataInstance(
 ) {
   const bindingsStream = await queryEngine.queryBindings(
     `
-        SELECT ?version ?name
-        WHERE {
-            ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#SolidMemoData> .
-            ?s <http://antwika.com/ns/solid-memo#version> ?version .
-            ?s <http://antwika.com/ns/solid-memo#name> ?name .
-        } LIMIT 100`,
+      SELECT ?subject ?version ?name ?hasDeck
+      WHERE {
+        ?subject <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#SolidMemoData> .
+        ?subject <http://antwika.com/ns/solid-memo#version> ?version .
+        ?subject <http://antwika.com/ns/solid-memo#name> ?name .
+        OPTIONAL {
+          ?subject <http://antwika.com/ns/solid-memo#hasDeck> ?hasDeck .
+        }
+      }
+      LIMIT 100`,
     {
       sources: [solidMemoDataInstanceIri],
       fetch: session.fetch,
     },
   );
   const bindings = await bindingsStream.toArray();
-  const solidMemoDataInstances = bindings.reduce<SolidMemoData[]>(
+
+  const instances = bindings.reduce<Record<string, SolidMemoData>>(
     (acc, binding) => {
-      const solidMemoDataInstanceVersion = binding.get("version");
-      const solidMemoDataInstanceName = binding.get("name");
-      if (!solidMemoDataInstanceVersion) return acc;
-      if (!solidMemoDataInstanceName) return acc;
-      acc.push({
+      const subject = binding.get("subject");
+      const version = binding.get("version");
+      const name = binding.get("name");
+      const hasDeck = binding.get("hasDeck");
+
+      if (!subject) return acc;
+      if (!version) return acc;
+      if (!name) return acc;
+      if (!hasDeck) return acc;
+
+      acc[subject.value] ??= {
         iri: solidMemoDataInstanceIri,
-        version: solidMemoDataInstanceVersion.value,
-        name: solidMemoDataInstanceName.value,
-      });
+        version: version.value,
+        name: name.value,
+        hasDeck: [],
+      };
+
+      const entry = acc[subject.value];
+
+      if (entry) {
+        if (!entry.hasDeck.includes(hasDeck.value)) {
+          entry.hasDeck.push(hasDeck.value);
+        }
+      }
+
       return acc;
     },
-    [],
+    {},
   );
 
-  if (solidMemoDataInstances.length > 1) {
-    throw new Error("Too many cards found for a single iri");
-  }
-
-  if (solidMemoDataInstances.length === 1) {
-    return solidMemoDataInstances[0];
-  } else {
-    return undefined;
-  }
+  return instances;
 }
 
 export async function createFlashcard(
@@ -299,6 +312,7 @@ export async function createDeck(
     version: deck.version,
     name: deck.name,
     hasCard: [],
+    isInSolidMemoDataInstance: solidMemoDataIri,
   };
 
   return createdDeck;
@@ -340,11 +354,12 @@ export const fetchDeck = async (
 
   const bindingsStream = await queryEngine.queryBindings(
     `
-        SELECT ?version ?name
+        SELECT ?version ?name ?isInSolidMemoDataInstance
         WHERE {
             <${deckIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
             <${deckIri}> <http://antwika.com/ns/solid-memo#version> ?version .
             <${deckIri}> <http://antwika.com/ns/solid-memo#name> ?name .
+            <${deckIri}> <http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance> ?isInSolidMemoDataInstance .
         } LIMIT 100`,
     {
       sources: [deckIri],
@@ -356,13 +371,18 @@ export const fetchDeck = async (
   const decks = bindings.reduce<DeckData[]>((acc, binding) => {
     const version = binding.get("version");
     const name = binding.get("name");
+    const isInSolidMemoDataInstance = binding.get("isInSolidMemoDataInstance");
+
     if (!version) return acc;
     if (!name) return acc;
+    if (!isInSolidMemoDataInstance) return acc;
+
     acc.push({
       iri: deckIri,
       version: version.value,
       name: name.value,
       hasCard: cardIris,
+      isInSolidMemoDataInstance: isInSolidMemoDataInstance.value,
     });
     return acc;
   }, []);

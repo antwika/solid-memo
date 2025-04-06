@@ -4,11 +4,11 @@ import type { ClassValue } from "clsx";
 import { Button } from "./ui";
 import { useContext } from "react";
 import { SessionContext } from "@src/providers/SessionProvider";
-import { SolidMemoDataContext } from "@src/providers/SolidMemoDataProvider";
 import { QueryEngineContext } from "@src/providers/QueryEngineProvider";
 import { deleteFlashcard } from "@src/services/solid.service";
 import { useAppSelector } from "@src/redux/hooks";
 import { selectFlashcardByIri } from "@src/redux/features/flashcards.slice";
+import { selectCurrentInstance } from "@src/redux/features/solidMemoData.slice";
 
 type Props = {
   className?: ClassValue;
@@ -18,20 +18,20 @@ type Props = {
 export function Flashcard({ className, cardIri }: Props) {
   const { session } = useContext(SessionContext);
   const { queryEngine } = useContext(QueryEngineContext);
-  const { solidMemoData } = useContext(SolidMemoDataContext);
   const card = useAppSelector((state) => selectFlashcardByIri(state, cardIri));
+  const currentInstance = useAppSelector(selectCurrentInstance);
 
   if (!card) {
     return <div>Loading flashcard...</div>;
   }
 
   const tryDeleteFlashcard = async () => {
-    if (!solidMemoData) {
+    if (!currentInstance) {
       console.error("An instance must be selected");
       return;
     }
 
-    await deleteFlashcard(session, queryEngine, solidMemoData.iri, cardIri);
+    await deleteFlashcard(session, queryEngine, currentInstance, cardIri);
   };
 
   return (
