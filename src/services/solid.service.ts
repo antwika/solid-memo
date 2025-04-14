@@ -23,7 +23,6 @@ export async function createInstance(
   storageIri: string,
   privateTypeIndexIri: string,
 ) {
-  const typeRegistrationIri = `${privateTypeIndexIri}#${uuid().toString()}`;
   const instanceContainerIri = `${storageIri}${uuid().toString()}/`;
   const instanceIri = `${instanceContainerIri}data`;
 
@@ -155,16 +154,19 @@ export async function fetchSolidMemoDataInstance(
       const version = binding.get("version");
       const name = binding.get("name");
       const hasDeck = binding.get("hasDeck");
+      const isInPrivateTypeIndex = binding.get("isInPrivateTypeIndex");
 
       if (!subject) return acc;
       if (!version) return acc;
       if (!name) return acc;
+      if (!isInPrivateTypeIndex) return acc;
 
       acc[subject.value] ??= {
         iri: solidMemoDataInstanceIri,
         version: version.value,
         name: name.value,
         hasDeck: [],
+        isInPrivateTypeIndex: isInPrivateTypeIndex.value,
       };
 
       if (hasDeck) {

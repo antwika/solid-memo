@@ -9,7 +9,6 @@ import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { DeckModel } from "@domain/index";
 import { createFlashcardThunk, deleteFlashcardThunk } from "./flashcards.slice";
-import { pickInstance } from "./instances.slice";
 
 export interface DecksSliceState {
   iris: string[];

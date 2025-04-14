@@ -7,7 +7,7 @@ import {
   pickInstance,
   selectInstances,
 } from "@redux/features/instances.slice";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { SessionContext, QueryEngineContext } from "@providers/index";
 
 export default function Home() {
@@ -28,8 +28,13 @@ export default function Home() {
       </Button>
       <Button
         onClick={() => {
-          dispatch(fetchSolidMemoDataThunk({ session, queryEngine }));
-          console.log("Fetch instances!");
+          dispatch(fetchSolidMemoDataThunk({ session, queryEngine }))
+            .then(() => {
+              /* NOP */
+            })
+            .catch((err) => {
+              console.log("Failed with error:", err);
+            });
         }}
       >
         Fetch instances

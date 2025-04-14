@@ -1,18 +1,14 @@
 import { Button } from "@ui/index";
 import Layout from "@pages/layout";
 import { QueryEngineContext, SessionContext } from "@providers/index";
-import {
-  createDeckThunk,
-  fetchDecksThunk,
-  selectDecks,
-} from "@redux/features/decks.slice";
+import { createDeckThunk, selectDecks } from "@redux/features/decks.slice";
 import {
   selectInstanceByIri,
   selectInstanceIri,
 } from "@redux/features/instances.slice";
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
 import { useRouter } from "next/router";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 
 export default function InstancePage() {
   const { session } = useContext(SessionContext);

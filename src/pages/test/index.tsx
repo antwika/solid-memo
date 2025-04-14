@@ -43,6 +43,9 @@ export default function TestPage() {
               })
               .then((flashcardUrls) => {
                 setFlashcardUrls(flashcardUrls);
+              })
+              .catch((err) => {
+                console.log("Failed with error:", err);
               });
           }}
         >
@@ -52,7 +55,10 @@ export default function TestPage() {
           onClick={() => {
             solidRepository
               .findAllInstanceUrls(session)
-              .then((instanceUrls) => setInstanceUrls(instanceUrls));
+              .then((instanceUrls) => setInstanceUrls(instanceUrls))
+              .catch((err) => {
+                console.log("Failed with error:", err);
+              });
           }}
         >
           Fetch all instances
@@ -84,6 +90,9 @@ export default function TestPage() {
               .then((instances) => {
                 setViewUrl(undefined);
                 setInstances(instances);
+              })
+              .catch((err) => {
+                console.log("Failed with error:", err);
               });
           }}
         >
@@ -106,8 +115,11 @@ export default function TestPage() {
                     console.log("Looking for instanceUrl:", instanceUrl);
                     console.log("Found instances:", instances);
                     setInstances(instances);
-                    setDeckUrls(instances[instanceUrl]?.hasDeck || []);
+                    setDeckUrls(instances[instanceUrl]?.hasDeck ?? []);
                     setViewUrl(instances[instanceUrl]?.iri);
+                  })
+                  .catch((err) => {
+                    console.log("Failed with error:", err);
                   });
               }}
             >
@@ -121,12 +133,17 @@ export default function TestPage() {
             <Button
               size={"sm"}
               onClick={() => {
-                solidRepository.findDecks(session, [deckUrl]).then((decks) => {
-                  console.log("Found decks:", decks);
-                  setDecks(decks);
-                  setFlashcardUrls(decks[deckUrl]?.hasCard || []);
-                  setViewUrl(decks[deckUrl]?.iri);
-                });
+                solidRepository
+                  .findDecks(session, [deckUrl])
+                  .then((decks) => {
+                    console.log("Found decks:", decks);
+                    setDecks(decks);
+                    setFlashcardUrls(decks[deckUrl]?.hasCard ?? []);
+                    setViewUrl(decks[deckUrl]?.iri);
+                  })
+                  .catch((err) => {
+                    console.log("Failed with error:", err);
+                  });
               }}
             >
               View
@@ -150,6 +167,9 @@ export default function TestPage() {
                     );
                     setFlashcards(flashcards);
                     setViewUrl(flashcardUrl);
+                  })
+                  .catch((err) => {
+                    console.log("Failed with error:", err);
                   });
               }}
             >
@@ -181,6 +201,9 @@ export default function TestPage() {
                   .then((instances) => {
                     setViewUrl(undefined);
                     setInstances(instances);
+                  })
+                  .catch((err) => {
+                    console.log("Failed with error:", err);
                   });
               }}
             >
@@ -198,6 +221,9 @@ export default function TestPage() {
                   .then((decks) => {
                     setDeckUrls(Object.keys(decks));
                     setDecks(decks);
+                  })
+                  .catch((err) => {
+                    console.log("Failed with error:", err);
                   });
               }}
             >
@@ -242,6 +268,9 @@ export default function TestPage() {
                     setViewUrl(viewDeck.isInSolidMemoDataInstance);
                     setDeckUrls(Object.keys(decks));
                     setDecks(decks);
+                  })
+                  .catch((err) => {
+                    console.log("Failed with error:", err);
                   });
               }}
             >
@@ -266,8 +295,11 @@ export default function TestPage() {
                   })
                   .then((decks) => {
                     setDecks(decks);
-                    setFlashcardUrls(decks[viewDeck.iri]?.hasCard || []);
+                    setFlashcardUrls(decks[viewDeck.iri]?.hasCard ?? []);
                     setViewUrl(decks[viewDeck.iri]?.iri);
+                  })
+                  .catch((err) => {
+                    console.log("Failed with error:", err);
                   });
               }}
             >
@@ -312,6 +344,9 @@ export default function TestPage() {
                     setViewUrl(viewFlashcard.isInDeck);
                     setFlashcardUrls(Object.keys(flashcards));
                     setFlashcards(flashcards);
+                  })
+                  .catch((err) => {
+                    console.log("Failed with error:", err);
                   });
               }}
             >

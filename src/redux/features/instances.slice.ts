@@ -39,12 +39,10 @@ export const instancesSlice = createAppSlice({
     createInstanceThunk: create.asyncThunk(
       async ({
         session,
-        queryEngine,
         storageIri,
         privateTypeIndexIri,
       }: {
         session: Session;
-        queryEngine: QueryEngine;
         storageIri: string;
         privateTypeIndexIri: string;
       }) => createInstance(session, storageIri, privateTypeIndexIri),
@@ -52,7 +50,7 @@ export const instancesSlice = createAppSlice({
         pending: (state) => {
           state.status = "loading";
         },
-        fulfilled: (state, action) => {
+        fulfilled: (state, _action) => {
           state.status = "idle";
         },
         rejected: (state) => {
@@ -64,11 +62,9 @@ export const instancesSlice = createAppSlice({
       async ({
         session,
         queryEngine,
-        deprecatedWebIdParam,
       }: {
         session: Session;
         queryEngine: QueryEngine;
-        deprecatedWebIdParam?: string;
       }) => {
         const webId = session.info?.webId;
         if (!webId) {

@@ -171,7 +171,7 @@ export default class SolidRepository implements IRepository {
     providedInstanceUrls?: string[],
   ): Promise<Record<string, InstanceModel>> {
     const instanceUrls =
-      providedInstanceUrls || (await this.findAllInstanceUrls(session));
+      providedInstanceUrls ?? (await this.findAllInstanceUrls(session));
 
     const instanceDatasets = await Promise.all(
       instanceUrls.map((instanceUrl) =>
@@ -228,7 +228,7 @@ export default class SolidRepository implements IRepository {
     providedInstanceUrls?: string[],
   ): Promise<string[]> {
     const instanceUrls =
-      providedInstanceUrls || (await this.findAllInstanceUrls(session));
+      providedInstanceUrls ?? (await this.findAllInstanceUrls(session));
 
     const instanceDatasets = await Promise.all(
       instanceUrls.map((instanceUrl) =>
@@ -279,7 +279,7 @@ export default class SolidRepository implements IRepository {
     session: Session,
     providedDeckUrls?: string[],
   ): Promise<Record<string, DeckModel>> {
-    const deckUrls = providedDeckUrls || (await this.findAllDeckUrls(session));
+    const deckUrls = providedDeckUrls ?? (await this.findAllDeckUrls(session));
 
     const deckDatasets = await Promise.all(
       deckUrls.map((deckUrl) =>
@@ -479,11 +479,9 @@ export default class SolidRepository implements IRepository {
       updatedInstanceThing,
     );
 
-    const savedInstanceDataset = await saveSolidDatasetAt(
-      instanceIri,
-      updatedInstanceDataset,
-      { fetch: session.fetch },
-    );
+    await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
+      fetch: session.fetch,
+    });
   }
 
   async createDeck(
@@ -666,7 +664,7 @@ export default class SolidRepository implements IRepository {
       );
     }
 
-    const savedPrivateTypeIndexDataset = await saveSolidDatasetAt(
+    await saveSolidDatasetAt(
       privateTypeIndexIri,
       updatedPrivateTypeIndexDataset,
       { fetch: session.fetch },
@@ -711,11 +709,9 @@ export default class SolidRepository implements IRepository {
       );
     }
 
-    const savedInstanceDataset = await saveSolidDatasetAt(
-      instanceIri,
-      updatedInstanceDataset,
-      { fetch: session.fetch },
-    );
+    await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
+      fetch: session.fetch,
+    });
   }
 
   async deleteFlashcard(
@@ -741,10 +737,8 @@ export default class SolidRepository implements IRepository {
       updatedDeckDataset = setThing(updatedDeckDataset, updatedDeckThing);
     }
 
-    const savedDeckDataset = await saveSolidDatasetAt(
-      deckIri,
-      updatedDeckDataset,
-      { fetch: session.fetch },
-    );
+    await saveSolidDatasetAt(deckIri, updatedDeckDataset, {
+      fetch: session.fetch,
+    });
   }
 }
