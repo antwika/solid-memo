@@ -6,6 +6,7 @@ import { Button } from "@ui/button.ui";
 import { Card } from "@ui/card.ui";
 import { useContext, useState } from "react";
 import { SolidRepository } from "src/repositories/index";
+import { Database, Layers, StickyNote } from "lucide-react";
 
 const solidRepository = new SolidRepository();
 
@@ -104,7 +105,8 @@ export default function TestPage() {
           <strong>Known urls:</strong>
         </div>
         {instanceUrls.map((instanceUrl) => (
-          <div key={instanceUrl}>
+          <div key={instanceUrl} className="flex items-center gap-2">
+            <Database />
             Instance: {instanceUrl}{" "}
             <Button
               size={"sm"}
@@ -128,7 +130,8 @@ export default function TestPage() {
           </div>
         ))}
         {deckUrls.map((deckUrl) => (
-          <div key={deckUrl}>
+          <div key={deckUrl} className="flex items-center gap-2">
+            <Layers />
             Deck: {deckUrl}{" "}
             <Button
               size={"sm"}
@@ -151,7 +154,8 @@ export default function TestPage() {
           </div>
         ))}
         {flashcardUrls.map((flashcardUrl) => (
-          <div key={flashcardUrl}>
+          <div key={flashcardUrl} className="flex items-center gap-2">
+            <StickyNote />
             Flashcard: {flashcardUrl}{" "}
             <Button
               size={"sm"}
@@ -181,7 +185,10 @@ export default function TestPage() {
       {viewInstance && (
         <Card className="p-2">
           <div className="space-x-2">
-            <strong>Instance</strong>
+            <div className="flex gap-1">
+              <Database />
+              <strong>Instance</strong>
+            </div>
             <div>Iri: {viewInstance.iri}</div>
             <div>Version: {viewInstance.version}</div>
             <div>Name: {viewInstance.name}</div>
@@ -235,7 +242,10 @@ export default function TestPage() {
       {viewDeck && (
         <Card className="p-2">
           <div className="space-x-2">
-            <strong>Deck</strong>
+            <div className="flex gap-1">
+              <Layers />
+              <strong>Deck</strong>
+            </div>
             <div>Iri: {viewDeck.iri}</div>
             <div>Version: {viewDeck.version}</div>
             <div>Name: {viewDeck.name}</div>
@@ -311,7 +321,10 @@ export default function TestPage() {
       {viewFlashcard && (
         <Card className="p-2">
           <div className="space-x-2">
-            <strong>Flashcard</strong>
+            <div className="flex gap-1">
+              <StickyNote />
+              <strong>Flashcard</strong>
+            </div>
             <div>Iri: {viewFlashcard.iri}</div>
             <div>Version: {viewFlashcard.version}</div>
             <div>Front: {viewFlashcard.front}</div>
