@@ -27,18 +27,6 @@ export default function InstancePage() {
     selectInstanceByIri(state, currentInstanceIri),
   );
 
-  useEffect(() => {
-    if (!currentInstance) return;
-
-    void dispatch(
-      fetchDecksThunk({
-        session,
-        queryEngine,
-        solidMemoDataIri: currentInstance.iri,
-      }),
-    );
-  }, [session, queryEngine, currentInstance, dispatch]);
-
   if (!currentInstance) {
     return <div>No solid memo instance selected!</div>;
   }

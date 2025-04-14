@@ -9,13 +9,16 @@ import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { DeckModel } from "@domain/index";
 import { createFlashcardThunk, deleteFlashcardThunk } from "./flashcards.slice";
+import { pickInstance } from "./instances.slice";
 
 export interface DecksSliceState {
+  iris: string[];
   value: Record<string, DeckModel>;
   status: "idle" | "loading" | "failed";
 }
 
 const initialState: DecksSliceState = {
+  iris: [],
   value: {},
   status: "idle",
 };
@@ -57,8 +60,42 @@ export const decksSlice = createAppSlice({
         },
         fulfilled: (state, action) => {
           for (const deck of action.payload) {
+            const index = state.iris.indexOf(deck.iri);
+            if (index === -1) state.iris.push(deck.iri);
             state.value[deck.iri] = deck;
           }
+          state.status = "idle";
+        },
+        rejected: (state) => {
+          state.status = "failed";
+        },
+      },
+    ),
+    fetchDeckThunk: create.asyncThunk(
+      async ({
+        session,
+        queryEngine,
+        deckIri,
+      }: {
+        session: Session;
+        queryEngine: QueryEngine;
+        deckIri: string;
+      }) => {
+        const fetchedDeck = await fetchDeck(session, queryEngine, deckIri);
+        if (!fetchedDeck) {
+          throw new Error(`Failed to fetch deck by iri: ${deckIri}`);
+        }
+        return fetchedDeck;
+      },
+      {
+        pending: (state) => {
+          state.status = "loading";
+        },
+        fulfilled: (state, action) => {
+          const fetchedDeck = action.payload;
+          state.value[fetchedDeck.iri] = fetchedDeck;
+          const index = state.iris.indexOf(fetchedDeck.iri);
+          if (index === -1) state.iris.push(fetchedDeck.iri);
           state.status = "idle";
         },
         rejected: (state) => {
@@ -87,6 +124,9 @@ export const decksSlice = createAppSlice({
           if (!createdDeck) return;
 
           state.value[createdDeck.iri] = createdDeck;
+
+          const index = state.iris.indexOf(createdDeck.iri);
+          if (index === -1) state.iris.push(createdDeck.iri);
 
           state.status = "idle";
           console.log("Deck created", createdDeck);
@@ -121,6 +161,10 @@ export const decksSlice = createAppSlice({
           if (state.value[deletedDeck.iri]) {
             delete state.value[deletedDeck.iri];
           }
+
+          const index = state.iris.indexOf(deletedDeck.iri);
+          if (index !== -1) state.iris.splice(index, 1);
+
           state.status = "idle";
           console.log("Deck deleted", deletedDeck);
         },
@@ -156,6 +200,7 @@ export const decksSlice = createAppSlice({
   // You can define your selectors here. These selectors receive the slice
   // state as their first argument.
   selectors: {
+    selectIris: (state) => state.iris,
     selectDecks: (state) => state.value,
     selectDeckByIri: (state, deckIri: string) => state.value[deckIri],
     selectStatus: (state) => state.status,
@@ -163,9 +208,13 @@ export const decksSlice = createAppSlice({
 });
 
 // Action creators are generated for each case reducer function.
-export const { fetchDecksThunk, createDeckThunk, deleteDeckThunk } =
-  decksSlice.actions;
+export const {
+  fetchDecksThunk,
+  fetchDeckThunk,
+  createDeckThunk,
+  deleteDeckThunk,
+} = decksSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
-export const { selectDecks, selectDeckByIri, selectStatus } =
+export const { selectIris, selectDecks, selectDeckByIri, selectStatus } =
   decksSlice.selectors;

@@ -1,5 +1,6 @@
 import { createAppSlice } from "@redux/createAppSlice";
 import {
+  createInstance,
   fetchAllPrivateTypeIndexIris,
   fetchSolidMemoDataInstances,
 } from "@services/solid.service";
@@ -10,12 +11,14 @@ import { type PayloadAction } from "@reduxjs/toolkit";
 import { createDeckThunk, deleteDeckThunk } from "./decks.slice";
 
 export interface InstancesSliceState {
+  iris: string[];
   value: Record<string, InstanceModel>;
   instanceIri: string | undefined;
   status: "idle" | "loading" | "failed";
 }
 
 const initialState: InstancesSliceState = {
+  iris: [],
   value: {},
   instanceIri: undefined,
   status: "idle",
@@ -33,17 +36,45 @@ export const instancesSlice = createAppSlice({
         state.instanceIri = action.payload.iri;
       },
     ),
+    createInstanceThunk: create.asyncThunk(
+      async ({
+        session,
+        queryEngine,
+        storageIri,
+        privateTypeIndexIri,
+      }: {
+        session: Session;
+        queryEngine: QueryEngine;
+        storageIri: string;
+        privateTypeIndexIri: string;
+      }) => createInstance(session, storageIri, privateTypeIndexIri),
+      {
+        pending: (state) => {
+          state.status = "loading";
+        },
+        fulfilled: (state, action) => {
+          state.status = "idle";
+        },
+        rejected: (state) => {
+          state.status = "failed";
+        },
+      },
+    ),
     fetchSolidMemoDataThunk: create.asyncThunk(
       async ({
         session,
         queryEngine,
-        webId,
+        deprecatedWebIdParam,
       }: {
         session: Session;
         queryEngine: QueryEngine;
-        webId?: string;
+        deprecatedWebIdParam?: string;
       }) => {
-        if (!webId) return {};
+        const webId = session.info?.webId;
+        if (!webId) {
+          console.error("No WebID");
+          return undefined;
+        }
 
         const privateTypeIndices = await fetchAllPrivateTypeIndexIris(
           session,
@@ -82,7 +113,16 @@ export const instancesSlice = createAppSlice({
           state.status = "loading";
         },
         fulfilled: (state, action) => {
-          state.value = action.payload;
+          const fetchedInstances = action.payload;
+          if (!fetchedInstances) return;
+
+          for (const fetchedInstanceIri in fetchedInstances) {
+            const fetchedInstance = fetchedInstances[fetchedInstanceIri];
+            if (!fetchedInstance) continue;
+            const index = state.iris.indexOf(fetchedInstance.iri);
+            if (index === -1) state.iris.push(fetchedInstance.iri);
+            state.value[fetchedInstance.iri] = fetchedInstance;
+          }
           state.status = "idle";
         },
         rejected: (state) => {
@@ -119,6 +159,7 @@ export const instancesSlice = createAppSlice({
   // You can define your selectors here. These selectors receive the slice
   // state as their first argument.
   selectors: {
+    selectIris: (state) => state.iris,
     selectInstances: (state) => state.value,
     selectInstanceByIri: (state, solidMemoDataIri: string | undefined) => {
       if (!solidMemoDataIri) return;
@@ -133,10 +174,12 @@ export const instancesSlice = createAppSlice({
 });
 
 // Action creators are generated for each case reducer function.
-export const { pickInstance, fetchSolidMemoDataThunk } = instancesSlice.actions;
+export const { pickInstance, createInstanceThunk, fetchSolidMemoDataThunk } =
+  instancesSlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
 export const {
+  selectIris,
   selectInstances,
   selectInstanceByIri,
   selectInstanceIri,

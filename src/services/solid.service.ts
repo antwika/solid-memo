@@ -2,25 +2,110 @@ import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { DeckModel, FlashcardModel, InstanceModel } from "@domain/index";
 import { v4 as uuid } from "uuid";
+import {
+  buildThing,
+  createContainerAt,
+  createSolidDataset,
+  createThing,
+  getSolidDataset,
+  saveSolidDatasetAt,
+  setThing,
+} from "@inrupt/solid-client";
+
+export type TypeRegistrationModel = {
+  iri: string;
+  forClass: string;
+  instance: string;
+};
+
+export async function createInstance(
+  session: Session,
+  storageIri: string,
+  privateTypeIndexIri: string,
+) {
+  const typeRegistrationIri = `${privateTypeIndexIri}#${uuid().toString()}`;
+  const instanceContainerIri = `${storageIri}${uuid().toString()}/`;
+  const instanceIri = `${instanceContainerIri}data`;
+
+  await createContainerAt(instanceContainerIri, { fetch: session.fetch });
+
+  const instanceThingName = uuid().toString();
+
+  const instanceDataset = createSolidDataset();
+
+  const instanceThing = buildThing(createThing({ name: instanceThingName }))
+    .addUrl(
+      "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+      "http://antwika.com/ns/solid-memo#SolidMemoData",
+    )
+    .addStringNoLocale("http://antwika.com/ns/solid-memo#version", "1")
+    .addStringNoLocale(
+      "http://antwika.com/ns/solid-memo#name",
+      "My Solid Memo instance",
+    )
+    .build();
+
+  const updatedInstanceDataset = setThing(instanceDataset, instanceThing);
+
+  await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
+    fetch: session.fetch,
+  });
+
+  const privateTypeIndexDataset = await getSolidDataset(privateTypeIndexIri, {
+    fetch: session.fetch,
+  });
+
+  const privateTypeIndexThingName = uuid().toString();
+
+  const privateTypeIndexThing = buildThing(
+    createThing({ name: privateTypeIndexThingName }),
+  )
+    .addUrl(
+      "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+      "http://www.w3.org/ns/solid/terms#TypeRegistration",
+    )
+    .addUrl(
+      "http://www.w3.org/ns/solid/terms#forClass",
+      "http://antwika.com/ns/solid-memo#SolidMemoData",
+    )
+    .addUrl(
+      "http://www.w3.org/ns/solid/terms#instance",
+      `${instanceIri}#${instanceThingName}`,
+    )
+    .build();
+
+  const updatedPrivateTypeIndexDataset = setThing(
+    privateTypeIndexDataset,
+    privateTypeIndexThing,
+  );
+
+  await saveSolidDatasetAt(
+    privateTypeIndexIri,
+    updatedPrivateTypeIndexDataset,
+    {
+      fetch: session.fetch,
+    },
+  );
+}
 
 export async function fetchSolidMemoDataInstances(
   session: Session,
   queryEngine: QueryEngine,
   privateTypeIndex: string,
 ) {
-  const bindingsStream = await queryEngine.queryBindings(
-    `
-        SELECT ?solidMemoDataIri
-        WHERE {
-            ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/solid/terms#TypeRegistration> .
-            ?s <http://www.w3.org/ns/solid/terms#forClass> <http://antwika.com/ns/solid-memo#SolidMemoData> .
-            ?s <http://www.w3.org/ns/solid/terms#instance> ?solidMemoDataIri .
-        } LIMIT 100`,
-    {
-      sources: [privateTypeIndex],
-      fetch: session.fetch,
-    },
-  );
+  const query = `
+    SELECT ?solidMemoDataIri
+    WHERE {
+      ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/solid/terms#TypeRegistration> .
+      ?s <http://www.w3.org/ns/solid/terms#forClass> <http://antwika.com/ns/solid-memo#SolidMemoData> .
+      ?s <http://www.w3.org/ns/solid/terms#instance> ?solidMemoDataIri .
+    } LIMIT 100
+  `;
+
+  const bindingsStream = await queryEngine.queryBindings(query, {
+    sources: [privateTypeIndex],
+    fetch: session.fetch,
+  });
   const bindings = await bindingsStream.toArray();
   const solidMemoDataIris = bindings.reduce<string[]>((acc, binding) => {
     const solidMemoDataIri = binding.get("solidMemoDataIri");
@@ -45,23 +130,23 @@ export async function fetchSolidMemoDataInstance(
   queryEngine: QueryEngine,
   solidMemoDataInstanceIri: string,
 ) {
-  const bindingsStream = await queryEngine.queryBindings(
-    `
-      SELECT ?subject ?version ?name ?hasDeck
-      WHERE {
-        ?subject <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#SolidMemoData> .
-        ?subject <http://antwika.com/ns/solid-memo#version> ?version .
-        ?subject <http://antwika.com/ns/solid-memo#name> ?name .
-        OPTIONAL {
-          ?subject <http://antwika.com/ns/solid-memo#hasDeck> ?hasDeck .
-        }
+  const query = `
+    SELECT ?subject ?version ?name ?hasDeck
+    WHERE {
+      ?subject <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#SolidMemoData> .
+      ?subject <http://antwika.com/ns/solid-memo#version> ?version .
+      ?subject <http://antwika.com/ns/solid-memo#name> ?name .
+      OPTIONAL {
+        ?subject <http://antwika.com/ns/solid-memo#hasDeck> ?hasDeck .
       }
-      LIMIT 100`,
-    {
-      sources: [solidMemoDataInstanceIri],
-      fetch: session.fetch,
-    },
-  );
+    }
+    LIMIT 100
+  `;
+
+  const bindingsStream = await queryEngine.queryBindings(query, {
+    sources: [solidMemoDataInstanceIri],
+    fetch: session.fetch,
+  });
   const bindings = await bindingsStream.toArray();
 
   const instances = bindings.reduce<Record<string, InstanceModel>>(
@@ -170,21 +255,21 @@ export async function fetchCard(
 ) {
   if (!queryEngine) return;
 
-  const bindingsStream = await queryEngine.queryBindings(
-    `
-        SELECT ?version ?front ?back ?isInDeck
-        WHERE {
-            <${cardIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Flashcard> .
-            <${cardIri}> <http://antwika.com/ns/solid-memo#version> ?version .
-            <${cardIri}> <http://antwika.com/ns/solid-memo#front> ?front .
-            <${cardIri}> <http://antwika.com/ns/solid-memo#back> ?back .
-            <${cardIri}> <http://antwika.com/ns/solid-memo#isInDeck> ?isInDeck .
-        } LIMIT 100`,
-    {
-      sources: [cardIri],
-      fetch: session.fetch,
-    },
-  );
+  const query = `
+    SELECT ?version ?front ?back ?isInDeck
+    WHERE {
+      <${cardIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Flashcard> .
+      <${cardIri}> <http://antwika.com/ns/solid-memo#version> ?version .
+      <${cardIri}> <http://antwika.com/ns/solid-memo#front> ?front .
+      <${cardIri}> <http://antwika.com/ns/solid-memo#back> ?back .
+      <${cardIri}> <http://antwika.com/ns/solid-memo#isInDeck> ?isInDeck .
+    } LIMIT 100
+  `;
+
+  const bindingsStream = await queryEngine.queryBindings(query, {
+    sources: [cardIri],
+    fetch: session.fetch,
+  });
 
   const bindings = await bindingsStream.toArray();
   const cards = bindings.reduce<FlashcardModel[]>((acc, binding) => {
@@ -222,18 +307,18 @@ export async function fetchCardIris(
   queryEngine: QueryEngine,
   deckIri: string,
 ) {
-  const bindingsStream = await queryEngine.queryBindings(
-    `
+  const query = `
     SELECT ?hasCard
     WHERE {
-        <${deckIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
-        <${deckIri}> <http://antwika.com/ns/solid-memo#hasCard> ?hasCard .
-    } LIMIT 100`,
-    {
-      sources: [deckIri],
-      fetch: session.fetch,
-    },
-  );
+      <${deckIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
+      <${deckIri}> <http://antwika.com/ns/solid-memo#hasCard> ?hasCard .
+    } LIMIT 100
+  `;
+
+  const bindingsStream = await queryEngine.queryBindings(query, {
+    sources: [deckIri],
+    fetch: session.fetch,
+  });
   const bindings = await bindingsStream.toArray();
   const cardIris = bindings.reduce<string[]>((acc, binding) => {
     const hasCard = binding.get("hasCard");
@@ -250,17 +335,17 @@ export async function fetchAllDeckIris(
   queryEngine: QueryEngine,
   dataIri: string,
 ) {
-  const bindingsStream = await queryEngine.queryBindings(
-    `
-      SELECT ?deckIri
-      WHERE {
-          ?deckIri <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
-      } LIMIT 100`,
-    {
-      sources: [dataIri],
-      fetch: session.fetch,
-    },
-  );
+  const query = `
+    SELECT ?deckIri
+    WHERE {
+      ?deckIri <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
+    } LIMIT 100
+  `;
+
+  const bindingsStream = await queryEngine.queryBindings(query, {
+    sources: [dataIri],
+    fetch: session.fetch,
+  });
   const bindings = await bindingsStream.toArray();
   const deckIris = bindings.reduce<string[]>((acc, binding) => {
     const deckIri = binding.get("deckIri");
@@ -281,6 +366,7 @@ export async function createDeck(
   if (!queryEngine) return;
 
   const iri = `${solidMemoDataIri}#${uuid().toString()}`;
+
   const query = `
     INSERT DATA
     {
@@ -318,16 +404,15 @@ export async function deleteDeck(
 ) {
   if (!queryEngine) return;
 
-  console.log("solidMemoDataIri", solidMemoDataIri);
   try {
     const query1 = `
-    DELETE {
-      ?s <http://antwika.com/ns/solid-memo#hasDeck> <${deckIri}> .
-    }
-    WHERE {
-      ?s <http://antwika.com/ns/solid-memo#hasDeck> <${deckIri}> .
-    }
-  `;
+      DELETE {
+        ?s <http://antwika.com/ns/solid-memo#hasDeck> <${deckIri}> .
+      }
+      WHERE {
+        ?s <http://antwika.com/ns/solid-memo#hasDeck> <${deckIri}> .
+      }
+    `;
 
     console.log("DELETE DATA", query1);
 
@@ -337,13 +422,13 @@ export async function deleteDeck(
     });
 
     const query2 = `
-    DELETE {
-      <${deckIri}> ?p ?o .
-    }
-    WHERE {
-      <${deckIri}> ?p ?o .
-    }
-  `;
+      DELETE {
+        <${deckIri}> ?p ?o .
+      }
+      WHERE {
+        <${deckIri}> ?p ?o .
+      }
+    `;
 
     console.log("DELETE DATA", query2);
 
@@ -367,20 +452,20 @@ export const fetchDeck = async (
 
   const cardIris = await fetchCardIris(session, queryEngine, deckIri);
 
-  const bindingsStream = await queryEngine.queryBindings(
-    `
-        SELECT ?version ?name ?isInSolidMemoDataInstance
-        WHERE {
-            <${deckIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
-            <${deckIri}> <http://antwika.com/ns/solid-memo#version> ?version .
-            <${deckIri}> <http://antwika.com/ns/solid-memo#name> ?name .
-            <${deckIri}> <http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance> ?isInSolidMemoDataInstance .
-        } LIMIT 100`,
-    {
-      sources: [deckIri],
-      fetch: session.fetch,
-    },
-  );
+  const query = `
+    SELECT ?version ?name ?isInSolidMemoDataInstance
+    WHERE {
+      <${deckIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://antwika.com/ns/solid-memo#Deck> .
+      <${deckIri}> <http://antwika.com/ns/solid-memo#version> ?version .
+      <${deckIri}> <http://antwika.com/ns/solid-memo#name> ?name .
+      <${deckIri}> <http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance> ?isInSolidMemoDataInstance .
+    } LIMIT 100
+  `;
+
+  const bindingsStream = await queryEngine.queryBindings(query, {
+    sources: [deckIri],
+    fetch: session.fetch,
+  });
 
   const bindings = await bindingsStream.toArray();
   const decks = bindings.reduce<DeckModel[]>((acc, binding) => {
@@ -418,18 +503,18 @@ export async function fetchPrivateTypeIndexIris(
   queryEngine: QueryEngine,
   webId: string,
 ) {
-  const bindingsStream = await queryEngine.queryBindings(
-    `
-        SELECT ?privateTypeIndexIri
-        WHERE {
-            <${webId}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?o .
-            <${webId}> <http://www.w3.org/ns/solid/terms#privateTypeIndex> ?privateTypeIndexIri .
-        } LIMIT 100`,
-    {
-      sources: [webId],
-      fetch: session.fetch,
-    },
-  );
+  const query = `
+    SELECT ?privateTypeIndexIri
+    WHERE {
+      <${webId}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?o .
+      <${webId}> <http://www.w3.org/ns/solid/terms#privateTypeIndex> ?privateTypeIndexIri .
+    } LIMIT 100
+  `;
+
+  const bindingsStream = await queryEngine.queryBindings(query, {
+    sources: [webId],
+    fetch: session.fetch,
+  });
   const bindings = await bindingsStream.toArray();
   const privateTypeIndexIris = bindings.reduce<string[]>((acc, binding) => {
     const privateTypeIndexIri = binding.get("privateTypeIndexIri");
@@ -446,18 +531,18 @@ export async function fetchSeeAlsoIris(
   queryEngine: QueryEngine,
   webId: string,
 ) {
-  const bindingsStream = await queryEngine.queryBindings(
-    `
-            SELECT ?seeAlsoIri
-            WHERE {
-                <${webId}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Agent> .
-                <${webId}> <http://www.w3.org/2000/01/rdf-schema#seeAlso> ?seeAlsoIri .
-            } LIMIT 100`,
-    {
-      sources: [webId],
-      fetch: session.fetch,
-    },
-  );
+  const query = `
+    SELECT ?seeAlsoIri
+    WHERE {
+      <${webId}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Agent> .
+      <${webId}> <http://www.w3.org/2000/01/rdf-schema#seeAlso> ?seeAlsoIri .
+    } LIMIT 100
+  `;
+
+  const bindingsStream = await queryEngine.queryBindings(query, {
+    sources: [webId],
+    fetch: session.fetch,
+  });
   const bindings = await bindingsStream.toArray();
   const seeAlsoIris = bindings.reduce<string[]>((acc, binding) => {
     const seeAlsoIri = binding.get("seeAlsoIri");
@@ -486,32 +571,4 @@ export async function fetchAllPrivateTypeIndexIris(
   const fetchAllPrivateTypeIndexIris = (await Promise.all(promises)).flat();
 
   return fetchAllPrivateTypeIndexIris;
-}
-
-export async function fetchAllIriOfRdfType(
-  session: Session,
-  queryEngine: QueryEngine,
-  sourceIri: string,
-  rdfType: string,
-) {
-  const bindingsStream = await queryEngine.queryBindings(
-    `
-      SELECT ?iri
-      WHERE {
-          ?iri <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <${rdfType}> .
-      } LIMIT 100`,
-    {
-      sources: [sourceIri],
-      fetch: session.fetch,
-    },
-  );
-  const bindings = await bindingsStream.toArray();
-  const iris = bindings.reduce<string[]>((acc, binding) => {
-    const iri = binding.get("iri");
-    if (!iri) return acc;
-    acc.push(iri.value);
-    return acc;
-  }, []);
-
-  return iris;
 }

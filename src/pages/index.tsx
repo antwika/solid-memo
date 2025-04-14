@@ -17,18 +17,23 @@ export default function Home() {
   const instances = useAppSelector(selectInstances);
   const dispatch = useAppDispatch();
 
-  useEffect(() => {
-    void dispatch(
-      fetchSolidMemoDataThunk({
-        session,
-        queryEngine,
-        webId: session.info.webId,
-      }),
-    );
-  }, [dispatch, queryEngine, session]);
-
   return (
     <Layout>
+      <Button
+        onClick={() => {
+          router.push(`/test`);
+        }}
+      >
+        Go to Test page
+      </Button>
+      <Button
+        onClick={() => {
+          dispatch(fetchSolidMemoDataThunk({ session, queryEngine }));
+          console.log("Fetch instances!");
+        }}
+      >
+        Fetch instances
+      </Button>
       <div>Choose instance:</div>
       {Object.keys(instances).map((iri) => {
         const entry = instances[iri];

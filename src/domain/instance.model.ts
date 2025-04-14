@@ -3,4 +3,5 @@ export type InstanceModel = {
   version: string;
   name: string;
   hasDeck: string[];
+  isInPrivateTypeIndex: string;
 };
