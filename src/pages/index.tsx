@@ -3,7 +3,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@ui/index";
 
 export default function Home() {
-  console.log("Render Home");
   const router = useRouter();
 
   return (
@@ -11,7 +10,6 @@ export default function Home() {
       <div className="space-x-2">
         <Button
           onClick={() => {
-            console.log("Go to test page");
             router.push(`/test`);
           }}
         >

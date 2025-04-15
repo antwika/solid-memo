@@ -35,7 +35,7 @@ function stripFragment(iri: string) {
 const thingContains = (
   privateTypeIndexThing: Thing,
   type: string,
-  value: string,
+  value: string
 ) => privateTypeIndexThing.predicates[type]?.namedNodes?.includes(value);
 
 export default class SolidRepository implements IRepository {
@@ -55,16 +55,12 @@ export default class SolidRepository implements IRepository {
     });
     const webIdThings = [getThing(profiles.webIdProfile, webId)];
 
-    console.log("webIdThings:", webIdThings);
-
     const storageIris = webIdThings
       .filter((webIdThing) => webIdThing !== null)
       .map((webIdThing) =>
-        getUrlAll(webIdThing, "http://www.w3.org/ns/pim/space#storage"),
+        getUrlAll(webIdThing, "http://www.w3.org/ns/pim/space#storage")
       )
       .flat();
-
-    console.log("storageIris:", storageIris);
 
     return storageIris;
   }
@@ -77,38 +73,33 @@ export default class SolidRepository implements IRepository {
     const profiles = await getProfileAll(webId, {
       fetch: this.authService.getFetch(),
     });
-    const webIdThings = [getThing(profiles.webIdProfile, webId)];
 
-    console.log("webIdThings:", webIdThings);
+    const webIdThings = [getThing(profiles.webIdProfile, webId)];
 
     const seeAlsoUrls = webIdThings
       .filter((webIdThing) => webIdThing !== null)
       .map((webIdThing) =>
-        getUrlAll(webIdThing, "http://www.w3.org/2000/01/rdf-schema#seeAlso"),
+        getUrlAll(webIdThing, "http://www.w3.org/2000/01/rdf-schema#seeAlso")
       )
       .flat();
 
-    console.log("seeAlsoUrls:", seeAlsoUrls);
-
     const seeAlsoDatasets = await Promise.all(
       seeAlsoUrls.map((seeAlsoUrl) =>
-        getSolidDataset(seeAlsoUrl, { fetch: this.authService.getFetch() }),
-      ),
+        getSolidDataset(seeAlsoUrl, { fetch: this.authService.getFetch() })
+      )
     );
-    console.log("seeAlsoDatasets:", seeAlsoDatasets);
 
     const seeAlsoThings = seeAlsoDatasets
       .map((seeAlsoDataset) => getThingAll(seeAlsoDataset))
       .flat();
-    console.log("seeAlsoThings:", seeAlsoThings);
 
     const privateTypeIndexUrls = webIdThings
       .filter((webIdThing) => webIdThing !== null)
       .map((webIdThing) =>
         getUrlAll(
           webIdThing,
-          "http://www.w3.org/ns/solid/terms#privateTypeIndex",
-        ),
+          "http://www.w3.org/ns/solid/terms#privateTypeIndex"
+        )
       )
       .flat();
 
@@ -116,17 +107,15 @@ export default class SolidRepository implements IRepository {
       .map((seeAlsoThing) =>
         getUrlAll(
           seeAlsoThing,
-          "http://www.w3.org/ns/solid/terms#privateTypeIndex",
-        ),
+          "http://www.w3.org/ns/solid/terms#privateTypeIndex"
+        )
       )
       .flat();
-    console.log("seeAlsoPrivateTypeIndexUrls:", seeAlsoPrivateTypeIndexUrls);
 
     const allPrivateTypeIndexUrls = [
       ...privateTypeIndexUrls,
       ...seeAlsoPrivateTypeIndexUrls,
     ];
-    console.log("allPrivateTypeIndexUrls:", allPrivateTypeIndexUrls);
 
     return allPrivateTypeIndexUrls;
   }
@@ -135,66 +124,59 @@ export default class SolidRepository implements IRepository {
     const privateTypeIndexUrls =
       await this.findAllPrivateTypeIndexIrisByWebId();
 
-    console.log("privateTypeIndexUrls:", privateTypeIndexUrls);
-
     const privateTypeIndexDatasets = await Promise.all(
       privateTypeIndexUrls.map((privateTypeIndexUrl) =>
         getSolidDataset(privateTypeIndexUrl, {
           fetch: this.authService.getFetch(),
-        }),
-      ),
+        })
+      )
     );
-    console.log("privateTypeIndexDatasets:", privateTypeIndexDatasets);
 
     const privateTypeIndexThings = (
       await Promise.all(
         privateTypeIndexDatasets.map((privateTypeIndexDataset) =>
-          getThingAll(privateTypeIndexDataset),
-        ),
+          getThingAll(privateTypeIndexDataset)
+        )
       )
     ).flat();
-    console.log("privateTypeIndexThings:", privateTypeIndexThings);
 
     const solidMemoDataThings = privateTypeIndexThings.filter(
       (privateTypeIndexThing) =>
         thingContains(
           privateTypeIndexThing,
           "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "http://www.w3.org/ns/solid/terms#TypeRegistration",
+          "http://www.w3.org/ns/solid/terms#TypeRegistration"
         ) &&
         thingContains(
           privateTypeIndexThing,
           "http://www.w3.org/ns/solid/terms#forClass",
-          "http://antwika.com/ns/solid-memo#SolidMemoData",
-        ),
+          "http://antwika.com/ns/solid-memo#SolidMemoData"
+        )
     );
-    console.log("solidMemoDataThings:", solidMemoDataThings);
 
     const instanceUrls = solidMemoDataThings
       .map((solidMemoDataThing) =>
         getUrlAll(
           solidMemoDataThing,
-          "http://www.w3.org/ns/solid/terms#instance",
-        ),
+          "http://www.w3.org/ns/solid/terms#instance"
+        )
       )
       .flat();
-    console.log("instanceUrls:", instanceUrls);
 
     return instanceUrls;
   }
 
   async findInstances(
-    providedInstanceUrls?: string[],
+    providedInstanceUrls?: string[]
   ): Promise<Record<string, InstanceModel>> {
     const instanceUrls =
       providedInstanceUrls ?? (await this.findAllInstanceUrls());
 
     const instanceDatasets = await Promise.all(
       instanceUrls.map((instanceUrl) =>
-        getSolidDataset(instanceUrl, { fetch: this.authService.getFetch() }),
-      ),
+        getSolidDataset(instanceUrl, { fetch: this.authService.getFetch() })
+      )
     );
-    console.log("instanceDatasets:", instanceDatasets);
 
     const instanceThings = instanceDatasets
       .map((instanceDataset) => getThingAll(instanceDataset))
@@ -203,10 +185,9 @@ export default class SolidRepository implements IRepository {
         thingContains(
           instanceThing,
           "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "http://antwika.com/ns/solid-memo#SolidMemoData",
-        ),
+          "http://antwika.com/ns/solid-memo#SolidMemoData"
+        )
       );
-    console.log("instanceThings:", instanceThings);
 
     const instances = instanceThings.reduce<Record<string, InstanceModel>>(
       (acc, instanceThing) => {
@@ -214,25 +195,25 @@ export default class SolidRepository implements IRepository {
           iri: instanceThing.url,
           version: getStringNoLocale(
             instanceThing,
-            "http://antwika.com/ns/solid-memo#version",
+            "http://antwika.com/ns/solid-memo#version"
           ),
           name: getStringNoLocale(
             instanceThing,
-            "http://antwika.com/ns/solid-memo#name",
+            "http://antwika.com/ns/solid-memo#name"
           ),
           hasDeck: getUrlAll(
             instanceThing,
-            "http://antwika.com/ns/solid-memo#hasDeck",
+            "http://antwika.com/ns/solid-memo#hasDeck"
           ),
           isInPrivateTypeIndex: getUrl(
             instanceThing,
-            "http://antwika.com/ns/solid-memo#isInPrivateTypeIndex",
+            "http://antwika.com/ns/solid-memo#isInPrivateTypeIndex"
           ),
         });
         acc[instance.iri] = instance;
         return acc;
       },
-      {},
+      {}
     );
 
     return instances;
@@ -244,34 +225,30 @@ export default class SolidRepository implements IRepository {
 
     const instanceDatasets = await Promise.all(
       instanceUrls.map((instanceUrl) =>
-        getSolidDataset(instanceUrl, { fetch: this.authService.getFetch() }),
-      ),
+        getSolidDataset(instanceUrl, { fetch: this.authService.getFetch() })
+      )
     );
-    console.log("instanceDatasets:", instanceDatasets);
 
     const instanceThings = instanceDatasets
       .map((instanceDataset) => getThingAll(instanceDataset))
       .flat();
-    console.log("instanceThings:", instanceThings);
 
     const solidMemoDataThings = instanceThings.filter((instanceThing) =>
       thingContains(
         instanceThing,
         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-        "http://antwika.com/ns/solid-memo#SolidMemoData",
-      ),
+        "http://antwika.com/ns/solid-memo#SolidMemoData"
+      )
     );
-    console.log("solidMemoDataThings:", solidMemoDataThings);
 
     const deckUrls = solidMemoDataThings
       .map((solidMemoDataThing) =>
         getUrlAll(
           solidMemoDataThing,
-          "http://antwika.com/ns/solid-memo#hasDeck",
-        ),
+          "http://antwika.com/ns/solid-memo#hasDeck"
+        )
       )
       .flat();
-    console.log("deckUrls:", deckUrls);
 
     return deckUrls;
   }
@@ -285,16 +262,15 @@ export default class SolidRepository implements IRepository {
   }
 
   async findDecks(
-    providedDeckUrls?: string[],
+    providedDeckUrls?: string[]
   ): Promise<Record<string, DeckModel>> {
     const deckUrls = providedDeckUrls ?? (await this.findAllDeckUrls());
 
     const deckDatasets = await Promise.all(
       deckUrls.map((deckUrl) =>
-        getSolidDataset(deckUrl, { fetch: this.authService.getFetch() }),
-      ),
+        getSolidDataset(deckUrl, { fetch: this.authService.getFetch() })
+      )
     );
-    console.log("deckDatasets:", deckDatasets);
 
     const deckThings = deckDatasets
       .map((deckDataset) => getThingAll(deckDataset))
@@ -303,10 +279,9 @@ export default class SolidRepository implements IRepository {
         thingContains(
           deckThing,
           "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-          "http://antwika.com/ns/solid-memo#Deck",
-        ),
+          "http://antwika.com/ns/solid-memo#Deck"
+        )
       );
-    console.log("deckThings:", deckThings);
 
     const decks = deckThings.reduce<Record<string, DeckModel>>(
       (acc, deckThing) => {
@@ -314,43 +289,43 @@ export default class SolidRepository implements IRepository {
           iri: deckThing.url,
           version: getStringNoLocale(
             deckThing,
-            "http://antwika.com/ns/solid-memo#version",
+            "http://antwika.com/ns/solid-memo#version"
           ),
           name: getStringNoLocale(
             deckThing,
-            "http://antwika.com/ns/solid-memo#name",
+            "http://antwika.com/ns/solid-memo#name"
           ),
           back: getStringNoLocale(
             deckThing,
-            "http://antwika.com/ns/solid-memo#back",
+            "http://antwika.com/ns/solid-memo#back"
           ),
           isInSolidMemoDataInstance: getUrl(
             deckThing,
-            "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance",
+            "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance"
           ),
           hasCard: getUrlAll(
             deckThing,
-            "http://antwika.com/ns/solid-memo#hasCard",
+            "http://antwika.com/ns/solid-memo#hasCard"
           ),
         });
         acc[deck.iri] = deck;
         return acc;
       },
-      {},
+      {}
     );
 
     return decks;
   }
 
   async findFlashcards(
-    flashcardUrls: string[],
+    flashcardUrls: string[]
   ): Promise<Record<string, FlashcardModel>> {
     const flashcardDatasets = await Promise.all(
       flashcardUrls.map((flashcardUrl) =>
         getSolidDataset(flashcardUrl, {
           fetch: this.authService.getFetch(),
-        }),
-      ),
+        })
+      )
     );
 
     const flashcardThings = (
@@ -360,10 +335,10 @@ export default class SolidRepository implements IRepository {
             thingContains(
               flashcardThing,
               "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-              "http://antwika.com/ns/solid-memo#Flashcard",
-            ),
-          ),
-        ),
+              "http://antwika.com/ns/solid-memo#Flashcard"
+            )
+          )
+        )
       )
     ).flat();
 
@@ -373,36 +348,33 @@ export default class SolidRepository implements IRepository {
           iri: flashcardThing.url,
           version: getStringNoLocale(
             flashcardThing,
-            "http://antwika.com/ns/solid-memo#version",
+            "http://antwika.com/ns/solid-memo#version"
           ),
           front: getStringNoLocale(
             flashcardThing,
-            "http://antwika.com/ns/solid-memo#front",
+            "http://antwika.com/ns/solid-memo#front"
           ),
           back: getStringNoLocale(
             flashcardThing,
-            "http://antwika.com/ns/solid-memo#back",
+            "http://antwika.com/ns/solid-memo#back"
           ),
           isInDeck: getUrl(
             flashcardThing,
-            "http://antwika.com/ns/solid-memo#isInDeck",
+            "http://antwika.com/ns/solid-memo#isInDeck"
           ),
         });
         acc[flashcard.iri] = flashcard;
         return acc;
       },
-      {},
+      {}
     );
 
     return flashcards;
   }
 
   async createInstance(podLocation: string): Promise<void> {
-    console.log("podLocation:", podLocation);
-
     const privateTypeIndexIris =
       await this.findAllPrivateTypeIndexIrisByWebId();
-    console.log("privateTypeIndexIris:", privateTypeIndexIris);
 
     if (privateTypeIndexIris.length === 0)
       throw new Error("No private type indexes found");
@@ -419,50 +391,37 @@ export default class SolidRepository implements IRepository {
     const privateTypeIndexDataset = await getSolidDataset(privateTypeIndexIri, {
       fetch: this.authService.getFetch(),
     });
-    console.log("privateTypeIndexDataset:", privateTypeIndexDataset);
 
     const typeRegistrationThing = createThing({ name: privateTypeIndexName });
-    console.log("typeRegistrationThing:", typeRegistrationThing);
 
     if (!typeRegistrationThing)
       throw new Error("Expected typeRegistrationThing to be defined!");
 
-    const typeRegistrationThingName = uuid().toString();
-    const typeRegistrationThingIri = `${privateTypeIndexIri}#${typeRegistrationThingName}`;
-    console.log("typeRegistrationThingIri:", typeRegistrationThingIri);
-
     const instanceName = uuid().toString();
     const instanceIri = `${podLocation}solid-memo/data-${uuid().toString()}#${instanceName}`;
-    console.log("instanceIri:", instanceIri);
 
     const updatedTypeRegistrationThing = buildThing(typeRegistrationThing)
       .addUrl(
         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-        "http://www.w3.org/ns/solid/terms#TypeRegistration",
+        "http://www.w3.org/ns/solid/terms#TypeRegistration"
       )
       .addUrl(
         "http://www.w3.org/ns/solid/terms#forClass",
-        "http://antwika.com/ns/solid-memo#SolidMemoData",
+        "http://antwika.com/ns/solid-memo#SolidMemoData"
       )
       .addUrl("http://www.w3.org/ns/solid/terms#instance", instanceIri)
       .build();
-    console.log("updatedTypeRegistrationThing:", updatedTypeRegistrationThing);
 
     const updatedPrivateTypeIndexDataset = setThing(
       privateTypeIndexDataset,
-      updatedTypeRegistrationThing,
-    );
-    console.log(
-      "updatedPrivateTypeIndexDataset:",
-      updatedPrivateTypeIndexDataset,
+      updatedTypeRegistrationThing
     );
 
-    const savedPrivateTypeIndexDataset = await saveSolidDatasetAt(
+    await saveSolidDatasetAt(
       privateTypeIndexIri,
       updatedPrivateTypeIndexDataset,
-      { fetch: this.authService.getFetch() },
+      { fetch: this.authService.getFetch() }
     );
-    console.log("savedPrivateTypeIndexDataset:", savedPrivateTypeIndexDataset);
 
     const instanceDataset = createSolidDataset();
 
@@ -471,22 +430,22 @@ export default class SolidRepository implements IRepository {
     const updatedInstanceThing = buildThing(instanceThing)
       .addUrl(
         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-        "http://antwika.com/ns/solid-memo#SolidMemoData",
+        "http://antwika.com/ns/solid-memo#SolidMemoData"
       )
       .addUrl(
         "http://antwika.com/ns/solid-memo#isInPrivateTypeIndex",
-        privateTypeIndexIriWithName,
+        privateTypeIndexIriWithName
       )
       .addStringNoLocale("http://antwika.com/ns/solid-memo#version", "1")
       .addStringNoLocale(
         "http://antwika.com/ns/solid-memo#name",
-        "My new instance",
+        "New instance name"
       )
       .build();
 
     const updatedInstanceDataset = setThing(
       instanceDataset,
-      updatedInstanceThing,
+      updatedInstanceThing
     );
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
@@ -496,74 +455,58 @@ export default class SolidRepository implements IRepository {
 
   async createDeck(
     instanceIri: string,
-    deck: Omit<DeckModel, "iri">,
+    deck: Omit<DeckModel, "iri">
   ): Promise<Record<string, DeckModel>> {
     const instanceDataset = await getSolidDataset(instanceIri, {
       fetch: this.authService.getFetch(),
     });
 
-    console.log("instanceDataset:", instanceDataset);
-
     const instanceThing = getThing(instanceDataset, instanceIri);
-
-    console.log("instanceThing:", instanceThing);
 
     if (!instanceThing)
       throw new Error("Expected instanceThing to be defined!");
 
     const instanceThingName = uuid().toString();
     const deckIri = `${stripFragment(instanceIri)}#${instanceThingName}`;
-    console.log("deckIri:", deckIri);
 
     const updatedInstanceThing = buildThing(instanceThing)
       .addUrl("http://antwika.com/ns/solid-memo#hasDeck", deckIri)
       .build();
-    console.log("updatedInstanceThing:", updatedInstanceThing);
 
     const updatedInstanceDataset = setThing(
       instanceDataset,
-      updatedInstanceThing,
+      updatedInstanceThing
     );
-    console.log("updatedInstanceDataset:", updatedInstanceDataset);
 
-    const savedInstanceDataset = await saveSolidDatasetAt(
-      instanceIri,
-      updatedInstanceDataset,
-      { fetch: this.authService.getFetch() },
-    );
-    console.log("savedInstanceDataset:", savedInstanceDataset);
+    await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
+      fetch: this.authService.getFetch(),
+    });
 
     const instanceDataset2 = await getSolidDataset(instanceIri, {
       fetch: this.authService.getFetch(),
     });
-    console.log("instanceDataset2:", instanceDataset2);
 
     const deckThing = buildThing({ name: instanceThingName })
       .addUrl(
         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-        "http://antwika.com/ns/solid-memo#Deck",
+        "http://antwika.com/ns/solid-memo#Deck"
       )
       .addStringNoLocale(
         "http://antwika.com/ns/solid-memo#version",
-        deck.version,
+        deck.version
       )
       .addStringNoLocale("http://antwika.com/ns/solid-memo#name", deck.name)
       .addUrl(
         "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance",
-        deck.isInSolidMemoDataInstance,
+        deck.isInSolidMemoDataInstance
       )
       .build();
-    console.log("deckThing:", deckThing);
 
     const updatedInstanceDataset2 = setThing(instanceDataset2, deckThing);
-    console.log("updatedInstanceDataset:", updatedInstanceDataset);
 
-    const savedInstanceDataset2 = await saveSolidDatasetAt(
-      instanceIri,
-      updatedInstanceDataset2,
-      { fetch: this.authService.getFetch() },
-    );
-    console.log("savedInstanceDataset2:", savedInstanceDataset2);
+    await saveSolidDatasetAt(instanceIri, updatedInstanceDataset2, {
+      fetch: this.authService.getFetch(),
+    });
 
     const foundDecks = await this.findDecks([deckIri]);
 
@@ -573,74 +516,58 @@ export default class SolidRepository implements IRepository {
   async createFlashcard(
     instanceIri: string,
     deckIri: string,
-    flashcard: Omit<FlashcardModel, "iri">,
+    flashcard: Omit<FlashcardModel, "iri">
   ): Promise<void> {
     const deckDataset = await getSolidDataset(deckIri, {
       fetch: this.authService.getFetch(),
     });
 
-    console.log("deckDataset:", deckDataset);
-
     const deckThing = getThing(deckDataset, deckIri);
-
-    console.log("deckThing:", deckThing);
 
     if (!deckThing) throw new Error("Expected deckThing to be defined!");
 
     const flashcardThingName = uuid().toString();
     const flashcardIri = `${stripFragment(instanceIri)}#${flashcardThingName}`;
-    console.log("flashcardIri:", flashcardIri);
 
     const updatedDeckThing = buildThing(deckThing)
       .addUrl("http://antwika.com/ns/solid-memo#hasCard", flashcardIri)
       .build();
-    console.log("updatedDeckThing:", updatedDeckThing);
 
     const updatedDeckDataset = setThing(deckDataset, updatedDeckThing);
-    console.log("updatedDeckDataset:", updatedDeckDataset);
 
-    const savedDeckDataset = await saveSolidDatasetAt(
-      deckIri,
-      updatedDeckDataset,
-      { fetch: this.authService.getFetch() },
-    );
-    console.log("savedDeckDataset:", savedDeckDataset);
+    await saveSolidDatasetAt(deckIri, updatedDeckDataset, {
+      fetch: this.authService.getFetch(),
+    });
 
     const instanceDataset = await getSolidDataset(instanceIri, {
       fetch: this.authService.getFetch(),
     });
-    console.log("instanceDataset:", instanceDataset);
 
     const flashcardThing = buildThing({ name: flashcardThingName })
       .addUrl(
         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-        "http://antwika.com/ns/solid-memo#Flashcard",
+        "http://antwika.com/ns/solid-memo#Flashcard"
       )
       .addStringNoLocale(
         "http://antwika.com/ns/solid-memo#version",
-        flashcard.version,
+        flashcard.version
       )
       .addStringNoLocale(
         "http://antwika.com/ns/solid-memo#front",
-        flashcard.front,
+        flashcard.front
       )
       .addStringNoLocale(
         "http://antwika.com/ns/solid-memo#back",
-        flashcard.back,
+        flashcard.back
       )
       .addUrl("http://antwika.com/ns/solid-memo#isInDeck", flashcard.isInDeck)
       .build();
-    console.log("flashcardThing:", flashcardThing);
 
     const updatedInstanceDataset = setThing(instanceDataset, flashcardThing);
-    console.log("updatedInstanceDataset:", updatedInstanceDataset);
 
-    const savedInstanceDataset = await saveSolidDatasetAt(
-      instanceIri,
-      updatedInstanceDataset,
-      { fetch: this.authService.getFetch() },
-    );
-    console.log("savedInstanceDataset:", savedInstanceDataset);
+    await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
+      fetch: this.authService.getFetch(),
+    });
   }
 
   async deleteInstance(instance: InstanceModel): Promise<void> {
@@ -654,25 +581,25 @@ export default class SolidRepository implements IRepository {
 
     let updatedPrivateTypeIndexDataset = removeThing(
       privateTypeIndexDataset,
-      instance.iri,
+      instance.iri
     );
 
     const privateTypeIndexThing = getThing(
       updatedPrivateTypeIndexDataset,
-      privateTypeIndexIri,
+      privateTypeIndexIri
     );
 
     if (privateTypeIndexThing) {
       updatedPrivateTypeIndexDataset = removeThing(
         updatedPrivateTypeIndexDataset,
-        privateTypeIndexIri,
+        privateTypeIndexIri
       );
     }
 
     await saveSolidDatasetAt(
       privateTypeIndexIri,
       updatedPrivateTypeIndexDataset,
-      { fetch: this.authService.getFetch() },
+      { fetch: this.authService.getFetch() }
     );
 
     const instanceDataset = await getSolidDataset(instance.iri, {
@@ -682,7 +609,7 @@ export default class SolidRepository implements IRepository {
     const savedInstanceDataset = await saveSolidDatasetAt(
       instance.iri,
       updatedInstanceDataset,
-      { fetch: this.authService.getFetch() },
+      { fetch: this.authService.getFetch() }
     );
 
     await deleteSolidDataset(savedInstanceDataset, {
@@ -707,12 +634,12 @@ export default class SolidRepository implements IRepository {
       const updatedInstanceThing = removeUrl(
         instanceThing,
         "http://antwika.com/ns/solid-memo#hasDeck",
-        deck.iri,
+        deck.iri
       );
 
       updatedInstanceDataset = setThing(
         updatedInstanceDataset,
-        updatedInstanceThing,
+        updatedInstanceThing
       );
     }
 
@@ -735,7 +662,7 @@ export default class SolidRepository implements IRepository {
       const updatedDeckThing = removeUrl(
         deckThing,
         "http://antwika.com/ns/solid-memo#hasCard",
-        flashcard.iri,
+        flashcard.iri
       );
 
       updatedDeckDataset = setThing(updatedDeckDataset, updatedDeckThing);

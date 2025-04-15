@@ -13,7 +13,6 @@ const AuthGuard = ({ children }: Props) => {
   const router = useRouter();
 
   const atLoginPage = router.pathname === "/login";
-  console.log("atLoginPage:", atLoginPage);
 
   useEffect(() => {
     if (atLoginPage) return;
@@ -26,16 +25,13 @@ const AuthGuard = ({ children }: Props) => {
     return (
       <Layout>
         <div className="flex items-center gap-2">
-          <div>Not logged in?</div>
+          <div>Not logged in</div>
         </div>
         <div>
           <Button
             onClick={() => {
               router.push("/login").catch((err) => {
-                console.error(
-                  "Error when navigating to login page, error:",
-                  err,
-                );
+                console.error("Failed with error:", err);
               });
             }}
           >

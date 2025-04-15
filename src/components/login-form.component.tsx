@@ -23,8 +23,6 @@ export function LoginForm({ className }: Props) {
   const { getAuthService } = useContext(ServiceContext);
   const authService = getAuthService();
 
-  console.log("authService:", authService);
-
   const oidcIssuers = [
     { url: "https://login.inrupt.com", name: "Inrupt PodSpaces" },
     { url: "http://localhost:3000", name: "Localhost:3000" },
@@ -46,23 +44,18 @@ export function LoginForm({ className }: Props) {
                     className="w-full"
                     onClick={(evt) => {
                       evt.preventDefault();
-                      console.log("Try log in! authService:", authService);
                       if (authService.logIn !== undefined) {
-                        console.log("Try log in!");
                         authService
                           .logIn({
                             oidcIssuer: oidcIssuer.url,
                             redirectUrl: new URL(
                               env.NEXT_PUBLIC_BASE_PATH,
-                              window.location.href,
+                              window.location.href
                             ).toString(),
                             clientName: "Solid Memo",
                           })
                           .catch((err) => {
-                            console.log(
-                              "Error occurred during login, error:",
-                              err,
-                            );
+                            console.error("Failed with error:", err);
                           });
                       }
                     }}

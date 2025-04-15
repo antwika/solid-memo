@@ -42,11 +42,11 @@ export const decksSlice = createAppSlice({
         const deckIris = await fetchAllDeckIris(
           session,
           queryEngine,
-          solidMemoDataIri,
+          solidMemoDataIri
         );
 
         const fetchDeckPromises = deckIris.map((deckIri) =>
-          fetchDeck(session, queryEngine, deckIri),
+          fetchDeck(session, queryEngine, deckIri)
         );
         const fetched = await Promise.all(fetchDeckPromises);
         const filtered = fetched.filter((deckData) => deckData !== undefined);
@@ -68,7 +68,7 @@ export const decksSlice = createAppSlice({
         rejected: (state) => {
           state.status = "failed";
         },
-      },
+      }
     ),
     fetchDeckThunk: create.asyncThunk(
       async ({
@@ -100,7 +100,7 @@ export const decksSlice = createAppSlice({
         rejected: (state) => {
           state.status = "failed";
         },
-      },
+      }
     ),
     createDeckThunk: create.asyncThunk(
       async ({
@@ -128,12 +128,11 @@ export const decksSlice = createAppSlice({
           if (index === -1) state.iris.push(createdDeck.iri);
 
           state.status = "idle";
-          console.log("Deck created", createdDeck);
         },
         rejected: (state) => {
           state.status = "failed";
         },
-      },
+      }
     ),
     deleteDeckThunk: create.asyncThunk(
       async ({
@@ -165,12 +164,11 @@ export const decksSlice = createAppSlice({
           if (index !== -1) state.iris.splice(index, 1);
 
           state.status = "idle";
-          console.log("Deck deleted", deletedDeck);
         },
         rejected: (state) => {
           state.status = "failed";
         },
-      },
+      }
     ),
   }),
   extraReducers: (builder) => {
@@ -178,7 +176,6 @@ export const decksSlice = createAppSlice({
       const flashcard = action.payload;
       if (!flashcard) return;
       state.value[flashcard.isInDeck]?.hasCard.push(flashcard.iri);
-      console.log("Updated deck hasCard to include", flashcard.iri);
     });
 
     builder.addCase(deleteFlashcardThunk.fulfilled, (state, action) => {
@@ -188,10 +185,6 @@ export const decksSlice = createAppSlice({
         const index = deck.hasCard.indexOf(deletedFlashcard.iri);
         if (index !== -1) {
           deck.hasCard.splice(index, 1);
-          console.log(
-            "Updated deck hasCard to not include",
-            deletedFlashcard.iri,
-          );
         }
       }
     });

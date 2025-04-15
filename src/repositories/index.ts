@@ -9,7 +9,7 @@ export interface IRepository {
   findAllInstanceUrls(): Promise<string[]>;
 
   findInstances(
-    providedInstanceUrls?: string[],
+    providedInstanceUrls?: string[]
   ): Promise<Record<string, InstanceModel>>;
 
   findAllDeckUrls(providedInstanceUrls?: string[]): Promise<string[]>;
@@ -19,20 +19,20 @@ export interface IRepository {
   findDecks(providedDeckUrls?: string[]): Promise<Record<string, DeckModel>>;
 
   findFlashcards(
-    flashcardUrls: string[],
+    flashcardUrls: string[]
   ): Promise<Record<string, FlashcardModel>>;
 
   createInstance(podLocation: string): Promise<void>;
 
   createDeck(
     instanceIri: string,
-    deck: Omit<DeckModel, "iri">,
+    deck: Omit<DeckModel, "iri">
   ): Promise<Record<string, DeckModel>>;
 
   createFlashcard(
     instanceIri: string,
     deckIri: string,
-    flashcard: Omit<FlashcardModel, "iri">,
+    flashcard: Omit<FlashcardModel, "iri">
   ): Promise<void>;
 
   deleteInstance(instance: InstanceModel): Promise<void>;

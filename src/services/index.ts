@@ -32,33 +32,33 @@ export interface IService {
 
   newDeck(
     repository: IRepository,
-    deck: Omit<DeckModel, "iri">,
+    deck: Omit<DeckModel, "iri">
   ): Promise<{ decks: Record<string, DeckModel> }>;
 
   newFlashcard(
     repository: IRepository,
     instanceIri: string,
-    flashcard: Omit<FlashcardModel, "iri">,
+    flashcard: Omit<FlashcardModel, "iri">
   ): Promise<{ decks: Record<string, DeckModel> }>;
 
   getInstance(
     repository: IRepository,
-    instanceUrl: string,
+    instanceUrl: string
   ): Promise<Record<string, InstanceModel>>;
 
   getDeck(
     repository: IRepository,
-    deckUrl: string,
+    deckUrl: string
   ): Promise<Record<string, DeckModel>>;
 
   getFlashcard(
     repository: IRepository,
-    flashcardUrl: string,
+    flashcardUrl: string
   ): Promise<Record<string, FlashcardModel>>;
 
   removeInstance(
     repository: IRepository,
-    instance: InstanceModel,
+    instance: InstanceModel
   ): Promise<{
     instanceUrls: string[];
     instances: Record<string, InstanceModel>;
@@ -66,7 +66,7 @@ export interface IService {
 
   removeDeck(
     repository: IRepository,
-    deck: DeckModel,
+    deck: DeckModel
   ): Promise<{
     instances: Record<string, InstanceModel>;
     deckUrls: string[];
@@ -75,7 +75,7 @@ export interface IService {
 
   removeFlashcard(
     repository: IRepository,
-    flashcard: FlashcardModel,
+    flashcard: FlashcardModel
   ): Promise<{
     deck: DeckModel | undefined;
     flashcardUrls: string[];

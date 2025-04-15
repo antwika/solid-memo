@@ -41,8 +41,8 @@ export const flashcardsSlice = createAppSlice({
         const flashcards = (
           await Promise.all(
             flashcardIris.map((flashcardIri) =>
-              fetchCard(session, queryEngine, flashcardIri),
-            ),
+              fetchCard(session, queryEngine, flashcardIri)
+            )
           )
         ).filter((flashcard) => flashcard !== undefined);
 
@@ -65,7 +65,7 @@ export const flashcardsSlice = createAppSlice({
         rejected: (state) => {
           state.status = "failed";
         },
-      },
+      }
     ),
     fetchFlashcardThunk: create.asyncThunk(
       async ({
@@ -93,7 +93,7 @@ export const flashcardsSlice = createAppSlice({
         rejected: (state) => {
           state.status = "failed";
         },
-      },
+      }
     ),
     createFlashcardThunk: create.asyncThunk(
       async ({
@@ -114,7 +114,7 @@ export const flashcardsSlice = createAppSlice({
           queryEngine,
           solidMemoDataIri,
           deckIri,
-          flashcard,
+          flashcard
         ),
       {
         pending: (state) => {
@@ -127,12 +127,11 @@ export const flashcardsSlice = createAppSlice({
           state.value[createdFlashcard.iri] = createdFlashcard;
 
           state.status = "idle";
-          console.log("Flashcard created", createdFlashcard);
         },
         rejected: (state) => {
           state.status = "failed";
         },
-      },
+      }
     ),
     deleteFlashcardThunk: create.asyncThunk(
       async ({
@@ -150,7 +149,7 @@ export const flashcardsSlice = createAppSlice({
           session,
           queryEngine,
           solidMemoDataIri,
-          flashcard.iri,
+          flashcard.iri
         );
         return flashcard;
       },
@@ -167,12 +166,11 @@ export const flashcardsSlice = createAppSlice({
           if (index !== -1) state.iris.splice(index, 1);
 
           state.status = "idle";
-          console.log("Flashcard deleted", deletedFlashcard);
         },
         rejected: (state) => {
           state.status = "failed";
         },
-      },
+      }
     ),
   }),
   extraReducers: (builder) => {

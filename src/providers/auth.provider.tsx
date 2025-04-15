@@ -25,8 +25,9 @@ export const AuthProvider = ({ authService, children }: Props) => {
     const checkAuth = async () => {
       // Replace this with real auth check, e.g. fetch('/api/me')
       await authService.handleIncomingRedirect();
+
       const token = authService.getWebId();
-      console.log("token:", token, "loading:", loading);
+
       if (token) {
         setUser({ name: token }); // fake user
       }
@@ -37,11 +38,10 @@ export const AuthProvider = ({ authService, children }: Props) => {
         /* NOP */
       })
       .catch((err) => {
-        console.log("Error occurred when checking auth, error:", err);
+        console.error("Failed with error:", err);
       });
   }, [authService, loading]);
 
-  console.log("AuthContext value:", { user, loading });
   return (
     <AuthContext.Provider value={{ user, loading }}>
       {children}

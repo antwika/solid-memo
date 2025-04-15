@@ -9,6 +9,10 @@ import { RepositoryContext } from "@providers/repository.provider";
 import { ServiceContext } from "@providers/service.provider";
 import Layout from "@pages/layout";
 
+function preferFragment(iri: string) {
+  return iri.split("#")[1] ?? iri;
+}
+
 type AppState = {
   instanceUrls: string[];
   deckUrls: string[];
@@ -21,7 +25,6 @@ type AppState = {
 export default function TestPage() {
   const { getRepository } = useContext(RepositoryContext);
   const { getService } = useContext(ServiceContext);
-  console.log("Rendering test page");
 
   const repository = getRepository();
   const service = getService();
@@ -67,7 +70,7 @@ export default function TestPage() {
                   });
                 })
                 .catch((err) => {
-                  console.log("Failed with error:", err);
+                  console.error("Failed with error:", err);
                 });
             }}
           >
@@ -81,7 +84,7 @@ export default function TestPage() {
                   setAppState({ ...appState, instanceUrls });
                 })
                 .catch((err) => {
-                  console.log("Failed with error:", err);
+                  console.error("Failed with error:", err);
                 });
             }}
           >
@@ -96,7 +99,7 @@ export default function TestPage() {
                   setViewUrl(undefined);
                 })
                 .catch((err) => {
-                  console.log("Failed with error:", err);
+                  console.error("Failed with error:", err);
                 });
             }}
           >
@@ -110,11 +113,13 @@ export default function TestPage() {
           {instanceUrls.map((instanceUrl) => (
             <div key={instanceUrl} className="items-center gap-2">
               <div className="flex gap-2">
-                <div>
+                <div title="Instance">
                   <Database />
                 </div>
-                <div className="flex grow-1 break-all">
-                  Instance: {instanceUrl}
+                <div className="flex grow-1 break-all gap-1">
+                  <span title={instanceUrl}>
+                    <strong>{preferFragment(instanceUrl)}</strong> (Instance)
+                  </span>
                 </div>
                 <div>
                   <Button
@@ -123,9 +128,6 @@ export default function TestPage() {
                       service
                         .getInstance(repository, instanceUrl)
                         .then((instances) => {
-                          console.log("Looking for instanceUrl:", instanceUrl);
-                          console.log("Found instances:", instances);
-
                           const updatedDeckUrls = [
                             ...new Set([
                               ...appState.deckUrls,
@@ -146,7 +148,7 @@ export default function TestPage() {
                           setViewUrl(instances[instanceUrl]?.iri);
                         })
                         .catch((err) => {
-                          console.log("Failed with error:", err);
+                          console.error("Failed with error:", err);
                         });
                     }}
                   >
@@ -159,10 +161,14 @@ export default function TestPage() {
           {deckUrls.map((deckUrl) => (
             <div key={deckUrl} className="items-center gap-2">
               <div className="flex gap-2">
-                <div>
+                <div title="Deck">
                   <Layers />
                 </div>
-                <div className="flex grow-1 break-all">Deck: {deckUrl}</div>
+                <div className="flex grow-1 break-all gap-1">
+                  <span title={deckUrl}>
+                    <strong>{preferFragment(deckUrl)}</strong> (Deck)
+                  </span>
+                </div>
                 <div>
                   <Button
                     size={"sm"}
@@ -170,8 +176,6 @@ export default function TestPage() {
                       service
                         .getDeck(repository, deckUrl)
                         .then((decks) => {
-                          console.log("Found decks:", decks);
-
                           const updatedFlashcardUrls = [
                             ...new Set([
                               ...appState.flashcardUrls,
@@ -189,7 +193,7 @@ export default function TestPage() {
                           setViewUrl(decks[deckUrl]?.iri);
                         })
                         .catch((err) => {
-                          console.log("Failed with error:", err);
+                          console.error("Failed with error:", err);
                         });
                     }}
                   >
@@ -202,11 +206,13 @@ export default function TestPage() {
           {flashcardUrls.map((flashcardUrl) => (
             <div key={flashcardUrl} className="items-center gap-2">
               <div className="flex gap-2">
-                <div>
+                <div title="Flashcard">
                   <StickyNote />
                 </div>
-                <div className="flex grow-1 break-all">
-                  Flashcard: {flashcardUrl}
+                <div className="flex grow-1 break-all gap-1">
+                  <span title={flashcardUrl}>
+                    <strong>{preferFragment(flashcardUrl)}</strong> (Flashcard)
+                  </span>
                 </div>
                 <div>
                   <Button
@@ -215,13 +221,6 @@ export default function TestPage() {
                       service
                         .getFlashcard(repository, flashcardUrl)
                         .then((flashcards) => {
-                          console.log(
-                            "Find flashcards:",
-                            flashcards,
-                            ", view ",
-                            flashcardUrl,
-                          );
-
                           const combinedFlashcards = {
                             ...appState.flashcards,
                             ...flashcards,
@@ -234,7 +233,7 @@ export default function TestPage() {
                           setViewUrl(flashcardUrl);
                         })
                         .catch((err) => {
-                          console.log("Failed with error:", err);
+                          console.error("Failed with error:", err);
                         });
                     }}
                   >
@@ -247,17 +246,34 @@ export default function TestPage() {
         </Card>
         {viewInstance && (
           <Card className="p-2">
-            <div className="space-x-2">
+            <div className="space-x-2 space-y-1">
               <div className="mb-2 flex gap-1">
-                <div className="width: 32px">
+                <div className="width: 32px" title="Instance">
                   <Database />
                 </div>
-                <strong>Instance: {viewInstance.name}</strong>
+                <strong>{viewInstance.name}</strong> (Instance)
               </div>
-              <div>Iri: {viewInstance.iri}</div>
-              <div>Version: {viewInstance.version}</div>
-              <div>Name: {viewInstance.name}</div>
-              <div>Has deck: {viewInstance.hasDeck}</div>
+              <div>
+                <span title={viewInstance.iri}>
+                  <strong>• Iri:</strong> {preferFragment(viewInstance.iri)}
+                </span>
+              </div>
+              <div>
+                <strong>• Version:</strong> {viewInstance.version}
+              </div>
+              <div>
+                <strong>• Name:</strong> {viewInstance.name}
+              </div>
+              <div>
+                <strong>• Has deck:</strong>{" "}
+                <div className="flex flex-col gap-1">
+                  {viewInstance.hasDeck.map((deckIri) => (
+                    <span key={deckIri} title={deckIri}>
+                      {preferFragment(deckIri)}
+                    </span>
+                  ))}
+                </div>
+              </div>
               <Button
                 variant={"destructive"}
                 onClick={() => {
@@ -282,7 +298,7 @@ export default function TestPage() {
                       setViewUrl(undefined);
                     })
                     .catch((err) => {
-                      console.log("Failed with error:", err);
+                      console.error("Failed with error:", err);
                     });
                 }}
               >
@@ -314,7 +330,7 @@ export default function TestPage() {
                       });
                     })
                     .catch((err) => {
-                      console.log("Failed with error:", err);
+                      console.error("Failed with error:", err);
                     });
                 }}
               >
@@ -325,19 +341,38 @@ export default function TestPage() {
         )}
         {viewDeck && (
           <Card className="p-2">
-            <div className="space-x-2">
-              <div className="mb-2 flex gap-1">
+            <div className="space-x-2 space-y-1">
+              <div className="mb-2 flex gap-1" title="Deck">
                 <Layers />
-                <strong>Deck: {viewDeck.name}</strong>
+                <strong>{viewDeck.name}</strong> (Deck)
               </div>
-              <div>Iri: {viewDeck.iri}</div>
-              <div>Version: {viewDeck.version}</div>
-              <div>Name: {viewDeck.name}</div>
               <div>
-                Is in Solid Memo data instance:{" "}
-                {viewDeck.isInSolidMemoDataInstance}
+                <span title={viewDeck.iri}>
+                  <strong>• Iri:</strong> {preferFragment(viewDeck.iri)}
+                </span>
               </div>
-              <div>Has card: {viewDeck.hasCard}</div>
+              <div>
+                <strong>• Version:</strong> {viewDeck.version}
+              </div>
+              <div>
+                <strong>• Name:</strong> {viewDeck.name}
+              </div>
+              <div>
+                <span title={viewDeck.isInSolidMemoDataInstance}>
+                  <strong>• Is in instance:</strong>
+                  {preferFragment(viewDeck.isInSolidMemoDataInstance)}
+                </span>
+              </div>
+              <div>
+                <strong>• Has card:</strong>{" "}
+                <div className="flex flex-col gap-1">
+                  {viewDeck.hasCard.map((cardIri) => (
+                    <span key={cardIri} title={cardIri}>
+                      {preferFragment(cardIri)}
+                    </span>
+                  ))}
+                </div>
+              </div>
               <Button
                 variant={"destructive"}
                 onClick={() => {
@@ -375,7 +410,7 @@ export default function TestPage() {
                       setViewUrl(viewDeck.isInSolidMemoDataInstance);
                     })
                     .catch((err) => {
-                      console.log("Failed with error:", err);
+                      console.error("Failed with error:", err);
                     });
                 }}
               >
@@ -392,7 +427,7 @@ export default function TestPage() {
                         front: "Front",
                         back: "Back",
                         isInDeck: viewDeck.iri,
-                      },
+                      }
                     )
                     .then(({ decks }) => {
                       const updatedFlashcardUrls = [
@@ -412,7 +447,7 @@ export default function TestPage() {
                       setViewUrl(decks[viewDeck.iri]?.iri);
                     })
                     .catch((err) => {
-                      console.log("Failed with error:", err);
+                      console.error("Failed with error:", err);
                     });
                 }}
               >
@@ -423,23 +458,37 @@ export default function TestPage() {
         )}
         {viewFlashcard && (
           <Card className="p-2">
-            <div className="space-x-2">
-              <div className="mb-2 flex gap-1">
+            <div className="space-x-2 space-y-1">
+              <div className="mb-2 flex gap-1" title="Flashcard">
                 <StickyNote />
                 <strong>Flashcard</strong>
               </div>
-              <div>Iri: {viewFlashcard.iri}</div>
-              <div>Version: {viewFlashcard.version}</div>
-              <div>Front: {viewFlashcard.front}</div>
-              <div>Back: {viewFlashcard.back}</div>
-              <div>Is in deck: {viewFlashcard.isInDeck}</div>
+              <div>
+                <span title={viewFlashcard.iri}>
+                  <strong>• Iri:</strong> {preferFragment(viewFlashcard.iri)}
+                </span>
+              </div>
+              <div>
+                <strong>• Version:</strong> {viewFlashcard.version}
+              </div>
+              <div>
+                <strong>• Front:</strong> {viewFlashcard.front}
+              </div>
+              <div>
+                <strong>• Back:</strong> {viewFlashcard.back}
+              </div>
+              <div>
+                <span title={viewFlashcard.iri}>
+                  <strong>• Is in deck:</strong>{" "}
+                  {preferFragment(viewFlashcard.isInDeck)}
+                </span>
+              </div>
               <Button
                 variant={"destructive"}
                 onClick={() => {
                   service
                     .removeFlashcard(repository, viewFlashcard)
                     .then(() => {
-                      console.log("decks:", decks);
                       const updatedDecks = { ...decks };
 
                       const flashcardIndex = updatedDecks[
@@ -452,20 +501,13 @@ export default function TestPage() {
                       ) {
                         updatedDecks[viewFlashcard.isInDeck]?.hasCard?.splice(
                           flashcardIndex,
-                          1,
+                          1
                         );
                       }
 
                       const updatedFlashcards = { ...appState.flashcards };
                       delete updatedFlashcards[viewFlashcard.iri];
 
-                      console.log("Set new app state:", {
-                        ...appState,
-                        deckUrls: Object.keys(updatedDecks),
-                        decks: updatedDecks,
-                        flashcardUrls: Object.keys(updatedFlashcards),
-                        flashcards: updatedFlashcards,
-                      });
                       setAppState({
                         ...appState,
                         deckUrls: Object.keys(updatedDecks),
@@ -476,7 +518,7 @@ export default function TestPage() {
                       setViewUrl(viewFlashcard.isInDeck);
                     })
                     .catch((err) => {
-                      console.log("Failed with error:", err);
+                      console.error("Failed with error:", err);
                     });
                 }}
               >

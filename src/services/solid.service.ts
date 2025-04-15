@@ -17,8 +17,6 @@ export default class SolidService implements IService {
   async newInstance(repository: IRepository) {
     const storageIris = await repository.findAllStorageIris();
 
-    console.log("Storage iris:", storageIris);
-
     if (storageIris.length === 0) throw new Error("No storage iris found");
     if (storageIris.length > 1) throw new Error("Too many storage iris found");
 
@@ -38,7 +36,7 @@ export default class SolidService implements IService {
   async newDeck(repository: IRepository, deck: Omit<DeckModel, "iri">) {
     const decks = await repository.createDeck(
       deck.isInSolidMemoDataInstance,
-      deck,
+      deck
     );
     return { decks };
   }
@@ -46,12 +44,12 @@ export default class SolidService implements IService {
   async newFlashcard(
     repository: IRepository,
     instanceIri: string,
-    flashcard: Omit<FlashcardModel, "iri">,
+    flashcard: Omit<FlashcardModel, "iri">
   ) {
     await repository.createFlashcard(
       instanceIri,
       flashcard.isInDeck,
-      flashcard,
+      flashcard
     );
     const decks = await repository.findDecks([flashcard.isInDeck]);
     return { decks };

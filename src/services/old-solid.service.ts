@@ -21,7 +21,7 @@ export type TypeRegistrationModel = {
 export async function createInstance(
   session: Session,
   storageIri: string,
-  privateTypeIndexIri: string,
+  privateTypeIndexIri: string
 ) {
   const instanceContainerIri = `${storageIri}${uuid().toString()}/`;
   const instanceIri = `${instanceContainerIri}data`;
@@ -35,12 +35,12 @@ export async function createInstance(
   const instanceThing = buildThing(createThing({ name: instanceThingName }))
     .addUrl(
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-      "http://antwika.com/ns/solid-memo#SolidMemoData",
+      "http://antwika.com/ns/solid-memo#SolidMemoData"
     )
     .addStringNoLocale("http://antwika.com/ns/solid-memo#version", "1")
     .addStringNoLocale(
       "http://antwika.com/ns/solid-memo#name",
-      "My Solid Memo instance",
+      "My Solid Memo instance"
     )
     .build();
 
@@ -57,25 +57,25 @@ export async function createInstance(
   const privateTypeIndexThingName = uuid().toString();
 
   const privateTypeIndexThing = buildThing(
-    createThing({ name: privateTypeIndexThingName }),
+    createThing({ name: privateTypeIndexThingName })
   )
     .addUrl(
       "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-      "http://www.w3.org/ns/solid/terms#TypeRegistration",
+      "http://www.w3.org/ns/solid/terms#TypeRegistration"
     )
     .addUrl(
       "http://www.w3.org/ns/solid/terms#forClass",
-      "http://antwika.com/ns/solid-memo#SolidMemoData",
+      "http://antwika.com/ns/solid-memo#SolidMemoData"
     )
     .addUrl(
       "http://www.w3.org/ns/solid/terms#instance",
-      `${instanceIri}#${instanceThingName}`,
+      `${instanceIri}#${instanceThingName}`
     )
     .build();
 
   const updatedPrivateTypeIndexDataset = setThing(
     privateTypeIndexDataset,
-    privateTypeIndexThing,
+    privateTypeIndexThing
   );
 
   await saveSolidDatasetAt(
@@ -83,14 +83,14 @@ export async function createInstance(
     updatedPrivateTypeIndexDataset,
     {
       fetch: session.fetch,
-    },
+    }
   );
 }
 
 export async function fetchSolidMemoDataInstances(
   session: Session,
   queryEngine: QueryEngine,
-  privateTypeIndex: string,
+  privateTypeIndex: string
 ) {
   const query = `
     SELECT ?solidMemoDataIri
@@ -118,7 +118,7 @@ export async function fetchSolidMemoDataInstances(
   });
 
   const solidMemoDataInstances = (await Promise.all(promises)).filter(
-    (solidMemoDataInstance) => solidMemoDataInstance !== undefined,
+    (solidMemoDataInstance) => solidMemoDataInstance !== undefined
   );
 
   return solidMemoDataInstances;
@@ -127,7 +127,7 @@ export async function fetchSolidMemoDataInstances(
 export async function fetchSolidMemoDataInstance(
   session: Session,
   queryEngine: QueryEngine,
-  solidMemoDataInstanceIri: string,
+  solidMemoDataInstanceIri: string
 ) {
   const query = `
     SELECT ?subject ?version ?name ?hasDeck
@@ -180,7 +180,7 @@ export async function fetchSolidMemoDataInstance(
 
       return acc;
     },
-    {},
+    {}
   );
 
   return instances;
@@ -191,7 +191,7 @@ export async function createFlashcard(
   queryEngine: QueryEngine,
   solidMemoDataIri: string,
   deckIri: string,
-  flashcard: Omit<FlashcardModel, "iri">,
+  flashcard: Omit<FlashcardModel, "iri">
 ) {
   if (!queryEngine) return;
 
@@ -229,7 +229,7 @@ export async function deleteFlashcard(
   session: Session,
   queryEngine: QueryEngine,
   solidMemoDataIri: string,
-  cardIri: string,
+  cardIri: string
 ) {
   if (!queryEngine) return;
 
@@ -239,8 +239,6 @@ export async function deleteFlashcard(
       ?s <http://antwika.com/ns/solid-memo#hasCard> <${cardIri}> .
     }
   `;
-
-  console.log("delete query", query);
 
   await queryEngine.queryVoid(query, {
     sources: [solidMemoDataIri],
@@ -253,7 +251,7 @@ export async function deleteFlashcard(
 export async function fetchCard(
   session: Session,
   queryEngine: QueryEngine,
-  cardIri: string,
+  cardIri: string
 ) {
   if (!queryEngine) return;
 
@@ -307,7 +305,7 @@ export async function fetchCard(
 export async function fetchCardIris(
   session: Session,
   queryEngine: QueryEngine,
-  deckIri: string,
+  deckIri: string
 ) {
   const query = `
     SELECT ?hasCard
@@ -335,7 +333,7 @@ export async function fetchCardIris(
 export async function fetchAllDeckIris(
   session: Session,
   queryEngine: QueryEngine,
-  dataIri: string,
+  dataIri: string
 ) {
   const query = `
     SELECT ?deckIri
@@ -363,7 +361,7 @@ export async function createDeck(
   session: Session,
   queryEngine: QueryEngine,
   solidMemoDataIri: string,
-  deck: Omit<DeckModel, "iri">,
+  deck: Omit<DeckModel, "iri">
 ) {
   if (!queryEngine) return;
 
@@ -379,8 +377,6 @@ export async function createDeck(
       <${iri}> <http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance> <${solidMemoDataIri}> .
     }
   `;
-
-  console.log("INSERT DATA", query);
 
   await queryEngine.queryVoid(query, {
     sources: [solidMemoDataIri],
@@ -402,7 +398,7 @@ export async function deleteDeck(
   session: Session,
   queryEngine: QueryEngine,
   solidMemoDataIri: string,
-  deckIri: string,
+  deckIri: string
 ) {
   if (!queryEngine) return;
 
@@ -415,8 +411,6 @@ export async function deleteDeck(
         ?s <http://antwika.com/ns/solid-memo#hasDeck> <${deckIri}> .
       }
     `;
-
-    console.log("DELETE DATA", query1);
 
     await queryEngine.queryVoid(query1, {
       sources: [solidMemoDataIri],
@@ -432,8 +426,6 @@ export async function deleteDeck(
       }
     `;
 
-    console.log("DELETE DATA", query2);
-
     await queryEngine.queryVoid(query2, {
       sources: [solidMemoDataIri],
       fetch: session.fetch,
@@ -448,7 +440,7 @@ export async function deleteDeck(
 export const fetchDeck = async (
   session: Session,
   queryEngine: QueryEngine,
-  deckIri: string,
+  deckIri: string
 ) => {
   if (!queryEngine) return;
 
@@ -503,7 +495,7 @@ export const fetchDeck = async (
 export async function fetchPrivateTypeIndexIris(
   session: Session,
   queryEngine: QueryEngine,
-  webId: string,
+  webId: string
 ) {
   const query = `
     SELECT ?privateTypeIndexIri
@@ -531,7 +523,7 @@ export async function fetchPrivateTypeIndexIris(
 export async function fetchSeeAlsoIris(
   session: Session,
   queryEngine: QueryEngine,
-  webId: string,
+  webId: string
 ) {
   const query = `
     SELECT ?seeAlsoIri
@@ -559,14 +551,14 @@ export async function fetchSeeAlsoIris(
 export async function fetchAllPrivateTypeIndexIris(
   session: Session,
   queryEngine: QueryEngine,
-  webId: string,
+  webId: string
 ) {
   const seeAlsoIris = await fetchSeeAlsoIris(session, queryEngine, webId);
 
   const promises = [
     fetchPrivateTypeIndexIris(session, queryEngine, webId),
     ...seeAlsoIris.map((seeAlsoIri) =>
-      fetchPrivateTypeIndexIris(session, queryEngine, seeAlsoIri),
+      fetchPrivateTypeIndexIris(session, queryEngine, seeAlsoIri)
     ),
   ];
 

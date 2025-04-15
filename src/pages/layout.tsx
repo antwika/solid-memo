@@ -32,7 +32,7 @@ export default function Layout({ children }: Props) {
                   router.push("/login");
                 })
                 .catch((err) => {
-                  console.log("Error occurred during logout, error:", err);
+                  console.error("Failed with error:", err);
                 });
             }}
           />
