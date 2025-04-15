@@ -7,18 +7,24 @@ import {
   QueryEngineProvider,
   StoreProvider,
 } from "@providers/index";
+import RepositoryProvider from "@providers/repository.provider";
+import { SolidRepository } from "@repositories/index";
 
 const geist = Geist({
   subsets: ["latin"],
 });
 
 const MyApp: AppType = ({ Component, pageProps }) => {
+  const solidRepository = new SolidRepository();
+
   return (
     <div className={geist.className}>
       <StoreProvider>
         <SessionProvider>
           <QueryEngineProvider>
-            <Component {...pageProps} />
+            <RepositoryProvider repository={solidRepository}>
+              <Component {...pageProps} />
+            </RepositoryProvider>
           </QueryEngineProvider>
         </SessionProvider>
       </StoreProvider>

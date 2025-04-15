@@ -5,13 +5,223 @@ import { SessionContext } from "@providers/index";
 import { Button } from "@ui/button.ui";
 import { Card } from "@ui/card.ui";
 import { useContext, useState } from "react";
-import { SolidRepository } from "src/repositories/index";
 import { Database, Layers, StickyNote } from "lucide-react";
+import { RepositoryContext } from "@providers/repository.provider";
+import type { IRepository } from "@repositories/index";
+import type { Session } from "@inrupt/solid-client-authn-browser";
 
-const solidRepository = new SolidRepository();
+interface IService {
+  discoverEverything(
+    session: Session,
+    repository: IRepository,
+  ): Promise<{
+    instanceUrls: string[];
+    deckUrls: string[];
+    flashcardUrls: string[];
+  }>;
+
+  discoverInstanceUrls(
+    session: Session,
+    repository: IRepository,
+  ): Promise<string[]>;
+
+  newInstance(
+    session: Session,
+    repository: IRepository,
+  ): Promise<{
+    instanceUrls: string[];
+    instances: Record<string, InstanceModel>;
+  }>;
+
+  newDeck(
+    session: Session,
+    repository: IRepository,
+    deck: Omit<DeckModel, "iri">,
+  ): Promise<{ decks: Record<string, DeckModel> }>;
+
+  newFlashcard(
+    session: Session,
+    repository: IRepository,
+    instanceIri: string,
+    flashcard: Omit<FlashcardModel, "iri">,
+  ): Promise<{ decks: Record<string, DeckModel> }>;
+
+  getInstance(
+    session: Session,
+    repository: IRepository,
+    instanceUrl: string,
+  ): Promise<Record<string, InstanceModel>>;
+
+  getDeck(
+    session: Session,
+    repository: IRepository,
+    deckUrl: string,
+  ): Promise<Record<string, DeckModel>>;
+
+  getFlashcard(
+    session: Session,
+    repository: IRepository,
+    flashcardUrl: string,
+  ): Promise<Record<string, FlashcardModel>>;
+
+  removeInstance(
+    session: Session,
+    repository: IRepository,
+    instance: InstanceModel,
+  ): Promise<{
+    instanceUrls: string[];
+    instances: Record<string, InstanceModel>;
+  }>;
+
+  removeDeck(
+    session: Session,
+    repository: IRepository,
+    deck: DeckModel,
+  ): Promise<{
+    instances: Record<string, InstanceModel>;
+    deckUrls: string[];
+    decks: Record<string, DeckModel>;
+  }>;
+
+  removeFlashcard(
+    session: Session,
+    repository: IRepository,
+    flashcard: FlashcardModel,
+  ): Promise<{
+    decks: Record<string, DeckModel>;
+    flashcardUrls: string[];
+    flashcards: Record<string, FlashcardModel>;
+  }>;
+}
+
+class SolidService implements IService {
+  async discoverEverything(session: Session, repository: IRepository) {
+    const instanceUrls = await repository.findAllInstanceUrls(session);
+    const deckUrls = await repository.findAllDeckUrls(session, instanceUrls);
+    const flashcardUrls = await repository.findAllFlashcardUrls(
+      session,
+      deckUrls,
+    );
+    return { instanceUrls, deckUrls, flashcardUrls };
+  }
+
+  async discoverInstanceUrls(session: Session, repository: IRepository) {
+    return repository.findAllInstanceUrls(session);
+  }
+
+  async newInstance(session: Session, repository: IRepository) {
+    const storageIris = await repository.findAllStorageIris(session);
+
+    console.log("Storage iris:", storageIris);
+
+    if (storageIris.length === 0) throw new Error("No storage iris found");
+    if (storageIris.length > 1) throw new Error("Too many storage iris found");
+
+    const storageIri = storageIris[0];
+
+    if (!storageIri) throw new Error("Failed to pick storage iri");
+
+    await repository.createInstance(session, storageIri);
+
+    const instanceUrls = await repository.findAllInstanceUrls(session);
+
+    const instances = await repository.findInstances(session, instanceUrls);
+
+    return { instanceUrls, instances };
+  }
+
+  async newDeck(
+    session: Session,
+    repository: IRepository,
+    deck: Omit<DeckModel, "iri">,
+  ) {
+    const decks = await repository.createDeck(
+      session,
+      deck.isInSolidMemoDataInstance,
+      deck,
+    );
+    return { decks };
+  }
+
+  async newFlashcard(
+    session: Session,
+    repository: IRepository,
+    instanceIri: string,
+    flashcard: Omit<FlashcardModel, "iri">,
+  ) {
+    await repository.createFlashcard(
+      session,
+      instanceIri,
+      flashcard.isInDeck,
+      flashcard,
+    );
+    const decks = await repository.findDecks(session, [flashcard.isInDeck]);
+    return { decks };
+  }
+
+  async getInstance(
+    session: Session,
+    repository: IRepository,
+    instanceUrl: string,
+  ) {
+    return repository.findInstances(session, [instanceUrl]);
+  }
+
+  async getDeck(session: Session, repository: IRepository, deckUrl: string) {
+    return repository.findDecks(session, [deckUrl]);
+  }
+
+  async getFlashcard(
+    session: Session,
+    repository: IRepository,
+    flashcardUrl: string,
+  ) {
+    return repository.findFlashcards(session, [flashcardUrl]);
+  }
+
+  async removeInstance(
+    session: Session,
+    repository: IRepository,
+    instance: InstanceModel,
+  ) {
+    await repository.deleteInstance(session, instance);
+    const instanceUrls = await repository.findAllInstanceUrls(session);
+    const instances = await repository.findInstances(session, instanceUrls);
+    return { instanceUrls, instances };
+  }
+
+  async removeDeck(session: Session, repository: IRepository, deck: DeckModel) {
+    await repository.deleteDeck(session, deck);
+    const instanceUrls = await repository.findAllInstanceUrls(session);
+    const instances = await repository.findInstances(session, instanceUrls);
+    const deckUrls = await repository.findAllDeckUrls(session, [
+      deck.isInSolidMemoDataInstance,
+    ]);
+    const decks = await repository.findDecks(session, deckUrls);
+    return { instances, deckUrls, decks };
+  }
+
+  async removeFlashcard(
+    session: Session,
+    repository: IRepository,
+    flashcard: FlashcardModel,
+  ) {
+    await repository.deleteFlashcard(session, flashcard);
+    const decks = await repository.findDecks(session, [flashcard.isInDeck]);
+    const flashcardUrls = await repository.findAllFlashcardUrls(session, [
+      flashcard.isInDeck,
+    ]);
+    const flashcards = await repository.findFlashcards(session, flashcardUrls);
+    return { decks, flashcardUrls, flashcards };
+  }
+}
+
+const solidService = new SolidService();
 
 export default function TestPage() {
   const { session } = useContext(SessionContext);
+  const { getRepository } = useContext(RepositoryContext);
+  const repository = getRepository();
 
   const [instanceUrls, setInstanceUrls] = useState<string[]>([]);
   const [deckUrls, setDeckUrls] = useState<string[]>([]);
@@ -32,17 +242,11 @@ export default function TestPage() {
       <div className="flex flex-row items-center gap-2">
         <Button
           onClick={() => {
-            solidRepository
-              .findAllInstanceUrls(session)
-              .then((instanceUrls) => {
+            solidService
+              .discoverEverything(session, repository)
+              .then(({ instanceUrls, deckUrls, flashcardUrls }) => {
                 setInstanceUrls(instanceUrls);
-                return solidRepository.findAllDeckUrls(session, instanceUrls);
-              })
-              .then((deckUrls) => {
                 setDeckUrls(deckUrls);
-                return solidRepository.findAllFlashcardUrls(session, deckUrls);
-              })
-              .then((flashcardUrls) => {
                 setFlashcardUrls(flashcardUrls);
               })
               .catch((err) => {
@@ -54,8 +258,8 @@ export default function TestPage() {
         </Button>
         <Button
           onClick={() => {
-            solidRepository
-              .findAllInstanceUrls(session)
+            solidService
+              .discoverInstanceUrls(session, repository)
               .then((instanceUrls) => setInstanceUrls(instanceUrls))
               .catch((err) => {
                 console.log("Failed with error:", err);
@@ -66,31 +270,12 @@ export default function TestPage() {
         </Button>
         <Button
           onClick={() => {
-            solidRepository
-              .findAllStorageIris(session)
-              .then((storageIris) => {
-                console.log("Storage iris:", storageIris);
-                if (storageIris.length === 0)
-                  throw new Error("No storage iris found");
-                if (storageIris.length > 1)
-                  throw new Error("Too many storage iris found");
-
-                const storageIri = storageIris[0];
-
-                if (!storageIri) throw new Error("Failed to pick storage iri");
-
-                return solidRepository.createInstance(session, storageIri);
-              })
-              .then(() => {
-                return solidRepository.findAllInstanceUrls(session);
-              })
-              .then((instanceUrls) => {
+            solidService
+              .newInstance(session, repository)
+              .then(({ instanceUrls, instances }) => {
                 setInstanceUrls(instanceUrls);
-                return solidRepository.findInstances(session, instanceUrls);
-              })
-              .then((instances) => {
-                setViewUrl(undefined);
                 setInstances(instances);
+                setViewUrl(undefined);
               })
               .catch((err) => {
                 console.log("Failed with error:", err);
@@ -111,8 +296,8 @@ export default function TestPage() {
             <Button
               size={"sm"}
               onClick={() => {
-                solidRepository
-                  .findInstances(session, [instanceUrl])
+                solidService
+                  .getInstance(session, repository, instanceUrl)
                   .then((instances) => {
                     console.log("Looking for instanceUrl:", instanceUrl);
                     console.log("Found instances:", instances);
@@ -136,8 +321,8 @@ export default function TestPage() {
             <Button
               size={"sm"}
               onClick={() => {
-                solidRepository
-                  .findDecks(session, [deckUrl])
+                solidService
+                  .getDeck(session, repository, deckUrl)
                   .then((decks) => {
                     console.log("Found decks:", decks);
                     setDecks(decks);
@@ -160,8 +345,8 @@ export default function TestPage() {
             <Button
               size={"sm"}
               onClick={() => {
-                solidRepository
-                  .findFlashcards(session, [flashcardUrl])
+                solidService
+                  .getFlashcard(session, repository, flashcardUrl)
                   .then((flashcards) => {
                     console.log(
                       "Find flashcards:",
@@ -196,18 +381,12 @@ export default function TestPage() {
             <Button
               variant={"destructive"}
               onClick={() => {
-                solidRepository
-                  .deleteInstance(session, viewInstance)
-                  .then(() => {
-                    return solidRepository.findAllInstanceUrls(session);
-                  })
-                  .then((instanceUrls) => {
+                solidService
+                  .removeInstance(session, repository, viewInstance)
+                  .then(({ instanceUrls, instances }) => {
                     setInstanceUrls(instanceUrls);
-                    return solidRepository.findInstances(session, instanceUrls);
-                  })
-                  .then((instances) => {
-                    setViewUrl(undefined);
                     setInstances(instances);
+                    setViewUrl(undefined);
                   })
                   .catch((err) => {
                     console.log("Failed with error:", err);
@@ -218,14 +397,14 @@ export default function TestPage() {
             </Button>
             <Button
               onClick={() => {
-                solidRepository
-                  .createDeck(session, viewInstance.iri, {
+                solidService
+                  .newDeck(session, repository, {
                     version: "1",
                     name: "New deck name",
                     isInSolidMemoDataInstance: viewInstance.iri,
                     hasCard: [],
                   })
-                  .then((decks) => {
+                  .then(({ decks }) => {
                     setDeckUrls(Object.keys(decks));
                     setDecks(decks);
                   })
@@ -257,27 +436,13 @@ export default function TestPage() {
             <Button
               variant={"destructive"}
               onClick={() => {
-                solidRepository
-                  .deleteDeck(session, viewDeck)
-                  .then(() => {
-                    return solidRepository.findAllInstanceUrls(session);
-                  })
-                  .then((instanceUrls) => {
-                    return solidRepository.findInstances(session, instanceUrls);
-                  })
-                  .then((instances) => {
+                solidService
+                  .removeDeck(session, repository, viewDeck)
+                  .then(({ instances, deckUrls, decks }) => {
                     setInstances(instances);
-                    return solidRepository.findAllDeckUrls(session, [
-                      viewDeck.isInSolidMemoDataInstance,
-                    ]);
-                  })
-                  .then((deckUrls) => {
-                    return solidRepository.findDecks(session, deckUrls);
-                  })
-                  .then((decks) => {
-                    setViewUrl(viewDeck.isInSolidMemoDataInstance);
-                    setDeckUrls(Object.keys(decks));
+                    setDeckUrls(deckUrls);
                     setDecks(decks);
+                    setViewUrl(viewDeck.isInSolidMemoDataInstance);
                   })
                   .catch((err) => {
                     console.log("Failed with error:", err);
@@ -288,11 +453,11 @@ export default function TestPage() {
             </Button>
             <Button
               onClick={() => {
-                solidRepository
-                  .createFlashcard(
+                solidService
+                  .newFlashcard(
                     session,
+                    repository,
                     viewDeck.isInSolidMemoDataInstance,
-                    viewDeck.iri,
                     {
                       version: "1",
                       front: "Front",
@@ -300,10 +465,7 @@ export default function TestPage() {
                       isInDeck: viewDeck.iri,
                     },
                   )
-                  .then(() => {
-                    return solidRepository.findDecks(session, [viewDeck.iri]);
-                  })
-                  .then((decks) => {
+                  .then(({ decks }) => {
                     setDecks(decks);
                     setFlashcardUrls(decks[viewDeck.iri]?.hasCard ?? []);
                     setViewUrl(decks[viewDeck.iri]?.iri);
@@ -333,30 +495,14 @@ export default function TestPage() {
             <Button
               variant={"destructive"}
               onClick={() => {
-                solidRepository
-                  .deleteFlashcard(session, viewFlashcard)
-                  .then(() => {
-                    return solidRepository.findDecks(session, [
-                      viewFlashcard.isInDeck,
-                    ]);
-                  })
-                  .then((decks) => {
+                solidService
+                  .removeFlashcard(session, repository, viewFlashcard)
+                  .then(({ decks, flashcardUrls, flashcards }) => {
                     setDeckUrls(Object.keys(decks));
                     setDecks(decks);
-                    return solidRepository.findAllFlashcardUrls(session, [
-                      viewFlashcard.isInDeck,
-                    ]);
-                  })
-                  .then((flashcardUrls) => {
-                    return solidRepository.findFlashcards(
-                      session,
-                      flashcardUrls,
-                    );
-                  })
-                  .then((flashcards) => {
-                    setViewUrl(viewFlashcard.isInDeck);
-                    setFlashcardUrls(Object.keys(flashcards));
+                    setFlashcardUrls(flashcardUrls);
                     setFlashcards(flashcards);
+                    setViewUrl(viewFlashcard.isInDeck);
                   })
                   .catch((err) => {
                     console.log("Failed with error:", err);

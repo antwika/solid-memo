@@ -27,6 +27,7 @@ export default function Home() {
         Go to Test page
       </Button>
       <Button
+        disabled
         onClick={() => {
           dispatch(fetchSolidMemoDataThunk({ session, queryEngine }))
             .then(() => {
