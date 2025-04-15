@@ -53,7 +53,7 @@ export default function TestPage() {
   return (
     <Layout>
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col gap-2">
           <Button
             onClick={() => {
               service
@@ -105,127 +105,143 @@ export default function TestPage() {
         </div>
         <Card className="p-2">
           <div>
-            <strong>Known urls:</strong>
+            <strong>Discovered:</strong>
           </div>
           {instanceUrls.map((instanceUrl) => (
-            <div key={instanceUrl} className="flex items-center gap-2">
-              <div className="width: 32px">
-                <Database />
+            <div key={instanceUrl} className="items-center gap-2">
+              <div className="flex gap-2">
+                <div>
+                  <Database />
+                </div>
+                <div className="flex grow-1 break-all">
+                  Instance: {instanceUrl}
+                </div>
+                <div>
+                  <Button
+                    size={"sm"}
+                    onClick={() => {
+                      service
+                        .getInstance(repository, instanceUrl)
+                        .then((instances) => {
+                          console.log("Looking for instanceUrl:", instanceUrl);
+                          console.log("Found instances:", instances);
+
+                          const updatedDeckUrls = [
+                            ...new Set([
+                              ...appState.deckUrls,
+                              ...(instances[instanceUrl]?.hasDeck ?? []),
+                            ]),
+                          ];
+
+                          const combinedInstances = {
+                            ...appState.instances,
+                            ...instances,
+                          };
+
+                          setAppState({
+                            ...appState,
+                            instances: combinedInstances,
+                            deckUrls: updatedDeckUrls,
+                          });
+                          setViewUrl(instances[instanceUrl]?.iri);
+                        })
+                        .catch((err) => {
+                          console.log("Failed with error:", err);
+                        });
+                    }}
+                  >
+                    View
+                  </Button>
+                </div>
               </div>
-              Instance: {instanceUrl}
-              <Button
-                size={"sm"}
-                onClick={() => {
-                  service
-                    .getInstance(repository, instanceUrl)
-                    .then((instances) => {
-                      console.log("Looking for instanceUrl:", instanceUrl);
-                      console.log("Found instances:", instances);
-
-                      const updatedDeckUrls = [
-                        ...new Set([
-                          ...appState.deckUrls,
-                          ...(instances[instanceUrl]?.hasDeck ?? []),
-                        ]),
-                      ];
-
-                      const combinedInstances = {
-                        ...appState.instances,
-                        ...instances,
-                      };
-
-                      setAppState({
-                        ...appState,
-                        instances: combinedInstances,
-                        deckUrls: updatedDeckUrls,
-                      });
-                      setViewUrl(instances[instanceUrl]?.iri);
-                    })
-                    .catch((err) => {
-                      console.log("Failed with error:", err);
-                    });
-                }}
-              >
-                View
-              </Button>
             </div>
           ))}
           {deckUrls.map((deckUrl) => (
-            <div key={deckUrl} className="flex items-center gap-2">
-              <div className="width: 32px">
-                <Layers />
+            <div key={deckUrl} className="items-center gap-2">
+              <div className="flex gap-2">
+                <div>
+                  <Layers />
+                </div>
+                <div className="flex grow-1 break-all">Deck: {deckUrl}</div>
+                <div>
+                  <Button
+                    size={"sm"}
+                    onClick={() => {
+                      service
+                        .getDeck(repository, deckUrl)
+                        .then((decks) => {
+                          console.log("Found decks:", decks);
+
+                          const updatedFlashcardUrls = [
+                            ...new Set([
+                              ...appState.flashcardUrls,
+                              ...(decks[deckUrl]?.hasCard ?? []),
+                            ]),
+                          ];
+
+                          const combinedDecks = { ...appState.decks, ...decks };
+
+                          setAppState({
+                            ...appState,
+                            decks: combinedDecks,
+                            flashcardUrls: updatedFlashcardUrls,
+                          });
+                          setViewUrl(decks[deckUrl]?.iri);
+                        })
+                        .catch((err) => {
+                          console.log("Failed with error:", err);
+                        });
+                    }}
+                  >
+                    View
+                  </Button>
+                </div>
               </div>
-              Deck: {deckUrl}
-              <Button
-                size={"sm"}
-                onClick={() => {
-                  service
-                    .getDeck(repository, deckUrl)
-                    .then((decks) => {
-                      console.log("Found decks:", decks);
-
-                      const updatedFlashcardUrls = [
-                        ...new Set([
-                          ...appState.flashcardUrls,
-                          ...(decks[deckUrl]?.hasCard ?? []),
-                        ]),
-                      ];
-
-                      const combinedDecks = { ...appState.decks, ...decks };
-
-                      setAppState({
-                        ...appState,
-                        decks: combinedDecks,
-                        flashcardUrls: updatedFlashcardUrls,
-                      });
-                      setViewUrl(decks[deckUrl]?.iri);
-                    })
-                    .catch((err) => {
-                      console.log("Failed with error:", err);
-                    });
-                }}
-              >
-                View
-              </Button>
             </div>
           ))}
           {flashcardUrls.map((flashcardUrl) => (
-            <div key={flashcardUrl} className="flex items-center gap-2">
-              <div className="width: 32px">
-                <StickyNote />
+            <div key={flashcardUrl} className="items-center gap-2">
+              <div className="flex gap-2">
+                <div>
+                  <StickyNote />
+                </div>
+                <div className="flex grow-1 break-all">
+                  Flashcard: {flashcardUrl}
+                </div>
+                <div>
+                  <Button
+                    size={"sm"}
+                    onClick={() => {
+                      service
+                        .getFlashcard(repository, flashcardUrl)
+                        .then((flashcards) => {
+                          console.log(
+                            "Find flashcards:",
+                            flashcards,
+                            ", view ",
+                            flashcardUrl,
+                          );
+
+                          const combinedFlashcards = {
+                            ...appState.flashcards,
+                            ...flashcards,
+                          };
+
+                          setAppState({
+                            ...appState,
+                            flashcards: combinedFlashcards,
+                          });
+                          setViewUrl(flashcardUrl);
+                        })
+                        .catch((err) => {
+                          console.log("Failed with error:", err);
+                        });
+                    }}
+                  >
+                    View
+                  </Button>
+                </div>
               </div>
-              Flashcard: {flashcardUrl}
-              <Button
-                size={"sm"}
-                onClick={() => {
-                  service
-                    .getFlashcard(repository, flashcardUrl)
-                    .then((flashcards) => {
-                      console.log(
-                        "Find flashcards:",
-                        flashcards,
-                        ", view ",
-                        flashcardUrl,
-                      );
-
-                      const combinedFlashcards = {
-                        ...appState.flashcards,
-                        ...flashcards,
-                      };
-
-                      setAppState({
-                        ...appState,
-                        flashcards: combinedFlashcards,
-                      });
-                      setViewUrl(flashcardUrl);
-                    })
-                    .catch((err) => {
-                      console.log("Failed with error:", err);
-                    });
-                }}
-              >
-                View
-              </Button>
             </div>
           ))}
         </Card>
