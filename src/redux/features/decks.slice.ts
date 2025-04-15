@@ -4,7 +4,7 @@ import {
   deleteDeck,
   fetchAllDeckIris,
   fetchDeck,
-} from "@services/solid.service";
+} from "@services/old-solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { DeckModel } from "@domain/index";

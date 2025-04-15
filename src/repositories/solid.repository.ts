@@ -1,4 +1,11 @@
-import type { DeckModel, FlashcardModel, InstanceModel } from "@domain/index";
+import {
+  parseDeck,
+  parseFlashcard,
+  parseInstance,
+  type DeckModel,
+  type FlashcardModel,
+  type InstanceModel,
+} from "@domain/index";
 import {
   buildThing,
   createSolidDataset,
@@ -17,9 +24,9 @@ import {
   setThing,
   type Thing,
 } from "@inrupt/solid-client";
-import type { Session } from "@inrupt/solid-client-authn-browser";
 import { v4 as uuid } from "uuid";
 import type { IRepository } from "@repositories/index";
+import type { IAuthService } from "@services/index";
 
 function stripFragment(iri: string) {
   return iri.split("#")[0];
@@ -32,12 +39,20 @@ const thingContains = (
 ) => privateTypeIndexThing.predicates[type]?.namedNodes?.includes(value);
 
 export default class SolidRepository implements IRepository {
-  async findAllStorageIris(session: Session) {
-    const webId = session.info?.webId;
+  readonly authService: IAuthService;
+
+  constructor(authService: IAuthService) {
+    this.authService = authService;
+  }
+
+  async findAllStorageIris() {
+    const webId = this.authService.getWebId();
 
     if (!webId) throw new Error("Session not authenticated!");
 
-    const profiles = await getProfileAll(webId, { fetch: session.fetch });
+    const profiles = await getProfileAll(webId, {
+      fetch: this.authService.getFetch(),
+    });
     const webIdThings = [getThing(profiles.webIdProfile, webId)];
 
     console.log("webIdThings:", webIdThings);
@@ -54,14 +69,14 @@ export default class SolidRepository implements IRepository {
     return storageIris;
   }
 
-  async findAllPrivateTypeIndexIrisByWebId(
-    session: Session,
-  ): Promise<string[]> {
-    const webId = session.info?.webId;
+  async findAllPrivateTypeIndexIrisByWebId(): Promise<string[]> {
+    const webId = this.authService.getWebId();
 
     if (!webId) throw new Error("Session not authenticated!");
 
-    const profiles = await getProfileAll(webId, { fetch: session.fetch });
+    const profiles = await getProfileAll(webId, {
+      fetch: this.authService.getFetch(),
+    });
     const webIdThings = [getThing(profiles.webIdProfile, webId)];
 
     console.log("webIdThings:", webIdThings);
@@ -77,7 +92,7 @@ export default class SolidRepository implements IRepository {
 
     const seeAlsoDatasets = await Promise.all(
       seeAlsoUrls.map((seeAlsoUrl) =>
-        getSolidDataset(seeAlsoUrl, { fetch: session.fetch }),
+        getSolidDataset(seeAlsoUrl, { fetch: this.authService.getFetch() }),
       ),
     );
     console.log("seeAlsoDatasets:", seeAlsoDatasets);
@@ -116,15 +131,17 @@ export default class SolidRepository implements IRepository {
     return allPrivateTypeIndexUrls;
   }
 
-  async findAllInstanceUrls(session: Session): Promise<string[]> {
+  async findAllInstanceUrls(): Promise<string[]> {
     const privateTypeIndexUrls =
-      await this.findAllPrivateTypeIndexIrisByWebId(session);
+      await this.findAllPrivateTypeIndexIrisByWebId();
 
     console.log("privateTypeIndexUrls:", privateTypeIndexUrls);
 
     const privateTypeIndexDatasets = await Promise.all(
       privateTypeIndexUrls.map((privateTypeIndexUrl) =>
-        getSolidDataset(privateTypeIndexUrl, { fetch: session.fetch }),
+        getSolidDataset(privateTypeIndexUrl, {
+          fetch: this.authService.getFetch(),
+        }),
       ),
     );
     console.log("privateTypeIndexDatasets:", privateTypeIndexDatasets);
@@ -167,15 +184,14 @@ export default class SolidRepository implements IRepository {
   }
 
   async findInstances(
-    session: Session,
     providedInstanceUrls?: string[],
   ): Promise<Record<string, InstanceModel>> {
     const instanceUrls =
-      providedInstanceUrls ?? (await this.findAllInstanceUrls(session));
+      providedInstanceUrls ?? (await this.findAllInstanceUrls());
 
     const instanceDatasets = await Promise.all(
       instanceUrls.map((instanceUrl) =>
-        getSolidDataset(instanceUrl, { fetch: session.fetch }),
+        getSolidDataset(instanceUrl, { fetch: this.authService.getFetch() }),
       ),
     );
     console.log("instanceDatasets:", instanceDatasets);
@@ -194,7 +210,7 @@ export default class SolidRepository implements IRepository {
 
     const instances = instanceThings.reduce<Record<string, InstanceModel>>(
       (acc, instanceThing) => {
-        const instance = {
+        const instance = parseInstance({
           iri: instanceThing.url,
           version: getStringNoLocale(
             instanceThing,
@@ -212,9 +228,8 @@ export default class SolidRepository implements IRepository {
             instanceThing,
             "http://antwika.com/ns/solid-memo#isInPrivateTypeIndex",
           ),
-        } as InstanceModel; // TODO: Actual parsing with zod
+        });
         acc[instance.iri] = instance;
-        console.log("Adding instance:", instance);
         return acc;
       },
       {},
@@ -223,16 +238,13 @@ export default class SolidRepository implements IRepository {
     return instances;
   }
 
-  async findAllDeckUrls(
-    session: Session,
-    providedInstanceUrls?: string[],
-  ): Promise<string[]> {
+  async findAllDeckUrls(providedInstanceUrls?: string[]): Promise<string[]> {
     const instanceUrls =
-      providedInstanceUrls ?? (await this.findAllInstanceUrls(session));
+      providedInstanceUrls ?? (await this.findAllInstanceUrls());
 
     const instanceDatasets = await Promise.all(
       instanceUrls.map((instanceUrl) =>
-        getSolidDataset(instanceUrl, { fetch: session.fetch }),
+        getSolidDataset(instanceUrl, { fetch: this.authService.getFetch() }),
       ),
     );
     console.log("instanceDatasets:", instanceDatasets);
@@ -264,11 +276,8 @@ export default class SolidRepository implements IRepository {
     return deckUrls;
   }
 
-  async findAllFlashcardUrls(
-    session: Session,
-    providedDeckUrls?: string[],
-  ): Promise<string[]> {
-    const decks = await this.findDecks(session, providedDeckUrls);
+  async findAllFlashcardUrls(providedDeckUrls?: string[]): Promise<string[]> {
+    const decks = await this.findDecks(providedDeckUrls);
 
     return Object.values(decks)
       .map((deck) => deck.hasCard)
@@ -276,14 +285,13 @@ export default class SolidRepository implements IRepository {
   }
 
   async findDecks(
-    session: Session,
     providedDeckUrls?: string[],
   ): Promise<Record<string, DeckModel>> {
-    const deckUrls = providedDeckUrls ?? (await this.findAllDeckUrls(session));
+    const deckUrls = providedDeckUrls ?? (await this.findAllDeckUrls());
 
     const deckDatasets = await Promise.all(
       deckUrls.map((deckUrl) =>
-        getSolidDataset(deckUrl, { fetch: session.fetch }),
+        getSolidDataset(deckUrl, { fetch: this.authService.getFetch() }),
       ),
     );
     console.log("deckDatasets:", deckDatasets);
@@ -302,7 +310,7 @@ export default class SolidRepository implements IRepository {
 
     const decks = deckThings.reduce<Record<string, DeckModel>>(
       (acc, deckThing) => {
-        const deck = {
+        const deck = parseDeck({
           iri: deckThing.url,
           version: getStringNoLocale(
             deckThing,
@@ -324,7 +332,7 @@ export default class SolidRepository implements IRepository {
             deckThing,
             "http://antwika.com/ns/solid-memo#hasCard",
           ),
-        } as DeckModel; // TODO: Actual parsing with zod
+        });
         acc[deck.iri] = deck;
         return acc;
       },
@@ -335,13 +343,12 @@ export default class SolidRepository implements IRepository {
   }
 
   async findFlashcards(
-    session: Session,
     flashcardUrls: string[],
   ): Promise<Record<string, FlashcardModel>> {
     const flashcardDatasets = await Promise.all(
       flashcardUrls.map((flashcardUrl) =>
         getSolidDataset(flashcardUrl, {
-          fetch: session.fetch,
+          fetch: this.authService.getFetch(),
         }),
       ),
     );
@@ -362,7 +369,7 @@ export default class SolidRepository implements IRepository {
 
     const flashcards = flashcardThings.reduce<Record<string, FlashcardModel>>(
       (acc, flashcardThing) => {
-        const flashcard = {
+        const flashcard = parseFlashcard({
           iri: flashcardThing.url,
           version: getStringNoLocale(
             flashcardThing,
@@ -380,7 +387,7 @@ export default class SolidRepository implements IRepository {
             flashcardThing,
             "http://antwika.com/ns/solid-memo#isInDeck",
           ),
-        } as FlashcardModel; // TODO: Actual parsing with zod
+        });
         acc[flashcard.iri] = flashcard;
         return acc;
       },
@@ -390,9 +397,11 @@ export default class SolidRepository implements IRepository {
     return flashcards;
   }
 
-  async createInstance(session: Session, podLocation: string): Promise<void> {
+  async createInstance(podLocation: string): Promise<void> {
+    console.log("podLocation:", podLocation);
+
     const privateTypeIndexIris =
-      await this.findAllPrivateTypeIndexIrisByWebId(session);
+      await this.findAllPrivateTypeIndexIrisByWebId();
     console.log("privateTypeIndexIris:", privateTypeIndexIris);
 
     if (privateTypeIndexIris.length === 0)
@@ -408,7 +417,7 @@ export default class SolidRepository implements IRepository {
       throw new Error("Failed to pick private type indexes iri");
 
     const privateTypeIndexDataset = await getSolidDataset(privateTypeIndexIri, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
     console.log("privateTypeIndexDataset:", privateTypeIndexDataset);
 
@@ -424,6 +433,7 @@ export default class SolidRepository implements IRepository {
 
     const instanceName = uuid().toString();
     const instanceIri = `${podLocation}solid-memo/data-${uuid().toString()}#${instanceName}`;
+    console.log("instanceIri:", instanceIri);
 
     const updatedTypeRegistrationThing = buildThing(typeRegistrationThing)
       .addUrl(
@@ -450,7 +460,7 @@ export default class SolidRepository implements IRepository {
     const savedPrivateTypeIndexDataset = await saveSolidDatasetAt(
       privateTypeIndexIri,
       updatedPrivateTypeIndexDataset,
-      { fetch: session.fetch },
+      { fetch: this.authService.getFetch() },
     );
     console.log("savedPrivateTypeIndexDataset:", savedPrivateTypeIndexDataset);
 
@@ -480,17 +490,16 @@ export default class SolidRepository implements IRepository {
     );
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
   }
 
   async createDeck(
-    session: Session,
     instanceIri: string,
     deck: Omit<DeckModel, "iri">,
   ): Promise<Record<string, DeckModel>> {
     const instanceDataset = await getSolidDataset(instanceIri, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
 
     console.log("instanceDataset:", instanceDataset);
@@ -520,12 +529,12 @@ export default class SolidRepository implements IRepository {
     const savedInstanceDataset = await saveSolidDatasetAt(
       instanceIri,
       updatedInstanceDataset,
-      { fetch: session.fetch },
+      { fetch: this.authService.getFetch() },
     );
     console.log("savedInstanceDataset:", savedInstanceDataset);
 
     const instanceDataset2 = await getSolidDataset(instanceIri, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
     console.log("instanceDataset2:", instanceDataset2);
 
@@ -552,23 +561,22 @@ export default class SolidRepository implements IRepository {
     const savedInstanceDataset2 = await saveSolidDatasetAt(
       instanceIri,
       updatedInstanceDataset2,
-      { fetch: session.fetch },
+      { fetch: this.authService.getFetch() },
     );
     console.log("savedInstanceDataset2:", savedInstanceDataset2);
 
-    const foundDecks = await this.findDecks(session, [deckIri]);
+    const foundDecks = await this.findDecks([deckIri]);
 
     return foundDecks;
   }
 
   async createFlashcard(
-    session: Session,
     instanceIri: string,
     deckIri: string,
     flashcard: Omit<FlashcardModel, "iri">,
   ): Promise<void> {
     const deckDataset = await getSolidDataset(deckIri, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
 
     console.log("deckDataset:", deckDataset);
@@ -594,12 +602,12 @@ export default class SolidRepository implements IRepository {
     const savedDeckDataset = await saveSolidDatasetAt(
       deckIri,
       updatedDeckDataset,
-      { fetch: session.fetch },
+      { fetch: this.authService.getFetch() },
     );
     console.log("savedDeckDataset:", savedDeckDataset);
 
     const instanceDataset = await getSolidDataset(instanceIri, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
     console.log("instanceDataset:", instanceDataset);
 
@@ -630,21 +638,18 @@ export default class SolidRepository implements IRepository {
     const savedInstanceDataset = await saveSolidDatasetAt(
       instanceIri,
       updatedInstanceDataset,
-      { fetch: session.fetch },
+      { fetch: this.authService.getFetch() },
     );
     console.log("savedInstanceDataset:", savedInstanceDataset);
   }
 
-  async deleteInstance(
-    session: Session,
-    instance: InstanceModel,
-  ): Promise<void> {
+  async deleteInstance(instance: InstanceModel): Promise<void> {
     if (instance.hasDeck.length > 0)
       throw new Error("Clear the instance before deletion");
 
     const privateTypeIndexIri = instance.isInPrivateTypeIndex;
     const privateTypeIndexDataset = await getSolidDataset(privateTypeIndexIri, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
 
     let updatedPrivateTypeIndexDataset = removeThing(
@@ -667,29 +672,31 @@ export default class SolidRepository implements IRepository {
     await saveSolidDatasetAt(
       privateTypeIndexIri,
       updatedPrivateTypeIndexDataset,
-      { fetch: session.fetch },
+      { fetch: this.authService.getFetch() },
     );
 
     const instanceDataset = await getSolidDataset(instance.iri, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
     const updatedInstanceDataset = removeThing(instanceDataset, instance.iri);
     const savedInstanceDataset = await saveSolidDatasetAt(
       instance.iri,
       updatedInstanceDataset,
-      { fetch: session.fetch },
+      { fetch: this.authService.getFetch() },
     );
 
-    await deleteSolidDataset(savedInstanceDataset, { fetch: session.fetch });
+    await deleteSolidDataset(savedInstanceDataset, {
+      fetch: this.authService.getFetch(),
+    });
   }
 
-  async deleteDeck(session: Session, deck: DeckModel): Promise<void> {
+  async deleteDeck(deck: DeckModel): Promise<void> {
     if (deck.hasCard.length > 0)
       throw new Error("Clear the deck before deletion");
 
     const instanceIri = deck.isInSolidMemoDataInstance;
     const instanceDataset = await getSolidDataset(instanceIri, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
 
     let updatedInstanceDataset = removeThing(instanceDataset, deck.iri);
@@ -710,17 +717,14 @@ export default class SolidRepository implements IRepository {
     }
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
   }
 
-  async deleteFlashcard(
-    session: Session,
-    flashcard: FlashcardModel,
-  ): Promise<void> {
+  async deleteFlashcard(flashcard: FlashcardModel): Promise<void> {
     const deckIri = flashcard.isInDeck;
     const deckDataset = await getSolidDataset(deckIri, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
 
     let updatedDeckDataset = removeThing(deckDataset, flashcard.iri);
@@ -738,7 +742,7 @@ export default class SolidRepository implements IRepository {
     }
 
     await saveSolidDatasetAt(deckIri, updatedDeckDataset, {
-      fetch: session.fetch,
+      fetch: this.authService.getFetch(),
     });
   }
 }

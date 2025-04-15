@@ -1,4 +1,4 @@
-import { SessionContext } from "@providers/index";
+import { ServiceContext } from "@providers/service.provider";
 import { Button } from "@ui/index";
 import { useContext } from "react";
 
@@ -7,16 +7,24 @@ type Props = {
 };
 
 export function Header({ onLogOut }: Props) {
-  const { session } = useContext(SessionContext);
+  const { getAuthService } = useContext(ServiceContext);
+  const authService = getAuthService();
+
   return (
-    <div className="flex p-4">
+    <div className="relative flex p-4">
       <div className="grow">
-        <div className="text-2xl font-extrabold">Solid Memo</div>
-        <div className="italic opacity-50">
-          Logged in as: {session.info.webId}
-        </div>
+        <div className="mb-2 text-2xl font-extrabold">Solid Memo</div>
+        {authService.isLoggedIn() && authService.getWebId() && (
+          <div className="break-all italic opacity-50">
+            Logged in as: {authService.getWebId()}
+          </div>
+        )}
       </div>
-      <Button onClick={onLogOut}>Log out</Button>
+      {authService.isLoggedIn() && authService.getWebId() && (
+        <div className="absolute right-0">
+          <Button onClick={onLogOut}>Log out</Button>
+        </div>
+      )}
     </div>
   );
 }

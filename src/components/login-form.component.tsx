@@ -1,4 +1,6 @@
+import { env } from "@lib/env";
 import { cn } from "@lib/utils";
+import { ServiceContext } from "@providers/service.provider";
 import {
   Button,
   Input,
@@ -10,13 +12,19 @@ import {
   CardTitle,
 } from "@ui/index";
 import type { ClassValue } from "clsx";
+import { useContext } from "react";
 
 type Props = {
   className?: ClassValue;
   onSelectOidcIssuer: (oidcIssuer: string) => void;
 };
 
-export function LoginForm({ className, onSelectOidcIssuer }: Props) {
+export function LoginForm({ className }: Props) {
+  const { getAuthService } = useContext(ServiceContext);
+  const authService = getAuthService();
+
+  console.log("authService:", authService);
+
   const oidcIssuers = [
     { url: "https://login.inrupt.com", name: "Inrupt PodSpaces" },
     { url: "http://localhost:3000", name: "Localhost:3000" },
@@ -38,7 +46,25 @@ export function LoginForm({ className, onSelectOidcIssuer }: Props) {
                     className="w-full"
                     onClick={(evt) => {
                       evt.preventDefault();
-                      onSelectOidcIssuer(oidcIssuer.url);
+                      console.log("Try log in! authService:", authService);
+                      if (authService.logIn !== undefined) {
+                        console.log("Try log in!");
+                        authService
+                          .logIn({
+                            oidcIssuer: oidcIssuer.url,
+                            redirectUrl: new URL(
+                              env.NEXT_PUBLIC_BASE_PATH,
+                              window.location.href,
+                            ).toString(),
+                            clientName: "Solid Memo",
+                          })
+                          .catch((err) => {
+                            console.log(
+                              "Error occurred during login, error:",
+                              err,
+                            );
+                          });
+                      }
                     }}
                   >
                     {oidcIssuer.name}

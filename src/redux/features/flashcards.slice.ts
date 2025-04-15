@@ -3,7 +3,7 @@ import {
   createFlashcard,
   deleteFlashcard,
   fetchCard,
-} from "@services/solid.service";
+} from "@services/old-solid.service";
 import type { Session } from "@inrupt/solid-client-authn-browser";
 import type { QueryEngine } from "@comunica/query-sparql-solid";
 import type { FlashcardModel } from "@domain/index";

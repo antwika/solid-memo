@@ -6,6 +6,7 @@ type Props = {
 };
 
 export default function Login({ tryLogIn }: Props) {
+  console.log("Render Login");
   return (
     <Layout>
       <LoginForm onSelectOidcIssuer={tryLogIn} />
