@@ -53,7 +53,7 @@ export default function TestPage() {
   return (
     <Layout>
       <div className="flex flex-col gap-4">
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-col items-center gap-2">
           <Button
             onClick={() => {
               service
