@@ -37,10 +37,14 @@ export default function Layout({ children }: Props) {
                 });
             }}
           />
-          <div className="flex gap-2">
-            <Button onClick={() => router.push("/")}>Home</Button>
-            <Button onClick={() => router.push("/instances")}>Instances</Button>
-          </div>
+          {authService.isLoggedIn() && (
+            <div className="flex gap-2">
+              <Button onClick={() => router.push("/")}>Home</Button>
+              <Button onClick={() => router.push("/instances")}>
+                Instances
+              </Button>
+            </div>
+          )}
           {children}
         </div>
       </main>

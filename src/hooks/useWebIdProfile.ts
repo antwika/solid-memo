@@ -10,16 +10,25 @@ export default function useWebIdProfile() {
 
   const { data: webIdProfileDatasets } = useDatasets(session.info.webId);
 
-  /* TODO: Probably traverse seeAlso to find more profiles */
-
   const [privateTypeIndexUrls, setPrivateTypeIndexUrls] = useState<string[]>(
     []
   );
 
+  const [seeAlsoPrivateTypeIndexUrls, setSeeAlsoPrivateTypeIndexUrls] =
+    useState<string[]>([]);
+
+  const [seeAlsoUrls, setSeeAlsoUrls] = useState<string[]>([]);
+  const { data: seeAlsoDatasets } = useDatasets(seeAlsoUrls);
+
   const [instanceUrls, setInstanceUrls] = useState<string[]>([]);
 
-  const { data: privateTypeIndexDatasets, mutate } = useSWR(
+  const { data: privateTypeIndexDatasets, mutate: mutate1 } = useSWR(
     privateTypeIndexUrls,
+    multiFetcher
+  );
+
+  const { data: seeAlsoPrivateTypeIndexDatasets, mutate: mutate2 } = useSWR(
+    seeAlsoPrivateTypeIndexUrls,
     multiFetcher
   );
 
@@ -29,6 +38,7 @@ export default function useWebIdProfile() {
       return;
     }
 
+    // Find all private type indices
     Promise.all(
       webIdProfileDatasets.map((webIdProfileDataset) =>
         solidClient.getThingAll(webIdProfileDataset)
@@ -50,14 +60,69 @@ export default function useWebIdProfile() {
       .catch((err) =>
         console.error("Failed to fetch private type indices, error:", err)
       );
+
+    // Find all see also references
+    Promise.all(
+      webIdProfileDatasets.map((webIdProfileDataset) =>
+        solidClient.getThingAll(webIdProfileDataset)
+      )
+    )
+      .then((things) => things.flat())
+      .then((things) => {
+        return Promise.all(
+          things.map((thing) =>
+            solidClient.getUrlAll(
+              thing,
+              "http://www.w3.org/2000/01/rdf-schema#seeAlso"
+            )
+          )
+        );
+      })
+      .then((urls) => urls.flat())
+      .then((urls) => setSeeAlsoUrls(urls))
+      .catch((err) =>
+        console.error("Failed to fetch see also references, error:", err)
+      );
   }, [webIdProfileDatasets]);
 
   useEffect(() => {
-    if (!privateTypeIndexDatasets) {
+    if (!seeAlsoDatasets) {
+      setSeeAlsoPrivateTypeIndexUrls([]);
       return;
     }
 
-    privateTypeIndexDatasets.map((privateTypeIndexDataset) => {
+    // Find all private type indices
+    Promise.all(
+      seeAlsoDatasets.map((dataset) => solidClient.getThingAll(dataset))
+    )
+      .then((things) => things.flat())
+      .then((things) => {
+        return Promise.all(
+          things.map((thing) =>
+            solidClient.getUrlAll(
+              thing,
+              "http://www.w3.org/ns/solid/terms#privateTypeIndex"
+            )
+          )
+        );
+      })
+      .then((urls) => urls.flat())
+      .then((urls) => setSeeAlsoPrivateTypeIndexUrls(urls))
+      .catch((err) =>
+        console.error(
+          "Failed to fetch see also private type indices, error:",
+          err
+        )
+      );
+  }, [seeAlsoDatasets]);
+
+  useEffect(() => {
+    const datasets = [
+      ...(privateTypeIndexDatasets ?? []),
+      ...(seeAlsoPrivateTypeIndexDatasets ?? []),
+    ];
+
+    datasets.map((privateTypeIndexDataset) => {
       const things = solidClient.getThingAll(privateTypeIndexDataset);
 
       const foundInstanceUrls = things.reduce<string[]>((acc, thing) => {
@@ -80,12 +145,19 @@ export default function useWebIdProfile() {
 
       setInstanceUrls(foundInstanceUrls);
     });
-  }, [privateTypeIndexDatasets]);
+  }, [privateTypeIndexDatasets, seeAlsoPrivateTypeIndexDatasets]);
 
   return {
     webIdProfileDatasets,
     privateTypeIndexDatasets,
     instanceUrls,
-    mutate: () => mutate(privateTypeIndexDatasets),
+    mutate: () => {
+      mutate1(privateTypeIndexDatasets).catch((err) =>
+        console.error("Failed to mutate, error:", err)
+      );
+      mutate2(seeAlsoPrivateTypeIndexDatasets).catch((err) =>
+        console.error("Failed to mutate, error:", err)
+      );
+    },
   };
 }
