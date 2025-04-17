@@ -1,5 +1,6 @@
 import { Header } from "@components/index";
 import { ServiceContext } from "@providers/service.provider";
+import { Button } from "@ui/index";
 import Head from "next/head";
 import { useRouter } from "next/navigation";
 import { useContext, type ReactNode } from "react";
@@ -36,6 +37,10 @@ export default function Layout({ children }: Props) {
                 });
             }}
           />
+          <div className="flex gap-2">
+            <Button onClick={() => router.push("/")}>Home</Button>
+            <Button onClick={() => router.push("/instances")}>Instances</Button>
+          </div>
           {children}
         </div>
       </main>
