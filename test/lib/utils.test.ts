@@ -1,6 +1,16 @@
-import { mapArrayToRecord } from "@lib/utils";
-import { deepEqual } from "assert";
+import { mapArrayToRecord, preferFragment } from "@lib/utils";
+import { deepEqual, strictEqual } from "assert";
 import it, { describe } from "node:test";
+
+describe("preferFragment", () => {
+  it("returns the full url if there is no fragment part", () => {
+    strictEqual(preferFragment("http://foo.bar"), "http://foo.bar");
+  });
+
+  it("returns the fragment part of a url", () => {
+    strictEqual(preferFragment("http://foo.bar#baz"), "baz");
+  });
+});
 
 describe("mapArrayToRecord", () => {
   it("maps each element of an array to a record", () => {

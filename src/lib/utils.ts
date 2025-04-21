@@ -21,8 +21,9 @@ export async function multiFetcher(urls: string[]) {
   );
 }
 
-export function preferFragment(iri: string) {
-  return iri.split("#")[1] ?? iri;
+export function preferFragment(url: string) {
+  const fragment = new URL(url).hash.substring(1);
+  return fragment !== "" ? fragment : url;
 }
 
 export function mapArrayToRecord<T, K extends keyof T & string>(
