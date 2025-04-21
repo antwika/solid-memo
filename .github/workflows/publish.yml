@@ -25,6 +25,9 @@ jobs:
       - name: Setup Node.js - Cache dependencies - Install dependencies
         uses: ./.github/workflows/setup-node
 
+      - name: Test
+        run: npm test
+
       - name: Build with Next.js
         run: npx next build
         env:
