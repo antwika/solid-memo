@@ -24,3 +24,16 @@ export async function multiFetcher(urls: string[]) {
 export function preferFragment(iri: string) {
   return iri.split("#")[1] ?? iri;
 }
+
+export function mapArrayToRecord<T, K extends keyof T & string>(
+  arr: T[],
+  byKey: K
+): Record<T[K] & string, T> {
+  return arr.reduce(
+    (acc, item) => {
+      acc[item[byKey] as T[K] & string] = item;
+      return acc;
+    },
+    {} as Record<T[K] & string, T>
+  );
+}
