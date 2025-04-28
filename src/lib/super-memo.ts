@@ -22,10 +22,14 @@ function nextInterval(repetition: Repetition, easeFactor: EaseFactor): number {
 }
 
 function nextEaseFactor(easeFactor: EaseFactor, quality: Quality) {
-  easeFactor = easeFactor >= 1.3 ? easeFactor : 1.3;
   return Math.max(
     parseFloat(
-      (easeFactor - 0.8 + 0.28 * quality - 0.02 * quality * quality).toFixed(2)
+      (
+        Math.max(easeFactor, 1.3) -
+        0.8 +
+        0.28 * quality -
+        0.02 * quality * quality
+      ).toFixed(2)
     ),
     1.3
   );

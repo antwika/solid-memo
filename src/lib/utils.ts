@@ -10,9 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 export async function fetcher(url: string) {
   const session = getDefaultSession();
   const res = await session.fetch(url);
-  return responseToSolidDataset(res).catch(() => {
-    /* NOP */
-  });
+  return responseToSolidDataset(res);
 }
 
 export async function multiFetcher(urls: string[]) {
