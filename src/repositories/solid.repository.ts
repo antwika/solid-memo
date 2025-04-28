@@ -372,6 +372,10 @@ export default class SolidRepository implements IRepository {
     return flashcards;
   }
 
+  async createPrivateTypeIndex(podLocation: string): Promise<void> {
+    console.log("Create private type index");
+  }
+
   async createInstance(podLocation: string): Promise<void> {
     const privateTypeIndexIris =
       await this.findAllPrivateTypeIndexIrisByWebId();

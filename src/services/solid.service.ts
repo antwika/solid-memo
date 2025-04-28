@@ -14,6 +14,24 @@ export default class SolidService implements IService {
     return repository.findAllInstanceUrls();
   }
 
+  async newPrivateTypeIndex(repository: IRepository) {
+    const storageIris = await repository.findAllStorageIris();
+
+    if (storageIris.length === 0) throw new Error("No storage iris found");
+    if (storageIris.length > 1) throw new Error("Too many storage iris found");
+
+    const storageIri = storageIris[0];
+
+    if (!storageIri) throw new Error("Failed to pick storage iri");
+
+    await repository.createPrivateTypeIndex(storageIri);
+
+    const privateTypeIndexIris =
+      await repository.findAllPrivateTypeIndexIrisByWebId();
+
+    return { privateTypeIndexUrls: privateTypeIndexIris };
+  }
+
   async newInstance(repository: IRepository) {
     const storageIris = await repository.findAllStorageIris();
 

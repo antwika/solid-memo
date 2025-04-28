@@ -6,6 +6,7 @@ import { Button } from "@ui/index";
 import { Database } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
+import usePrivateTypeIndices from "src/hooks/usePrivateTypeIndices";
 import useWebIdProfile from "src/hooks/useWebIdProfile";
 
 export default function Page() {
@@ -15,10 +16,18 @@ export default function Page() {
   const repository = getRepository();
   const service = getService();
 
-  const { instanceUrls, mutate: mutateWebIdProfile } = useWebIdProfile();
+  const {
+    webIdProfileUrls,
+    instanceUrls,
+    mutate: mutateWebIdProfile,
+  } = useWebIdProfile();
+
+  const { privateTypeIndexUrls } = usePrivateTypeIndices(webIdProfileUrls);
 
   return (
     <Layout>
+      <div>webIdProfileUrls: {webIdProfileUrls}</div>
+      <div>privateTypeIndexUrls: {privateTypeIndexUrls}</div>
       <Button
         onClick={() => {
           service

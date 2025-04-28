@@ -3,7 +3,7 @@ import * as solidClient from "@inrupt/solid-client";
 import { getDefaultSession } from "@inrupt/solid-client-authn-browser";
 import { useEffect, useState } from "react";
 import { multiFetcher } from "@lib/utils";
-import useDatasets from "./useDatasets";
+import useDatasets from "@hooks/useDatasets";
 
 export default function useWebIdProfile() {
   const session = getDefaultSession();
@@ -147,7 +147,20 @@ export default function useWebIdProfile() {
     });
   }, [privateTypeIndexDatasets, seeAlsoPrivateTypeIndexDatasets]);
 
+  const [webIdProfileUrls, setWebIdProfileUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    const profileUrls: string[] = [];
+
+    if (session.info.webId) {
+      profileUrls.push(session.info.webId);
+    }
+
+    setWebIdProfileUrls([...profileUrls, ...seeAlsoUrls]);
+  }, [session.info.webId, seeAlsoUrls]);
+
   return {
+    webIdProfileUrls,
     webIdProfileDatasets,
     privateTypeIndexDatasets,
     instanceUrls,

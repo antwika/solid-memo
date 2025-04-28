@@ -39,6 +39,7 @@ export default function Layout({ children }: Props) {
           />
           {authService.isLoggedIn() && (
             <div className="flex gap-2">
+              <Button onClick={() => router.push("/test")}>Test</Button>
               <Button onClick={() => router.push("/")}>Home</Button>
               <Button onClick={() => router.push("/instances")}>
                 Instances

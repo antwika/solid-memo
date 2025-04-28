@@ -22,6 +22,8 @@ export interface IRepository {
     flashcardUrls: string[]
   ): Promise<Record<string, FlashcardModel>>;
 
+  createPrivateTypeIndex(podLocation: string): Promise<void>;
+
   createInstance(podLocation: string): Promise<void>;
 
   createDeck(

@@ -25,6 +25,10 @@ export interface IService {
 
   discoverInstanceUrls(repository: IRepository): Promise<string[]>;
 
+  newPrivateTypeIndex(repository: IRepository): Promise<{
+    privateTypeIndexUrls: string[];
+  }>;
+
   newInstance(repository: IRepository): Promise<{
     instanceUrls: string[];
     instances: Record<string, InstanceModel>;
