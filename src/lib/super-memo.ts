@@ -1,14 +1,19 @@
-type Interval = number;
-type EaseFactor = number;
-type Quality = number;
-type Repetition = number;
-type Item = {
+export type Interval = number;
+
+export type EaseFactor = number;
+
+export type Quality = number;
+
+export type Repetition = number;
+
+export type Item = {
   i: Interval;
   ef: EaseFactor;
   r: Repetition;
   q: Quality;
 };
-type Assessment = Item & { q: Quality };
+
+export type Assessment = Item & { q: Quality };
 
 export function item(i: Interval, ef: EaseFactor, r: Repetition, q: Quality) {
   return { i, ef, r, q };
