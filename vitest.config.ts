@@ -8,6 +8,7 @@ export default defineConfig({
     },
   },
   test: {
+    reporters: ["verbose"],
     include: ["test/**/*.test.{ts,tsx}"],
   },
 });
