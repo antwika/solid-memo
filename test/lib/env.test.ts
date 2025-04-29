@@ -1,7 +1,6 @@
 import { env, schemas } from "@lib/env";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createEnv } from "@t3-oss/env-nextjs";
-import { ZodError } from "zod";
 
 vi.mock("@t3-oss/env-nextjs", () => ({ createEnv: vi.fn() }));
 
