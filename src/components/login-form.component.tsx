@@ -49,7 +49,7 @@ export function LoginForm({ className }: Props) {
                           .logIn({
                             oidcIssuer: oidcIssuer.url,
                             redirectUrl: new URL(
-                              env.NEXT_PUBLIC_BASE_PATH,
+                              env().NEXT_PUBLIC_BASE_PATH,
                               window.location.href
                             ).toString(),
                             clientName: "Solid Memo",
