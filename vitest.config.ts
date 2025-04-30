@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@lib": path.resolve(__dirname, "src/lib"),
+      "@hooks": path.resolve(__dirname, "src/hooks"),
     },
   },
   test: {
