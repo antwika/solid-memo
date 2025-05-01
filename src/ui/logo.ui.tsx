@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { env } from "@lib/env";
 
 type Size = "xs" | "sm" | "md" | "lg" | "xl";
 
@@ -7,6 +8,7 @@ type Props = {
 };
 
 function Logo({ size }: Props) {
+  const { NEXT_PUBLIC_BASE_PATH } = env();
   let pixels;
   switch (size) {
     case "xs":
@@ -28,7 +30,7 @@ function Logo({ size }: Props) {
 
   return (
     <Image
-      src={`/sm-logo-${size}.png`}
+      src={`${NEXT_PUBLIC_BASE_PATH}/sm-logo-${size}.png`}
       width={pixels}
       height={pixels}
       alt="Picture of the author"
