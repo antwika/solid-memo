@@ -37,7 +37,7 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: /solid-memo
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-out
           path: ./out
