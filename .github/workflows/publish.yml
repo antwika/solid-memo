@@ -3,7 +3,10 @@ name: publish-to-github-pages
 on:
   push:
     branches:
-      - main
+      - "*"
+      - "!gh-pages"
+    tags:
+      - "*"
 
 permissions:
   contents: read
@@ -34,19 +37,57 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: /solid-memo
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v3
         with:
+          name: build-out
           path: ./out
 
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     runs-on: ubuntu-latest
     needs: build
 
+    concurrency:
+      group: deploy-gh-pages
+      cancel-in-progress: false
+
     steps:
-      - name: Publish to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-out
+          path: out
+
+      - name: Set up Git config
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Deploy to gh-pages
+        run: |
+          # Determine target path
+          if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
+            TARGET_PATH="branches/${GITHUB_REF#refs/heads/}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TARGET_PATH="tags/${GITHUB_REF#refs/tags/}"
+          else
+            echo "Not a branch or tag, skipping"
+            exit 1
+          fi
+
+          git clone --depth 1 --branch gh-pages "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+
+          # Copy build output
+          rm -rf "gh-pages/${TARGET_PATH}"
+          mkdir -p "gh-pages/${TARGET_PATH}"
+          cp -r out/* "gh-pages/${TARGET_PATH}/"
+
+          cd gh-pages
+          git add .
+
+          # Only commit and push if there are actual changes
+          if ! git diff --cached --quiet; then
+            git commit -m "Deploy ${TARGET_PATH} from ${GITHUB_SHA}"
+            git push
+          else
+            echo "No changes to deploy."
+          fi
