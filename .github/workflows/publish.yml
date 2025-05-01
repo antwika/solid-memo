@@ -5,6 +5,7 @@ on:
     branches:
       - "*"
       - "!gh-pages"
+      - "!renovate/**" # Exclude all renovate/* branches
     tags:
       - "*"
 
