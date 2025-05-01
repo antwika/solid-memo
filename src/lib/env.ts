@@ -7,6 +7,7 @@ export const schemas = {
   },
   client: {
     NEXT_PUBLIC_BASE_PATH: () => z.string().default("/"),
+    NEXT_PUBLIC_VERSION: () => z.string(),
   },
 };
 
@@ -27,6 +28,7 @@ export const env = () =>
      */
     client: {
       NEXT_PUBLIC_BASE_PATH: schemas.client.NEXT_PUBLIC_BASE_PATH(),
+      NEXT_PUBLIC_VERSION: schemas.client.NEXT_PUBLIC_VERSION(),
     },
 
     /**
@@ -36,6 +38,7 @@ export const env = () =>
     runtimeEnv: {
       NODE_ENV: process.env.NODE_ENV,
       NEXT_PUBLIC_BASE_PATH: process.env.NEXT_PUBLIC_BASE_PATH,
+      NEXT_PUBLIC_VERSION: process.env.NEXT_PUBLIC_VERSION,
     },
     /**
      * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

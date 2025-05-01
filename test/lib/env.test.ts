@@ -19,6 +19,20 @@ describe("'schemas' (object) (named export)", () => {
   });
 
   describe("nested 'client' (object)", () => {
+    describe("nested 'NEXT_PUBLIC_VERSION' (function)", () => {
+      it("builds a zod schema of type 'string' which must be defined", () => {
+        const { client } = schemas;
+        expect(() => client.NEXT_PUBLIC_VERSION().parse(undefined)).toThrow();
+        expect(client.NEXT_PUBLIC_VERSION().parse("0.1.2")).toBe("0.1.2");
+        expect(client.NEXT_PUBLIC_VERSION().parse("0.1.2-rc3")).toBe(
+          "0.1.2-rc3"
+        );
+        expect(client.NEXT_PUBLIC_VERSION().parse("foo")).toBe("foo");
+      });
+    });
+  });
+
+  describe("nested 'client' (object)", () => {
     describe("nested 'NEXT_PUBLIC_BASE_PATH' (function)", () => {
       it("builds a zod schema of type 'string' which can be any 'string', but it defaults to '/'", () => {
         const { client } = schemas;
@@ -111,6 +125,42 @@ describe("'env' (function) (named export)", () => {
           expect.objectContaining({
             runtimeEnv: expect.objectContaining({
               NEXT_PUBLIC_BASE_PATH: "foobar",
+            }),
+          })
+        );
+      });
+    });
+
+    describe("when 'NEXT_PUBLIC_VERSION' environment variable", () => {
+      it("is undefined, then property 'runtimeEnv.NEXT_PUBLIC_VERSION' is also undefined", () => {
+        // Arrange
+        vi.stubEnv("NEXT_PUBLIC_VERSION", undefined);
+
+        // Act
+        env();
+
+        // Assert
+        expect(createEnv).toHaveBeenCalledWith(
+          expect.objectContaining({
+            runtimeEnv: expect.objectContaining({
+              NEXT_PUBLIC_VERSION: undefined,
+            }),
+          })
+        );
+      });
+
+      it("is defined, then property 'runtimeEnv.NEXT_PUBLIC_VERSION' is also that exact value", () => {
+        // Arrange
+        vi.stubEnv("NEXT_PUBLIC_VERSION", "foobar");
+
+        // Act
+        env();
+
+        // Assert
+        expect(createEnv).toHaveBeenCalledWith(
+          expect.objectContaining({
+            runtimeEnv: expect.objectContaining({
+              NEXT_PUBLIC_VERSION: "foobar",
             }),
           })
         );
