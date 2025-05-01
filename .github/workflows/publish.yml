@@ -28,13 +28,30 @@ jobs:
       - name: Setup Node.js - Cache dependencies - Install dependencies
         uses: ./.github/workflows/setup-node
 
+      - name: Determine NEXT_PUBLIC_BASE_PATH
+        id: set-path
+        run: |
+          if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
+            NAME="${GITHUB_REF#refs/heads/}"
+            BASE_PATH="/solid-memo/branches/${NAME}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            NAME="${GITHUB_REF#refs/tags/}"
+            BASE_PATH="/solid-memo/tags/${NAME}"
+          else
+            echo "Unsupported ref: ${GITHUB_REF}"
+            exit 1
+          fi
+
+          echo "Base path: $BASE_PATH"
+          echo "base_path=$BASE_PATH" >> "$GITHUB_OUTPUT"
+
       - name: Test
         run: npm test
 
       - name: Build with Next.js
         run: npx next build
         env:
-          NEXT_PUBLIC_BASE_PATH: /solid-memo
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.set-path.outputs.base_path }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
