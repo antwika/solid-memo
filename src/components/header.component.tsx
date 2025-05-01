@@ -1,3 +1,4 @@
+import { env } from "@lib/env";
 import { ServiceContext } from "@providers/service.provider";
 import { Button } from "@ui/index";
 import { Logo } from "@ui/logo.ui";
@@ -10,15 +11,17 @@ type Props = {
 export function Header({ onLogOut }: Props) {
   const { getAuthService } = useContext(ServiceContext);
   const authService = getAuthService();
+  const { NEXT_PUBLIC_VERSION } = env();
 
   return (
     <div className="relative flex p-4">
       <div className="grow">
-        <div className="mb-2 flex items-center">
+        <div className="mb-2 flex items-center gap-2">
           <div>
             <Logo size="xs" />
           </div>
-          <div className="text-2xl font-extrabold p-2">Solid Memo</div>
+          <div className="text-2xl font-extrabold">Solid Memo</div>
+          <div>({NEXT_PUBLIC_VERSION})</div>
         </div>
         {authService.isLoggedIn() && authService.getWebId() && (
           <div className="break-all italic opacity-50">
