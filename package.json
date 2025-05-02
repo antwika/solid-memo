@@ -30,7 +30,7 @@
     "@t3-oss/env-nextjs": "^0.13.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.503.0",
+    "lucide-react": "^0.506.0",
     "next": "^15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
