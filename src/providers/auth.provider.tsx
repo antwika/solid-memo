@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import type { IAuthService } from "@services/index";
+import { useRouter } from "next/navigation";
 
 type User = { name: string };
 
@@ -17,19 +18,20 @@ const AuthContext = createContext<{ user: User | null; loading: boolean }>({
 type Props = { authService: IAuthService; children: ReactNode };
 
 export const AuthProvider = ({ authService, children }: Props) => {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null); // null means not logged in
   const [loading, setLoading] = useState(true);
 
-  // Simulate checking auth status
   useEffect(() => {
     const checkAuth = async () => {
-      // Replace this with real auth check, e.g. fetch('/api/me')
-      await authService.handleIncomingRedirect();
+      await authService.handleIncomingRedirect((url: string) =>
+        router.push(url)
+      );
 
       const token = authService.getWebId();
 
       if (token) {
-        setUser({ name: token }); // fake user
+        setUser({ name: token });
       }
       setLoading(false);
     };
@@ -40,7 +42,7 @@ export const AuthProvider = ({ authService, children }: Props) => {
       .catch((err) => {
         console.error("Failed with error:", err);
       });
-  }, [authService, loading]);
+  }, [authService, loading, router]);
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
