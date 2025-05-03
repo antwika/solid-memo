@@ -11,5 +11,8 @@ export default defineConfig({
   test: {
     reporters: ["verbose"],
     include: ["test/**/*.test.{ts,tsx}"],
+    coverage: {
+      include: ["src/**/*.{ts,tsx,js,jsx}"],
+    },
   },
 });
