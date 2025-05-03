@@ -12,6 +12,11 @@ export interface IAuthService {
     redirectUrl: string;
     clientName: string;
   }): Promise<void>;
+  logInWithWebId(props: {
+    webId: string;
+    redirectUrl: string;
+    clientName: string;
+  }): Promise<void>;
   logOut(): Promise<void>;
   handleIncomingRedirect(
     restoreUrlCallback: (url: string) => void
