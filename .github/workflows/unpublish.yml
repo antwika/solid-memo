@@ -36,10 +36,11 @@ jobs:
       - name: Unpublish from gh-pages
         env:
           DELETED_REF: ${{ github.event.ref }}
+          REF_TYPE: ${{ github.event.ref_type }}
         run: |
-          if [[ "${DELETED_REF}" == refs/heads/* ]]; then
+          if [[ "${REF_TYPE}" == "branch" ]]; then
             TARGET_PATH="branches/${DELETED_REF#refs/heads/}"
-          elif [[ "${DELETED_REF}" == refs/tags/* ]]; then
+          elif [[ "${REF_TYPE}" == "tag" ]]; then
             TARGET_PATH="tags/${DELETED_REF#refs/tags/}"
           else
             echo "Not a branch or tag, skipping"
