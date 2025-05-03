@@ -1,6 +1,6 @@
 import { getSolidDataset, getThing, getUrlAll } from "@inrupt/solid-client";
 import { EVENTS, getDefaultSession } from "@inrupt/solid-client-authn-browser";
-import type { IAuthService } from "@services/index";
+import type { IAuthService } from "./IAuthService";
 
 export default class AuthService implements IAuthService {
   isLoggedIn() {
@@ -86,6 +86,7 @@ export default class AuthService implements IAuthService {
   async handleIncomingRedirect(restoreUrlCallback: (url: string) => void) {
     const session = getDefaultSession();
 
+    session.events.removeAllListeners(EVENTS.SESSION_RESTORED);
     session.events.on(EVENTS.SESSION_RESTORED, restoreUrlCallback);
 
     await session.handleIncomingRedirect({ restorePreviousSession: true });

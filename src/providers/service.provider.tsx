@@ -1,4 +1,5 @@
-import type { IAuthService, IService } from "@services/index";
+import type { IAuthService } from "@services/IAuthService";
+import type { IService } from "@services/ISolidService";
 import { createContext, type ReactNode } from "react";
 
 export const ServiceContext = createContext<{
@@ -16,7 +17,7 @@ export const ServiceContext = createContext<{
   },
 });
 
-export type Props = {
+export type ServiceProviderProps = {
   authService: IAuthService;
   service: IService;
   children: ReactNode;
@@ -26,7 +27,7 @@ export default function ServiceProvider({
   children,
   authService,
   service,
-}: Props) {
+}: ServiceProviderProps) {
   return (
     <>
       <ServiceContext.Provider
