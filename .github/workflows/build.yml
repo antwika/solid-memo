@@ -1,0 +1,60 @@
+name: build
+
+on:
+  workflow_call:
+    outputs:
+      base_path:
+        description: "Base path for deployment"
+        value: ${{ jobs.build.outputs.base_path }}
+      version:
+        description: "Version for deployment"
+        value: ${{ jobs.build.outputs.version }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      base_path: ${{ steps.set-path.outputs.base_path }}
+      version: ${{ steps.set-path.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js - Cache dependencies - Install dependencies
+        uses: ./.github/workflows/setup-node
+
+      - name: Determine NEXT_PUBLIC_BASE_PATH
+        id: set-path
+        run: |
+          if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
+            NAME="${GITHUB_REF#refs/heads/}"
+            BASE_PATH="/solid-memo/branches/${NAME}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            NAME="${GITHUB_REF#refs/tags/}"
+            BASE_PATH="/solid-memo/tags/${NAME}"
+          else
+            echo "Unsupported ref: ${GITHUB_REF}"
+            exit 1
+          fi
+
+          echo "base_path=$BASE_PATH" >> "$GITHUB_OUTPUT"
+          echo "version=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Unit test
+        run: npm run test:unit
+
+      - name: Integration test
+        run: npm run test:integration
+
+      - name: Build with Next.js
+        run: npx next build
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.set-path.outputs.base_path }}
+          NEXT_PUBLIC_VERSION: ${{ steps.set-path.outputs.version }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-out
+          path: ./out

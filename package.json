@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "vitest",
+    "test:unit": "vitest test/unit/",
+    "test:integration": "vitest test/integration/",
     "coverage": "vitest run --coverage",
     "build": "next build",
     "check": "next lint && tsc --noEmit",
