@@ -45,9 +45,9 @@ export function LoginForm({ className }: Props) {
                     className="w-full"
                     onClick={(evt) => {
                       evt.preventDefault();
-                      if (authService.logIn !== undefined) {
+                      if (authService.logInWithOidcIssuer !== undefined) {
                         authService
-                          .logIn({
+                          .logInWithOidcIssuer({
                             oidcIssuer: oidcIssuer.url,
                             redirectUrl: new URL(
                               env().NEXT_PUBLIC_BASE_PATH,
@@ -92,9 +92,9 @@ export function LoginForm({ className }: Props) {
                       return;
                     }
 
-                    if (!authService.logIn) {
+                    if (!authService.logInWithWebId) {
                       console.error(
-                        "Failed because authService.logIn is falsy"
+                        "Failed because authService.logInWithWebId is falsy"
                       );
                       return;
                     }

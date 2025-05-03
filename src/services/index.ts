@@ -7,7 +7,7 @@ export interface IAuthService {
   isLoggedIn(): boolean;
   getWebId(): string | undefined;
   getFetch(): typeof fetch;
-  logIn(props: {
+  logInWithOidcIssuer(props: {
     oidcIssuer: string;
     redirectUrl: string;
     clientName: string;

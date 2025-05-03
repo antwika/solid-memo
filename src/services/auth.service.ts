@@ -18,7 +18,7 @@ export default class AuthService implements IAuthService {
     return session.fetch;
   }
 
-  async logIn({
+  async logInWithOidcIssuer({
     oidcIssuer,
     redirectUrl,
     clientName,
