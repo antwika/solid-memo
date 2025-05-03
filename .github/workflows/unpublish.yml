@@ -1,4 +1,4 @@
-name: publish
+name: unpublish
 on:
   delete:
     branches:
@@ -34,15 +34,19 @@ jobs:
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Unpublish from gh-pages
+        env:
+          DELETED_REF: ${{ github.event.ref }}
         run: |
-          if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
-            TARGET_PATH="branches/${GITHUB_REF#refs/heads/}"
-          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            TARGET_PATH="tags/${GITHUB_REF#refs/tags/}"
+          if [[ "${DELETED_REF}" == refs/heads/* ]]; then
+            TARGET_PATH="branches/${DELETED_REF#refs/heads/}"
+          elif [[ "${DELETED_REF}" == refs/tags/* ]]; then
+            TARGET_PATH="tags/${DELETED_REF#refs/tags/}"
           else
             echo "Not a branch or tag, skipping"
             exit 0
           fi
+
+          echo "Target path to remove: $TARGET_PATH"
 
           git fetch origin gh-pages
           git switch gh-pages
@@ -53,6 +57,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Remove ${TARGET_PATH} from ${GITHUB_SHA}"
+            git commit -m "Remove ${TARGET_PATH} after deletion of ${DELETED_REF}"
             git push
           fi
