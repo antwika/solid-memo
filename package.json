@@ -7,7 +7,7 @@
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest run test/unit/",
     "test:integration": "vitest run test/integration/",
-    "test:unit:coverage": "vitest run --coverage",
+    "test:unit:coverage": "vitest run --coverage test/unit/",
     "test:unit:watch": "vitest",
     "build": "next build",
     "check": "next lint && tsc --noEmit",
