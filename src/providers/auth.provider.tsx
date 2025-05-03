@@ -5,8 +5,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { IAuthService } from "@services/index";
 import { useRouter } from "next/navigation";
+import type { IAuthService } from "@services/IAuthService";
 
 type User = { name: string };
 
@@ -15,9 +15,12 @@ const AuthContext = createContext<{ user: User | null; loading: boolean }>({
   loading: true,
 });
 
-type Props = { authService: IAuthService; children: ReactNode };
+export type AuthProviderProps = {
+  authService: IAuthService;
+  children: ReactNode;
+};
 
-export const AuthProvider = ({ authService, children }: Props) => {
+export const AuthProvider = ({ authService, children }: AuthProviderProps) => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null); // null means not logged in
   const [loading, setLoading] = useState(true);

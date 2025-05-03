@@ -9,12 +9,15 @@ export const RepositoryContext = createContext<{
   },
 });
 
-export type Props = {
+export type RepositoryProviderProps = {
   repository: IRepository;
   children: ReactNode;
 };
 
-export default function RepositoryProvider({ children, repository }: Props) {
+export default function RepositoryProvider({
+  children,
+  repository,
+}: RepositoryProviderProps) {
   return (
     <>
       <RepositoryContext.Provider

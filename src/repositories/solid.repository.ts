@@ -26,7 +26,7 @@ import {
 } from "@inrupt/solid-client";
 import { v4 as uuid } from "uuid";
 import type { IRepository } from "@repositories/index";
-import type { IAuthService } from "@services/index";
+import type { IAuthService } from "@services/IAuthService";
 
 function stripFragment(iri: string) {
   return iri.split("#")[0];
