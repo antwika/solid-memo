@@ -1,11 +1,10 @@
-# File: .github/workflows/publish.yml
-name: publish-to-github-pages
+name: publish
 on:
   push:
     branches:
       - "*"
       - "!gh-pages"
-      - "!renovate/**" # Exclude all renovate/* branches
+      - "!renovate/**"
     tags:
       - "*"
 
@@ -19,54 +18,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js - Cache dependencies - Install dependencies
-        uses: ./.github/workflows/setup-node
-
-      - name: Determine NEXT_PUBLIC_BASE_PATH
-        id: set-path
-        run: |
-          if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
-            NAME="${GITHUB_REF#refs/heads/}"
-            BASE_PATH="/solid-memo/branches/${NAME}"
-          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            NAME="${GITHUB_REF#refs/tags/}"
-            BASE_PATH="/solid-memo/tags/${NAME}"
-          else
-            echo "Unsupported ref: ${GITHUB_REF}"
-            exit 1
-          fi
-
-          echo "Base path: $BASE_PATH"
-          echo "base_path=$BASE_PATH" >> "$GITHUB_OUTPUT"
-
-          echo "Version: $NAME"
-          echo "version=$NAME" >> "$GITHUB_OUTPUT"
-
-      - name: Test
-        run: npm test
-
-      - name: Build with Next.js
-        run: npx next build
-        env:
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.set-path.outputs.base_path }}
-          NEXT_PUBLIC_VERSION: ${{ steps.set-path.outputs.version }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-out
-          path: ./out
+  call-build:
+    uses: ./.github/workflows/build.yml
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build
+    needs: call-build
 
     concurrency:
       group: deploy-gh-pages
@@ -86,7 +43,6 @@ jobs:
 
       - name: Deploy to gh-pages
         run: |
-          # Determine target path
           if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
             TARGET_PATH="branches/${GITHUB_REF#refs/heads/}"
           elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
@@ -97,16 +53,12 @@ jobs:
           fi
 
           git clone --depth 1 --branch gh-pages "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
-
-          # Copy build output
           rm -rf "gh-pages/${TARGET_PATH}"
           mkdir -p "gh-pages/${TARGET_PATH}"
           cp -r out/* "gh-pages/${TARGET_PATH}/"
 
           cd gh-pages
           git add .
-
-          # Only commit and push if there are actual changes
           if ! git diff --cached --quiet; then
             git commit -m "Deploy ${TARGET_PATH} from ${GITHUB_SHA}"
             git push
