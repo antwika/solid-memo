@@ -1,0 +1,58 @@
+name: publish
+on:
+  push:
+    branches:
+      - "*"
+      - "!gh-pages"
+      - "!renovate/**"
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  remove-deployment-from-gh-pages:
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/gh-pages'
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git config
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Unpublish from gh-pages
+        run: |
+          if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
+            TARGET_PATH="branches/${GITHUB_REF#refs/heads/}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TARGET_PATH="tags/${GITHUB_REF#refs/tags/}"
+          else
+            echo "Not a branch or tag, skipping"
+            exit 0
+          fi
+
+          git fetch origin gh-pages
+          git switch gh-pages
+
+          rm -rf "${TARGET_PATH}"
+          git rm -rf --ignore-unmatch "${TARGET_PATH}" || true
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Remove ${TARGET_PATH} from ${GITHUB_SHA}"
+            git push
+          fi
