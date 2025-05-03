@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@ui/index";
 import type { ClassValue } from "clsx";
-import { useContext } from "react";
+import { useContext, useRef } from "react";
 
 type Props = {
   className?: ClassValue;
@@ -20,6 +20,7 @@ type Props = {
 };
 
 export function LoginForm({ className }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const { getAuthService } = useContext(ServiceContext);
   const authService = getAuthService();
 
@@ -73,14 +74,45 @@ export function LoginForm({ className }: Props) {
                 <div className="grid gap-2">
                   <Label htmlFor="email">Your Solid WebID</Label>
                   <Input
+                    ref={inputRef}
                     id="email"
                     type="email"
                     placeholder="https://your.pod/profile/card#me"
                     required
-                    disabled
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  onClick={(evt) => {
+                    evt.preventDefault();
+
+                    if (!inputRef.current) {
+                      console.error("Failed because inputRef.current is falsy");
+                      return;
+                    }
+
+                    if (!authService.logIn) {
+                      console.error(
+                        "Failed because authService.logIn is falsy"
+                      );
+                      return;
+                    }
+
+                    authService
+                      .logInWithWebId({
+                        webId: inputRef.current.value,
+                        redirectUrl: new URL(
+                          env().NEXT_PUBLIC_BASE_PATH,
+                          window.location.href
+                        ).toString(),
+                        clientName: "Solid Memo",
+                      })
+                      .catch((err) => {
+                        console.error("Failed with error:", err);
+                      });
+                  }}
+                >
                   Login with WebID
                 </Button>
               </div>
