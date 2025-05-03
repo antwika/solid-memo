@@ -13,7 +13,9 @@ export interface IAuthService {
     clientName: string;
   }): Promise<void>;
   logOut(): Promise<void>;
-  handleIncomingRedirect(): Promise<void>;
+  handleIncomingRedirect(
+    restoreUrlCallback: (url: string) => void
+  ): Promise<void>;
 }
 
 export interface IService {

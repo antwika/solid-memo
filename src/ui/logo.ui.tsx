@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { env } from "@lib/env";
+import { ensureTrailingSlash } from "@lib/utils";
 
 type Size = "xs" | "sm" | "md" | "lg" | "xl";
 
@@ -30,7 +31,7 @@ function Logo({ size }: Props) {
 
   return (
     <Image
-      src={`${NEXT_PUBLIC_BASE_PATH}/sm-logo-${size}.png`}
+      src={`${ensureTrailingSlash(NEXT_PUBLIC_BASE_PATH)}sm-logo-${size}.png`}
       width={pixels}
       height={pixels}
       alt="Picture of the author"

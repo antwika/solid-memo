@@ -2,7 +2,6 @@ import { type AppType } from "next/app";
 import { Geist } from "next/font/google";
 
 import "@styles/globals.css";
-import { QueryEngineProvider, StoreProvider } from "@providers/index";
 import RepositoryProvider from "@providers/repository.provider";
 import { SolidRepository } from "@repositories/index";
 import ServiceProvider from "@providers/service.provider";
@@ -21,19 +20,15 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 
   return (
     <div className={geist.className}>
-      <StoreProvider>
-        <QueryEngineProvider>
-          <RepositoryProvider repository={solidRepository}>
-            <ServiceProvider authService={authService} service={solidService}>
-              <AuthProvider authService={authService}>
-                <AuthGuard>
-                  <Component {...pageProps} />
-                </AuthGuard>
-              </AuthProvider>
-            </ServiceProvider>
-          </RepositoryProvider>
-        </QueryEngineProvider>
-      </StoreProvider>
+      <RepositoryProvider repository={solidRepository}>
+        <ServiceProvider authService={authService} service={solidService}>
+          <AuthProvider authService={authService}>
+            <AuthGuard>
+              <Component {...pageProps} />
+            </AuthGuard>
+          </AuthProvider>
+        </ServiceProvider>
+      </RepositoryProvider>
     </div>
   );
 };

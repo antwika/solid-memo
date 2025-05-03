@@ -36,3 +36,7 @@ export function mapArrayToRecord<T, K extends keyof T & string>(
     {} as Record<T[K] & string, T>
   );
 }
+
+export function ensureTrailingSlash(url: string) {
+  return url.endsWith("/") ? url : url + "/";
+}

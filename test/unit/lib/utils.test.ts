@@ -1,5 +1,6 @@
 import {
   cn,
+  ensureTrailingSlash,
   fetcher,
   mapArrayToRecord,
   multiFetcher,
@@ -105,5 +106,19 @@ describe("mapArrayToRecord", () => {
       1: { id: "1", foo: "bar" },
       2: { id: "2", foo: "baz" },
     });
+  });
+});
+
+describe("ensureTrailingSlash", () => {
+  it("simply returns a slash the the provided url is an empty string", () => {
+    expect(ensureTrailingSlash("")).toBe("/");
+  });
+
+  it("appends a slash to the provided url if there is none", () => {
+    expect(ensureTrailingSlash("foo")).toBe("foo/");
+  });
+
+  it("does not append anything if the provided url already ends with a slash", () => {
+    expect(ensureTrailingSlash("foo/")).toBe("foo/");
   });
 });

@@ -1,4 +1,4 @@
-import { getDefaultSession } from "@inrupt/solid-client-authn-browser";
+import { EVENTS, getDefaultSession } from "@inrupt/solid-client-authn-browser";
 import type { IAuthService } from "@services/index";
 
 export default class AuthService implements IAuthService {
@@ -39,8 +39,11 @@ export default class AuthService implements IAuthService {
     return session.logout({ logoutType: "app" });
   }
 
-  async handleIncomingRedirect() {
+  async handleIncomingRedirect(restoreUrlCallback: (url: string) => void) {
     const session = getDefaultSession();
+
+    session.events.on(EVENTS.SESSION_RESTORED, restoreUrlCallback);
+
     await session.handleIncomingRedirect({ restorePreviousSession: true });
   }
 }
