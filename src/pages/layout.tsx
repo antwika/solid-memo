@@ -1,4 +1,6 @@
 import { Header } from "@components/index";
+import { env } from "@lib/env";
+import { ensureTrailingSlash } from "@lib/utils";
 import { ServiceContext } from "@providers/service.provider";
 import { Button } from "@ui/index";
 import Head from "next/head";
@@ -13,6 +15,8 @@ export default function Layout({ children }: Props) {
   const router = useRouter();
   const { getAuthService } = useContext(ServiceContext);
   const authService = getAuthService();
+  const { NEXT_PUBLIC_BASE_PATH } = env();
+
   return (
     <>
       <Head>
@@ -21,7 +25,10 @@ export default function Layout({ children }: Props) {
           name="description"
           content="A memorization app built using Solid"
         />
-        <link rel="icon" href="/favicon.ico" />
+        <link
+          rel="icon"
+          href={`${ensureTrailingSlash(NEXT_PUBLIC_BASE_PATH)}favicon.ico`}
+        />
       </Head>
       <main className="bg-background text-foreground flex min-h-screen flex-col items-center">
         <div className="container items-center justify-center gap-6 space-y-2 bg-white/80 p-6">
