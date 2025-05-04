@@ -1,6 +1,10 @@
-import type { IRepository } from "@repositories/index";
-import type { DeckModel, FlashcardModel, InstanceModel } from "@domain/index";
-import type { IService } from "./ISolidService";
+import type {
+  DeckModel,
+  FlashcardModel,
+  InstanceModel,
+  IService,
+  IRepository,
+} from "@solid-memo/core";
 
 export default class SolidService implements IService {
   async discoverEverything(repository: IRepository) {

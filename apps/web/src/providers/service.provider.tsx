@@ -1,5 +1,5 @@
-import type { IAuthService } from "@services/IAuthService";
-import type { IService } from "@services/ISolidService";
+import type { IAuthService } from "@solid-memo/core";
+import type { IService } from "@solid-memo/core";
 import { createContext, type ReactNode } from "react";
 
 export const ServiceContext = createContext<{

@@ -6,7 +6,7 @@ import {
   type Thing,
 } from "@inrupt/solid-client";
 import useDatasets from "./useDatasets";
-import { parseInstance, type InstanceModel } from "@domain/instance.model";
+import { parseInstance, type InstanceModel } from "@solid-memo/core";
 
 function parseInstanceFromThing(thing: Thing) {
   return parseInstance({

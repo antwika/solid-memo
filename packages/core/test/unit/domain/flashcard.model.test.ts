@@ -1,4 +1,4 @@
-import { parseFlashcard } from "@domain/flashcard.model";
+import { parseFlashcard } from "../../../src/domain/flashcard.model";
 import { describe, expect, it } from "vitest";
 
 describe("flashcard.model", () => {

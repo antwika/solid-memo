@@ -1,4 +1,4 @@
-import type { IRepository } from "@repositories/index";
+import type { IRepository } from "@solid-memo/core";
 import { createContext, type ReactNode } from "react";
 
 export const RepositoryContext = createContext<{
