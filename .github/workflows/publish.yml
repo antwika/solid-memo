@@ -4,7 +4,6 @@ on:
     branches:
       - "**"
       - "!gh-pages"
-      - "!renovate/**"
     tags:
       - "**"
 
