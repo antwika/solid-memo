@@ -2,11 +2,11 @@ name: publish
 on:
   push:
     branches:
-      - "*"
+      - "**"
       - "!gh-pages"
       - "!renovate/**"
     tags:
-      - "*"
+      - "**"
 
 permissions:
   contents: write
