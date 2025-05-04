@@ -9,7 +9,12 @@ on:
       version:
         description: "Version for deployment"
         value: ${{ jobs.build.outputs.version }}
-
+  push:
+    branches:
+      - "*"
+      - "!gh-pages"
+    tags:
+      - "*"
 jobs:
   build:
     runs-on: ubuntu-latest
