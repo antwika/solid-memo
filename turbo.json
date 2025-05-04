@@ -15,6 +15,9 @@
     "test:unit": {
       "outputs": []
     },
+    "test:unit:coverage": {
+      "outputs": []
+    },
     "test:integration": {
       "outputs": []
     }
