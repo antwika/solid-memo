@@ -35,6 +35,8 @@ export interface IRepository {
     flashcard: Omit<FlashcardModel, "iri">
   ): Promise<void>;
 
+  renameInstance(instance: InstanceModel, newName: string): Promise<void>;
+
   deleteInstance(instance: InstanceModel): Promise<void>;
 
   deleteDeck(deck: DeckModel): Promise<void>;

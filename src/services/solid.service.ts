@@ -67,6 +67,14 @@ export default class SolidService implements IService {
     return repository.findFlashcards([flashcardUrl]);
   }
 
+  async renameInstance(
+    repository: IRepository,
+    instance: InstanceModel,
+    newName: string
+  ) {
+    await repository.renameInstance(instance, newName);
+  }
+
   async removeInstance(repository: IRepository, instance: InstanceModel) {
     await repository.deleteInstance(instance);
     const instanceUrls = await repository.findAllInstanceUrls();
