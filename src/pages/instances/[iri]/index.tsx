@@ -88,6 +88,16 @@ export default function Page() {
           <Button
             onClick={() => {
               service
+                .renameInstance(repository, instance, "Renamed instance")
+                .then(() => mutate())
+                .catch((err) => console.error("Failed with error:", err));
+            }}
+          >
+            Rename instance
+          </Button>
+          <Button
+            onClick={() => {
+              service
                 .newDeck(repository, {
                   version: "1",
                   name: "New deck name",

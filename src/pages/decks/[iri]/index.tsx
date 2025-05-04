@@ -107,6 +107,16 @@ export default function Page() {
           <Button
             onClick={() => {
               service
+                .renameDeck(repository, deck, "Renamed deck")
+                .then(() => mutate())
+                .catch((err) => console.error("Failed with error:", err));
+            }}
+          >
+            Rename deck
+          </Button>
+          <Button
+            onClick={() => {
+              service
                 .newFlashcard(repository, deck.isInSolidMemoDataInstance, {
                   version: "1",
                   front: "Front",

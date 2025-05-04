@@ -14,13 +14,16 @@ import {
   getProfileAll,
   getSolidDataset,
   getStringNoLocale,
+  getStringNoLocaleAll,
   getThing,
   getThingAll,
   getUrl,
   getUrlAll,
+  removeStringNoLocale,
   removeThing,
   removeUrl,
   saveSolidDatasetAt,
+  setStringNoLocale,
   setThing,
   type Thing,
 } from "@inrupt/solid-client";
@@ -566,6 +569,83 @@ export default class SolidRepository implements IRepository {
     const updatedInstanceDataset = setThing(instanceDataset, flashcardThing);
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
+      fetch: this.authService.getFetch(),
+    });
+  }
+
+  async renameInstance(instance: InstanceModel, newName: string) {
+    const instanceDataset = await getSolidDataset(instance.iri, {
+      fetch: this.authService.getFetch(),
+    });
+
+    const instanceThing = getThing(instanceDataset, instance.iri);
+
+    if (!instanceThing) throw new Error("Could not find instance thing");
+
+    const names = getStringNoLocaleAll(
+      instanceThing,
+      "http://antwika.com/ns/solid-memo#name"
+    );
+
+    let updatedInstanceThing = instanceThing;
+
+    for (const name of names) {
+      updatedInstanceThing = removeStringNoLocale(
+        instanceThing,
+        "http://antwika.com/ns/solid-memo#name",
+        name
+      );
+    }
+
+    updatedInstanceThing = setStringNoLocale(
+      updatedInstanceThing,
+      "http://antwika.com/ns/solid-memo#name",
+      newName
+    );
+
+    const updatedInstanceDataset = setThing(
+      instanceDataset,
+      updatedInstanceThing
+    );
+
+    await saveSolidDatasetAt(instance.iri, updatedInstanceDataset, {
+      fetch: this.authService.getFetch(),
+    });
+  }
+
+  async renameDeck(deck: DeckModel, newName: string) {
+    const deckDataset = await getSolidDataset(deck.iri, {
+      fetch: this.authService.getFetch(),
+    });
+
+    const deckThing = getThing(deckDataset, deck.iri);
+
+    if (!deckThing) throw new Error("Could not find deck thing");
+
+    const names = getStringNoLocaleAll(
+      deckThing,
+      "http://antwika.com/ns/solid-memo#name"
+    );
+
+    let updatedDeckThing = deckThing;
+
+    for (const name of names) {
+      updatedDeckThing = removeStringNoLocale(
+        deckThing,
+        "http://antwika.com/ns/solid-memo#name",
+        name
+      );
+    }
+
+    updatedDeckThing = setStringNoLocale(
+      updatedDeckThing,
+      "http://antwika.com/ns/solid-memo#name",
+      newName
+    );
+
+    const updatedDeckDataset = setThing(deckDataset, updatedDeckThing);
+
+    await saveSolidDatasetAt(deck.iri, updatedDeckDataset, {
       fetch: this.authService.getFetch(),
     });
   }

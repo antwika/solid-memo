@@ -41,6 +41,18 @@ export interface IService {
     flashcardUrl: string
   ): Promise<Record<string, FlashcardModel>>;
 
+  renameInstance(
+    repository: IRepository,
+    instance: InstanceModel,
+    newName: string
+  ): Promise<void>;
+
+  renameDeck(
+    repository: IRepository,
+    deck: DeckModel,
+    newName: string
+  ): Promise<void>;
+
   removeInstance(
     repository: IRepository,
     instance: InstanceModel
