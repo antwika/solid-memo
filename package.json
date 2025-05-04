@@ -11,6 +11,7 @@
         "lint": "turbo run lint",
         "verify": "turbo run verify",
         "test:unit": "turbo run test:unit",
+        "test:unit:coverage": "turbo run test:unit:coverage",
         "test:integration": "turbo run test:integration"
     },
     "devDependencies": {
