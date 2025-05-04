@@ -613,6 +613,43 @@ export default class SolidRepository implements IRepository {
     });
   }
 
+  async renameDeck(deck: DeckModel, newName: string) {
+    const deckDataset = await getSolidDataset(deck.iri, {
+      fetch: this.authService.getFetch(),
+    });
+
+    const deckThing = getThing(deckDataset, deck.iri);
+
+    if (!deckThing) throw new Error("Could not find deck thing");
+
+    const names = getStringNoLocaleAll(
+      deckThing,
+      "http://antwika.com/ns/solid-memo#name"
+    );
+
+    let updatedDeckThing = deckThing;
+
+    for (const name of names) {
+      updatedDeckThing = removeStringNoLocale(
+        deckThing,
+        "http://antwika.com/ns/solid-memo#name",
+        name
+      );
+    }
+
+    updatedDeckThing = setStringNoLocale(
+      updatedDeckThing,
+      "http://antwika.com/ns/solid-memo#name",
+      newName
+    );
+
+    const updatedDeckDataset = setThing(deckDataset, updatedDeckThing);
+
+    await saveSolidDatasetAt(deck.iri, updatedDeckDataset, {
+      fetch: this.authService.getFetch(),
+    });
+  }
+
   async deleteInstance(instance: InstanceModel): Promise<void> {
     if (instance.hasDeck.length > 0)
       throw new Error("Clear the instance before deletion");

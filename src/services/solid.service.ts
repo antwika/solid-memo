@@ -75,6 +75,10 @@ export default class SolidService implements IService {
     await repository.renameInstance(instance, newName);
   }
 
+  async renameDeck(repository: IRepository, deck: DeckModel, newName: string) {
+    await repository.renameDeck(deck, newName);
+  }
+
   async removeInstance(repository: IRepository, instance: InstanceModel) {
     await repository.deleteInstance(instance);
     const instanceUrls = await repository.findAllInstanceUrls();

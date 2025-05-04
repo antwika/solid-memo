@@ -37,6 +37,8 @@ export interface IRepository {
 
   renameInstance(instance: InstanceModel, newName: string): Promise<void>;
 
+  renameDeck(deck: DeckModel, newName: string): Promise<void>;
+
   deleteInstance(instance: InstanceModel): Promise<void>;
 
   deleteDeck(deck: DeckModel): Promise<void>;

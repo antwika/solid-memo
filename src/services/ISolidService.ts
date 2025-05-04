@@ -47,6 +47,12 @@ export interface IService {
     newName: string
   ): Promise<void>;
 
+  renameDeck(
+    repository: IRepository,
+    deck: DeckModel,
+    newName: string
+  ): Promise<void>;
+
   removeInstance(
     repository: IRepository,
     instance: InstanceModel
