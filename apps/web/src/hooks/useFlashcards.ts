@@ -5,7 +5,7 @@ import {
   type Thing,
 } from "@inrupt/solid-client";
 import useDatasets from "./useDatasets";
-import { parseFlashcard, type FlashcardModel } from "@domain/index";
+import { parseFlashcard, type FlashcardModel } from "@solid-memo/core";
 
 function parseFlashcardFromThing(thing: Thing) {
   return parseFlashcard({

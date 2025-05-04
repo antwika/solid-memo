@@ -1,16 +1,26 @@
 {
   "name": "@solid-memo/core",
   "version": "0.1.0",
-  "main": "index.ts",
+  "main": "src/index.ts",
   "types": "index.ts",
   "scripts": {
-    "verify": "echo ok",
-    "test:unit": "echo ok"
+    "test": "npm run test:unit && npm run test:integration",
+    "verify": "npm run test",
+    "test:unit": "vitest run test/unit/",
+    "test:integration": "vitest run test/integration/",
+    "test:unit:coverage": "vitest run --coverage test/unit/",
+    "test:unit:watch": "vitest"
   },
   "exports": {
     ".": {
-      "import": "./index.ts",
-      "require": "./index.ts"
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
     }
+  },
+  "dependencies": {
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.2"
   }
 }

@@ -5,7 +5,7 @@ import {
   type DeckModel,
   type FlashcardModel,
   type InstanceModel,
-} from "@domain/index";
+} from "@solid-memo/core";
 import {
   buildThing,
   createSolidDataset,
@@ -28,8 +28,7 @@ import {
   type Thing,
 } from "@inrupt/solid-client";
 import { v4 as uuid } from "uuid";
-import type { IRepository } from "@repositories/index";
-import type { IAuthService } from "@services/IAuthService";
+import type { IRepository, IAuthService } from "@solid-memo/core";
 
 function stripFragment(iri: string) {
   return iri.split("#")[0];

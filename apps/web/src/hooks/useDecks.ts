@@ -6,7 +6,7 @@ import {
   type Thing,
 } from "@inrupt/solid-client";
 import useDatasets from "./useDatasets";
-import { parseDeck, type DeckModel } from "@domain/index";
+import { parseDeck, type DeckModel } from "@solid-memo/core";
 
 function parseDeckFromThing(thing: Thing) {
   return parseDeck({

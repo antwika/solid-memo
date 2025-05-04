@@ -1,4 +1,4 @@
-import { parseInstance } from "@domain/instance.model";
+import { parseInstance } from "../../../src/domain/instance.model";
 import { describe, expect, it } from "vitest";
 
 describe("instance.model", () => {

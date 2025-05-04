@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import type { IAuthService } from "@services/IAuthService";
+import type { IAuthService } from "@solid-memo/core";
 
 type User = { name: string };
 

@@ -1,6 +1,6 @@
 import { getSolidDataset, getThing, getUrlAll } from "@inrupt/solid-client";
 import { EVENTS, getDefaultSession } from "@inrupt/solid-client-authn-browser";
-import type { IAuthService } from "./IAuthService";
+import type { IAuthService } from "@solid-memo/core";
 
 export default class AuthService implements IAuthService {
   isLoggedIn() {

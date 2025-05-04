@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import * as index from "@domain/index";
+import * as index from "../../../src/domain/index";
 
-vi.mock("@domain/deck.model", () => ({
+vi.mock("../../../src/domain/deck.model", () => ({
   a: "a",
 }));
-vi.mock("@domain/flashcard.model", () => ({
+vi.mock("../../../src/domain/flashcard.model", () => ({
   b: "b",
 }));
-vi.mock("@domain/instance.model", () => ({
+vi.mock("../../../src/domain/instance.model", () => ({
   c: "c",
 }));
 

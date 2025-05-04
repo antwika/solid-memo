@@ -1,5 +1,5 @@
-import type { DeckModel, FlashcardModel, InstanceModel } from "@domain/index";
-import type { IRepository } from "@repositories/index";
+import type { DeckModel, FlashcardModel, InstanceModel } from "./domain";
+import type { IRepository } from "./IRepository";
 
 export interface IService {
   discoverEverything(repository: IRepository): Promise<{

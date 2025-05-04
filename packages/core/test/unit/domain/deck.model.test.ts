@@ -1,4 +1,4 @@
-import { parseDeck } from "@domain/deck.model";
+import { parseDeck } from "../../../src/domain/deck.model";
 import { describe, expect, it } from "vitest";
 
 describe("deck.model", () => {
