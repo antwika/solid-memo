@@ -2,11 +2,11 @@ name: unpublish
 on:
   delete:
     branches:
-      - "*"
+      - "**"
       - "!gh-pages"
       - "!renovate/**"
     tags:
-      - "*"
+      - "**"
 
 permissions:
   contents: write
