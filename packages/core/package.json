@@ -1,0 +1,16 @@
+{
+  "name": "@solid-memo/core",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "verify": "echo ok",
+    "test:unit": "echo ok"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "require": "./index.ts"
+    }
+  }
+}
