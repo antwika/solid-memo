@@ -3,6 +3,7 @@ import { ServiceContext } from "@providers/service.provider";
 import { Button } from "@ui/index";
 import { Logo } from "@ui/logo.ui";
 import { useContext } from "react";
+import { greet } from "@solid-memo/core";
 
 type Props = {
   onLogOut: () => void;
@@ -23,6 +24,7 @@ export function Header({ onLogOut }: Props) {
           <div className="text-2xl font-extrabold">Solid Memo</div>
           <div>({NEXT_PUBLIC_VERSION})</div>
         </div>
+        <div>{greet("user")}</div>
         {authService.isLoggedIn() && authService.getWebId() && (
           <div className="break-all italic opacity-50">
             Logged in as: {authService.getWebId()}
