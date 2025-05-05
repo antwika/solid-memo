@@ -24,11 +24,8 @@
   "dependencies": {
     "@inrupt/solid-client": "^2.1.2",
     "@inrupt/solid-client-authn-browser": "^2.3.0",
-    "@inrupt/vocab-common-rdf": "^1.0.5",
-    "@inrupt/vocab-solid": "^1.0.4",
     "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.2",
-    "@reduxjs/toolkit": "^2.6.1",
     "@solid-memo/core": "*",
     "@solid-memo/inrupt-solid-client-repository": "*",
     "@t3-oss/env-nextjs": "^0.13.0",
