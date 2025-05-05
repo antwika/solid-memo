@@ -1,6 +1,5 @@
 import { preferFragment } from "@lib/utils";
 import Layout from "@pages/layout";
-import { RepositoryContext } from "@providers/repository.provider";
 import { ServiceContext } from "@providers/service.provider";
 import { Button, Card } from "@ui/index";
 import { Database, Layers, StickyNote } from "lucide-react";
@@ -10,9 +9,7 @@ import useDecks from "src/hooks/useDecks";
 
 export default function Page() {
   const router = useRouter();
-  const { getRepository } = useContext(RepositoryContext);
   const { getService } = useContext(ServiceContext);
-  const repository = getRepository();
   const service = getService();
 
   const { iri } = useParams();
@@ -93,7 +90,7 @@ export default function Page() {
             variant={"destructive"}
             onClick={() => {
               service
-                .removeDeck(repository, deck)
+                .removeDeck(deck)
                 .then(() =>
                   router.push(
                     `/instances/${encodeURIComponent(deck.isInSolidMemoDataInstance)}`
@@ -107,7 +104,7 @@ export default function Page() {
           <Button
             onClick={() => {
               service
-                .renameDeck(repository, deck, "Renamed deck")
+                .renameDeck(deck, "Renamed deck")
                 .then(() => mutate())
                 .catch((err) => console.error("Failed with error:", err));
             }}
@@ -117,7 +114,7 @@ export default function Page() {
           <Button
             onClick={() => {
               service
-                .newFlashcard(repository, deck.isInSolidMemoDataInstance, {
+                .newFlashcard(deck.isInSolidMemoDataInstance, {
                   version: "1",
                   front: "Front",
                   back: "Back",

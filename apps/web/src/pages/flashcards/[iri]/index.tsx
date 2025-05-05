@@ -1,6 +1,5 @@
 import { preferFragment } from "@lib/utils";
 import Layout from "@pages/layout";
-import { RepositoryContext } from "@providers/repository.provider";
 import { ServiceContext } from "@providers/service.provider";
 import { Button, Card } from "@ui/index";
 import { Layers, StickyNote } from "lucide-react";
@@ -10,9 +9,7 @@ import useFlashcards from "src/hooks/useFlashcards";
 
 export default function Page() {
   const router = useRouter();
-  const { getRepository } = useContext(RepositoryContext);
   const { getService } = useContext(ServiceContext);
-  const repository = getRepository();
   const service = getService();
 
   const { iri } = useParams();
@@ -72,7 +69,7 @@ export default function Page() {
             variant={"destructive"}
             onClick={() => {
               service
-                .removeFlashcard(repository, flashcard)
+                .removeFlashcard(flashcard)
                 .then(() =>
                   router.push(
                     `/decks/${encodeURIComponent(flashcard.isInDeck)}`
