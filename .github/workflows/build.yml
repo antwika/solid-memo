@@ -45,8 +45,11 @@ jobs:
             exit 1
           fi
 
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          VERSION="${NAME}:${SHORT_SHA}"
+
           echo "base_path=$BASE_PATH" >> "$GITHUB_OUTPUT"
-          echo "version=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Unit test
         run: npm run test:unit
