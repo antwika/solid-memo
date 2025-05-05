@@ -45,24 +45,17 @@ export default class AuthService implements IAuthService {
     clientName: string;
   }): Promise<void> {
     const session = getDefaultSession();
-    const result = await fetch(webId);
-    const text = await result.text();
-    console.log("text:", text);
 
     const webIdDataset = await getSolidDataset(webId);
-
-    console.log("webIdDataset:", webIdDataset);
 
     const webIdThing = getThing(webIdDataset, webId);
 
     if (!webIdThing) throw new Error("Failed to discover WebID");
 
-    console.log("webIdThing:", webIdThing);
     const oidcIssuers = getUrlAll(
       webIdThing,
       "http://www.w3.org/ns/solid/terms#oidcIssuer"
     );
-    console.log("oidcIssuers:", oidcIssuers);
 
     if (oidcIssuers.length > 1)
       throw new Error("Too many oidc issuers found in WebID");
