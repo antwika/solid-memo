@@ -1,13 +1,13 @@
 {
-    "compilerOptions": {
-      "target": "ESNext",
-      "module": "ESNext",
-      "moduleResolution": "Node",
-      "baseUrl": ".",
-      "paths": {
-        "@solid-memo/core": ["packages/core"]
-      }
-    },
-    "exclude": ["node_modules"]
-  }
-  
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "baseUrl": ".",
+    "paths": {
+      "@solid-memo/core": ["packages/core"],
+      "@solid-memo/inrupt-solid-client-repository": ["packages/inrupt-solid-client-repository"]
+    }
+  },
+  "exclude": ["node_modules"]
+}

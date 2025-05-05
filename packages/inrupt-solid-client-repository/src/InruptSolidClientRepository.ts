@@ -25,23 +25,13 @@ import {
   saveSolidDatasetAt,
   setStringNoLocale,
   setThing,
-  type Thing,
 } from "@inrupt/solid-client";
 import { v4 as uuid } from "uuid";
 import type { IRepository } from "@solid-memo/core";
 import { EVENTS, getDefaultSession } from "@inrupt/solid-client-authn-browser";
+import { stripFragment, thingContains } from "./utils";
 
-function stripFragment(iri: string) {
-  return iri.split("#")[0];
-}
-
-const thingContains = (
-  privateTypeIndexThing: Thing,
-  type: string,
-  value: string
-) => privateTypeIndexThing.predicates[type]?.namedNodes?.includes(value);
-
-export default class SolidRepository implements IRepository {
+export class InruptSolidClientRepository implements IRepository {
   getSession() {
     return getDefaultSession();
   }

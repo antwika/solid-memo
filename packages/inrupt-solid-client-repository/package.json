@@ -1,0 +1,31 @@
+{
+  "name": "@solid-memo/inrupt-solid-client-repository",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "test": "npm run test:unit && npm run test:integration",
+    "verify": "npm run test",
+    "test:unit": "vitest run test/unit/",
+    "test:integration": "vitest run test/integration/",
+    "test:unit:coverage": "vitest run --coverage test/unit/",
+    "test:unit:watch": "vitest"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@inrupt/solid-client": "^2.1.2",
+    "@inrupt/solid-client-authn-browser": "^2.4.1",
+    "@solid-memo/core": "*",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.1.2",
+    "vitest": "^3.1.2",
+    "vitest-when": "^0.6.0"
+  }
+}
