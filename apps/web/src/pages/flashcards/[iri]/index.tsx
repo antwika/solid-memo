@@ -80,6 +80,15 @@ export default function Page() {
           >
             Delete flashcard
           </Button>
+          <Button
+            onClick={() => {
+              router.push(
+                `/flashcards/${encodeURIComponent(flashcard.iri)}/edit`
+              );
+            }}
+          >
+            Edit
+          </Button>
         </div>
       </Card>
     </Layout>

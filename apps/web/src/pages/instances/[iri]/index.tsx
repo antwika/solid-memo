@@ -94,6 +94,15 @@ export default function Page() {
           </Button>
           <Button
             onClick={() => {
+              router.push(
+                `/instances/${encodeURIComponent(instance.iri)}/edit`
+              );
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            onClick={() => {
               service
                 .newDeck({
                   version: "1",

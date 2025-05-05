@@ -30,6 +30,9 @@ describe("solid.service", () => {
     createFlashcard: vi.fn(),
     renameInstance: vi.fn(),
     renameDeck: vi.fn(),
+    updateInstance: vi.fn(),
+    updateDeck: vi.fn(),
+    updateFlashcard: vi.fn(),
     deleteInstance: vi.fn(),
     deleteDeck: vi.fn(),
     deleteFlashcard: vi.fn(),
@@ -378,16 +381,20 @@ describe("solid.service", () => {
     const mockFlashcardIri = "mock-flashcard-iri";
     const mockFlashcard = { isInDeck: mockDeckIri };
 
+    const mockDecks: Record<string, DeckModel> = {
+      [mockDeckIri]: mockDeck,
+    };
+
     const mockFlashcards: Record<string, FlashcardModel> = {
       [mockFlashcardIri]: mockFlashcard,
     };
 
     when(mockRepository.findDecks)
       .calledWith([mockFlashcard.isInDeck])
-      .thenResolve([mockDeck]);
+      .thenResolve(mockDecks);
 
     when(mockRepository.findAllFlashcardUrls)
-      .calledWith([mockFlashcard.isInDeck])
+      .calledWith([mockDeckIri])
       .thenResolve([mockFlashcardIri]);
 
     when(mockRepository.findFlashcards)
@@ -403,5 +410,38 @@ describe("solid.service", () => {
     expect(deck).toBe(mockDeck);
     expect(flashcardUrls).toStrictEqual([mockFlashcardIri]);
     expect(flashcards).toBe(mockFlashcards);
+  });
+
+  test("updateInstance", () => {
+    // Arrange
+    const mockInstance = {};
+
+    // Act
+    solidService.updateInstance(mockInstance);
+
+    // Assert
+    expect(mockRepository.updateInstance).toHaveBeenCalledWith(mockInstance);
+  });
+
+  test("updateDeck", () => {
+    // Arrange
+    const mockDeck = {};
+
+    // Act
+    solidService.updateDeck(mockDeck);
+
+    // Assert
+    expect(mockRepository.updateDeck).toHaveBeenCalledWith(mockDeck);
+  });
+
+  test("updateFlashcard", () => {
+    // Arrange
+    const mockFlashcard = {};
+
+    // Act
+    solidService.updateFlashcard(mockFlashcard);
+
+    // Assert
+    expect(mockRepository.updateFlashcard).toHaveBeenCalledWith(mockFlashcard);
   });
 });
