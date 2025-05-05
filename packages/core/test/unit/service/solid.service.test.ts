@@ -8,7 +8,15 @@ import type { FlashcardModel } from "../../../src/domain/flashcard.model";
 import { when } from "vitest-when";
 
 describe("solid.service", () => {
-  const mockRepository = {
+  const mockRepository: IRepository = {
+    getSession: vi.fn(),
+    isLoggedIn: vi.fn(),
+    getFetch: vi.fn(),
+    getWebId: vi.fn(),
+    login: vi.fn(),
+    logout: vi.fn(),
+    handleIncomingRedirect: vi.fn(),
+    findOidcIssuers: vi.fn(),
     findAllStorageIris: vi.fn(),
     findAllPrivateTypeIndexIrisByWebId: vi.fn(),
     findAllInstanceUrls: vi.fn(),

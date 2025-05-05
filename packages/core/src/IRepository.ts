@@ -1,6 +1,32 @@
 import type { DeckModel, FlashcardModel, InstanceModel } from "./domain";
 
 export interface IRepository {
+  getSession(): { info: { isLoggedIn: boolean } };
+
+  isLoggedIn(): boolean;
+
+  getFetch(): typeof fetch;
+
+  getWebId(): string | undefined;
+
+  login({
+    oidcIssuer,
+    redirectUrl,
+    clientName,
+  }: {
+    oidcIssuer: string;
+    redirectUrl: string;
+    clientName: string;
+  }): Promise<void>;
+
+  logout(): Promise<void>;
+
+  handleIncomingRedirect(
+    restoreUrlCallback: (url: string) => void
+  ): Promise<void>;
+
+  findOidcIssuers(webId: string): Promise<string[]>;
+
   findAllStorageIris(): Promise<string[]>;
 
   findAllPrivateTypeIndexIrisByWebId(): Promise<string[]>;
