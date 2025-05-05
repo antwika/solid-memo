@@ -3,7 +3,7 @@ import { Geist } from "next/font/google";
 
 import "@styles/globals.css";
 import RepositoryProvider from "@providers/repository.provider";
-import { SolidRepository } from "@repositories/index";
+import { InruptSolidClientRepository } from "@solid-memo/inrupt-solid-client-repository";
 import ServiceProvider from "@providers/service.provider";
 import AuthGuard from "@components/auth-guard.component";
 import { AuthProvider } from "@providers/auth.provider";
@@ -14,7 +14,7 @@ const geist = Geist({
 });
 
 const MyApp: AppType = ({ Component, pageProps }) => {
-  const solidRepository = new SolidRepository();
+  const solidRepository = new InruptSolidClientRepository();
   const authService = new AuthService(solidRepository);
   const solidService = new SolidService(solidRepository);
 
