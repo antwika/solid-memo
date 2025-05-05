@@ -34,7 +34,6 @@
       "@pages/*": ["./src/pages/*"],
       "@providers/*": ["./src/providers/*"],
       "@redux/*": ["./src/redux/*"],
-      "@services/*": ["./src/services/*"],
       "@repositories/*": ["./src/repositories/*"],
       "@styles/*": ["./src/styles/*"],
       "@ui/*": ["./src/ui/*"],

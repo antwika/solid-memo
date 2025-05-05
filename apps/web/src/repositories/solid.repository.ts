@@ -28,7 +28,8 @@ import {
   type Thing,
 } from "@inrupt/solid-client";
 import { v4 as uuid } from "uuid";
-import type { IRepository, IAuthService } from "@solid-memo/core";
+import type { IRepository } from "@solid-memo/core";
+import { EVENTS, getDefaultSession } from "@inrupt/solid-client-authn-browser";
 
 function stripFragment(iri: string) {
   return iri.split("#")[0];
@@ -41,19 +42,66 @@ const thingContains = (
 ) => privateTypeIndexThing.predicates[type]?.namedNodes?.includes(value);
 
 export default class SolidRepository implements IRepository {
-  readonly authService: IAuthService;
+  getSession() {
+    return getDefaultSession();
+  }
 
-  constructor(authService: IAuthService) {
-    this.authService = authService;
+  isLoggedIn() {
+    return this.getSession().info.isLoggedIn;
+  }
+
+  getFetch() {
+    return this.getSession().fetch;
+  }
+
+  getWebId() {
+    return this.getSession().info.webId;
+  }
+
+  async login(opts: {
+    oidcIssuer: string;
+    redirectUrl: string;
+    clientName: string;
+  }) {
+    return this.getSession().login(opts);
+  }
+
+  async logout() {
+    return this.getSession().logout({ logoutType: "app" });
+  }
+
+  async handleIncomingRedirect(
+    restoreUrlCallback: (url: string) => void
+  ): Promise<void> {
+    const session = this.getSession();
+
+    session.events.removeAllListeners(EVENTS.SESSION_RESTORED);
+    session.events.on(EVENTS.SESSION_RESTORED, restoreUrlCallback);
+
+    await session.handleIncomingRedirect({ restorePreviousSession: true });
+  }
+
+  async findOidcIssuers(webId: string) {
+    const webIdDataset = await getSolidDataset(webId);
+    const webIdThing = getThing(webIdDataset, webId);
+
+    if (!webIdThing) throw new Error("Failed to discover WebID");
+
+    const oidcIssuers = getUrlAll(
+      webIdThing,
+      "http://www.w3.org/ns/solid/terms#oidcIssuer"
+    );
+
+    return oidcIssuers;
   }
 
   async findAllStorageIris() {
-    const webId = this.authService.getWebId();
+    const webId = this.getWebId();
 
     if (!webId) throw new Error("Session not authenticated!");
 
     const profiles = await getProfileAll(webId, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
     const webIdThings = [getThing(profiles.webIdProfile, webId)];
 
@@ -68,12 +116,12 @@ export default class SolidRepository implements IRepository {
   }
 
   async findAllPrivateTypeIndexIrisByWebId(): Promise<string[]> {
-    const webId = this.authService.getWebId();
+    const webId = this.getWebId();
 
     if (!webId) throw new Error("Session not authenticated!");
 
     const profiles = await getProfileAll(webId, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const webIdThings = [getThing(profiles.webIdProfile, webId)];
@@ -87,7 +135,7 @@ export default class SolidRepository implements IRepository {
 
     const seeAlsoDatasets = await Promise.all(
       seeAlsoUrls.map((seeAlsoUrl) =>
-        getSolidDataset(seeAlsoUrl, { fetch: this.authService.getFetch() })
+        getSolidDataset(seeAlsoUrl, { fetch: this.getFetch() })
       )
     );
 
@@ -129,7 +177,7 @@ export default class SolidRepository implements IRepository {
     const privateTypeIndexDatasets = await Promise.all(
       privateTypeIndexUrls.map((privateTypeIndexUrl) =>
         getSolidDataset(privateTypeIndexUrl, {
-          fetch: this.authService.getFetch(),
+          fetch: this.getFetch(),
         })
       )
     );
@@ -176,7 +224,7 @@ export default class SolidRepository implements IRepository {
 
     const instanceDatasets = await Promise.all(
       instanceUrls.map((instanceUrl) =>
-        getSolidDataset(instanceUrl, { fetch: this.authService.getFetch() })
+        getSolidDataset(instanceUrl, { fetch: this.getFetch() })
       )
     );
 
@@ -227,7 +275,7 @@ export default class SolidRepository implements IRepository {
 
     const instanceDatasets = await Promise.all(
       instanceUrls.map((instanceUrl) =>
-        getSolidDataset(instanceUrl, { fetch: this.authService.getFetch() })
+        getSolidDataset(instanceUrl, { fetch: this.getFetch() })
       )
     );
 
@@ -270,7 +318,7 @@ export default class SolidRepository implements IRepository {
 
     const deckDatasets = await Promise.all(
       deckUrls.map((deckUrl) =>
-        getSolidDataset(deckUrl, { fetch: this.authService.getFetch() })
+        getSolidDataset(deckUrl, { fetch: this.getFetch() })
       )
     );
 
@@ -325,7 +373,7 @@ export default class SolidRepository implements IRepository {
     const flashcardDatasets = await Promise.all(
       flashcardUrls.map((flashcardUrl) =>
         getSolidDataset(flashcardUrl, {
-          fetch: this.authService.getFetch(),
+          fetch: this.getFetch(),
         })
       )
     );
@@ -391,7 +439,7 @@ export default class SolidRepository implements IRepository {
       throw new Error("Failed to pick private type indexes iri");
 
     const privateTypeIndexDataset = await getSolidDataset(privateTypeIndexIri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const typeRegistrationThing = createThing({ name: privateTypeIndexName });
@@ -422,7 +470,7 @@ export default class SolidRepository implements IRepository {
     await saveSolidDatasetAt(
       privateTypeIndexIri,
       updatedPrivateTypeIndexDataset,
-      { fetch: this.authService.getFetch() }
+      { fetch: this.getFetch() }
     );
 
     const instanceDataset = createSolidDataset();
@@ -451,7 +499,7 @@ export default class SolidRepository implements IRepository {
     );
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
   }
 
@@ -460,7 +508,7 @@ export default class SolidRepository implements IRepository {
     deck: Omit<DeckModel, "iri">
   ): Promise<Record<string, DeckModel>> {
     const instanceDataset = await getSolidDataset(instanceIri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const instanceThing = getThing(instanceDataset, instanceIri);
@@ -481,11 +529,11 @@ export default class SolidRepository implements IRepository {
     );
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const instanceDataset2 = await getSolidDataset(instanceIri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const deckThing = buildThing({ name: instanceThingName })
@@ -507,7 +555,7 @@ export default class SolidRepository implements IRepository {
     const updatedInstanceDataset2 = setThing(instanceDataset2, deckThing);
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset2, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const foundDecks = await this.findDecks([deckIri]);
@@ -521,7 +569,7 @@ export default class SolidRepository implements IRepository {
     flashcard: Omit<FlashcardModel, "iri">
   ): Promise<void> {
     const deckDataset = await getSolidDataset(deckIri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const deckThing = getThing(deckDataset, deckIri);
@@ -538,11 +586,11 @@ export default class SolidRepository implements IRepository {
     const updatedDeckDataset = setThing(deckDataset, updatedDeckThing);
 
     await saveSolidDatasetAt(deckIri, updatedDeckDataset, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const instanceDataset = await getSolidDataset(instanceIri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const flashcardThing = buildThing({ name: flashcardThingName })
@@ -568,13 +616,13 @@ export default class SolidRepository implements IRepository {
     const updatedInstanceDataset = setThing(instanceDataset, flashcardThing);
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
   }
 
   async renameInstance(instance: InstanceModel, newName: string) {
     const instanceDataset = await getSolidDataset(instance.iri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const instanceThing = getThing(instanceDataset, instance.iri);
@@ -608,13 +656,13 @@ export default class SolidRepository implements IRepository {
     );
 
     await saveSolidDatasetAt(instance.iri, updatedInstanceDataset, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
   }
 
   async renameDeck(deck: DeckModel, newName: string) {
     const deckDataset = await getSolidDataset(deck.iri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     const deckThing = getThing(deckDataset, deck.iri);
@@ -645,7 +693,7 @@ export default class SolidRepository implements IRepository {
     const updatedDeckDataset = setThing(deckDataset, updatedDeckThing);
 
     await saveSolidDatasetAt(deck.iri, updatedDeckDataset, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
   }
 
@@ -655,7 +703,7 @@ export default class SolidRepository implements IRepository {
 
     const privateTypeIndexIri = instance.isInPrivateTypeIndex;
     const privateTypeIndexDataset = await getSolidDataset(privateTypeIndexIri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     let updatedPrivateTypeIndexDataset = removeThing(
@@ -678,21 +726,21 @@ export default class SolidRepository implements IRepository {
     await saveSolidDatasetAt(
       privateTypeIndexIri,
       updatedPrivateTypeIndexDataset,
-      { fetch: this.authService.getFetch() }
+      { fetch: this.getFetch() }
     );
 
     const instanceDataset = await getSolidDataset(instance.iri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
     const updatedInstanceDataset = removeThing(instanceDataset, instance.iri);
     const savedInstanceDataset = await saveSolidDatasetAt(
       instance.iri,
       updatedInstanceDataset,
-      { fetch: this.authService.getFetch() }
+      { fetch: this.getFetch() }
     );
 
     await deleteSolidDataset(savedInstanceDataset, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
   }
 
@@ -702,7 +750,7 @@ export default class SolidRepository implements IRepository {
 
     const instanceIri = deck.isInSolidMemoDataInstance;
     const instanceDataset = await getSolidDataset(instanceIri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     let updatedInstanceDataset = removeThing(instanceDataset, deck.iri);
@@ -723,14 +771,14 @@ export default class SolidRepository implements IRepository {
     }
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
   }
 
   async deleteFlashcard(flashcard: FlashcardModel): Promise<void> {
     const deckIri = flashcard.isInDeck;
     const deckDataset = await getSolidDataset(deckIri, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
 
     let updatedDeckDataset = removeThing(deckDataset, flashcard.iri);
@@ -748,7 +796,7 @@ export default class SolidRepository implements IRepository {
     }
 
     await saveSolidDatasetAt(deckIri, updatedDeckDataset, {
-      fetch: this.authService.getFetch(),
+      fetch: this.getFetch(),
     });
   }
 }
