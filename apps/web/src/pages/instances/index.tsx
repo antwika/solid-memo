@@ -1,6 +1,5 @@
 import { preferFragment } from "@lib/utils";
 import Layout from "@pages/layout";
-import { RepositoryContext } from "@providers/repository.provider";
 import { ServiceContext } from "@providers/service.provider";
 import { Button } from "@ui/index";
 import { Database } from "lucide-react";
@@ -10,9 +9,7 @@ import useWebIdProfile from "src/hooks/useWebIdProfile";
 
 export default function Page() {
   const router = useRouter();
-  const { getRepository } = useContext(RepositoryContext);
   const { getService } = useContext(ServiceContext);
-  const repository = getRepository();
   const service = getService();
 
   const { instanceUrls, mutate: mutateWebIdProfile } = useWebIdProfile();
@@ -22,7 +19,7 @@ export default function Page() {
       <Button
         onClick={() => {
           service
-            .newInstance(repository)
+            .newInstance()
             .then(() => mutateWebIdProfile())
             .catch((err) => console.error("Failed with error:", err));
         }}

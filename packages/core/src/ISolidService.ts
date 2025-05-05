@@ -1,79 +1,50 @@
 import type { DeckModel, FlashcardModel, InstanceModel } from "./domain";
-import type { IRepository } from "./IRepository";
 
 export interface IService {
-  discoverEverything(repository: IRepository): Promise<{
+  discoverEverything(): Promise<{
     instanceUrls: string[];
     deckUrls: string[];
     flashcardUrls: string[];
   }>;
 
-  discoverInstanceUrls(repository: IRepository): Promise<string[]>;
+  discoverInstanceUrls(): Promise<string[]>;
 
-  newInstance(repository: IRepository): Promise<{
+  newInstance(): Promise<{
     instanceUrls: string[];
     instances: Record<string, InstanceModel>;
   }>;
 
   newDeck(
-    repository: IRepository,
     deck: Omit<DeckModel, "iri">
   ): Promise<{ decks: Record<string, DeckModel> }>;
 
   newFlashcard(
-    repository: IRepository,
     instanceIri: string,
     flashcard: Omit<FlashcardModel, "iri">
   ): Promise<{ decks: Record<string, DeckModel> }>;
 
-  getInstance(
-    repository: IRepository,
-    instanceUrl: string
-  ): Promise<Record<string, InstanceModel>>;
+  getInstance(instanceUrl: string): Promise<Record<string, InstanceModel>>;
 
-  getDeck(
-    repository: IRepository,
-    deckUrl: string
-  ): Promise<Record<string, DeckModel>>;
+  getDeck(deckUrl: string): Promise<Record<string, DeckModel>>;
 
-  getFlashcard(
-    repository: IRepository,
-    flashcardUrl: string
-  ): Promise<Record<string, FlashcardModel>>;
+  getFlashcard(flashcardUrl: string): Promise<Record<string, FlashcardModel>>;
 
-  renameInstance(
-    repository: IRepository,
-    instance: InstanceModel,
-    newName: string
-  ): Promise<void>;
+  renameInstance(instance: InstanceModel, newName: string): Promise<void>;
 
-  renameDeck(
-    repository: IRepository,
-    deck: DeckModel,
-    newName: string
-  ): Promise<void>;
+  renameDeck(deck: DeckModel, newName: string): Promise<void>;
 
-  removeInstance(
-    repository: IRepository,
-    instance: InstanceModel
-  ): Promise<{
+  removeInstance(instance: InstanceModel): Promise<{
     instanceUrls: string[];
     instances: Record<string, InstanceModel>;
   }>;
 
-  removeDeck(
-    repository: IRepository,
-    deck: DeckModel
-  ): Promise<{
+  removeDeck(deck: DeckModel): Promise<{
     instances: Record<string, InstanceModel>;
     deckUrls: string[];
     decks: Record<string, DeckModel>;
   }>;
 
-  removeFlashcard(
-    repository: IRepository,
-    flashcard: FlashcardModel
-  ): Promise<{
+  removeFlashcard(flashcard: FlashcardModel): Promise<{
     deck: DeckModel | undefined;
     flashcardUrls: string[];
     flashcards: Record<string, FlashcardModel>;

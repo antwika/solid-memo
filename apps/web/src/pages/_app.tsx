@@ -5,9 +5,10 @@ import "@styles/globals.css";
 import RepositoryProvider from "@providers/repository.provider";
 import { SolidRepository } from "@repositories/index";
 import ServiceProvider from "@providers/service.provider";
-import { AuthService, SolidService } from "@services/index";
+import { AuthService } from "@services/index";
 import AuthGuard from "@components/auth-guard.component";
 import { AuthProvider } from "@providers/auth.provider";
+import { SolidService } from "@solid-memo/core";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -16,7 +17,7 @@ const geist = Geist({
 const MyApp: AppType = ({ Component, pageProps }) => {
   const authService = new AuthService();
   const solidRepository = new SolidRepository(authService);
-  const solidService = new SolidService();
+  const solidService = new SolidService(solidRepository);
 
   return (
     <div className={geist.className}>
