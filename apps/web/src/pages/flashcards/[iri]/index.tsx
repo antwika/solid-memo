@@ -1,4 +1,4 @@
-import { preferFragment } from "@lib/utils";
+import { preferFragment } from "@solid-memo/core";
 import Layout from "@pages/layout";
 import { ServiceContext } from "@providers/service.provider";
 import { Button, Card } from "@ui/index";
