@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { env } from "@lib/env";
-import { ensureTrailingSlash } from "@lib/utils";
+import { ensureTrailingSlash } from "@solid-memo/core";
 
 type Size = "xs" | "sm" | "md" | "lg" | "xl";
 

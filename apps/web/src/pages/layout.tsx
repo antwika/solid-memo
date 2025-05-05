@@ -1,6 +1,6 @@
 import { Header } from "@components/index";
 import { env } from "@lib/env";
-import { ensureTrailingSlash } from "@lib/utils";
+import { ensureTrailingSlash } from "@solid-memo/core";
 import { ServiceContext } from "@providers/service.provider";
 import { Button } from "@ui/index";
 import Head from "next/head";

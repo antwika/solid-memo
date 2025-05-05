@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { item, sm2 } from "@lib/super-memo";
+import { item, sm2 } from "../../../src/lib/super-memo";
 
 test("super-memo", () => {
   expect(sm2(item(1, 2.5, 1, 0))).toStrictEqual(item(1, 1.7, 1, 0));
