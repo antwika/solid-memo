@@ -107,8 +107,20 @@ export class SolidService implements IService {
     ]);
     const flashcards = await this.repository.findFlashcards(flashcardUrls);
 
-    const deck = decks[0];
+    const deck = decks[flashcard.isInDeck];
 
     return { deck, flashcardUrls, flashcards };
+  }
+
+  async updateInstance(instance: InstanceModel) {
+    await this.repository.updateInstance(instance);
+  }
+
+  async updateDeck(deck: DeckModel) {
+    await this.repository.updateDeck(deck);
+  }
+
+  async updateFlashcard(flashcard: FlashcardModel) {
+    await this.repository.updateFlashcard(flashcard);
   }
 }

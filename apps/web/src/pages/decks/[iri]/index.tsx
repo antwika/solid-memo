@@ -113,6 +113,13 @@ export default function Page() {
           </Button>
           <Button
             onClick={() => {
+              router.push(`/decks/${encodeURIComponent(deck.iri)}/edit`);
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            onClick={() => {
               service
                 .newFlashcard(deck.isInSolidMemoDataInstance, {
                   version: "1",

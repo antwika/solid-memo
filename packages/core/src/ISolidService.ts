@@ -33,6 +33,12 @@ export interface IService {
 
   renameDeck(deck: DeckModel, newName: string): Promise<void>;
 
+  updateInstance(instance: InstanceModel): Promise<void>;
+
+  updateDeck(deck: DeckModel): Promise<void>;
+
+  updateFlashcard(flashcard: FlashcardModel): Promise<void>;
+
   removeInstance(instance: InstanceModel): Promise<{
     instanceUrls: string[];
     instances: Record<string, InstanceModel>;

@@ -64,6 +64,12 @@ export interface IRepository {
 
   renameDeck(deck: DeckModel, newName: string): Promise<void>;
 
+  updateInstance(instance: InstanceModel): Promise<void>;
+
+  updateDeck(deck: DeckModel): Promise<void>;
+
+  updateFlashcard(flashcard: FlashcardModel): Promise<void>;
+
   deleteInstance(instance: InstanceModel): Promise<void>;
 
   deleteDeck(deck: DeckModel): Promise<void>;

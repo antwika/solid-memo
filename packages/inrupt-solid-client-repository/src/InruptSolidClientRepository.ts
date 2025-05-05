@@ -25,6 +25,8 @@ import {
   saveSolidDatasetAt,
   setStringNoLocale,
   setThing,
+  type Thing,
+  type ThingPersisted,
 } from "@inrupt/solid-client";
 import { v4 as uuid } from "uuid";
 import type { IRepository } from "@solid-memo/core";
@@ -683,6 +685,86 @@ export class InruptSolidClientRepository implements IRepository {
     const updatedDeckDataset = setThing(deckDataset, updatedDeckThing);
 
     await saveSolidDatasetAt(deck.iri, updatedDeckDataset, {
+      fetch: this.getFetch(),
+    });
+  }
+
+  async updateInstance(instance: InstanceModel) {
+    const instanceDataset = await getSolidDataset(instance.iri, {
+      fetch: this.getFetch(),
+    });
+
+    const instanceThing = getThing(instanceDataset, instance.iri);
+
+    if (!instanceThing) throw new Error("Could not find instance thing");
+
+    let updatedInstanceThing = instanceThing;
+    updatedInstanceThing = setStringNoLocale(
+      updatedInstanceThing,
+      "http://antwika.com/ns/solid-memo#name",
+      instance.name
+    );
+
+    const updatedInstanceDataset = setThing(
+      instanceDataset,
+      updatedInstanceThing
+    );
+
+    await saveSolidDatasetAt(instance.iri, updatedInstanceDataset, {
+      fetch: this.getFetch(),
+    });
+  }
+
+  async updateDeck(deck: DeckModel) {
+    const deckDataset = await getSolidDataset(deck.iri, {
+      fetch: this.getFetch(),
+    });
+
+    const deckThing = getThing(deckDataset, deck.iri);
+
+    if (!deckThing) throw new Error("Could not find deck thing");
+
+    let updatedDeckThing = deckThing;
+    updatedDeckThing = setStringNoLocale(
+      updatedDeckThing,
+      "http://antwika.com/ns/solid-memo#name",
+      deck.name
+    );
+
+    const updatedDeckDataset = setThing(deckDataset, updatedDeckThing);
+
+    await saveSolidDatasetAt(deck.iri, updatedDeckDataset, {
+      fetch: this.getFetch(),
+    });
+  }
+
+  async updateFlashcard(flashcard: FlashcardModel) {
+    const flashcardDataset = await getSolidDataset(flashcard.iri, {
+      fetch: this.getFetch(),
+    });
+
+    const flashcardThing = getThing(flashcardDataset, flashcard.iri);
+
+    if (!flashcardThing) throw new Error("Could not find flashcard thing");
+
+    let updatedFlashcardThing = flashcardThing;
+    updatedFlashcardThing = setStringNoLocale(
+      updatedFlashcardThing,
+      "http://antwika.com/ns/solid-memo#front",
+      flashcard.front
+    );
+    updatedFlashcardThing = setStringNoLocale(
+      updatedFlashcardThing,
+      "http://antwika.com/ns/solid-memo#back",
+      flashcard.back
+    );
+
+    const updatedFlashcardDataset = setThing(
+      flashcardDataset,
+      updatedFlashcardThing
+    );
+
+    await saveSolidDatasetAt(flashcard.iri, updatedFlashcardDataset, {
       fetch: this.getFetch(),
     });
   }
