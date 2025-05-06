@@ -1,4 +1,6 @@
 import {
+  getDecimal,
+  getInteger,
   getStringNoLocale,
   getThingAll,
   getUrl,
@@ -19,6 +21,15 @@ function parseFlashcardFromThing(thing: Thing) {
     isInDeck: getUrl(thing, "http://antwika.com/ns/solid-memo#isInDeck"),
     front: getStringNoLocale(thing, "http://antwika.com/ns/solid-memo#front"),
     back: getStringNoLocale(thing, "http://antwika.com/ns/solid-memo#back"),
+    interval: getInteger(thing, "http://antwika.com/ns/solid-memo#interval"),
+    easeFactor: getDecimal(
+      thing,
+      "http://antwika.com/ns/solid-memo#easeFactor"
+    ),
+    repetition: getInteger(
+      thing,
+      "http://antwika.com/ns/solid-memo#repetition"
+    ),
   });
 }
 

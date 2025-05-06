@@ -10,6 +10,9 @@ describe("flashcard.model", () => {
         front: "mock-front",
         back: "mock-back",
         isInDeck: "mock-deck",
+        interval: 1,
+        easeFactor: 2,
+        repetition: 3,
       });
       expect(flashcard).toStrictEqual({
         iri: "mock-iri",
@@ -17,6 +20,9 @@ describe("flashcard.model", () => {
         front: "mock-front",
         back: "mock-back",
         isInDeck: "mock-deck",
+        interval: 1,
+        easeFactor: 2,
+        repetition: 3,
       });
     });
   });

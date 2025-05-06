@@ -1,4 +1,4 @@
-import { IAuthService } from "packages/core/src";
+import type { IAuthService } from "../../src/IAuthService";
 import { describe, it, vi } from "vitest";
 
 class MockAuthService implements IAuthService {

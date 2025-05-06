@@ -1,6 +1,6 @@
 import type { IService } from "../ISolidService";
 import type { IRepository } from "../IRepository";
-import type { DeckModel, FlashcardModel, InstanceModel } from "../domain/index";
+import type { DeckModel, FlashcardModel, InstanceModel } from "../domain";
 
 export class SolidService implements IService {
   private readonly repository: IRepository;

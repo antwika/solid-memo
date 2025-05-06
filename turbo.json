@@ -18,6 +18,9 @@
     "test:unit:coverage": {
       "outputs": []
     },
+    "test:unit:watch": {
+      "outputs": []
+    },
     "test:integration": {
       "outputs": []
     }

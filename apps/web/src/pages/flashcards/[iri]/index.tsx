@@ -65,6 +65,15 @@ export default function Page() {
               View
             </Button>
           </div>
+          <div>
+            <strong>• Interval:</strong> {flashcard.interval}
+          </div>
+          <div>
+            <strong>• Ease factor:</strong> {flashcard.easeFactor}
+          </div>
+          <div>
+            <strong>• Repetition:</strong> {flashcard.repetition}
+          </div>
           <Button
             variant={"destructive"}
             onClick={() => {
