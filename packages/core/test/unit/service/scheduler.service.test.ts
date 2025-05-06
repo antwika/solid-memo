@@ -87,7 +87,7 @@ describe("scheduler.service", () => {
       {
         iri: "mock-resource-iri#mock-uuid",
         version: "mockv-version",
-        forCard: "mock-iri",
+        forFlashcard: "mock-iri",
         nextReview: "2000-02-04T00:00:00.000Z",
       },
     ]);

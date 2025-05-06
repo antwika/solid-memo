@@ -7,14 +7,14 @@ describe("assessment.model", () => {
       const assessment = parseAssessment({
         iri: "mock-iri",
         version: "mock-version",
-        forCard: "mock-card-iri",
+        forFlashcard: "mock-card-iri",
         date: "2025-05-01",
         score: 1,
       });
       expect(assessment).toStrictEqual({
         iri: "mock-iri",
         version: "mock-version",
-        forCard: "mock-card-iri",
+        forFlashcard: "mock-card-iri",
         date: "2025-05-01",
         score: 1,
       });

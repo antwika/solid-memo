@@ -3,7 +3,7 @@ import { z } from "zod";
 export const assessmentSchema = z.object({
   iri: z.string(),
   version: z.string(),
-  forCard: z.string(),
+  forFlashcard: z.string(),
   date: z.string().date(),
   score: z.number(),
 });

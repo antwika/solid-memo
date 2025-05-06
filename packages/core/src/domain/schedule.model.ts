@@ -3,7 +3,7 @@ import { z } from "zod";
 export const scheduleSchema = z.object({
   iri: z.string(),
   version: z.string(),
-  forCard: z.string(),
+  forFlashcard: z.string(),
   lastReviewed: z.string().date().optional(),
   nextReview: z.string().date(),
 });
