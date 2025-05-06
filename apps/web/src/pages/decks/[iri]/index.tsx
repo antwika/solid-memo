@@ -126,6 +126,9 @@ export default function Page() {
                   front: "Front",
                   back: "Back",
                   isInDeck: deck.iri,
+                  interval: 1,
+                  easeFactor: 2.5,
+                  repetition: 1,
                 })
                 .then(() => mutate())
                 .catch((err) => console.error("Failed with error:", err));

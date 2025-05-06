@@ -1,4 +1,4 @@
-import { FlashcardModel } from "./domain";
+import type { FlashcardModel } from "./domain";
 
 export type Quality = number;
 

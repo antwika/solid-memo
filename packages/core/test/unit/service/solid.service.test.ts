@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, test, vi } from "vitest";
 import { SolidService } from "../../../src/service/solid.service";
-import { IRepository } from "../../../src/IRepository";
-import { IService } from "../../../src/ISolidService";
+import type { IRepository } from "../../../src/IRepository";
+import type { IService } from "../../../src/ISolidService";
 import type { InstanceModel } from "../../../src/domain/instance.model";
 import type { DeckModel } from "../../../src/domain/deck.model";
 import type { FlashcardModel } from "../../../src/domain/flashcard.model";

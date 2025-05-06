@@ -1,5 +1,9 @@
 import { when } from "vitest-when";
-import { AuthService, IAuthService, IRepository } from "../../../src/index";
+import {
+  AuthService,
+  type IAuthService,
+  type IRepository,
+} from "../../../src/index";
 import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 
 describe("auth.service", () => {

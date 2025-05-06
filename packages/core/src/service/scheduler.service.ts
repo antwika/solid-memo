@@ -1,16 +1,10 @@
-import { DeckModel, FlashcardModel, ScheduleModel } from "../domain";
-import {
+import type { DeckModel, FlashcardModel, ScheduleModel } from "../domain";
+import type {
   Assessment,
   ISpacedRepetitionAlgorithm,
 } from "../ISpacedRepetitionAlgorithm";
 import { v4 as uuid } from "uuid";
-import {
-  format,
-  formatDistance,
-  formatRelative,
-  addDays,
-  startOfDay,
-} from "date-fns";
+import { addDays, startOfDay } from "date-fns";
 
 export type ScheduleInput = {
   decks: DeckModel[];

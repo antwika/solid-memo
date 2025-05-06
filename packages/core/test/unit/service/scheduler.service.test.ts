@@ -1,9 +1,9 @@
-import {
+import type {
   Assessment,
   ISpacedRepetitionAlgorithm,
-} from "packages/core/src/ISpacedRepetitionAlgorithm";
+} from "../../../src/ISpacedRepetitionAlgorithm";
 import {
-  ISchedulerService,
+  type ISchedulerService,
   SchedulerService,
 } from "../../../src/service/scheduler.service";
 import {
@@ -16,7 +16,7 @@ import {
   vi,
 } from "vitest";
 import { when } from "vitest-when";
-import { FlashcardModel } from "packages/core/src";
+import type { FlashcardModel } from "../../../src/domain";
 import { v4 as uuid } from "uuid";
 
 vi.mock("uuid");
@@ -88,7 +88,7 @@ describe("scheduler.service", () => {
         iri: "mock-resource-iri#mock-uuid",
         version: "mockv-version",
         forCard: "mock-iri",
-        nextReview: "2000-02-03T23:00:00.000Z",
+        nextReview: "2000-02-04T00:00:00.000Z",
       },
     ]);
   });

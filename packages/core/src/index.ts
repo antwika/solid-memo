@@ -1,5 +1,5 @@
-export * from "./domain/index";
-export * from "./service/index";
+export * from "./domain";
+export * from "./service";
 export * from "./lib/utils";
 export * from "./IAuthService";
 export * from "./ISolidService";

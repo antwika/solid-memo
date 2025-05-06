@@ -37,7 +37,8 @@
       "@repositories/*": ["./src/repositories/*"],
       "@styles/*": ["./src/styles/*"],
       "@ui/*": ["./src/ui/*"],
-      "@solid-memo/core": ["../../packages/core"]
+      "@solid-memo/core": ["../../packages/core"],
+      "@src/*": ["../../packages/core"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

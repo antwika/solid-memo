@@ -1,4 +1,5 @@
-import type { IAuthService, IRepository } from "../../src/index";
+import type { IAuthService } from "../IAuthService";
+import type { IRepository } from "../IRepository";
 
 export class AuthService implements IAuthService {
   private readonly repository: IRepository;

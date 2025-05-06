@@ -1,5 +1,5 @@
-import { FlashcardModel } from "../domain";
-import {
+import type { FlashcardModel } from "../domain";
+import type {
   Assessment,
   ISpacedRepetitionAlgorithm,
   Quality,

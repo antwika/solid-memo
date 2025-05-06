@@ -4,8 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@lib": path.resolve(__dirname, "src/lib"),
-      "@hooks": path.resolve(__dirname, "src/hooks"),
+      "@src": path.resolve(__dirname, "src"),
     },
   },
   test: {
@@ -16,6 +15,12 @@ export default defineConfig({
     include: ["test/**/*.test.{ts,tsx}"],
     coverage: {
       include: ["src/**/*.{ts,tsx,js,jsx}"],
+      thresholds: {
+        lines: 100,
+        functions: 100,
+        branches: 100,
+        statements: 100,
+      },
     },
   },
 });

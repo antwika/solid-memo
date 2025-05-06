@@ -11,6 +11,8 @@ import {
   createSolidDataset,
   createThing,
   deleteSolidDataset,
+  getDecimal,
+  getInteger,
   getProfileAll,
   getSolidDataset,
   getStringNoLocale,
@@ -404,6 +406,18 @@ export class InruptSolidClientRepository implements IRepository {
             flashcardThing,
             "http://antwika.com/ns/solid-memo#isInDeck"
           ),
+          interval: getInteger(
+            flashcardThing,
+            "http://antwika.com/ns/solid-memo#interval"
+          ),
+          easeFactor: getDecimal(
+            flashcardThing,
+            "http://antwika.com/ns/solid-memo#easeFactor"
+          ),
+          repetition: getInteger(
+            flashcardThing,
+            "http://antwika.com/ns/solid-memo#repetition"
+          ),
         });
         acc[flashcard.iri] = flashcard;
         return acc;
@@ -601,6 +615,18 @@ export class InruptSolidClientRepository implements IRepository {
       .addStringNoLocale(
         "http://antwika.com/ns/solid-memo#back",
         flashcard.back
+      )
+      .addInteger(
+        "http://antwika.com/ns/solid-memo#interval",
+        flashcard.interval
+      )
+      .addDecimal(
+        "http://antwika.com/ns/solid-memo#easeFactor",
+        flashcard.easeFactor
+      )
+      .addInteger(
+        "http://antwika.com/ns/solid-memo#repetition",
+        flashcard.repetition
       )
       .addUrl("http://antwika.com/ns/solid-memo#isInDeck", flashcard.isInDeck)
       .build();

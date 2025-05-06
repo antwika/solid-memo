@@ -1,10 +1,10 @@
 import { test, expect, describe, beforeAll } from "vitest";
-import { assessment, item, sm2, SuperMemo2 } from "../../../src/lib/super-memo";
-import {
+import { sm2, SuperMemo2 } from "../../../src/lib/super-memo";
+import type {
   Assessment,
   ISpacedRepetitionAlgorithm,
-} from "packages/core/src/ISpacedRepetitionAlgorithm";
-import { FlashcardModel } from "packages/core/src";
+} from "../../../src/ISpacedRepetitionAlgorithm";
+import type { FlashcardModel } from "../../../src/domain";
 
 describe("super-memo", () => {
   test("sm2", () => {
@@ -14,6 +14,9 @@ describe("super-memo", () => {
       front: "mock-front",
       back: "mock-back",
       isInDeck: "mock-is-in-deck",
+      interval: 1,
+      easeFactor: 2,
+      repetition: 3,
     };
     expect(
       sm2({
@@ -374,6 +377,9 @@ describe("super-memo", () => {
         front: "mock-front",
         back: "mock-back",
         isInDeck: "mock-is-in-deck",
+        interval: 1,
+        easeFactor: 2,
+        repetition: 3,
       };
       const mockAssessments: Assessment[] = [
         {
