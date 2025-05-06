@@ -6,6 +6,9 @@ export const flashcardSchema = z.object({
   front: z.string(),
   back: z.string(),
   isInDeck: z.string(),
+  interval: z.number(),
+  easeFactor: z.number(),
+  repetition: z.number(),
 });
 
 export type FlashcardModel = z.infer<typeof flashcardSchema>;

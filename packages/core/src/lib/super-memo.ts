@@ -1,23 +1,13 @@
-export type Interval = number;
+import { FlashcardModel } from "../domain";
+import {
+  Assessment,
+  ISpacedRepetitionAlgorithm,
+  Quality,
+} from "../ISpacedRepetitionAlgorithm";
 
-export type EaseFactor = number;
+type EaseFactor = number;
 
-export type Quality = number;
-
-export type Repetition = number;
-
-export type Item = {
-  i: Interval;
-  ef: EaseFactor;
-  r: Repetition;
-  q: Quality;
-};
-
-export type Assessment = Item & { q: Quality };
-
-export function item(i: Interval, ef: EaseFactor, r: Repetition, q: Quality) {
-  return { i, ef, r, q };
-}
+type Repetition = number;
 
 function nextInterval(repetition: Repetition, easeFactor: EaseFactor): number {
   repetition = Math.ceil(repetition);
@@ -46,11 +36,21 @@ function nextRepetition(repetition: Repetition, quality: Quality): number {
   else return 1;
 }
 
-export function sm2(assessment: Assessment): Item {
+export function sm2(assessment: Assessment): FlashcardModel {
   return {
-    ...assessment,
-    i: nextInterval(assessment.r, assessment.ef),
-    ef: nextEaseFactor(assessment.ef, assessment.q),
-    r: nextRepetition(assessment.r, assessment.q),
+    iri: assessment.iri,
+    version: assessment.version,
+    front: assessment.front,
+    back: assessment.back,
+    isInDeck: assessment.isInDeck,
+    interval: nextInterval(assessment.repetition, assessment.easeFactor),
+    easeFactor: nextEaseFactor(assessment.easeFactor, assessment.q),
+    repetition: nextRepetition(assessment.repetition, assessment.q),
   };
+}
+
+export class SuperMemo2 implements ISpacedRepetitionAlgorithm {
+  compute(assessments: Assessment[]) {
+    return assessments.map((assessment) => sm2(assessment));
+  }
 }

@@ -1,0 +1,53 @@
+import { DeckModel, FlashcardModel, ScheduleModel } from "../domain";
+import {
+  Assessment,
+  ISpacedRepetitionAlgorithm,
+} from "../ISpacedRepetitionAlgorithm";
+import { v4 as uuid } from "uuid";
+import {
+  format,
+  formatDistance,
+  formatRelative,
+  addDays,
+  startOfDay,
+} from "date-fns";
+
+export type ScheduleInput = {
+  decks: DeckModel[];
+  flashcards: FlashcardModel[];
+  assessments: Assessment[];
+  schedules: ScheduleModel[];
+};
+
+export interface ISchedulerService {
+  schedule(resourceIri: string, assessments: Assessment[]): ScheduleModel[];
+}
+
+export class SchedulerService implements ISchedulerService {
+  private readonly spacedRepetitonAlgorithm: ISpacedRepetitionAlgorithm;
+
+  constructor(spacedRepetitionAlgorithm: ISpacedRepetitionAlgorithm) {
+    this.spacedRepetitonAlgorithm = spacedRepetitionAlgorithm;
+  }
+
+  schedule(resourceIri: string, assessments: Assessment[]): ScheduleModel[] {
+    const flashcards = this.spacedRepetitonAlgorithm.compute(assessments);
+
+    const schedules = flashcards.map((flashcard) => {
+      const scheduleName = uuid().toString();
+
+      const nextReview = startOfDay(
+        addDays(new Date(), flashcard.interval)
+      ).toISOString();
+
+      return {
+        iri: `${resourceIri}#${scheduleName}`,
+        version: flashcard.version,
+        forCard: flashcard.iri,
+        nextReview,
+      };
+    });
+
+    return schedules;
+  }
+}
