@@ -14,7 +14,11 @@ export type ScheduleInput = {
 };
 
 export interface ISchedulerService {
-  schedule(resourceIri: string, assessments: Assessment[]): ScheduleModel[];
+  schedule(
+    instanceIri: string,
+    resourceIri: string,
+    assessments: Assessment[]
+  ): ScheduleModel[];
 }
 
 export class SchedulerService implements ISchedulerService {
@@ -24,19 +28,22 @@ export class SchedulerService implements ISchedulerService {
     this.spacedRepetitonAlgorithm = spacedRepetitionAlgorithm;
   }
 
-  schedule(resourceIri: string, assessments: Assessment[]): ScheduleModel[] {
+  schedule(
+    instanceIri: string,
+    resourceIri: string,
+    assessments: Assessment[]
+  ): ScheduleModel[] {
     const flashcards = this.spacedRepetitonAlgorithm.compute(assessments);
 
     const schedules = flashcards.map((flashcard) => {
       const scheduleName = uuid().toString();
 
-      const nextReview = startOfDay(
-        addDays(new Date(), flashcard.interval)
-      ).toISOString();
+      const nextReview = startOfDay(addDays(new Date(), flashcard.interval));
 
       return {
         iri: `${resourceIri}#${scheduleName}`,
         version: flashcard.version,
+        isInSolidMemoDataInstance: instanceIri,
         forFlashcard: flashcard.iri,
         nextReview,
       };

@@ -43,11 +43,12 @@ describe("scheduler.service", () => {
 
   test("scheduler.service", () => {
     // Arrange
-    const mockFlashcard = {
+    const mockFlashcard: FlashcardModel = {
       iri: "mock-iri",
       version: "mockv-version",
       front: "mock-front",
       back: "mock-back",
+      isInSolidMemoDataInstance: "mock-instance-iri",
       isInDeck: "mock-deck-iri",
       interval: 1,
       easeFactor: 2,
@@ -78,6 +79,7 @@ describe("scheduler.service", () => {
 
     // Act
     const schedules = schedulerService.schedule(
+      "mock-instance-iri",
       "mock-resource-iri",
       mockAssessments
     );
@@ -87,8 +89,9 @@ describe("scheduler.service", () => {
       {
         iri: "mock-resource-iri#mock-uuid",
         version: "mockv-version",
+        isInSolidMemoDataInstance: "mock-instance-iri",
         forFlashcard: "mock-iri",
-        nextReview: "2000-02-04T00:00:00.000Z",
+        nextReview: new Date(2000, 1, 4, 0, 0, 0, 0),
       },
     ]);
   });

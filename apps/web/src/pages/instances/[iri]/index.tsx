@@ -2,7 +2,7 @@ import { preferFragment } from "@solid-memo/core";
 import Layout from "@pages/layout";
 import { ServiceContext } from "@providers/service.provider";
 import { Button, Card } from "@ui/index";
-import { Database, Layers } from "lucide-react";
+import { Calendar, Database, Layers } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useContext } from "react";
 import useInstances from "src/hooks/useInstances";
@@ -63,6 +63,32 @@ export default function Page() {
                     size={"sm"}
                     onClick={() => {
                       router.push(`/decks/${encodeURIComponent(deckIri)}`);
+                    }}
+                  >
+                    View
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <strong>• Has schedule:</strong>{" "}
+            <div className="flex flex-col gap-1">
+              {instance.hasSchedule.map((scheduleIri) => (
+                <div key={scheduleIri} className="flex gap-1 items-center">
+                  <Calendar />
+                  <strong>
+                    <span title={scheduleIri}>
+                      {preferFragment(scheduleIri)}
+                    </span>
+                  </strong>{" "}
+                  (Schedule)
+                  <Button
+                    size={"sm"}
+                    onClick={() => {
+                      router.push(
+                        `/schedules/${encodeURIComponent(scheduleIri)}`
+                      );
                     }}
                   >
                     View

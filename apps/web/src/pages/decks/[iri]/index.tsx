@@ -125,6 +125,7 @@ export default function Page() {
                   version: "1",
                   front: "Front",
                   back: "Back",
+                  isInSolidMemoDataInstance: deck.isInSolidMemoDataInstance,
                   isInDeck: deck.iri,
                   interval: 1,
                   easeFactor: 2.5,
@@ -135,6 +136,29 @@ export default function Page() {
             }}
           >
             Create flashcard
+          </Button>
+          <Button
+            onClick={() => {
+              Promise.all(
+                deck.hasCard.map((flashcardIri) => {
+                  return service.newSchedule({
+                    version: "1",
+                    isInSolidMemoDataInstance: deck.isInSolidMemoDataInstance,
+                    forFlashcard: flashcardIri,
+                    nextReview: new Date(),
+                  });
+                })
+              )
+                .then(() => mutate())
+                .then(() => {
+                  console.log("Scheduled all flashcards of deck");
+                })
+                .catch((err) => {
+                  console.error("Failed to schedule flashcards, error:", err);
+                });
+            }}
+          >
+            Schedule all flashcards
           </Button>
         </div>
       </Card>

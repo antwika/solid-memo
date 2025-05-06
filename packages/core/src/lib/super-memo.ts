@@ -42,6 +42,7 @@ export function sm2(assessment: Assessment): FlashcardModel {
     version: assessment.version,
     front: assessment.front,
     back: assessment.back,
+    isInSolidMemoDataInstance: assessment.isInSolidMemoDataInstance,
     isInDeck: assessment.isInDeck,
     interval: nextInterval(assessment.repetition, assessment.easeFactor),
     easeFactor: nextEaseFactor(assessment.easeFactor, assessment.q),

@@ -6,6 +6,7 @@ import type { InstanceModel } from "../../../src/domain/instance.model";
 import type { DeckModel } from "../../../src/domain/deck.model";
 import type { FlashcardModel } from "../../../src/domain/flashcard.model";
 import { when } from "vitest-when";
+import type { ScheduleModel } from "@src/domain";
 
 describe("solid.service", () => {
   const mockRepository: IRepository = {
@@ -28,6 +29,7 @@ describe("solid.service", () => {
     createInstance: vi.fn(),
     createDeck: vi.fn(),
     createFlashcard: vi.fn(),
+    createSchedule: vi.fn(),
     renameInstance: vi.fn(),
     renameDeck: vi.fn(),
     updateInstance: vi.fn(),
@@ -36,6 +38,9 @@ describe("solid.service", () => {
     deleteInstance: vi.fn(),
     deleteDeck: vi.fn(),
     deleteFlashcard: vi.fn(),
+    findAllScheduleUrls: vi.fn(),
+    findSchedules: vi.fn(),
+    deleteSchedule: vi.fn(),
   };
 
   let solidService: IService;
@@ -118,7 +123,7 @@ describe("solid.service", () => {
       // Arrange
       when(mockRepository.findAllStorageIris)
         .calledWith()
-        .thenResolve([undefined]);
+        .thenResolve([undefined as any]);
 
       // Act & Assert
       await expect(() => solidService.newInstance()).rejects.toThrowError(
@@ -130,7 +135,14 @@ describe("solid.service", () => {
       // Arrange
       const mockInstanceIri = "mock-instance-iri";
       const mockStorageIri = "mock-storage-iri";
-      const mockInstance = {};
+      const mockInstance = {
+        iri: "mock-iri",
+        version: "mock-version",
+        name: "mock-name",
+        hasDeck: ["mock-deck-iri"],
+        isInPrivateTypeIndex: "mock-private-type-index-iri",
+        hasSchedule: ["mock-schedule-iri"],
+      };
 
       const mockInstances: Record<string, InstanceModel> = {
         [mockInstanceIri]: mockInstance,
@@ -164,16 +176,21 @@ describe("solid.service", () => {
 
   test("newDeck", async () => {
     // Arrange
-    const mockInstanceIri = "mock-instance-iri";
     const mockDeckIri = "mock-deck-iri";
-    const mockDeck = { isInSolidMemoDataInstance: mockInstanceIri };
+    const mockDeck = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      hasCard: ["mock-flashcard-iri"],
+    };
 
     const mockDecks: Record<string, DeckModel> = {
       [mockDeckIri]: mockDeck,
     };
 
     when(mockRepository.createDeck)
-      .calledWith(mockInstanceIri, mockDeck)
+      .calledWith("mock-instance-iri", mockDeck)
       .thenResolve(mockDecks);
 
     // Act
@@ -187,8 +204,24 @@ describe("solid.service", () => {
     // Arrange
     const mockInstanceIri = "mock-instance-iri";
     const mockDeckIri = "mock-deck-iri";
-    const mockDeck = {};
-    const mockFlashcard = { isInDeck: mockDeckIri };
+    const mockDeck: DeckModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      hasCard: ["mock-flashcard-iri"],
+    };
+    const mockFlashcard: FlashcardModel = {
+      iri: "mock-iri",
+      isInDeck: mockDeckIri,
+      version: "mock-version",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      front: "mock-front",
+      back: "mock-back",
+      interval: 1,
+      easeFactor: 2,
+      repetition: 3,
+    };
 
     const mockDecks: Record<string, DeckModel> = {
       [mockDeckIri]: mockDeck,
@@ -213,10 +246,33 @@ describe("solid.service", () => {
     expect(result.decks).toBe(mockDecks);
   });
 
+  test("newSchedule", async () => {
+    // Arrange
+    const mockSchedule: Omit<ScheduleModel, "iri"> = {
+      version: "mock-version",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      forFlashcard: "mock-flashcard-iri",
+      nextReview: new Date(0),
+    };
+
+    // Act
+    await solidService.newSchedule(mockSchedule);
+
+    // Assert
+    expect(mockRepository.createSchedule).toHaveBeenCalledWith(mockSchedule);
+  });
+
   test("getInstance", async () => {
     // Arrange
     const mockInstanceIri = "mock-instance-iri";
-    const mockInstance = {};
+    const mockInstance: InstanceModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasDeck: ["mock-deck-iri"],
+      isInPrivateTypeIndex: "mock-private-type-index-iri",
+      hasSchedule: ["mock-schedule-iri"],
+    };
 
     const mockInstances: Record<string, InstanceModel> = {
       [mockInstanceIri]: mockInstance,
@@ -236,7 +292,13 @@ describe("solid.service", () => {
   test("getDeck", async () => {
     // Arrange
     const mockDeckIri = "mock-deck-iri";
-    const mockDeck = {};
+    const mockDeck: DeckModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasCard: ["mock-flashcard-iri"],
+      isInSolidMemoDataInstance: "mock-instance-iri",
+    };
 
     const mockDecks: Record<string, DeckModel> = {
       [mockDeckIri]: mockDeck,
@@ -256,7 +318,17 @@ describe("solid.service", () => {
   test("getFlashcard", async () => {
     // Arrange
     const mockFlashcardIri = "mock-instance-iri";
-    const mockFlashcard = {};
+    const mockFlashcard: FlashcardModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      front: "mock-front",
+      back: "mock-back",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      isInDeck: "mock-deck-iri",
+      interval: 1,
+      easeFactor: 2,
+      repetition: 3,
+    };
 
     const mockFlashcards: Record<string, FlashcardModel> = {
       [mockFlashcardIri]: mockFlashcard,
@@ -275,7 +347,14 @@ describe("solid.service", () => {
 
   test("renameInstance", async () => {
     // Arrange
-    const mockInstance = {};
+    const mockInstance: InstanceModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasDeck: ["mock-deck-iri"],
+      isInPrivateTypeIndex: "mock-private-type-index-iri",
+      hasSchedule: ["mock-schedule-iri"],
+    };
 
     // Act
     await solidService.renameInstance(mockInstance, "new-instance-name");
@@ -289,7 +368,13 @@ describe("solid.service", () => {
 
   test("renameDeck", async () => {
     // Arrange
-    const mockDeck = {};
+    const mockDeck: DeckModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasCard: ["mock-flashcard-iri"],
+      isInSolidMemoDataInstance: "mock-instance-iri",
+    };
 
     // Act
     await solidService.renameDeck(mockDeck, "new-deck-name");
@@ -304,7 +389,14 @@ describe("solid.service", () => {
   test("removeInstance", async () => {
     // Arrange
     const mockInstanceIri = "mock-instance-iri";
-    const mockInstance = {};
+    const mockInstance: InstanceModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasDeck: ["mock-deck-iri"],
+      isInPrivateTypeIndex: "mock-private-type-index-iri",
+      hasSchedule: ["mock-schedule-iri"],
+    };
 
     const mockInstances: Record<string, InstanceModel> = {
       [mockInstanceIri]: mockInstance,
@@ -332,10 +424,21 @@ describe("solid.service", () => {
   test("removeDeck", async () => {
     // Arrange
     const mockInstanceIri = "mock-instance-iri";
-    const mockInstance = {};
+    const mockInstance: InstanceModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasDeck: ["mock-deck-iri"],
+      isInPrivateTypeIndex: "mock-private-type-index-iri",
+      hasSchedule: ["mock-schedule-iri"],
+    };
     const mockDeckIri = "mock-deck-iri";
-    const mockDeck = {
+    const mockDeck: DeckModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
       isInSolidMemoDataInstance: mockInstanceIri,
+      hasCard: ["mock-flashcard-iri"],
     };
 
     const mockInstances: Record<string, InstanceModel> = {
@@ -377,9 +480,25 @@ describe("solid.service", () => {
   test("removeFlashcard", async () => {
     // Arrange
     const mockDeckIri = "mock-deck-iri";
-    const mockDeck = {};
+    const mockDeck: DeckModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasCard: ["mock-flashcard-iri"],
+      isInSolidMemoDataInstance: "mock-instance-iri",
+    };
     const mockFlashcardIri = "mock-flashcard-iri";
-    const mockFlashcard = { isInDeck: mockDeckIri };
+    const mockFlashcard: FlashcardModel = {
+      isInDeck: mockDeckIri,
+      iri: "mock-iri",
+      version: "mock-version",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      front: "mock-front",
+      back: "mock-back",
+      interval: 1,
+      easeFactor: 2,
+      repetition: 3,
+    };
 
     const mockDecks: Record<string, DeckModel> = {
       [mockDeckIri]: mockDeck,
@@ -412,9 +531,66 @@ describe("solid.service", () => {
     expect(flashcards).toBe(mockFlashcards);
   });
 
+  test("removeSchedule", async () => {
+    // Arrange
+    const mockSchedule: ScheduleModel = {
+      iri: "mock-schedule-iri",
+      version: "mock-version",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      forFlashcard: "mock-flashcard-iri",
+      nextReview: new Date(0),
+    };
+
+    const mockInstance: InstanceModel = {
+      iri: "mock-instance-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasDeck: ["mock-deck-iri"],
+      isInPrivateTypeIndex: "mock-private-type-index-iri",
+      hasSchedule: ["mock-schedule-iri"],
+    };
+
+    const mockSchedules: Record<string, ScheduleModel> = {
+      [mockSchedule.iri]: mockSchedule,
+    };
+
+    const mockInstances: Record<string, InstanceModel> = {
+      [mockInstance.iri]: mockInstance,
+    };
+
+    when(mockRepository.findInstances, { times: 1 })
+      .calledWith([mockSchedule.isInSolidMemoDataInstance])
+      .thenResolve(mockInstances);
+
+    when(mockRepository.findAllScheduleUrls, { times: 1 })
+      .calledWith([mockSchedule.isInSolidMemoDataInstance])
+      .thenResolve([mockSchedule.iri]);
+
+    when(mockRepository.findSchedules, { times: 1 })
+      .calledWith([mockSchedule.iri])
+      .thenResolve(mockSchedules);
+
+    // Act
+    const { instance, scheduleUrls, schedules } =
+      await solidService.removeSchedule(mockSchedule);
+
+    // Assert
+    expect(mockRepository.deleteSchedule).toHaveBeenCalledWith(mockSchedule);
+    expect(instance).toBe(mockInstance);
+    expect(scheduleUrls).toStrictEqual([mockSchedule.iri]);
+    expect(schedules).toBe(mockSchedules);
+  });
+
   test("updateInstance", () => {
     // Arrange
-    const mockInstance = {};
+    const mockInstance: InstanceModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasDeck: ["mock-deck-iri"],
+      isInPrivateTypeIndex: "mock-private-type-index-iri",
+      hasSchedule: ["mock-schedule-iri"],
+    };
 
     // Act
     solidService.updateInstance(mockInstance);
@@ -425,7 +601,13 @@ describe("solid.service", () => {
 
   test("updateDeck", () => {
     // Arrange
-    const mockDeck = {};
+    const mockDeck: DeckModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      name: "mock-name",
+      hasCard: ["mock-flashcard-iri"],
+      isInSolidMemoDataInstance: "mock-instance-iri",
+    };
 
     // Act
     solidService.updateDeck(mockDeck);
@@ -436,7 +618,17 @@ describe("solid.service", () => {
 
   test("updateFlashcard", () => {
     // Arrange
-    const mockFlashcard = {};
+    const mockFlashcard: FlashcardModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      front: "mock-front",
+      back: "mock-back",
+      isInDeck: "mock-deck-iri",
+      interval: 1,
+      easeFactor: 2,
+      repetition: 3,
+    };
 
     // Act
     solidService.updateFlashcard(mockFlashcard);
