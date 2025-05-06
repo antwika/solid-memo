@@ -7,14 +7,14 @@ describe("schedule.model", () => {
       const schedule = parseSchedule({
         iri: "mock-iri",
         version: "mock-version",
-        forCard: "mock-card-iri",
+        forFlashcard: "mock-card-iri",
         lastReviewed: "2025-05-01",
         nextReview: "2025-06-01",
       });
       expect(schedule).toStrictEqual({
         iri: "mock-iri",
         version: "mock-version",
-        forCard: "mock-card-iri",
+        forFlashcard: "mock-card-iri",
         lastReviewed: "2025-05-01",
         nextReview: "2025-06-01",
       });

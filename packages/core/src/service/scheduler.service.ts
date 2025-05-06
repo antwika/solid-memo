@@ -37,7 +37,7 @@ export class SchedulerService implements ISchedulerService {
       return {
         iri: `${resourceIri}#${scheduleName}`,
         version: flashcard.version,
-        forCard: flashcard.iri,
+        forFlashcard: flashcard.iri,
         nextReview,
       };
     });
