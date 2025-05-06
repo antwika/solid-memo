@@ -1,22 +1,23 @@
 {
-    "name": "my-turbo-app",
-    "version": "0.1.0",
-    "workspaces": [
-        "apps/*",
-        "packages/*"
-    ],
-    "scripts": {
-        "dev": "turbo run dev",
-        "build": "turbo run build",
-        "lint": "turbo run lint",
-        "verify": "turbo run verify",
-        "test:unit": "turbo run test:unit",
-        "test:unit:coverage": "turbo run test:unit:coverage",
-        "test:integration": "turbo run test:integration"
-    },
-    "devDependencies": {
-        "turbo": "^2.5.2",
-        "typescript": "^5.8.3"
-    },
-    "packageManager": "npm@11.3.0"
+  "name": "my-turbo-app",
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "verify": "turbo run verify",
+    "test:unit": "turbo run test:unit",
+    "test:unit:watch": "turbo run test:unit:watch",
+    "test:unit:coverage": "turbo run test:unit:coverage",
+    "test:integration": "turbo run test:integration"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.2",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "npm@11.3.0"
 }
