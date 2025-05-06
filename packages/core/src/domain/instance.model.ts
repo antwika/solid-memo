@@ -6,6 +6,7 @@ export const instanceSchema = z.object({
   name: z.string(),
   hasDeck: z.array(z.string()),
   isInPrivateTypeIndex: z.string(),
+  hasSchedule: z.array(z.string()),
 });
 
 export type InstanceModel = z.infer<typeof instanceSchema>;

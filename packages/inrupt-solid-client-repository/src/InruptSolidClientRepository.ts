@@ -2,15 +2,19 @@ import {
   parseDeck,
   parseFlashcard,
   parseInstance,
+  parseSchedule,
   type DeckModel,
   type FlashcardModel,
   type InstanceModel,
 } from "@solid-memo/core";
 import {
+  addUrl,
   buildThing,
   createSolidDataset,
   createThing,
   deleteSolidDataset,
+  getDate,
+  getDatetime,
   getDecimal,
   getInteger,
   getProfileAll,
@@ -31,7 +35,7 @@ import {
   type ThingPersisted,
 } from "@inrupt/solid-client";
 import { v4 as uuid } from "uuid";
-import type { IRepository } from "@solid-memo/core";
+import type { IRepository, ScheduleModel } from "@solid-memo/core";
 import { EVENTS, getDefaultSession } from "@inrupt/solid-client-authn-browser";
 import { stripFragment, thingContains } from "./utils";
 
@@ -253,6 +257,10 @@ export class InruptSolidClientRepository implements IRepository {
             instanceThing,
             "http://antwika.com/ns/solid-memo#isInPrivateTypeIndex"
           ),
+          hasSchedule: getUrlAll(
+            instanceThing,
+            "http://antwika.com/ns/solid-memo#hasSchedule"
+          ),
         });
         acc[instance.iri] = instance;
         return acc;
@@ -302,6 +310,16 @@ export class InruptSolidClientRepository implements IRepository {
 
     return Object.values(decks)
       .map((deck) => deck.hasCard)
+      .flat();
+  }
+
+  async findAllScheduleUrls(
+    providedInstanceUrls?: string[]
+  ): Promise<string[]> {
+    const instances = await this.findInstances(providedInstanceUrls);
+
+    return Object.values(instances)
+      .map((instance) => instance.hasSchedule)
       .flat();
   }
 
@@ -406,6 +424,10 @@ export class InruptSolidClientRepository implements IRepository {
             flashcardThing,
             "http://antwika.com/ns/solid-memo#isInDeck"
           ),
+          isInSolidMemoDataInstance: getUrl(
+            flashcardThing,
+            "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance"
+          ),
           interval: getInteger(
             flashcardThing,
             "http://antwika.com/ns/solid-memo#interval"
@@ -426,6 +448,65 @@ export class InruptSolidClientRepository implements IRepository {
     );
 
     return flashcards;
+  }
+
+  async findSchedules(
+    scheduleUrls: string[]
+  ): Promise<Record<string, ScheduleModel>> {
+    const scheduleDatasets = await Promise.all(
+      scheduleUrls.map((scheduleUrl) =>
+        getSolidDataset(scheduleUrl, {
+          fetch: this.getFetch(),
+        })
+      )
+    );
+
+    const scheduleThings = (
+      await Promise.all(
+        scheduleDatasets.map((scheduleDataset) =>
+          getThingAll(scheduleDataset).filter((scheduleThing) =>
+            thingContains(
+              scheduleThing,
+              "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+              "http://antwika.com/ns/solid-memo#Schedule"
+            )
+          )
+        )
+      )
+    ).flat();
+
+    const schedules = scheduleThings.reduce<Record<string, ScheduleModel>>(
+      (acc, scheduleThing) => {
+        const schedule = parseSchedule({
+          iri: scheduleThing.url,
+          version: getStringNoLocale(
+            scheduleThing,
+            "http://antwika.com/ns/solid-memo#version"
+          ),
+          forFlashcard: getUrl(
+            scheduleThing,
+            "http://antwika.com/ns/solid-memo#forFlashcard"
+          ),
+          isInSolidMemoDataInstance: getUrl(
+            scheduleThing,
+            "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance"
+          ),
+          nextReview: getDatetime(
+            scheduleThing,
+            "http://antwika.com/ns/solid-memo#nextReview"
+          ),
+          lastReviewed: getDatetime(
+            scheduleThing,
+            "http://antwika.com/ns/solid-memo#lastReviewed"
+          ),
+        });
+        acc[schedule.iri] = schedule;
+        return acc;
+      },
+      {}
+    );
+
+    return schedules;
   }
 
   async createInstance(podLocation: string): Promise<void> {
@@ -629,9 +710,77 @@ export class InruptSolidClientRepository implements IRepository {
         flashcard.repetition
       )
       .addUrl("http://antwika.com/ns/solid-memo#isInDeck", flashcard.isInDeck)
+      .addUrl(
+        "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance",
+        flashcard.isInSolidMemoDataInstance
+      )
       .build();
 
     const updatedInstanceDataset = setThing(instanceDataset, flashcardThing);
+
+    await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
+      fetch: this.getFetch(),
+    });
+  }
+
+  async createSchedule(schedule: Omit<ScheduleModel, "iri">): Promise<void> {
+    const instanceIri = schedule.isInSolidMemoDataInstance;
+
+    const instanceDataset = await getSolidDataset(instanceIri, {
+      fetch: this.getFetch(),
+    });
+
+    const instanceThing = getThing(instanceDataset, instanceIri);
+
+    if (!instanceThing)
+      throw new Error("Expected instanceThing to be defined!");
+
+    const scheduleThingName = uuid().toString();
+    const scheduleIri = `${stripFragment(instanceIri)}#${scheduleThingName}`;
+
+    const updatedInstanceThing = addUrl(
+      instanceThing,
+      "http://antwika.com/ns/solid-memo#hasSchedule",
+      scheduleIri
+    );
+
+    let updatedInstanceDataset = setThing(
+      instanceDataset,
+      updatedInstanceThing
+    );
+
+    const scheduleThingBuilder = buildThing({ name: scheduleThingName })
+      .addUrl(
+        "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+        "http://antwika.com/ns/solid-memo#Schedule"
+      )
+      .addStringNoLocale(
+        "http://antwika.com/ns/solid-memo#version",
+        schedule.version
+      )
+      .addUrl(
+        "http://antwika.com/ns/solid-memo#forFlashcard",
+        schedule.forFlashcard
+      )
+      .addUrl(
+        "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance",
+        instanceIri
+      )
+      .addDatetime(
+        "http://antwika.com/ns/solid-memo#nextReview",
+        schedule.nextReview
+      );
+
+    if (schedule.lastReviewed) {
+      scheduleThingBuilder.addDatetime(
+        "http://antwika.com/ns/solid-memo#lastReviewed",
+        schedule.lastReviewed
+      );
+    }
+
+    const scheduleThing = scheduleThingBuilder.build();
+
+    updatedInstanceDataset = setThing(updatedInstanceDataset, scheduleThing);
 
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
       fetch: this.getFetch(),
@@ -894,6 +1043,34 @@ export class InruptSolidClientRepository implements IRepository {
     }
 
     await saveSolidDatasetAt(deckIri, updatedDeckDataset, {
+      fetch: this.getFetch(),
+    });
+  }
+
+  async deleteSchedule(schedule: ScheduleModel): Promise<void> {
+    const instanceIri = schedule.isInSolidMemoDataInstance;
+    const instanceDataset = await getSolidDataset(instanceIri, {
+      fetch: this.getFetch(),
+    });
+
+    let updatedInstanceDataset = removeThing(instanceDataset, schedule.iri);
+
+    const instanceThing = getThing(updatedInstanceDataset, instanceIri);
+
+    if (instanceThing) {
+      const updatedInstanceThing = removeUrl(
+        instanceThing,
+        "http://antwika.com/ns/solid-memo#hasSchedule",
+        schedule.iri
+      );
+
+      updatedInstanceDataset = setThing(
+        updatedInstanceDataset,
+        updatedInstanceThing
+      );
+    }
+
+    await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
       fetch: this.getFetch(),
     });
   }

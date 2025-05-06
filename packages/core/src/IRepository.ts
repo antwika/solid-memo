@@ -1,4 +1,9 @@
-import type { DeckModel, FlashcardModel, InstanceModel } from "./domain";
+import type {
+  DeckModel,
+  FlashcardModel,
+  InstanceModel,
+  ScheduleModel,
+} from "./domain";
 
 export interface IRepository {
   getSession(): { info: { isLoggedIn: boolean } };
@@ -41,11 +46,15 @@ export interface IRepository {
 
   findAllFlashcardUrls(providedDeckUrls?: string[]): Promise<string[]>;
 
+  findAllScheduleUrls(providedInstanceUrls?: string[]): Promise<string[]>;
+
   findDecks(providedDeckUrls?: string[]): Promise<Record<string, DeckModel>>;
 
   findFlashcards(
     flashcardUrls: string[]
   ): Promise<Record<string, FlashcardModel>>;
+
+  findSchedules(scheduleUrls: string[]): Promise<Record<string, ScheduleModel>>;
 
   createInstance(podLocation: string): Promise<void>;
 
@@ -59,6 +68,8 @@ export interface IRepository {
     deckIri: string,
     flashcard: Omit<FlashcardModel, "iri">
   ): Promise<void>;
+
+  createSchedule(schedule: Omit<ScheduleModel, "iri">): Promise<void>;
 
   renameInstance(instance: InstanceModel, newName: string): Promise<void>;
 
@@ -75,4 +86,6 @@ export interface IRepository {
   deleteDeck(deck: DeckModel): Promise<void>;
 
   deleteFlashcard(flashcard: FlashcardModel): Promise<void>;
+
+  deleteSchedule(flashcard: ScheduleModel): Promise<void>;
 }

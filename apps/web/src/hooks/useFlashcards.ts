@@ -18,6 +18,10 @@ function parseFlashcardFromThing(thing: Thing) {
       thing,
       "http://antwika.com/ns/solid-memo#version"
     ),
+    isInSolidMemoDataInstance: getUrl(
+      thing,
+      "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance"
+    ),
     isInDeck: getUrl(thing, "http://antwika.com/ns/solid-memo#isInDeck"),
     front: getStringNoLocale(thing, "http://antwika.com/ns/solid-memo#front"),
     back: getStringNoLocale(thing, "http://antwika.com/ns/solid-memo#back"),

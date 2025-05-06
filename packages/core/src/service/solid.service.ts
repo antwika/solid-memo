@@ -1,6 +1,11 @@
 import type { IService } from "../ISolidService";
 import type { IRepository } from "../IRepository";
-import type { DeckModel, FlashcardModel, InstanceModel } from "../domain";
+import type {
+  DeckModel,
+  FlashcardModel,
+  InstanceModel,
+  ScheduleModel,
+} from "../domain";
 
 export class SolidService implements IService {
   private readonly repository: IRepository;
@@ -61,6 +66,10 @@ export class SolidService implements IService {
     return { decks };
   }
 
+  async newSchedule(schedule: Omit<ScheduleModel, "iri">) {
+    await this.repository.createSchedule(schedule);
+  }
+
   async getInstance(instanceUrl: string) {
     return this.repository.findInstances([instanceUrl]);
   }
@@ -110,6 +119,21 @@ export class SolidService implements IService {
     const deck = decks[flashcard.isInDeck];
 
     return { deck, flashcardUrls, flashcards };
+  }
+
+  async removeSchedule(schedule: ScheduleModel) {
+    await this.repository.deleteSchedule(schedule);
+    const instances = await this.repository.findInstances([
+      schedule.isInSolidMemoDataInstance,
+    ]);
+    const scheduleUrls = await this.repository.findAllScheduleUrls([
+      schedule.isInSolidMemoDataInstance,
+    ]);
+    const schedules = await this.repository.findSchedules(scheduleUrls);
+
+    const instance = instances[schedule.isInSolidMemoDataInstance];
+
+    return { instance, scheduleUrls, schedules };
   }
 
   async updateInstance(instance: InstanceModel) {

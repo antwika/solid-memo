@@ -4,8 +4,9 @@ export const scheduleSchema = z.object({
   iri: z.string(),
   version: z.string(),
   forFlashcard: z.string(),
-  lastReviewed: z.string().date().optional(),
-  nextReview: z.string().date(),
+  isInSolidMemoDataInstance: z.string(),
+  lastReviewed: z.date().optional().nullable(),
+  nextReview: z.date(),
 });
 
 export type ScheduleModel = z.infer<typeof scheduleSchema>;

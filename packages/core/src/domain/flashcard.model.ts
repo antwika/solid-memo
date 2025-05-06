@@ -5,6 +5,7 @@ export const flashcardSchema = z.object({
   iri: z.string(),
   front: z.string(),
   back: z.string(),
+  isInSolidMemoDataInstance: z.string(),
   isInDeck: z.string(),
   interval: z.number(),
   easeFactor: z.number(),
