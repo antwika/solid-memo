@@ -110,16 +110,6 @@ export default function Page() {
           </Button>
           <Button
             onClick={() => {
-              service
-                .renameInstance(instance, "Renamed instance")
-                .then(() => mutate())
-                .catch((err) => console.error("Failed with error:", err));
-            }}
-          >
-            Rename instance
-          </Button>
-          <Button
-            onClick={() => {
               router.push(
                 `/instances/${encodeURIComponent(instance.iri)}/edit`
               );
