@@ -1,5 +1,4 @@
 import {
-  getDate,
   getDatetime,
   getStringNoLocale,
   getThingAll,

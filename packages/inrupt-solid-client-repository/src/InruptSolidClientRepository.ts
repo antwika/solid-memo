@@ -3,6 +3,7 @@ import {
   parseFlashcard,
   parseInstance,
   parseSchedule,
+  preferFragment,
   type DeckModel,
   type FlashcardModel,
   type InstanceModel,
@@ -785,6 +786,95 @@ export class InruptSolidClientRepository implements IRepository {
     await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
       fetch: this.getFetch(),
     });
+  }
+
+  async createSchedules(
+    schedules: Omit<ScheduleModel, "iri">[]
+  ): Promise<void> {
+    const schedulesByInstanceIri = schedules.reduce<
+      Record<string, ScheduleModel[]>
+    >((acc, schedule) => {
+      const instanceIri = schedule.isInSolidMemoDataInstance;
+      if (!acc[instanceIri]) {
+        acc[instanceIri] = [];
+      }
+
+      const scheduleThingName = uuid().toString();
+      const scheduleIri = `${stripFragment(instanceIri)}#${scheduleThingName}`;
+
+      acc[instanceIri]?.push({ ...schedule, iri: scheduleIri });
+
+      return acc;
+    }, {});
+
+    const instanceIris = Object.keys(schedulesByInstanceIri);
+
+    for (const instanceIri of instanceIris) {
+      const instanceDataset = await getSolidDataset(instanceIri, {
+        fetch: this.getFetch(),
+      });
+
+      const instanceThing = getThing(instanceDataset, instanceIri);
+
+      if (!instanceThing) throw new Error("Could not find instance thing");
+
+      const schedulesInInstance = schedulesByInstanceIri[instanceIri] || [];
+
+      let updatedInstanceDataset = instanceDataset;
+      let updatedInstanceThing = instanceThing;
+      for (const scheduleInInstance of schedulesInInstance) {
+        updatedInstanceThing = addUrl(
+          updatedInstanceThing,
+          "http://antwika.com/ns/solid-memo#hasSchedule",
+          scheduleInInstance.iri
+        );
+
+        updatedInstanceDataset = setThing(
+          updatedInstanceDataset,
+          updatedInstanceThing
+        );
+
+        const scheduleThingBuilder = buildThing({
+          name: preferFragment(scheduleInInstance.iri),
+        })
+          .addUrl(
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            "http://antwika.com/ns/solid-memo#Schedule"
+          )
+          .addStringNoLocale(
+            "http://antwika.com/ns/solid-memo#version",
+            scheduleInInstance.version
+          )
+          .addUrl(
+            "http://antwika.com/ns/solid-memo#forFlashcard",
+            scheduleInInstance.forFlashcard
+          )
+          .addUrl(
+            "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance",
+            instanceIri
+          )
+          .addDatetime(
+            "http://antwika.com/ns/solid-memo#nextReview",
+            scheduleInInstance.nextReview
+          );
+
+        if (scheduleInInstance.lastReviewed) {
+          scheduleThingBuilder.addDatetime(
+            "http://antwika.com/ns/solid-memo#lastReviewed",
+            scheduleInInstance.lastReviewed
+          );
+        }
+
+        updatedInstanceDataset = setThing(
+          updatedInstanceDataset,
+          scheduleThingBuilder.build()
+        );
+      }
+
+      await saveSolidDatasetAt(instanceIri, updatedInstanceDataset, {
+        fetch: this.getFetch(),
+      });
+    }
   }
 
   async renameInstance(instance: InstanceModel, newName: string) {

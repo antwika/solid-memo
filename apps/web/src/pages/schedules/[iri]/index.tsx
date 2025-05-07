@@ -2,7 +2,7 @@ import { preferFragment } from "@solid-memo/core";
 import Layout from "@pages/layout";
 import { ServiceContext } from "@providers/service.provider";
 import { Button, Card } from "@ui/index";
-import { Calendar, Database, Layers, StickyNote } from "lucide-react";
+import { Calendar, Database, StickyNote } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useContext } from "react";
 import useSchedules from "src/hooks/useSchedules";
@@ -13,7 +13,7 @@ export default function Page() {
   const service = getService();
 
   const { iri } = useParams();
-  const { scheduleMap, mutate } = useSchedules(iri ? [iri?.toString()] : []);
+  const { scheduleMap } = useSchedules(iri ? [iri?.toString()] : []);
   const schedule = iri ? scheduleMap[iri.toString()] : undefined;
 
   if (!schedule) {

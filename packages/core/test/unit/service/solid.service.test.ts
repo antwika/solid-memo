@@ -30,6 +30,7 @@ describe("solid.service", () => {
     createDeck: vi.fn(),
     createFlashcard: vi.fn(),
     createSchedule: vi.fn(),
+    createSchedules: vi.fn(),
     renameInstance: vi.fn(),
     renameDeck: vi.fn(),
     updateInstance: vi.fn(),
@@ -260,6 +261,22 @@ describe("solid.service", () => {
 
     // Assert
     expect(mockRepository.createSchedule).toHaveBeenCalledWith(mockSchedule);
+  });
+
+  test("newSchedules", async () => {
+    // Arrange
+    const mockSchedule: Omit<ScheduleModel, "iri"> = {
+      version: "mock-version",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      forFlashcard: "mock-flashcard-iri",
+      nextReview: new Date(0),
+    };
+
+    // Act
+    await solidService.newSchedules([mockSchedule]);
+
+    // Assert
+    expect(mockRepository.createSchedules).toHaveBeenCalledWith([mockSchedule]);
   });
 
   test("getInstance", async () => {
