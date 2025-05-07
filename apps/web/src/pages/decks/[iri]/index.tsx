@@ -129,16 +129,17 @@ export default function Page() {
           </Button>
           <Button
             onClick={() => {
-              Promise.all(
-                deck.hasCard.map((flashcardIri) => {
-                  return service.newSchedule({
-                    version: "1",
-                    isInSolidMemoDataInstance: deck.isInSolidMemoDataInstance,
-                    forFlashcard: flashcardIri,
-                    nextReview: new Date(),
-                  });
-                })
-              )
+              const schedules = deck.hasCard.map((flashcardIri) => {
+                return {
+                  version: "1",
+                  isInSolidMemoDataInstance: deck.isInSolidMemoDataInstance,
+                  forFlashcard: flashcardIri,
+                  nextReview: new Date(),
+                };
+              });
+
+              service
+                .newSchedules(schedules)
                 .then(() => mutate())
                 .then(() => {
                   console.log("Scheduled all flashcards of deck");

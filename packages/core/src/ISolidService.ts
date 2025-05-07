@@ -30,6 +30,8 @@ export interface IService {
 
   newSchedule(schedule: Omit<ScheduleModel, "iri">): Promise<void>;
 
+  newSchedules(schedules: Omit<ScheduleModel, "iri">[]): Promise<void>;
+
   getInstance(instanceUrl: string): Promise<Record<string, InstanceModel>>;
 
   getDeck(deckUrl: string): Promise<Record<string, DeckModel>>;

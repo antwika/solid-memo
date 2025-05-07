@@ -70,6 +70,10 @@ export class SolidService implements IService {
     await this.repository.createSchedule(schedule);
   }
 
+  async newSchedules(schedules: Omit<ScheduleModel, "iri">[]) {
+    await this.repository.createSchedules(schedules);
+  }
+
   async getInstance(instanceUrl: string) {
     return this.repository.findInstances([instanceUrl]);
   }

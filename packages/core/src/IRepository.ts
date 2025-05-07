@@ -71,6 +71,8 @@ export interface IRepository {
 
   createSchedule(schedule: Omit<ScheduleModel, "iri">): Promise<void>;
 
+  createSchedules(schedule: Omit<ScheduleModel, "iri">[]): Promise<void>;
+
   renameInstance(instance: InstanceModel, newName: string): Promise<void>;
 
   renameDeck(deck: DeckModel, newName: string): Promise<void>;
