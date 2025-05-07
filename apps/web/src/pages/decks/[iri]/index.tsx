@@ -103,16 +103,6 @@ export default function Page() {
           </Button>
           <Button
             onClick={() => {
-              service
-                .renameDeck(deck, "Renamed deck")
-                .then(() => mutate())
-                .catch((err) => console.error("Failed with error:", err));
-            }}
-          >
-            Rename deck
-          </Button>
-          <Button
-            onClick={() => {
               router.push(`/decks/${encodeURIComponent(deck.iri)}/edit`);
             }}
           >
