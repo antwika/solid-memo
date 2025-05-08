@@ -28,17 +28,16 @@ function parseDeckFromThing(thing: Thing) {
 export default function useDecks(deckUrls: string[]) {
   const { data: deckDatasets, mutate } = useDatasets(deckUrls);
 
-  const decks = deckDatasets
-    ?.map((dataset) => getThingAll(dataset))
+  const decks = (deckDatasets ?? [])
+    .map((dataset) => getThingAll(dataset))
     .flat()
     .filter((thing) => deckUrls.includes(thing.url))
     .map((thing) => parseDeckFromThing(thing));
 
-  const deckMap =
-    decks?.reduce<Record<string, DeckModel>>((acc, deck) => {
-      acc[deck.iri] = deck;
-      return acc;
-    }, {}) ?? {};
+  const deckMap = decks.reduce<Record<string, DeckModel>>((acc, deck) => {
+    acc[deck.iri] = deck;
+    return acc;
+  }, {});
 
   return { deckDatasets, decks, deckMap, mutate };
 }
