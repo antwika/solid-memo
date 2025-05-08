@@ -1,4 +1,4 @@
-import useDatasets from "src/hooks/useDatasets";
+import useDatasets from "@hooks/useDatasets";
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import useSWR from "swr";
 import { multiFetcher } from "@lib/utils";
