@@ -8,7 +8,9 @@ import useDatasets from "./useDatasets";
 export default function useWebIdProfile() {
   const session = getDefaultSession();
 
-  const { data: webIdProfileDatasets } = useDatasets(session.info.webId);
+  const { data: webIdProfileDatasets, isLoading: isLoadingWebId } = useDatasets(
+    session.info.webId
+  );
 
   const [privateTypeIndexUrls, setPrivateTypeIndexUrls] = useState<string[]>(
     []
@@ -22,15 +24,17 @@ export default function useWebIdProfile() {
 
   const [instanceUrls, setInstanceUrls] = useState<string[]>([]);
 
-  const { data: privateTypeIndexDatasets, mutate: mutate1 } = useSWR(
-    privateTypeIndexUrls,
-    multiFetcher
-  );
+  const {
+    data: privateTypeIndexDatasets,
+    mutate: mutate1,
+    isLoading: isLoadingPrivateTypeIndexDatasets,
+  } = useSWR(privateTypeIndexUrls, multiFetcher);
 
-  const { data: seeAlsoPrivateTypeIndexDatasets, mutate: mutate2 } = useSWR(
-    seeAlsoPrivateTypeIndexUrls,
-    multiFetcher
-  );
+  const {
+    data: seeAlsoPrivateTypeIndexDatasets,
+    mutate: mutate2,
+    isLoading: isLoadingSeeAlsoPrivateTypeIndexDatasets,
+  } = useSWR(seeAlsoPrivateTypeIndexUrls, multiFetcher);
 
   useEffect(() => {
     if (!webIdProfileDatasets) {
@@ -147,6 +151,11 @@ export default function useWebIdProfile() {
     });
   }, [privateTypeIndexDatasets, seeAlsoPrivateTypeIndexDatasets]);
 
+  const isLoading =
+    isLoadingWebId ||
+    isLoadingPrivateTypeIndexDatasets ||
+    isLoadingSeeAlsoPrivateTypeIndexDatasets;
+
   return {
     webIdProfileDatasets,
     privateTypeIndexDatasets,
@@ -159,5 +168,6 @@ export default function useWebIdProfile() {
         console.error("Failed to mutate, error:", err)
       );
     },
+    isLoading,
   };
 }

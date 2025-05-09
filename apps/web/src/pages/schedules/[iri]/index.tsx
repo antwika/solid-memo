@@ -13,8 +13,18 @@ export default function Page() {
   const service = getService();
 
   const { iri } = useParams();
-  const { scheduleMap } = useSchedules(iri ? [iri?.toString()] : []);
+  const { scheduleMap, isLoading } = useSchedules(iri ? [iri?.toString()] : []);
   const schedule = iri ? scheduleMap[iri.toString()] : undefined;
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <Card className="p-2">
+          <div>Loading schedule...</div>
+        </Card>
+      </Layout>
+    );
+  }
 
   if (!schedule) {
     return (

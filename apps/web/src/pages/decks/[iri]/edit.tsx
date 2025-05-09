@@ -16,7 +16,7 @@ export default function Page() {
   const service = getService();
 
   const { iri } = useParams();
-  const { deckMap, mutate } = useDecks(iri ? [iri?.toString()] : []);
+  const { deckMap, mutate, isLoading } = useDecks(iri ? [iri?.toString()] : []);
   const deck = iri ? deckMap[iri.toString()] : undefined;
 
   const {
@@ -24,6 +24,16 @@ export default function Page() {
     handleSubmit,
     formState: { errors },
   } = useForm<Inputs>();
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <Card className="p-2">
+          <div>Loading deck...</div>
+        </Card>
+      </Layout>
+    );
+  }
 
   if (!deck) {
     return (

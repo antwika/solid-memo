@@ -12,7 +12,11 @@ export default function Page() {
   const { getService } = useContext(ServiceContext);
   const service = getService();
 
-  const { instanceUrls, mutate: mutateWebIdProfile } = useWebIdProfile();
+  const {
+    instanceUrls,
+    mutate: mutateWebIdProfile,
+    isLoading,
+  } = useWebIdProfile();
 
   return (
     <Layout>
@@ -26,30 +30,34 @@ export default function Page() {
       >
         Create new instance
       </Button>
-      {instanceUrls.map((instanceUrl) => (
-        <div key={instanceUrl} className="items-center gap-2">
-          <div className="flex gap-2">
-            <div title="Instance">
-              <Database />
-            </div>
-            <div className="flex grow-1 break-all gap-1">
-              <span title={instanceUrl}>
-                <strong>{preferFragment(instanceUrl)}</strong> (Instance)
-              </span>
-            </div>
-            <div>
-              <Button
-                size={"sm"}
-                onClick={() => {
-                  router.push(`/instances/${encodeURIComponent(instanceUrl)}`);
-                }}
-              >
-                View
-              </Button>
+      {isLoading && <div>Loading instances...</div>}
+      {!isLoading &&
+        instanceUrls.map((instanceUrl) => (
+          <div key={instanceUrl} className="items-center gap-2">
+            <div className="flex gap-2">
+              <div title="Instance">
+                <Database />
+              </div>
+              <div className="flex grow-1 break-all gap-1">
+                <span title={instanceUrl}>
+                  <strong>{preferFragment(instanceUrl)}</strong> (Instance)
+                </span>
+              </div>
+              <div>
+                <Button
+                  size={"sm"}
+                  onClick={() => {
+                    router.push(
+                      `/instances/${encodeURIComponent(instanceUrl)}`
+                    );
+                  }}
+                >
+                  View
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
     </Layout>
   );
 }
