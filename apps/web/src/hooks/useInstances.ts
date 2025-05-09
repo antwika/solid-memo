@@ -30,7 +30,11 @@ function parseInstanceFromThing(thing: Thing) {
 }
 
 export default function useInstances(instanceUrls: string[]) {
-  const { data: instanceDatasets, mutate } = useDatasets(instanceUrls);
+  const {
+    data: instanceDatasets,
+    mutate,
+    isLoading,
+  } = useDatasets(instanceUrls);
 
   const instances = (instanceDatasets ?? [])
     .map((dataset) => getThingAll(dataset))
@@ -46,5 +50,5 @@ export default function useInstances(instanceUrls: string[]) {
     {}
   );
 
-  return { instanceDatasets, instances, instanceMap, mutate };
+  return { instanceDatasets, instances, instanceMap, mutate, isLoading };
 }

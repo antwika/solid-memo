@@ -26,7 +26,7 @@ function parseDeckFromThing(thing: Thing) {
 }
 
 export default function useDecks(deckUrls: string[]) {
-  const { data: deckDatasets, mutate } = useDatasets(deckUrls);
+  const { data: deckDatasets, mutate, isLoading } = useDatasets(deckUrls);
 
   const decks = (deckDatasets ?? [])
     .map((dataset) => getThingAll(dataset))
@@ -39,5 +39,5 @@ export default function useDecks(deckUrls: string[]) {
     return acc;
   }, {});
 
-  return { deckDatasets, decks, deckMap, mutate };
+  return { deckDatasets, decks, deckMap, mutate, isLoading };
 }

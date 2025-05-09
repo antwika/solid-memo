@@ -1,7 +1,8 @@
 import useDatasets from "@hooks/useDatasets";
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
-import useSWR from "swr";
+import useSWR, { type SWRResponse } from "swr";
 import { multiFetcher } from "@lib/utils";
+import { when } from "vitest-when";
 
 vi.mock("swr", () => ({
   default: vi.fn(),
@@ -66,5 +67,27 @@ describe("useDatasets (function) (default export)", () => {
 
   it("returns the 'mutate' property that useSWR returns with no further processing", () => {
     expect(useDatasets(undefined).mutate).toBe(mockMutate);
+  });
+
+  describe("returned property 'isLoading'", () => {
+    test("when useSWR returned property 'isLoading' as true, this function also returns property 'isLoading' as true.", () => {
+      // Arrange
+      when(useSWR)
+        .calledWith(["mock-iri"], multiFetcher, undefined)
+        .thenReturn({ isLoading: true } as SWRResponse);
+
+      // Act & Assert
+      expect(useDatasets(["mock-iri"]).isLoading).toBeTruthy();
+    });
+
+    test("when useSWR returned property 'isLoading' as false, this function also returns property 'isLoading' as false.", () => {
+      // Arrange
+      when(useSWR)
+        .calledWith(["mock-iri"], multiFetcher, undefined)
+        .thenReturn({ isLoading: false } as SWRResponse);
+
+      // Act & Assert
+      expect(useDatasets(["mock-iri"]).isLoading).toBeFalsy();
+    });
   });
 });

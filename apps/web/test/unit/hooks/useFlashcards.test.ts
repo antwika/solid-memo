@@ -54,7 +54,7 @@ describe("useFlashcards (function) (default export)", () => {
     beforeEach(() => {
       when(useDatasets)
         .calledWith(["mock-iri"])
-        .thenReturn({ data: undefined, mutate: mockMutate });
+        .thenReturn({ data: undefined, mutate: mockMutate, isLoading: false });
     });
 
     test("then return property 'flashcards' as an empty array", () => {
@@ -80,7 +80,7 @@ describe("useFlashcards (function) (default export)", () => {
 
     when(useDatasets)
       .calledWith(["mock-iri"])
-      .thenReturn({ data: mockDatasets, mutate: mockMutate });
+      .thenReturn({ data: mockDatasets, mutate: mockMutate, isLoading: false });
 
     when(getThingAll).calledWith(mockDataset).thenReturn([mockThing]);
 
@@ -152,5 +152,27 @@ describe("useFlashcards (function) (default export)", () => {
     expect(flashcards).toStrictEqual([mockFlashcard]);
     expect(flashcardMap["mock-flashcard-iri"]).toBe(mockFlashcard);
     expect(flashcardDatasets).toStrictEqual([mockDataset]);
+  });
+
+  describe("returned property 'isLoading'", () => {
+    test("when useDatasets returned property 'isLoading' as true, this function also returns property 'isLoading' as true.", () => {
+      // Arrange
+      when(useDatasets)
+        .calledWith(["mock-iri"])
+        .thenReturn({ isLoading: true } as any);
+
+      // Act & Assert
+      expect(useFlashcards(["mock-iri"]).isLoading).toBeTruthy();
+    });
+
+    test("when useDatasets returned property 'isLoading' as false, this function also returns property 'isLoading' as false.", () => {
+      // Arrange
+      when(useDatasets)
+        .calledWith(["mock-iri"])
+        .thenReturn({ isLoading: false } as any);
+
+      // Act & Assert
+      expect(useFlashcards(["mock-iri"]).isLoading).toBeFalsy();
+    });
   });
 });
