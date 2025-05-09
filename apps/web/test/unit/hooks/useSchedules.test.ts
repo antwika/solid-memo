@@ -53,7 +53,7 @@ describe("useInstances (function) (default export)", () => {
     beforeEach(() => {
       when(useDatasets)
         .calledWith(["mock-iri"])
-        .thenReturn({ data: undefined, mutate: mockMutate });
+        .thenReturn({ data: undefined, mutate: mockMutate, isLoading: false });
     });
 
     test("then return property 'schedules' as an empty array", () => {
@@ -79,7 +79,7 @@ describe("useInstances (function) (default export)", () => {
 
     when(useDatasets)
       .calledWith(["mock-iri"])
-      .thenReturn({ data: mockDatasets, mutate: mockMutate });
+      .thenReturn({ data: mockDatasets, mutate: mockMutate, isLoading: false });
 
     when(getThingAll).calledWith(mockDataset).thenReturn([mockThing]);
 
@@ -131,5 +131,27 @@ describe("useInstances (function) (default export)", () => {
     expect(schedules).toStrictEqual([mockSchedule]);
     expect(scheduleMap["mock-schedule-iri"]).toBe(mockSchedule);
     expect(scheduleDatasets).toStrictEqual([mockDataset]);
+  });
+
+  describe("returned property 'isLoading'", () => {
+    test("when useDatasets returned property 'isLoading' as true, this function also returns property 'isLoading' as true.", () => {
+      // Arrange
+      when(useDatasets)
+        .calledWith(["mock-iri"])
+        .thenReturn({ isLoading: true } as any);
+
+      // Act & Assert
+      expect(useSchedules(["mock-iri"]).isLoading).toBeTruthy();
+    });
+
+    test("when useDatasets returned property 'isLoading' as false, this function also returns property 'isLoading' as false.", () => {
+      // Arrange
+      when(useDatasets)
+        .calledWith(["mock-iri"])
+        .thenReturn({ isLoading: false } as any);
+
+      // Act & Assert
+      expect(useSchedules(["mock-iri"]).isLoading).toBeFalsy();
+    });
   });
 });

@@ -38,7 +38,11 @@ function parseFlashcardFromThing(thing: Thing) {
 }
 
 export default function useFlashcards(flashcardUrls: string[]) {
-  const { data: flashcardDatasets, mutate } = useDatasets(flashcardUrls);
+  const {
+    data: flashcardDatasets,
+    mutate,
+    isLoading,
+  } = useDatasets(flashcardUrls);
 
   const flashcards = (flashcardDatasets ?? [])
     .map((dataset) => getThingAll(dataset))
@@ -54,5 +58,5 @@ export default function useFlashcards(flashcardUrls: string[]) {
     {}
   );
 
-  return { flashcardDatasets, flashcards, flashcardMap, mutate };
+  return { flashcardDatasets, flashcards, flashcardMap, mutate, isLoading };
 }

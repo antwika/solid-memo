@@ -36,7 +36,11 @@ function parseScheduleFromThing(thing: Thing) {
 }
 
 export default function useSchedules(scheduleUrls: string[]) {
-  const { data: scheduleDatasets, mutate } = useDatasets(scheduleUrls);
+  const {
+    data: scheduleDatasets,
+    mutate,
+    isLoading,
+  } = useDatasets(scheduleUrls);
 
   const schedules = (scheduleDatasets ?? [])
     .map((dataset) => getThingAll(dataset))
@@ -52,5 +56,5 @@ export default function useSchedules(scheduleUrls: string[]) {
     {}
   );
 
-  return { scheduleDatasets, schedules, scheduleMap, mutate };
+  return { scheduleDatasets, schedules, scheduleMap, mutate, isLoading };
 }
