@@ -18,7 +18,9 @@ export default function Page() {
   const service = getService();
 
   const { iri } = useParams();
-  const { flashcardMap, mutate } = useFlashcards(iri ? [iri?.toString()] : []);
+  const { flashcardMap, mutate, isLoading } = useFlashcards(
+    iri ? [iri?.toString()] : []
+  );
   const flashcard = iri ? flashcardMap[iri.toString()] : undefined;
 
   const {
@@ -26,6 +28,16 @@ export default function Page() {
     handleSubmit,
     formState: { errors },
   } = useForm<Inputs>();
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <Card className="p-2">
+          <div>Loading flashcard...</div>
+        </Card>
+      </Layout>
+    );
+  }
 
   if (!flashcard) {
     return (

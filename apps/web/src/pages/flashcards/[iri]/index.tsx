@@ -13,8 +13,20 @@ export default function Page() {
   const service = getService();
 
   const { iri } = useParams();
-  const { flashcardMap } = useFlashcards(iri ? [iri?.toString()] : []);
+  const { flashcardMap, isLoading } = useFlashcards(
+    iri ? [iri?.toString()] : []
+  );
   const flashcard = iri ? flashcardMap[iri.toString()] : undefined;
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <Card className="p-2">
+          <div>Loading flashcards...</div>
+        </Card>
+      </Layout>
+    );
+  }
 
   if (!flashcard) {
     return (

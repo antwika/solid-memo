@@ -13,8 +13,18 @@ export default function Page() {
   const service = getService();
 
   const { iri } = useParams();
-  const { deckMap, mutate } = useDecks(iri ? [iri?.toString()] : []);
+  const { deckMap, mutate, isLoading } = useDecks(iri ? [iri?.toString()] : []);
   const deck = iri ? deckMap[iri.toString()] : undefined;
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <Card className="p-2">
+          <div>Loading decks...</div>
+        </Card>
+      </Layout>
+    );
+  }
 
   if (!deck) {
     return (

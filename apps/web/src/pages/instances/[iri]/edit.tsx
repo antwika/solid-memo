@@ -16,7 +16,9 @@ export default function Page() {
   const service = getService();
 
   const { iri } = useParams();
-  const { instanceMap, mutate } = useInstances(iri ? [iri?.toString()] : []);
+  const { instanceMap, mutate, isLoading } = useInstances(
+    iri ? [iri?.toString()] : []
+  );
   const instance = iri ? instanceMap[iri.toString()] : undefined;
 
   const {
@@ -24,6 +26,16 @@ export default function Page() {
     handleSubmit,
     formState: { errors },
   } = useForm<Inputs>();
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <Card className="p-2">
+          <div>Loading instance...</div>
+        </Card>
+      </Layout>
+    );
+  }
 
   if (!instance) {
     return (
