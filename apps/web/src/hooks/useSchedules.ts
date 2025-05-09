@@ -38,18 +38,19 @@ function parseScheduleFromThing(thing: Thing) {
 export default function useSchedules(scheduleUrls: string[]) {
   const { data: scheduleDatasets, mutate } = useDatasets(scheduleUrls);
 
-  const schedules =
-    scheduleDatasets
-      ?.map((dataset) => getThingAll(dataset))
-      .flat()
-      .filter((thing) => scheduleUrls.includes(thing.url))
-      .map((thing) => parseScheduleFromThing(thing)) ?? [];
+  const schedules = (scheduleDatasets ?? [])
+    .map((dataset) => getThingAll(dataset))
+    .flat()
+    .filter((thing) => scheduleUrls.includes(thing.url))
+    .map((thing) => parseScheduleFromThing(thing));
 
-  const scheduleMap =
-    schedules?.reduce<Record<string, ScheduleModel>>((acc, schedule) => {
+  const scheduleMap = schedules.reduce<Record<string, ScheduleModel>>(
+    (acc, schedule) => {
       acc[schedule.iri] = schedule;
       return acc;
-    }, {}) ?? {};
+    },
+    {}
+  );
 
   return { scheduleDatasets, schedules, scheduleMap, mutate };
 }
