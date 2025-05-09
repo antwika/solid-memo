@@ -41,7 +41,7 @@ export default function Page() {
       <Card key={flashcard.iri} className="p-2">
         <div className="space-x-2 space-y-1">
           <div className="mb-2 flex gap-1">
-            <div className="width: 32px" title="Instance">
+            <div className="width: 32px" title="Flashcard">
               <StickyNote />
             </div>
             <strong>{preferFragment(flashcard.iri)}</strong> (Flashcard)
