@@ -39,7 +39,7 @@ export default function Page() {
       <Card key={deck.iri} className="p-2">
         <div className="space-x-2 space-y-1">
           <div className="mb-2 flex gap-1">
-            <div className="width: 32px" title="Instance">
+            <div className="width: 32px" title="Deck">
               <Layers />
             </div>
             <strong>{deck.name}</strong> (Deck)
@@ -160,6 +160,13 @@ export default function Page() {
             }}
           >
             Schedule all flashcards
+          </Button>
+          <Button
+            onClick={() => {
+              router.push(`/decks/${encodeURIComponent(deck.iri)}/study`);
+            }}
+          >
+            Study
           </Button>
         </div>
       </Card>
