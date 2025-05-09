@@ -57,33 +57,15 @@ describe("useDecks (function) (default export)", () => {
     });
 
     test("then return property 'decks' as an empty array", () => {
-      // Act
-      const { decks, deckMap, deckDatasets } = useDecks(["mock-iri"]);
-
-      // Assert
-      expect(decks).toStrictEqual([]);
-      expect(deckMap).toStrictEqual({});
-      expect(deckDatasets).toBeUndefined();
+      expect(useDecks(["mock-iri"]).decks).toStrictEqual([]);
     });
 
     test("then return property 'deckMap' as an empty object", () => {
-      // Act
-      const { decks, deckMap, deckDatasets } = useDecks(["mock-iri"]);
-
-      // Assert
-      expect(decks).toStrictEqual([]);
-      expect(deckMap).toStrictEqual({});
-      expect(deckDatasets).toBeUndefined();
+      expect(useDecks(["mock-iri"]).deckMap).toStrictEqual({});
     });
 
     test("then return property 'deckDatasets' as undefined", () => {
-      // Act
-      const { decks, deckMap, deckDatasets } = useDecks(["mock-iri"]);
-
-      // Assert
-      expect(decks).toStrictEqual([]);
-      expect(deckMap).toStrictEqual({});
-      expect(deckDatasets).toBeUndefined();
+      expect(useDecks(["mock-iri"]).deckDatasets).toBeUndefined();
     });
   });
 
