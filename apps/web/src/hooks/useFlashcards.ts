@@ -40,17 +40,19 @@ function parseFlashcardFromThing(thing: Thing) {
 export default function useFlashcards(flashcardUrls: string[]) {
   const { data: flashcardDatasets, mutate } = useDatasets(flashcardUrls);
 
-  const flashcards = flashcardDatasets
-    ?.map((dataset) => getThingAll(dataset))
+  const flashcards = (flashcardDatasets ?? [])
+    .map((dataset) => getThingAll(dataset))
     .flat()
     .filter((thing) => flashcardUrls.includes(thing.url))
     .map((thing) => parseFlashcardFromThing(thing));
 
-  const flashcardMap =
-    flashcards?.reduce<Record<string, FlashcardModel>>((acc, flashcard) => {
+  const flashcardMap = flashcards.reduce<Record<string, FlashcardModel>>(
+    (acc, flashcard) => {
       acc[flashcard.iri] = flashcard;
       return acc;
-    }, {}) ?? {};
+    },
+    {}
+  );
 
   return { flashcardDatasets, flashcards, flashcardMap, mutate };
 }
