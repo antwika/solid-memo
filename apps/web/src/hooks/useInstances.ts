@@ -32,17 +32,19 @@ function parseInstanceFromThing(thing: Thing) {
 export default function useInstances(instanceUrls: string[]) {
   const { data: instanceDatasets, mutate } = useDatasets(instanceUrls);
 
-  const instances = instanceDatasets
-    ?.map((dataset) => getThingAll(dataset))
+  const instances = (instanceDatasets ?? [])
+    .map((dataset) => getThingAll(dataset))
     .flat()
     .filter((thing) => instanceUrls.includes(thing.url))
     .map((thing) => parseInstanceFromThing(thing));
 
-  const instanceMap =
-    instances?.reduce<Record<string, InstanceModel>>((acc, instance) => {
+  const instanceMap = instances.reduce<Record<string, InstanceModel>>(
+    (acc, instance) => {
       acc[instance.iri] = instance;
       return acc;
-    }, {}) ?? {};
+    },
+    {}
+  );
 
   return { instanceDatasets, instances, instanceMap, mutate };
 }
