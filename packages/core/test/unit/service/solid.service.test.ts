@@ -222,6 +222,7 @@ describe("solid.service", () => {
       interval: 1,
       easeFactor: 2,
       repetition: 3,
+      lastReviewed: new Date(1),
     };
 
     const mockDecks: Record<string, DeckModel> = {
@@ -345,6 +346,7 @@ describe("solid.service", () => {
       interval: 1,
       easeFactor: 2,
       repetition: 3,
+      lastReviewed: new Date(1),
     };
 
     const mockFlashcards: Record<string, FlashcardModel> = {
@@ -515,6 +517,7 @@ describe("solid.service", () => {
       interval: 1,
       easeFactor: 2,
       repetition: 3,
+      lastReviewed: new Date(1),
     };
 
     const mockDecks: Record<string, DeckModel> = {
@@ -645,6 +648,7 @@ describe("solid.service", () => {
       interval: 1,
       easeFactor: 2,
       repetition: 3,
+      lastReviewed: new Date(1),
     };
 
     // Act

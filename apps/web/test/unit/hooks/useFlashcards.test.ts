@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { when } from "vitest-when";
 import { parseFlashcard, type FlashcardModel } from "@solid-memo/core";
 import {
+  getDatetime,
   getDecimal,
   getInteger,
   getStringNoLocale,
@@ -127,6 +128,10 @@ describe("useFlashcards (function) (default export)", () => {
       .calledWith(mockThing, "http://antwika.com/ns/solid-memo#repetition")
       .thenReturn(3);
 
+    when(getDatetime)
+      .calledWith(mockThing, "http://antwika.com/ns/solid-memo#lastReviewed")
+      .thenReturn(new Date(1));
+
     when(parseFlashcard)
       .calledWith({
         iri: mockThing.url,
@@ -140,6 +145,7 @@ describe("useFlashcards (function) (default export)", () => {
         interval: 1,
         easeFactor: 2,
         repetition: 3,
+        lastReviewed: new Date(1),
       })
       .thenReturn(mockFlashcard);
 

@@ -10,6 +10,7 @@ export const flashcardSchema = z.object({
   interval: z.number(),
   easeFactor: z.number(),
   repetition: z.number(),
+  lastReviewed: z.date().optional().nullable(),
 });
 
 export type FlashcardModel = z.infer<typeof flashcardSchema>;

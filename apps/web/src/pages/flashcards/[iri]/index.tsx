@@ -1,4 +1,4 @@
-import { preferFragment } from "@solid-memo/core";
+import { preferFragment, type FlashcardModel } from "@solid-memo/core";
 import Layout from "@pages/layout";
 import { ServiceContext } from "@providers/service.provider";
 import { Button, Card } from "@ui/index";
@@ -6,14 +6,22 @@ import { Layers, StickyNote } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useContext } from "react";
 import useFlashcards from "src/hooks/useFlashcards";
+import {
+  addDays,
+  formatDuration,
+  intervalToDuration,
+  startOfDay,
+} from "date-fns";
 
 export default function Page() {
   const router = useRouter();
-  const { getService } = useContext(ServiceContext);
+  const { getService, getSpacedRepetitionAlgorithm } =
+    useContext(ServiceContext);
   const service = getService();
+  const spacedRepetitionAlgorithm = getSpacedRepetitionAlgorithm();
 
   const { iri } = useParams();
-  const { flashcardMap, isLoading } = useFlashcards(
+  const { flashcardMap, isLoading, mutate } = useFlashcards(
     iri ? [iri?.toString()] : []
   );
   const flashcard = iri ? flashcardMap[iri.toString()] : undefined;
@@ -35,6 +43,35 @@ export default function Page() {
       </Layout>
     );
   }
+
+  const review = async (flashcard: FlashcardModel, quality: number) => {
+    console.log(
+      "Reviewed flashcard",
+      preferFragment(flashcard.iri),
+      ", answer quality",
+      quality
+    );
+
+    const reviewedFlashcards = spacedRepetitionAlgorithm.compute([
+      { ...flashcard, q: quality },
+    ]);
+
+    await Promise.all(
+      reviewedFlashcards.map((reviewedFlashcard) =>
+        service.updateFlashcard(reviewedFlashcard)
+      )
+    );
+    await mutate();
+  };
+
+  const startOfToday = startOfDay(new Date());
+  const nextReview = addDays(startOfToday, flashcard.interval);
+  const relativeDuration = formatDuration(
+    intervalToDuration({
+      start: startOfToday,
+      end: nextReview,
+    })
+  );
 
   return (
     <Layout>
@@ -86,6 +123,15 @@ export default function Page() {
           <div>
             <strong>• Repetition:</strong> {flashcard.repetition}
           </div>
+          {flashcard.lastReviewed && (
+            <div>
+              <strong>• Last reviewed:</strong>{" "}
+              {flashcard.lastReviewed.toUTCString()}
+            </div>
+          )}
+          <div>
+            <strong>• Next review:</strong> In {relativeDuration}
+          </div>
           <Button
             variant={"destructive"}
             onClick={() => {
@@ -110,6 +156,14 @@ export default function Page() {
           >
             Edit
           </Button>
+
+          <div>
+            <strong>Review:</strong>
+          </div>
+          <Button onClick={() => review(flashcard, 0)}>Again</Button>
+          <Button onClick={() => review(flashcard, 2)}>Hard</Button>
+          <Button onClick={() => review(flashcard, 4)}>Good</Button>
+          <Button onClick={() => review(flashcard, 5)}>Easy</Button>
         </div>
       </Card>
     </Layout>

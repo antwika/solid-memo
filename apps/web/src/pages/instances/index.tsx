@@ -31,6 +31,7 @@ export default function Page() {
         Create new instance
       </Button>
       {isLoading && <div>Loading instances...</div>}
+      {!isLoading && instanceUrls.length === 0 && <div>No instances found</div>}
       {!isLoading &&
         instanceUrls.map((instanceUrl) => (
           <div key={instanceUrl} className="items-center gap-2">
