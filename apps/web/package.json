@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@inrupt/solid-client": "^2.1.2",
-    "@inrupt/solid-client-authn-browser": "^2.3.0",
+    "@inrupt/solid-client-authn-browser": "^2.5.0",
     "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.2",
     "@solid-memo/core": "*",
