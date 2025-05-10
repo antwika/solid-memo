@@ -6,5 +6,6 @@
   "labels": ["Renovate", "Dependencies"],
   "automerge": true,
   "automergeType": "branch",
-  "platformAutomerge": true
+  "platformAutomerge": true,
+  "updateInternalDeps": true
 }
