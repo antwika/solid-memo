@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { useContext } from "react";
 import useFlashcards from "src/hooks/useFlashcards";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import Link from "next/link";
 
 type Inputs = {
   front: string;
@@ -65,10 +66,18 @@ export default function Page() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-x-2 space-y-1">
             <div className="mb-2 flex gap-1">
-              <div className="width: 32px" title="Instance">
-                <StickyNote />
-              </div>
-              <strong>{preferFragment(flashcard.iri)}</strong> (Flashcard)
+              <Link
+                href={`/flashcards/${encodeURIComponent(flashcard.iri)}`}
+                className="hover:underline"
+              >
+                <div className="flex gap-1" title={flashcard.iri}>
+                  <StickyNote />
+                  <strong>
+                    <span>{preferFragment(flashcard.iri)}</span>
+                  </strong>{" "}
+                  (Flashcard)
+                </div>
+              </Link>
             </div>
             <div>
               <strong>• Front:</strong>{" "}

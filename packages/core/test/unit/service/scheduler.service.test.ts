@@ -53,6 +53,7 @@ describe("scheduler.service", () => {
       interval: 1,
       easeFactor: 2,
       repetition: 3,
+      lastReviewed: new Date(1),
     };
     const mockAssessments: Assessment[] = [
       {

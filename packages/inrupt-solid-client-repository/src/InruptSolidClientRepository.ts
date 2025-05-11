@@ -14,7 +14,6 @@ import {
   createSolidDataset,
   createThing,
   deleteSolidDataset,
-  getDate,
   getDatetime,
   getDecimal,
   getInteger,
@@ -30,10 +29,11 @@ import {
   removeThing,
   removeUrl,
   saveSolidDatasetAt,
+  setDatetime,
+  setDecimal,
+  setInteger,
   setStringNoLocale,
   setThing,
-  type Thing,
-  type ThingPersisted,
 } from "@inrupt/solid-client";
 import { v4 as uuid } from "uuid";
 import type { IRepository, ScheduleModel } from "@solid-memo/core";
@@ -441,6 +441,10 @@ export class InruptSolidClientRepository implements IRepository {
             flashcardThing,
             "http://antwika.com/ns/solid-memo#repetition"
           ),
+          lastReviewed: getInteger(
+            flashcardThing,
+            "http://antwika.com/ns/solid-memo#lastReviewed"
+          ),
         });
         acc[flashcard.iri] = flashcard;
         return acc;
@@ -681,7 +685,7 @@ export class InruptSolidClientRepository implements IRepository {
       fetch: this.getFetch(),
     });
 
-    const flashcardThing = buildThing({ name: flashcardThingName })
+    const flashcardThingBuilder = buildThing({ name: flashcardThingName })
       .addUrl(
         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
         "http://antwika.com/ns/solid-memo#Flashcard"
@@ -714,8 +718,16 @@ export class InruptSolidClientRepository implements IRepository {
       .addUrl(
         "http://antwika.com/ns/solid-memo#isInSolidMemoDataInstance",
         flashcard.isInSolidMemoDataInstance
-      )
-      .build();
+      );
+
+    if (flashcard.lastReviewed) {
+      flashcardThingBuilder.addDatetime(
+        "http://antwika.com/ns/solid-memo#lastReviewed",
+        flashcard.lastReviewed
+      );
+    }
+
+    const flashcardThing = flashcardThingBuilder.build();
 
     const updatedInstanceDataset = setThing(instanceDataset, flashcardThing);
 
@@ -1023,6 +1035,28 @@ export class InruptSolidClientRepository implements IRepository {
       "http://antwika.com/ns/solid-memo#back",
       flashcard.back
     );
+    updatedFlashcardThing = setInteger(
+      updatedFlashcardThing,
+      "http://antwika.com/ns/solid-memo#interval",
+      flashcard.interval
+    );
+    updatedFlashcardThing = setDecimal(
+      updatedFlashcardThing,
+      "http://antwika.com/ns/solid-memo#easeFactor",
+      flashcard.easeFactor
+    );
+    updatedFlashcardThing = setInteger(
+      updatedFlashcardThing,
+      "http://antwika.com/ns/solid-memo#repetition",
+      flashcard.repetition
+    );
+    if (flashcard.lastReviewed) {
+      updatedFlashcardThing = setDatetime(
+        updatedFlashcardThing,
+        "http://antwika.com/ns/solid-memo#lastReviewed",
+        flashcard.lastReviewed
+      );
+    }
 
     const updatedFlashcardDataset = setThing(
       flashcardDataset,

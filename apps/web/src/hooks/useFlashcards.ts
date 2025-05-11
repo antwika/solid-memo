@@ -1,4 +1,5 @@
 import {
+  getDatetime,
   getDecimal,
   getInteger,
   getStringNoLocale,
@@ -33,6 +34,10 @@ function parseFlashcardFromThing(thing: Thing) {
     repetition: getInteger(
       thing,
       "http://antwika.com/ns/solid-memo#repetition"
+    ),
+    lastReviewed: getDatetime(
+      thing,
+      "http://antwika.com/ns/solid-memo#lastReviewed"
     ),
   });
 }

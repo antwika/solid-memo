@@ -47,6 +47,7 @@ export function sm2(assessment: Assessment): FlashcardModel {
     interval: nextInterval(assessment.repetition, assessment.easeFactor),
     easeFactor: nextEaseFactor(assessment.easeFactor, assessment.q),
     repetition: nextRepetition(assessment.repetition, assessment.q),
+    lastReviewed: new Date(),
   };
 }
 

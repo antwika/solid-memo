@@ -1,4 +1,12 @@
-import { test, expect, describe, beforeAll } from "vitest";
+import {
+  test,
+  expect,
+  describe,
+  beforeAll,
+  beforeEach,
+  afterEach,
+  vi,
+} from "vitest";
 import { sm2, SuperMemo2 } from "../../../src/lib/super-memo";
 import type {
   Assessment,
@@ -7,7 +15,18 @@ import type {
 import type { FlashcardModel } from "../../../src/domain";
 
 describe("super-memo", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   test("sm2", () => {
+    const mockDate = new Date(2000, 1, 2, 3, 4, 5, 6);
+    vi.setSystemTime(mockDate);
+
     const mockFlashcardBase: FlashcardModel = {
       version: "mock-version",
       iri: "mock-iri",
@@ -32,6 +51,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.7,
       repetition: 1,
+      lastReviewed: mockDate,
     });
 
     expect(
@@ -47,6 +67,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.7,
       repetition: 1,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -61,6 +82,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.3,
       repetition: 1,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -75,6 +97,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.3,
       repetition: 1,
+      lastReviewed: mockDate,
     });
 
     expect(
@@ -90,6 +113,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.96,
       repetition: 1,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -104,6 +128,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.42,
       repetition: 1,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -118,6 +143,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.3,
       repetition: 1,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -132,6 +158,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.3,
       repetition: 1,
+      lastReviewed: mockDate,
     });
 
     expect(
@@ -147,6 +174,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 2.18,
       repetition: 1,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -161,6 +189,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.86,
       repetition: 1,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -175,6 +204,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.54,
       repetition: 1,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -189,6 +219,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 1.3,
       repetition: 1,
+      lastReviewed: mockDate,
     });
 
     expect(
@@ -204,6 +235,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 2.36,
       repetition: 2,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -218,6 +250,7 @@ describe("super-memo", () => {
       interval: 6,
       easeFactor: 2.22,
       repetition: 3,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -232,6 +265,7 @@ describe("super-memo", () => {
       interval: 14,
       easeFactor: 2.08,
       repetition: 4,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -246,6 +280,7 @@ describe("super-memo", () => {
       interval: 28,
       easeFactor: 1.94,
       repetition: 5,
+      lastReviewed: mockDate,
     });
 
     expect(
@@ -261,6 +296,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 2.5,
       repetition: 2,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -275,6 +311,7 @@ describe("super-memo", () => {
       interval: 6,
       easeFactor: 2.5,
       repetition: 3,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -289,6 +326,7 @@ describe("super-memo", () => {
       interval: 15,
       easeFactor: 2.5,
       repetition: 4,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -303,6 +341,7 @@ describe("super-memo", () => {
       interval: 38,
       easeFactor: 2.5,
       repetition: 5,
+      lastReviewed: mockDate,
     });
 
     expect(
@@ -318,6 +357,7 @@ describe("super-memo", () => {
       interval: 1,
       easeFactor: 2.6,
       repetition: 2,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -332,6 +372,7 @@ describe("super-memo", () => {
       interval: 6,
       easeFactor: 2.7,
       repetition: 3,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -346,6 +387,7 @@ describe("super-memo", () => {
       interval: 17,
       easeFactor: 2.8,
       repetition: 4,
+      lastReviewed: mockDate,
     });
     expect(
       sm2({
@@ -360,6 +402,7 @@ describe("super-memo", () => {
       interval: 48,
       easeFactor: 2.9,
       repetition: 5,
+      lastReviewed: mockDate,
     });
   });
 
@@ -372,6 +415,9 @@ describe("super-memo", () => {
 
     test("compute", () => {
       // Arrange
+      const mockDate = new Date(2000, 1, 2, 3, 4, 5, 6);
+      vi.setSystemTime(mockDate);
+
       const mockFlashcardBase: FlashcardModel = {
         version: "mock-version",
         iri: "mock-iri",
@@ -403,6 +449,7 @@ describe("super-memo", () => {
           interval: 1,
           easeFactor: 1.7,
           repetition: 1,
+          lastReviewed: mockDate,
         },
       ]);
     });
