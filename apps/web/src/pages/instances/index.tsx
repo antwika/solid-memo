@@ -3,13 +3,11 @@ import Layout from "@pages/layout";
 import { ServiceContext } from "@providers/service.provider";
 import { Button } from "@ui/index";
 import { Database } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useContext } from "react";
 import useWebIdProfile from "src/hooks/useWebIdProfile";
 import Link from "next/link";
 
 export default function Page() {
-  const router = useRouter();
   const { getService } = useContext(ServiceContext);
   const service = getService();
 
