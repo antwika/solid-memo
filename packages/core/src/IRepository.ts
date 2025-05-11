@@ -83,6 +83,8 @@ export interface IRepository {
 
   updateFlashcard(flashcard: FlashcardModel): Promise<void>;
 
+  resetFlashcard(flashcard: FlashcardModel): Promise<void>;
+
   deleteInstance(instance: InstanceModel): Promise<void>;
 
   deleteDeck(deck: DeckModel): Promise<void>;

@@ -151,4 +151,8 @@ export class SolidService implements IService {
   async updateFlashcard(flashcard: FlashcardModel) {
     await this.repository.updateFlashcard(flashcard);
   }
+
+  async resetFlashcard(flashcard: FlashcardModel): Promise<void> {
+    await this.repository.resetFlashcard(flashcard);
+  }
 }
