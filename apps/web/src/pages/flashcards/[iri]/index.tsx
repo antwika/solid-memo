@@ -1,4 +1,4 @@
-import { preferFragment, type FlashcardModel } from "@solid-memo/core";
+import { preferFragment } from "@solid-memo/core";
 import Layout from "@pages/layout";
 import { ServiceContext } from "@providers/service.provider";
 import { Button, Card } from "@ui/index";
@@ -16,10 +16,8 @@ import Link from "next/link";
 
 export default function Page() {
   const router = useRouter();
-  const { getService, getSpacedRepetitionAlgorithm } =
-    useContext(ServiceContext);
+  const { getService } = useContext(ServiceContext);
   const service = getService();
-  const spacedRepetitionAlgorithm = getSpacedRepetitionAlgorithm();
 
   const { iri } = useParams();
   const { flashcardMap, isLoading, mutate } = useFlashcards(
@@ -45,28 +43,11 @@ export default function Page() {
     );
   }
 
-  const review = async (flashcard: FlashcardModel, quality: number) => {
-    console.log(
-      "Reviewed flashcard",
-      preferFragment(flashcard.iri),
-      ", answer quality",
-      quality
-    );
-
-    const reviewedFlashcards = spacedRepetitionAlgorithm.compute([
-      { ...flashcard, q: quality },
-    ]);
-
-    await Promise.all(
-      reviewedFlashcards.map((reviewedFlashcard) =>
-        service.updateFlashcard(reviewedFlashcard)
-      )
-    );
-    await mutate();
-  };
-
   const startOfToday = startOfDay(new Date());
-  const nextReview = addDays(startOfToday, flashcard.interval);
+  const nextReview = addDays(
+    startOfToday,
+    flashcard.lastReviewed ? flashcard.interval : 0
+  );
   const relativeDuration = formatDuration(
     intervalToDuration({
       start: startOfToday,
@@ -136,9 +117,9 @@ export default function Page() {
               {flashcard.lastReviewed.toUTCString()}
             </div>
           )}
-          <div>
-            <strong>• Next review:</strong> In {relativeDuration} (
-            {nextReview.toUTCString()})
+          <div className="flex gap-1">
+            <strong>• Next review:</strong>
+            {relativeDuration.length > 0 ? `In ${relativeDuration}` : "Now"}
           </div>
           <Button
             variant={"destructive"}
@@ -156,6 +137,18 @@ export default function Page() {
             Delete flashcard
           </Button>
           <Button
+            variant={"destructive"}
+            onClick={() =>
+              service
+                .resetFlashcard(flashcard)
+                .then(() => mutate())
+                .then(() => console.log("Flashcard has been reset"))
+                .catch((err) => console.error("Failed with error:", err))
+            }
+          >
+            Reset
+          </Button>
+          <Button
             onClick={() => {
               router.push(
                 `/flashcards/${encodeURIComponent(flashcard.iri)}/edit`
@@ -164,14 +157,6 @@ export default function Page() {
           >
             Edit
           </Button>
-
-          <div>
-            <strong>Review:</strong>
-          </div>
-          <Button onClick={() => review(flashcard, 0)}>Again</Button>
-          <Button onClick={() => review(flashcard, 2)}>Hard</Button>
-          <Button onClick={() => review(flashcard, 4)}>Good</Button>
-          <Button onClick={() => review(flashcard, 5)}>Easy</Button>
         </div>
       </Card>
     </Layout>

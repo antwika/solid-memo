@@ -36,6 +36,7 @@ describe("solid.service", () => {
     updateInstance: vi.fn(),
     updateDeck: vi.fn(),
     updateFlashcard: vi.fn(),
+    resetFlashcard: vi.fn(),
     deleteInstance: vi.fn(),
     deleteDeck: vi.fn(),
     deleteFlashcard: vi.fn(),
@@ -656,5 +657,27 @@ describe("solid.service", () => {
 
     // Assert
     expect(mockRepository.updateFlashcard).toHaveBeenCalledWith(mockFlashcard);
+  });
+
+  test("resetFlashcard", () => {
+    // Arrange
+    const mockFlashcard: FlashcardModel = {
+      iri: "mock-iri",
+      version: "mock-version",
+      isInSolidMemoDataInstance: "mock-instance-iri",
+      front: "mock-front",
+      back: "mock-back",
+      isInDeck: "mock-deck-iri",
+      interval: 5,
+      easeFactor: 6,
+      repetition: 7,
+      lastReviewed: new Date(1),
+    };
+
+    // Act
+    solidService.resetFlashcard(mockFlashcard);
+
+    // Assert
+    expect(mockRepository.resetFlashcard).toHaveBeenCalledWith(mockFlashcard);
   });
 });

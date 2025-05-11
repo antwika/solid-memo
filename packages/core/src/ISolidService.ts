@@ -48,6 +48,8 @@ export interface IService {
 
   updateFlashcard(flashcard: FlashcardModel): Promise<void>;
 
+  resetFlashcard(flashcard: FlashcardModel): Promise<void>;
+
   removeInstance(instance: InstanceModel): Promise<{
     instanceUrls: string[];
     instances: Record<string, InstanceModel>;

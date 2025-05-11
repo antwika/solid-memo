@@ -25,6 +25,7 @@ import {
   getThingAll,
   getUrl,
   getUrlAll,
+  removeDatetime,
   removeStringNoLocale,
   removeThing,
   removeUrl,
@@ -1052,6 +1053,50 @@ export class InruptSolidClientRepository implements IRepository {
     );
     if (flashcard.lastReviewed) {
       updatedFlashcardThing = setDatetime(
+        updatedFlashcardThing,
+        "http://antwika.com/ns/solid-memo#lastReviewed",
+        flashcard.lastReviewed
+      );
+    }
+
+    const updatedFlashcardDataset = setThing(
+      flashcardDataset,
+      updatedFlashcardThing
+    );
+
+    await saveSolidDatasetAt(flashcard.iri, updatedFlashcardDataset, {
+      fetch: this.getFetch(),
+    });
+  }
+
+  async resetFlashcard(flashcard: FlashcardModel): Promise<void> {
+    const flashcardDataset = await getSolidDataset(flashcard.iri, {
+      fetch: this.getFetch(),
+    });
+
+    const flashcardThing = getThing(flashcardDataset, flashcard.iri);
+
+    if (!flashcardThing) throw new Error("Could not find flashcard thing");
+
+    let updatedFlashcardThing = flashcardThing;
+
+    updatedFlashcardThing = setInteger(
+      updatedFlashcardThing,
+      "http://antwika.com/ns/solid-memo#interval",
+      1
+    );
+    updatedFlashcardThing = setDecimal(
+      updatedFlashcardThing,
+      "http://antwika.com/ns/solid-memo#easeFactor",
+      2.5
+    );
+    updatedFlashcardThing = setInteger(
+      updatedFlashcardThing,
+      "http://antwika.com/ns/solid-memo#repetition",
+      1
+    );
+    if (flashcard.lastReviewed) {
+      updatedFlashcardThing = removeDatetime(
         updatedFlashcardThing,
         "http://antwika.com/ns/solid-memo#lastReviewed",
         flashcard.lastReviewed
