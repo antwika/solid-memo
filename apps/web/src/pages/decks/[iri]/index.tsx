@@ -6,6 +6,7 @@ import { Database, Layers, StickyNote } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useContext } from "react";
 import useDecks from "src/hooks/useDecks";
+import Link from "next/link";
 
 export default function Page() {
   const router = useRouter();
@@ -39,10 +40,18 @@ export default function Page() {
       <Card key={deck.iri} className="p-2">
         <div className="space-x-2 space-y-1">
           <div className="mb-2 flex gap-1">
-            <div className="width: 32px" title="Deck">
-              <Layers />
-            </div>
-            <strong>{deck.name}</strong> (Deck)
+            <Link
+              href={`/decks/${encodeURIComponent(deck.iri)}`}
+              className="hover:underline"
+            >
+              <div className="flex gap-1" title={deck.iri}>
+                <Layers />
+                <strong>
+                  <span>{deck.name ?? preferFragment(deck.iri)}</span>
+                </strong>{" "}
+                (Deck)
+              </div>
+            </Link>
           </div>
           <div>
             <span title={deck.iri}>
@@ -56,42 +65,40 @@ export default function Page() {
             <strong>• Name:</strong> {deck.name}
           </div>
           <div className="flex gap-1 items-center">
-            <strong>• Is in instance:</strong> <Database />
-            <strong>
-              <span title={deck.isInSolidMemoDataInstance}>
-                {preferFragment(deck.isInSolidMemoDataInstance)}
-              </span>
-            </strong>{" "}
-            (Instance)
-            <Button
-              size={"sm"}
-              onClick={() => {
-                router.push(
-                  `/instances/${encodeURIComponent(deck.isInSolidMemoDataInstance)}`
-                );
-              }}
+            <strong>• Is in instance:</strong>
+            <Link
+              href={`/instances/${encodeURIComponent(deck.isInSolidMemoDataInstance)}`}
+              className="hover:underline"
             >
-              View
-            </Button>
+              <div
+                className="flex gap-1"
+                title={deck.isInSolidMemoDataInstance}
+              >
+                <Database />
+                <strong>
+                  <span>{preferFragment(deck.isInSolidMemoDataInstance)}</span>
+                </strong>{" "}
+                (Instance)
+              </div>
+            </Link>
           </div>
           <div>
             <strong>• Has flashcard:</strong>{" "}
             <div className="flex flex-col gap-1">
               {deck.hasCard.map((cardIri) => (
                 <div key={cardIri} className="flex gap-1 items-center">
-                  <StickyNote />
-                  <strong>
-                    <span title={cardIri}>{preferFragment(cardIri)}</span>
-                  </strong>{" "}
-                  (Flashcard)
-                  <Button
-                    size={"sm"}
-                    onClick={() => {
-                      router.push(`/flashcards/${encodeURIComponent(cardIri)}`);
-                    }}
+                  <Link
+                    href={`/flashcards/${encodeURIComponent(cardIri)}`}
+                    className="hover:underline"
                   >
-                    View
-                  </Button>
+                    <div className="flex gap-1" title={cardIri}>
+                      <StickyNote />
+                      <strong>
+                        <span>{preferFragment(cardIri)}</span>
+                      </strong>{" "}
+                      (Flashcard)
+                    </div>
+                  </Link>
                 </div>
               ))}
             </div>

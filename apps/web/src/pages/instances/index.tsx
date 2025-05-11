@@ -6,6 +6,7 @@ import { Database } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
 import useWebIdProfile from "src/hooks/useWebIdProfile";
+import Link from "next/link";
 
 export default function Page() {
   const router = useRouter();
@@ -36,26 +37,18 @@ export default function Page() {
         instanceUrls.map((instanceUrl) => (
           <div key={instanceUrl} className="items-center gap-2">
             <div className="flex gap-2">
-              <div title="Instance">
-                <Database />
-              </div>
-              <div className="flex grow-1 break-all gap-1">
-                <span title={instanceUrl}>
-                  <strong>{preferFragment(instanceUrl)}</strong> (Instance)
-                </span>
-              </div>
-              <div>
-                <Button
-                  size={"sm"}
-                  onClick={() => {
-                    router.push(
-                      `/instances/${encodeURIComponent(instanceUrl)}`
-                    );
-                  }}
-                >
-                  View
-                </Button>
-              </div>
+              <Link
+                href={`/instances/${encodeURIComponent(instanceUrl)}`}
+                className="hover:underline"
+              >
+                <div className="flex gap-1" title={instanceUrl}>
+                  <Database />
+                  <strong>
+                    <span>{preferFragment(instanceUrl)}</span>
+                  </strong>{" "}
+                  (Instance)
+                </div>
+              </Link>
             </div>
           </div>
         ))}

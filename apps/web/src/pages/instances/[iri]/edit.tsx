@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useContext } from "react";
 import useInstances from "src/hooks/useInstances";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import Link from "next/link";
 
 type Inputs = {
   name: string;
@@ -63,10 +64,18 @@ export default function Page() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-x-2 space-y-1">
             <div className="mb-2 flex gap-1">
-              <div className="width: 32px" title="Instance">
-                <Database />
-              </div>
-              <strong>{instance.name}</strong> (Instance)
+              <Link
+                href={`/instances/${encodeURIComponent(instance.iri)}`}
+                className="hover:underline"
+              >
+                <div className="flex gap-1" title={instance.iri}>
+                  <Database />
+                  <strong>
+                    <span>{instance.name}</span>
+                  </strong>{" "}
+                  (Instance)
+                </div>
+              </Link>
             </div>
             <div>
               <strong>• Name:</strong> {instance.name}

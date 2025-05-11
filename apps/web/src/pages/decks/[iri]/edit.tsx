@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useContext } from "react";
 import useDecks from "src/hooks/useDecks";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import Link from "next/link";
 
 type Inputs = {
   name: string;
@@ -61,10 +62,18 @@ export default function Page() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-x-2 space-y-1">
             <div className="mb-2 flex gap-1">
-              <div className="width: 32px" title="Instance">
-                <Layers />
-              </div>
-              <strong>{deck.name}</strong> (Deck)
+              <Link
+                href={`/decks/${encodeURIComponent(deck.iri)}`}
+                className="hover:underline"
+              >
+                <div className="flex gap-1" title={deck.iri}>
+                  <Layers />
+                  <strong>
+                    <span>{deck.name}</span>
+                  </strong>{" "}
+                  (Deck)
+                </div>
+              </Link>
             </div>
             <div>
               <strong>• Name:</strong> {deck.name}

@@ -12,6 +12,7 @@ import {
   intervalToDuration,
   startOfDay,
 } from "date-fns";
+import Link from "next/link";
 
 export default function Page() {
   const router = useRouter();
@@ -78,10 +79,18 @@ export default function Page() {
       <Card key={flashcard.iri} className="p-2">
         <div className="space-x-2 space-y-1">
           <div className="mb-2 flex gap-1">
-            <div className="width: 32px" title="Flashcard">
-              <StickyNote />
-            </div>
-            <strong>{preferFragment(flashcard.iri)}</strong> (Flashcard)
+            <Link
+              href={`/flashcards/${encodeURIComponent(flashcard.iri)}`}
+              className="hover:underline"
+            >
+              <div className="flex gap-1" title={flashcard.iri}>
+                <StickyNote />
+                <strong>
+                  <span>{preferFragment(flashcard.iri)}</span>
+                </strong>{" "}
+                (Flashcard)
+              </div>
+            </Link>
           </div>
           <div>
             <span title={flashcard.iri}>
@@ -98,21 +107,19 @@ export default function Page() {
             <strong>• Back:</strong> {flashcard.back}
           </div>
           <div className="flex gap-1 items-center">
-            <strong>• Is in deck:</strong> <Layers />
-            <strong>
-              <span title={flashcard.isInDeck}>
-                {preferFragment(flashcard.isInDeck)}
-              </span>
-            </strong>{" "}
-            (Deck)
-            <Button
-              size={"sm"}
-              onClick={() => {
-                router.push(`/decks/${encodeURIComponent(flashcard.isInDeck)}`);
-              }}
+            <strong>• Is in deck:</strong>{" "}
+            <Link
+              href={`/decks/${encodeURIComponent(flashcard.isInDeck)}`}
+              className="hover:underline"
             >
-              View
-            </Button>
+              <div className="flex gap-1" title={flashcard.isInDeck}>
+                <Layers />
+                <strong>
+                  <span>{preferFragment(flashcard.isInDeck)}</span>
+                </strong>{" "}
+                (Deck)
+              </div>
+            </Link>
           </div>
           <div>
             <strong>• Interval:</strong> {flashcard.interval}
@@ -130,7 +137,8 @@ export default function Page() {
             </div>
           )}
           <div>
-            <strong>• Next review:</strong> In {relativeDuration}
+            <strong>• Next review:</strong> In {relativeDuration} (
+            {nextReview.toUTCString()})
           </div>
           <Button
             variant={"destructive"}

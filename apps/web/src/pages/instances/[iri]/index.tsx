@@ -6,6 +6,7 @@ import { Calendar, Database, Layers } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useContext } from "react";
 import useInstances from "src/hooks/useInstances";
+import Link from "next/link";
 
 export default function Page() {
   const router = useRouter();
@@ -41,10 +42,18 @@ export default function Page() {
       <Card key={instance.iri} className="p-2">
         <div className="space-x-2 space-y-1">
           <div className="mb-2 flex gap-1">
-            <div className="width: 32px" title="Instance">
-              <Database />
-            </div>
-            <strong>{instance.name}</strong> (Instance)
+            <Link
+              href={`/instances/${encodeURIComponent(instance.iri)}`}
+              className="hover:underline"
+            >
+              <div className="flex gap-1" title={instance.iri}>
+                <Database />
+                <strong>
+                  <span>{instance.name}</span>
+                </strong>{" "}
+                (Instance)
+              </div>
+            </Link>
           </div>
           <div>
             <span title={instance.iri}>
@@ -66,19 +75,18 @@ export default function Page() {
             <div className="flex flex-col gap-1">
               {instance.hasDeck.map((deckIri) => (
                 <div key={deckIri} className="flex gap-1 items-center">
-                  <Layers />
-                  <strong>
-                    <span title={deckIri}>{preferFragment(deckIri)}</span>
-                  </strong>{" "}
-                  (Deck)
-                  <Button
-                    size={"sm"}
-                    onClick={() => {
-                      router.push(`/decks/${encodeURIComponent(deckIri)}`);
-                    }}
+                  <Link
+                    href={`/decks/${encodeURIComponent(deckIri)}`}
+                    className="hover:underline"
                   >
-                    View
-                  </Button>
+                    <div className="flex gap-1" title={deckIri}>
+                      <Layers />
+                      <strong>
+                        <span>{preferFragment(deckIri)}</span>
+                      </strong>{" "}
+                      (Deck)
+                    </div>
+                  </Link>
                 </div>
               ))}
             </div>
