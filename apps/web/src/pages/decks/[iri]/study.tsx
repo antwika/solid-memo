@@ -7,6 +7,8 @@ import useDecks from "src/hooks/useDecks";
 import { preferFragment, type FlashcardModel } from "@solid-memo/core";
 import useFlashcards from "@hooks/useFlashcards";
 import { addDays, isAfter, startOfDay } from "date-fns";
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function Page() {
   const { getService, getSpacedRepetitionAlgorithm } =
@@ -67,11 +69,28 @@ export default function Page() {
     );
   }
 
+  const navBar = (
+    <div className="flex text-foreground font-semibold">
+      <span>
+        <Link
+          className="flex items-center"
+          href={`/instances/${encodeURIComponent(deck.isInSolidMemoDataInstance)}`}
+        >
+          <ChevronLeft /> Back
+        </Link>
+      </span>
+      <div className="grow" />
+      <span>{dueFlashcards.length} remaining</span>
+    </div>
+  );
+
   const dueFlashcard = dueFlashcards[0];
 
   if (!dueFlashcard) {
     return (
       <Layout>
+        {navBar}
+        <h1>{deck.name}</h1>
         <div>There are no more flashcards to study in this deck!</div>
       </Layout>
     );
@@ -100,30 +119,57 @@ export default function Page() {
 
   return (
     <Layout>
-      <Card key={deck.iri} className="p-2">
-        <div className="space-x-2 space-y-1">
-          <div>Reviews remaining: {dueFlashcards.length}</div>
-          {!displayAnswer && <Card className="p-2">{dueFlashcard.front}</Card>}
-          {displayAnswer && <Card className="p-2">{dueFlashcard.back}</Card>}
+      {navBar}
+      <h1>{deck.name}</h1>
+      <div className="flex flex-col gap-2">
+        <Card className="items-center">
+          {!displayAnswer && <h3>{dueFlashcard.front}</h3>}
+          {displayAnswer && <h3>{dueFlashcard.back}</h3>}
+        </Card>
+        <div className="flex sm:flex-row flex-col justify-center gap-2 flex-col-reverse">
           {!displayAnswer && (
             <Button onClick={() => setDisplayAnswer(true)}>
               Display answer
             </Button>
           )}
           {displayAnswer && (
-            <Button onClick={() => review(dueFlashcard, 0)}>Again</Button>
+            <Button
+              size={"lg"}
+              className="bg-red-500/60 font-bold"
+              onClick={() => review(dueFlashcard, 0)}
+            >
+              Again
+            </Button>
           )}
           {displayAnswer && (
-            <Button onClick={() => review(dueFlashcard, 2)}>Hard</Button>
+            <Button
+              size={"lg"}
+              className="bg-orange-500/60 font-bold"
+              onClick={() => review(dueFlashcard, 2)}
+            >
+              Hard
+            </Button>
           )}
           {displayAnswer && (
-            <Button onClick={() => review(dueFlashcard, 4)}>Good</Button>
+            <Button
+              size={"lg"}
+              className="bg-yellow-500/60 font-bold"
+              onClick={() => review(dueFlashcard, 4)}
+            >
+              Good
+            </Button>
           )}
           {displayAnswer && (
-            <Button onClick={() => review(dueFlashcard, 5)}>Easy</Button>
+            <Button
+              size={"lg"}
+              className="bg-green-500/60 font-bold"
+              onClick={() => review(dueFlashcard, 5)}
+            >
+              Easy
+            </Button>
           )}
         </div>
-      </Card>
+      </div>
     </Layout>
   );
 }

@@ -15,7 +15,7 @@ export default function Layout({ children }: Props) {
   const router = useRouter();
   const { getAuthService } = useContext(ServiceContext);
   const authService = getAuthService();
-  const { NEXT_PUBLIC_BASE_PATH } = env();
+  const { NEXT_PUBLIC_BASE_PATH, NEXT_PUBLIC_VERSION } = env();
 
   return (
     <>
@@ -31,7 +31,12 @@ export default function Layout({ children }: Props) {
         />
       </Head>
       <main className="bg-background text-foreground flex min-h-screen flex-col items-center">
-        <div className="container items-center justify-center gap-6 space-y-2 bg-white/80 p-6">
+        {NEXT_PUBLIC_VERSION !== "main" && (
+          <div className="absolute italic opacity-30">
+            <div className="p-1">Version: {NEXT_PUBLIC_VERSION}</div>
+          </div>
+        )}
+        <div className="container items-center justify-center gap-6 space-y-2 bg-white/60 p-6">
           <Header
             onLogOut={() => {
               authService
@@ -44,14 +49,6 @@ export default function Layout({ children }: Props) {
                 });
             }}
           />
-          {authService.isLoggedIn() && (
-            <div className="flex gap-2">
-              <Button onClick={() => router.push("/")}>Home</Button>
-              <Button onClick={() => router.push("/instances")}>
-                Instances
-              </Button>
-            </div>
-          )}
           {children}
         </div>
       </main>
