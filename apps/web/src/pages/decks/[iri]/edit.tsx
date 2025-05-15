@@ -2,7 +2,7 @@ import Layout from "@pages/layout";
 import { ServiceContext } from "@providers/service.provider";
 import { Button, Card, Input } from "@ui/index";
 import { Layers } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useContext } from "react";
 import useDecks from "src/hooks/useDecks";
 import { useForm, type SubmitHandler } from "react-hook-form";
@@ -13,6 +13,7 @@ type Inputs = {
 };
 
 export default function Page() {
+  const router = useRouter();
   const { getService } = useContext(ServiceContext);
   const service = getService();
 
@@ -61,19 +62,30 @@ export default function Page() {
       <Card key={deck.iri} className="p-2">
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-x-2 space-y-1">
-            <div className="mb-2 flex gap-1">
+            <div className="mb-2 flex gap-1 justify-between">
               <Link
                 href={`/decks/${encodeURIComponent(deck.iri)}`}
                 className="hover:underline"
               >
-                <div className="flex gap-1" title={deck.iri}>
+                <div className="flex gap-1">
                   <Layers />
                   <strong>
                     <span>{deck.name}</span>
-                  </strong>{" "}
-                  (Deck)
+                  </strong>
                 </div>
               </Link>
+              <Button
+                size={"sm"}
+                variant={"destructive"}
+                onClick={() => {
+                  service
+                    .removeDeck(deck)
+                    .then(() => router.push(`/decks`))
+                    .catch((err) => console.error("Failed with error:", err));
+                }}
+              >
+                Delete
+              </Button>
             </div>
             <div>
               <strong>• Name:</strong> {deck.name}
