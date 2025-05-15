@@ -29,7 +29,7 @@ export default function Page() {
         router.push(`/instances/${encodeURIComponent(onlyInstanceUrl)}`);
       }
     }
-  }, [instanceUrls]);
+  }, [router, instanceUrls]);
 
   return (
     <Layout>

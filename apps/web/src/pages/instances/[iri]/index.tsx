@@ -1,14 +1,11 @@
-import { preferFragment } from "@solid-memo/core";
 import Layout from "@pages/layout";
 import { ServiceContext } from "@providers/service.provider";
 import { Button, Card } from "@ui/index";
-import { Calendar, Database, Layers } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useContext } from "react";
 import useInstances from "src/hooks/useInstances";
 import Link from "next/link";
 import useDecks from "@hooks/useDecks";
-import useFlashcards from "@hooks/useFlashcards";
 
 export default function Page() {
   const router = useRouter();
@@ -20,7 +17,7 @@ export default function Page() {
     iri ? [iri?.toString()] : []
   );
   const instance = iri ? instanceMap[iri.toString()] : undefined;
-  const { deckMap } = useDecks(instance?.hasDeck || []);
+  const { deckMap } = useDecks(instance?.hasDeck ?? []);
 
   if (isLoading) {
     return (
