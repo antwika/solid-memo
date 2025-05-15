@@ -69,12 +69,14 @@ export default function Page() {
                 key={deck.iri}
                 href={`/decks/${encodeURIComponent(deck.iri)}/study`}
               >
-                <Card title={deckIri} className="h-full">
+                <Card title={deckIri} className="h-full hover:bg-primary/5">
                   <h3 className="flex justify-between">
                     <span>{deck.name}</span>
                     <Button
                       size={"sm"}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         router.push(
                           `/decks/${encodeURIComponent(deck.iri)}/edit`
                         );
