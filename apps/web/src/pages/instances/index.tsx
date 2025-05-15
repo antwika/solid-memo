@@ -3,11 +3,13 @@ import Layout from "@pages/layout";
 import { ServiceContext } from "@providers/service.provider";
 import { Button } from "@ui/index";
 import { Database } from "lucide-react";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import useWebIdProfile from "src/hooks/useWebIdProfile";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
+  const router = useRouter();
   const { getService } = useContext(ServiceContext);
   const service = getService();
 
@@ -16,6 +18,18 @@ export default function Page() {
     mutate: mutateWebIdProfile,
     isLoading,
   } = useWebIdProfile();
+
+  useEffect(() => {
+    if (instanceUrls.length === 1) {
+      const onlyInstanceUrl = instanceUrls[0];
+      if (onlyInstanceUrl !== undefined) {
+        console.log(
+          "There's only one instance url, assume the user want to use that one."
+        );
+        router.push(`/instances/${encodeURIComponent(onlyInstanceUrl)}`);
+      }
+    }
+  }, [instanceUrls]);
 
   return (
     <Layout>

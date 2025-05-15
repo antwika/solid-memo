@@ -7,6 +7,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useContext } from "react";
 import useInstances from "src/hooks/useInstances";
 import Link from "next/link";
+import useDecks from "@hooks/useDecks";
+import useFlashcards from "@hooks/useFlashcards";
 
 export default function Page() {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function Page() {
     iri ? [iri?.toString()] : []
   );
   const instance = iri ? instanceMap[iri.toString()] : undefined;
+  const { deckMap } = useDecks(instance?.hasDeck || []);
 
   if (isLoading) {
     return (
@@ -39,105 +42,12 @@ export default function Page() {
 
   return (
     <Layout>
-      <Card key={instance.iri} className="p-2">
-        <div className="space-x-2 space-y-1">
-          <div className="mb-2 flex gap-1">
-            <Link
-              href={`/instances/${encodeURIComponent(instance.iri)}`}
-              className="hover:underline"
-            >
-              <div className="flex gap-1" title={instance.iri}>
-                <Database />
-                <strong>
-                  <span>{instance.name}</span>
-                </strong>{" "}
-                (Instance)
-              </div>
-            </Link>
-          </div>
-          <div>
-            <span title={instance.iri}>
-              <strong>• Iri:</strong> {preferFragment(instance.iri)}
-            </span>
-          </div>
-          <div>
-            <strong>• Version:</strong> {instance.version}
-          </div>
-          <div>
-            <strong>• Name:</strong> {instance.name}
-          </div>
-          <div>
-            <strong>• Is in private type index:</strong>{" "}
-            {preferFragment(instance.isInPrivateTypeIndex)}
-          </div>
-          <div>
-            <strong>• Has deck:</strong>{" "}
-            <div className="flex flex-col gap-1">
-              {instance.hasDeck.map((deckIri) => (
-                <div key={deckIri} className="flex gap-1 items-center">
-                  <Link
-                    href={`/decks/${encodeURIComponent(deckIri)}`}
-                    className="hover:underline"
-                  >
-                    <div className="flex gap-1" title={deckIri}>
-                      <Layers />
-                      <strong>
-                        <span>{preferFragment(deckIri)}</span>
-                      </strong>{" "}
-                      (Deck)
-                    </div>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <strong>• Has schedule:</strong>{" "}
-            <div className="flex flex-col gap-1">
-              {instance.hasSchedule.map((scheduleIri) => (
-                <div key={scheduleIri} className="flex gap-1 items-center">
-                  <Calendar />
-                  <strong>
-                    <span title={scheduleIri}>
-                      {preferFragment(scheduleIri)}
-                    </span>
-                  </strong>{" "}
-                  (Schedule)
-                  <Button
-                    size={"sm"}
-                    onClick={() => {
-                      router.push(
-                        `/schedules/${encodeURIComponent(scheduleIri)}`
-                      );
-                    }}
-                  >
-                    View
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="flex flex-col gap-2">
+        <h2 className="flex gap-2 items-center">
+          Study Decks
           <Button
-            variant={"destructive"}
-            onClick={() => {
-              service
-                .removeInstance(instance)
-                .then(() => router.push(`/instances`))
-                .catch((err) => console.error("Failed with error:", err));
-            }}
-          >
-            Delete instance
-          </Button>
-          <Button
-            onClick={() => {
-              router.push(
-                `/instances/${encodeURIComponent(instance.iri)}/edit`
-              );
-            }}
-          >
-            Edit
-          </Button>
-          <Button
+            size={"sm"}
+            variant={"default"}
             onClick={() => {
               service
                 .newDeck({
@@ -150,10 +60,63 @@ export default function Page() {
                 .catch((err) => console.error("Failed with error:", err));
             }}
           >
-            Create deck
+            Create
+          </Button>
+        </h2>
+        <div className="gap-2 grid lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 xs:grid-cols-1">
+          {Object.keys(deckMap).map((deckIri) => {
+            const deck = deckMap[deckIri];
+            if (!deck) return undefined;
+            return (
+              <Link
+                key={deck.iri}
+                href={`/decks/${encodeURIComponent(deck.iri)}/study`}
+              >
+                <Card title={deckIri} className="h-full">
+                  <h3 className="flex justify-between">
+                    <span>{deck.name}</span>
+                    <Button
+                      size={"sm"}
+                      onClick={() => {
+                        router.push(
+                          `/decks/${encodeURIComponent(deck.iri)}/edit`
+                        );
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </h3>
+                  <span className="grow">{deck.hasCard.length} cards</span>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+        <h3>Other instance actions:</h3>
+        <div className="flex sm:flex-row flex-col gap-1">
+          <Button
+            variant={"secondary"}
+            onClick={() => {
+              router.push(
+                `/instances/${encodeURIComponent(instance.iri)}/edit`
+              );
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            variant={"destructive"}
+            onClick={() => {
+              service
+                .removeInstance(instance)
+                .then(() => router.push(`/instances`))
+                .catch((err) => console.error("Failed with error:", err));
+            }}
+          >
+            Delete
           </Button>
         </div>
-      </Card>
+      </div>
     </Layout>
   );
 }
