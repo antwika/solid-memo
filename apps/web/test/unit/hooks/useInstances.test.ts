@@ -106,10 +106,6 @@ describe("useInstances (function) (default export)", () => {
       .calledWith(mockThing, "http://antwika.com/ns/solid-memo#hasDeck")
       .thenReturn(["mock-deck-iri"]);
 
-    when(getUrlAll)
-      .calledWith(mockThing, "http://antwika.com/ns/solid-memo#hasSchedule")
-      .thenReturn(["mock-schedule-iri"]);
-
     when(parseInstance)
       .calledWith({
         iri: mockThing.url,
@@ -118,7 +114,6 @@ describe("useInstances (function) (default export)", () => {
         version: "mock-version",
         isInPrivateTypeIndex: "mock-private-type-index-iri",
         hasDeck: ["mock-deck-iri"],
-        hasSchedule: ["mock-schedule-iri"],
       })
       .thenReturn(mockInstance);
 
