@@ -12,6 +12,7 @@
     "verify": {
       "outputs": []
     },
+    "lint": {},
     "test:unit": {
       "outputs": []
     },
