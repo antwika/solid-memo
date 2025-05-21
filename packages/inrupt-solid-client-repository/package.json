@@ -5,7 +5,8 @@
   "types": "index.ts",
   "scripts": {
     "test": "npm run test:unit && npm run test:integration",
-    "verify": "npm run test",
+    "verify": "npm run lint && npm run test",
+    "lint": "npx eslint",
     "test:unit": "vitest run test/unit/",
     "test:integration": "vitest run test/integration/",
     "test:unit:coverage": "vitest run --coverage test/unit/",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.1.2",
+    "eslint": "^9.23.0",
     "vitest": "^3.1.2",
     "vitest-when": "^0.6.0"
   }

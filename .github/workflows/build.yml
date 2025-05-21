@@ -12,10 +12,10 @@ on:
 
   push:
     branches:
-      - '**'
+      - "**"
       - "!gh-pages"
     tags:
-      - '**'
+      - "**"
 
 jobs:
   build:
@@ -50,6 +50,9 @@ jobs:
 
           echo "base_path=$BASE_PATH" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Lint
+        run: npm run lint
 
       - name: Unit test
         run: npm run test:unit

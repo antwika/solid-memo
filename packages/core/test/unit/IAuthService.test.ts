@@ -1,5 +1,5 @@
 import type { IAuthService } from "../../src/IAuthService";
-import { describe, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 class MockAuthService implements IAuthService {
   isLoggedIn(): boolean {
@@ -11,24 +11,33 @@ class MockAuthService implements IAuthService {
   getFetch(): typeof fetch {
     return vi.fn();
   }
-  async logInWithOidcIssuer(props: {
+  async logInWithOidcIssuer(_props: {
     oidcIssuer: string;
     redirectUrl: string;
     clientName: string;
-  }): Promise<void> {}
-  async logInWithWebId(props: {
+  }): Promise<void> {
+    /* NOP */
+  }
+  async logInWithWebId(_props: {
     webId: string;
     redirectUrl: string;
     clientName: string;
-  }): Promise<void> {}
-  async logOut(): Promise<void> {}
+  }): Promise<void> {
+    /* NOP */
+  }
+  async logOut(): Promise<void> {
+    /* NOP */
+  }
   async handleIncomingRedirect(
-    restoreUrlCallback: (url: string) => void
-  ): Promise<void> {}
+    _restoreUrlCallback: (url: string) => void
+  ): Promise<void> {
+    /* NOP */
+  }
 }
 
 describe("IAuthService", () => {
   it("does something", () => {
     const mockAuthService = new MockAuthService();
+    expect(mockAuthService).toBeDefined();
   });
 });

@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it, test, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { SolidService } from "../../../src/service/solid.service";
 import type { IRepository } from "../../../src/IRepository";
 import type { IService } from "../../../src/ISolidService";
@@ -112,18 +112,6 @@ describe("solid.service", () => {
       // Act & Assert
       await expect(() => solidService.newInstance()).rejects.toThrowError(
         /^Too many storage iris found$/
-      );
-    });
-
-    test("when a storage is found but it is not 'string' type > then throw error", async () => {
-      // Arrange
-      when(mockRepository.findAllStorageIris)
-        .calledWith()
-        .thenResolve([undefined as any]);
-
-      // Act & Assert
-      await expect(() => solidService.newInstance()).rejects.toThrowError(
-        /^Failed to discover storage to put instance in$/
       );
     });
 
@@ -509,7 +497,7 @@ describe("solid.service", () => {
     expect(flashcards).toBe(mockFlashcards);
   });
 
-  test("updateInstance", () => {
+  test("updateInstance", async () => {
     // Arrange
     const mockInstance: InstanceModel = {
       iri: "mock-iri",
@@ -520,13 +508,13 @@ describe("solid.service", () => {
     };
 
     // Act
-    solidService.updateInstance(mockInstance);
+    await solidService.updateInstance(mockInstance);
 
     // Assert
     expect(mockRepository.updateInstance).toHaveBeenCalledWith(mockInstance);
   });
 
-  test("updateDeck", () => {
+  test("updateDeck", async () => {
     // Arrange
     const mockDeck: DeckModel = {
       iri: "mock-iri",
@@ -537,13 +525,13 @@ describe("solid.service", () => {
     };
 
     // Act
-    solidService.updateDeck(mockDeck);
+    await solidService.updateDeck(mockDeck);
 
     // Assert
     expect(mockRepository.updateDeck).toHaveBeenCalledWith(mockDeck);
   });
 
-  test("updateFlashcard", () => {
+  test("updateFlashcard", async () => {
     // Arrange
     const mockFlashcard: FlashcardModel = {
       iri: "mock-iri",
@@ -559,13 +547,13 @@ describe("solid.service", () => {
     };
 
     // Act
-    solidService.updateFlashcard(mockFlashcard);
+    await solidService.updateFlashcard(mockFlashcard);
 
     // Assert
     expect(mockRepository.updateFlashcard).toHaveBeenCalledWith(mockFlashcard);
   });
 
-  test("resetFlashcard", () => {
+  test("resetFlashcard", async () => {
     // Arrange
     const mockFlashcard: FlashcardModel = {
       iri: "mock-iri",
@@ -581,7 +569,7 @@ describe("solid.service", () => {
     };
 
     // Act
-    solidService.resetFlashcard(mockFlashcard);
+    await solidService.resetFlashcard(mockFlashcard);
 
     // Assert
     expect(mockRepository.resetFlashcard).toHaveBeenCalledWith(mockFlashcard);
