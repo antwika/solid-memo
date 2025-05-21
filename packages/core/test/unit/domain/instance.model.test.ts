@@ -14,7 +14,6 @@ describe("instance.model", () => {
         name: "mock-name",
         isInPrivateTypeIndex: "mock-isInPrivateTypeIndex",
         hasDeck: ["mock-deck"],
-        hasSchedule: ["mock-schedule"],
       };
 
       const instance = parseInstance(mockInstance);
@@ -24,7 +23,6 @@ describe("instance.model", () => {
         name: "mock-name",
         isInPrivateTypeIndex: "mock-isInPrivateTypeIndex",
         hasDeck: ["mock-deck"],
-        hasSchedule: ["mock-schedule"],
       });
     });
   });

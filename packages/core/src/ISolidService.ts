@@ -1,9 +1,4 @@
-import type {
-  DeckModel,
-  FlashcardModel,
-  InstanceModel,
-  ScheduleModel,
-} from "./domain";
+import type { DeckModel, FlashcardModel, InstanceModel } from "./domain";
 
 export interface IService {
   discoverEverything(): Promise<{
@@ -27,10 +22,6 @@ export interface IService {
     instanceIri: string,
     flashcard: Omit<FlashcardModel, "iri">
   ): Promise<{ decks: Record<string, DeckModel> }>;
-
-  newSchedule(schedule: Omit<ScheduleModel, "iri">): Promise<void>;
-
-  newSchedules(schedules: Omit<ScheduleModel, "iri">[]): Promise<void>;
 
   getInstance(instanceUrl: string): Promise<Record<string, InstanceModel>>;
 
@@ -65,11 +56,5 @@ export interface IService {
     deck: DeckModel | undefined;
     flashcardUrls: string[];
     flashcards: Record<string, FlashcardModel>;
-  }>;
-
-  removeSchedule(schedule: ScheduleModel): Promise<{
-    instance: InstanceModel | undefined;
-    scheduleUrls: string[];
-    schedules: Record<string, ScheduleModel>;
   }>;
 }

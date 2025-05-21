@@ -22,10 +22,6 @@ function parseInstanceFromThing(thing: Thing) {
       "http://antwika.com/ns/solid-memo#isInPrivateTypeIndex"
     ),
     hasDeck: getUrlAll(thing, "http://antwika.com/ns/solid-memo#hasDeck"),
-    hasSchedule: getUrlAll(
-      thing,
-      "http://antwika.com/ns/solid-memo#hasSchedule"
-    ),
   });
 }
 

@@ -146,30 +146,6 @@ export default function Page() {
           </Button>
           <Button
             onClick={() => {
-              const schedules = deck.hasCard.map((flashcardIri) => {
-                return {
-                  version: "1",
-                  isInSolidMemoDataInstance: deck.isInSolidMemoDataInstance,
-                  forFlashcard: flashcardIri,
-                  nextReview: new Date(),
-                };
-              });
-
-              service
-                .newSchedules(schedules)
-                .then(() => mutate())
-                .then(() => {
-                  console.log("Scheduled all flashcards of deck");
-                })
-                .catch((err) => {
-                  console.error("Failed to schedule flashcards, error:", err);
-                });
-            }}
-          >
-            Schedule all flashcards
-          </Button>
-          <Button
-            onClick={() => {
               router.push(`/decks/${encodeURIComponent(deck.iri)}/study`);
             }}
           >

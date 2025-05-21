@@ -6,7 +6,6 @@ import type { InstanceModel } from "../../../src/domain/instance.model";
 import type { DeckModel } from "../../../src/domain/deck.model";
 import type { FlashcardModel } from "../../../src/domain/flashcard.model";
 import { when } from "vitest-when";
-import type { ScheduleModel } from "@src/domain";
 
 describe("solid.service", () => {
   const mockRepository: IRepository = {
@@ -29,8 +28,6 @@ describe("solid.service", () => {
     createInstance: vi.fn(),
     createDeck: vi.fn(),
     createFlashcard: vi.fn(),
-    createSchedule: vi.fn(),
-    createSchedules: vi.fn(),
     renameInstance: vi.fn(),
     renameDeck: vi.fn(),
     updateInstance: vi.fn(),
@@ -40,9 +37,6 @@ describe("solid.service", () => {
     deleteInstance: vi.fn(),
     deleteDeck: vi.fn(),
     deleteFlashcard: vi.fn(),
-    findAllScheduleUrls: vi.fn(),
-    findSchedules: vi.fn(),
-    deleteSchedule: vi.fn(),
   };
 
   let solidService: IService;
@@ -143,7 +137,6 @@ describe("solid.service", () => {
         name: "mock-name",
         hasDeck: ["mock-deck-iri"],
         isInPrivateTypeIndex: "mock-private-type-index-iri",
-        hasSchedule: ["mock-schedule-iri"],
       };
 
       const mockInstances: Record<string, InstanceModel> = {
@@ -249,38 +242,6 @@ describe("solid.service", () => {
     expect(result.decks).toBe(mockDecks);
   });
 
-  test("newSchedule", async () => {
-    // Arrange
-    const mockSchedule: Omit<ScheduleModel, "iri"> = {
-      version: "mock-version",
-      isInSolidMemoDataInstance: "mock-instance-iri",
-      forFlashcard: "mock-flashcard-iri",
-      nextReview: new Date(0),
-    };
-
-    // Act
-    await solidService.newSchedule(mockSchedule);
-
-    // Assert
-    expect(mockRepository.createSchedule).toHaveBeenCalledWith(mockSchedule);
-  });
-
-  test("newSchedules", async () => {
-    // Arrange
-    const mockSchedule: Omit<ScheduleModel, "iri"> = {
-      version: "mock-version",
-      isInSolidMemoDataInstance: "mock-instance-iri",
-      forFlashcard: "mock-flashcard-iri",
-      nextReview: new Date(0),
-    };
-
-    // Act
-    await solidService.newSchedules([mockSchedule]);
-
-    // Assert
-    expect(mockRepository.createSchedules).toHaveBeenCalledWith([mockSchedule]);
-  });
-
   test("getInstance", async () => {
     // Arrange
     const mockInstanceIri = "mock-instance-iri";
@@ -290,7 +251,6 @@ describe("solid.service", () => {
       name: "mock-name",
       hasDeck: ["mock-deck-iri"],
       isInPrivateTypeIndex: "mock-private-type-index-iri",
-      hasSchedule: ["mock-schedule-iri"],
     };
 
     const mockInstances: Record<string, InstanceModel> = {
@@ -373,7 +333,6 @@ describe("solid.service", () => {
       name: "mock-name",
       hasDeck: ["mock-deck-iri"],
       isInPrivateTypeIndex: "mock-private-type-index-iri",
-      hasSchedule: ["mock-schedule-iri"],
     };
 
     // Act
@@ -415,7 +374,6 @@ describe("solid.service", () => {
       name: "mock-name",
       hasDeck: ["mock-deck-iri"],
       isInPrivateTypeIndex: "mock-private-type-index-iri",
-      hasSchedule: ["mock-schedule-iri"],
     };
 
     const mockInstances: Record<string, InstanceModel> = {
@@ -450,7 +408,6 @@ describe("solid.service", () => {
       name: "mock-name",
       hasDeck: ["mock-deck-iri"],
       isInPrivateTypeIndex: "mock-private-type-index-iri",
-      hasSchedule: ["mock-schedule-iri"],
     };
     const mockDeckIri = "mock-deck-iri";
     const mockDeck: DeckModel = {
@@ -552,56 +509,6 @@ describe("solid.service", () => {
     expect(flashcards).toBe(mockFlashcards);
   });
 
-  test("removeSchedule", async () => {
-    // Arrange
-    const mockSchedule: ScheduleModel = {
-      iri: "mock-schedule-iri",
-      version: "mock-version",
-      isInSolidMemoDataInstance: "mock-instance-iri",
-      forFlashcard: "mock-flashcard-iri",
-      nextReview: new Date(0),
-    };
-
-    const mockInstance: InstanceModel = {
-      iri: "mock-instance-iri",
-      version: "mock-version",
-      name: "mock-name",
-      hasDeck: ["mock-deck-iri"],
-      isInPrivateTypeIndex: "mock-private-type-index-iri",
-      hasSchedule: ["mock-schedule-iri"],
-    };
-
-    const mockSchedules: Record<string, ScheduleModel> = {
-      [mockSchedule.iri]: mockSchedule,
-    };
-
-    const mockInstances: Record<string, InstanceModel> = {
-      [mockInstance.iri]: mockInstance,
-    };
-
-    when(mockRepository.findInstances, { times: 1 })
-      .calledWith([mockSchedule.isInSolidMemoDataInstance])
-      .thenResolve(mockInstances);
-
-    when(mockRepository.findAllScheduleUrls, { times: 1 })
-      .calledWith([mockSchedule.isInSolidMemoDataInstance])
-      .thenResolve([mockSchedule.iri]);
-
-    when(mockRepository.findSchedules, { times: 1 })
-      .calledWith([mockSchedule.iri])
-      .thenResolve(mockSchedules);
-
-    // Act
-    const { instance, scheduleUrls, schedules } =
-      await solidService.removeSchedule(mockSchedule);
-
-    // Assert
-    expect(mockRepository.deleteSchedule).toHaveBeenCalledWith(mockSchedule);
-    expect(instance).toBe(mockInstance);
-    expect(scheduleUrls).toStrictEqual([mockSchedule.iri]);
-    expect(schedules).toBe(mockSchedules);
-  });
-
   test("updateInstance", () => {
     // Arrange
     const mockInstance: InstanceModel = {
@@ -610,7 +517,6 @@ describe("solid.service", () => {
       name: "mock-name",
       hasDeck: ["mock-deck-iri"],
       isInPrivateTypeIndex: "mock-private-type-index-iri",
-      hasSchedule: ["mock-schedule-iri"],
     };
 
     // Act
