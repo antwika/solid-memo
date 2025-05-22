@@ -3,6 +3,7 @@ import { Button } from "@ui/index";
 import { Logo } from "@ui/logo.ui";
 import Link from "next/link";
 import { useContext } from "react";
+import { ThemePicker } from "./theme-picker.component";
 
 type Props = {
   onLogOut: () => void;
@@ -20,6 +21,7 @@ export function Header({ onLogOut }: Props) {
             <div className="flex items-center gap-x-2">
               <Logo size="xs" />
               <h1>Solid Memo</h1>
+              <ThemePicker />
             </div>
           </Link>
           {authService.isLoggedIn() && authService.getWebId() && (
