@@ -75,6 +75,6 @@ export default defineConfig({
     command: "npx http-server --port 3000 ../web/out",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 15 * 1000,
   },
 });
