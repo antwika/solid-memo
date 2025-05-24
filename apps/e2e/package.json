@@ -1,0 +1,19 @@
+{
+  "name": "@solid-memo/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.52.0",
+    "http-server": "^14.1.1",
+    "playwright": "^1.52.0"
+  }
+}

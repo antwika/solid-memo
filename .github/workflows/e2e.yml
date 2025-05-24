@@ -1,0 +1,76 @@
+name: e2e
+on:
+  push:
+    branches:
+      - "**"
+      - "!gh-pages"
+    tags:
+      - "**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: global-workflow-queue
+  cancel-in-progress: false
+
+jobs:
+  call-build:
+    uses: ./.github/workflows/build.yml
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: call-build
+
+    concurrency:
+      group: deploy-gh-pages
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js - Cache dependencies - Install dependencies
+        uses: ./.github/workflows/setup-node
+
+      - name: Determine NEXT_PUBLIC_BASE_PATH
+        id: set-path
+        run: |
+          if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
+            NAME="${GITHUB_REF#refs/heads/}"
+            BASE_PATH="/solid-memo/branches/${NAME}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            NAME="${GITHUB_REF#refs/tags/}"
+            BASE_PATH="/solid-memo/tags/${NAME}"
+          else
+            echo "Unsupported ref: ${GITHUB_REF}"
+            exit 1
+          fi
+
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          VERSION="${NAME}:${SHORT_SHA}"
+
+          echo "base_path=$BASE_PATH" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-out
+          path: ./apps/web/out
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: End-to-end test
+        run: npm run test:e2e
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.set-path.outputs.base_path }}
+          NEXT_PUBLIC_VERSION: ${{ steps.set-path.outputs.version }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
