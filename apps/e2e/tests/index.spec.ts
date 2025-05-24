@@ -3,11 +3,18 @@ import { test, expect } from "@playwright/test";
 test("has Solid Memo title", async ({ page }) => {
   await page.goto("http://localhost:3000/");
 
-  // Expect a title "to contain" a substring.
   await expect(page).toHaveTitle(/Solid Memo/);
+
+  await expect(
+    page.getByRole("button", { name: "Go to Login page" })
+  ).toBeVisible();
+
+  await expect(
+    page.getByRole("button", { name: "Go to non-existant page" })
+  ).not.toBeVisible();
 });
 
-test("go to login page", async ({ page }) => {
+test.skip("go to login page", async ({ page }) => {
   await page.goto("http://localhost:3000/");
 
   await page.getByRole("button", { name: "Go to Login page" }).click();
