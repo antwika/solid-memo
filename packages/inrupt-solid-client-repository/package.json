@@ -29,6 +29,6 @@
     "@vitest/coverage-v8": "^4.0.0",
     "eslint": "^9.23.0",
     "vitest": "^4.0.0",
-    "vitest-when": "^0.8.0"
+    "vitest-when": "^0.9.0"
   }
 }
