@@ -9,7 +9,7 @@
     "test:e2e:ui": "npx playwright test --ui"
   },
   "devDependencies": {
-    "@types/node": "^22.15.21"
+    "@types/node": "^24.0.0"
   },
   "dependencies": {
     "@playwright/test": "^1.52.0",
