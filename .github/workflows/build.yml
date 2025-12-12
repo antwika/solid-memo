@@ -67,7 +67,7 @@ jobs:
           NEXT_PUBLIC_VERSION: ${{ steps.set-path.outputs.version }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-out
           path: ./apps/web/out
