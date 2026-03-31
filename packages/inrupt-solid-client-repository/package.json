@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@inrupt/solid-client": "^3.0.0",
-    "@inrupt/solid-client-authn-browser": "^3.0.0",
+    "@inrupt/solid-client-authn-browser": "^4.0.0",
     "@solid-memo/core": "*",
     "uuid": "^13.0.0"
   },
