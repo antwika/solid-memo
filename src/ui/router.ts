@@ -19,12 +19,8 @@ export type RouteRef =
   | { screen: "deckCreator"; instanceUrl: string }
   | { screen: "deckDetail"; instanceUrl: string; deckUrl: string }
   | { screen: "browser"; instanceUrl: string; deckUrl: string }
-  | {
-      screen: "cardCreator";
-      instanceUrl: string;
-      deckUrl: string;
-      returnTo: "deckDetail" | "browser";
-    }
+  | { screen: "cardCreator"; instanceUrl: string; deckUrl: string }
+  | { screen: "card"; instanceUrl: string; deckUrl: string; cardUrl: string }
   | {
       screen: "practice";
       instanceUrl: string;
@@ -62,7 +58,12 @@ export function routeToHash(ref: RouteRef): string {
       return `#/new-card${params({
         instance: ref.instanceUrl,
         deck: ref.deckUrl,
-        return: ref.returnTo,
+      })}`;
+    case "card":
+      return `#/card${params({
+        instance: ref.instanceUrl,
+        deck: ref.deckUrl,
+        card: ref.cardUrl,
       })}`;
     case "practice":
       return `#/practice${params({
@@ -73,6 +74,22 @@ export function routeToHash(ref: RouteRef): string {
     case "preferences":
       return `#/preferences${params({ instance: ref.instanceUrl })}`;
   }
+}
+
+/**
+ * Hash URL of an instance's deck list: what every "Decks" in the UI —
+ * heading, breadcrumb, "Back to decks" — links to.
+ */
+export function decksHref(instanceUrl: string): string {
+  return routeToHash({ screen: "home", instanceUrl });
+}
+
+/**
+ * Hash URL of a deck's page: what a deck's name links to wherever the UI
+ * shows it — deck list, headings, breadcrumb.
+ */
+export function deckHref(instanceUrl: string, deckUrl: string): string {
+  return routeToHash({ screen: "deckDetail", instanceUrl, deckUrl });
 }
 
 /** Parse a location hash; null for anything that isn't a valid route. */
@@ -108,11 +125,15 @@ export function parseHash(hash: string): RouteRef | null {
       return instanceUrl === null || deckUrl === null
         ? null
         : { screen: "browser", instanceUrl, deckUrl };
-    case "/new-card": {
-      const returnTo = query.get("return");
-      if (instanceUrl === null || deckUrl === null) return null;
-      if (returnTo !== "deckDetail" && returnTo !== "browser") return null;
-      return { screen: "cardCreator", instanceUrl, deckUrl, returnTo };
+    case "/new-card":
+      return instanceUrl === null || deckUrl === null
+        ? null
+        : { screen: "cardCreator", instanceUrl, deckUrl };
+    case "/card": {
+      const cardUrl = query.get("card");
+      return instanceUrl === null || deckUrl === null || cardUrl === null
+        ? null
+        : { screen: "card", instanceUrl, deckUrl, cardUrl };
     }
     case "/practice": {
       const mode = query.get("mode");

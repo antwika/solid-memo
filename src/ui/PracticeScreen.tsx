@@ -17,6 +17,7 @@ const QUALITY_LABELS: Record<ReviewQuality, string> = {
 export function PracticeScreen({
   mode,
   deckName,
+  deckHref,
   card,
   position,
   total,
@@ -27,6 +28,8 @@ export function PracticeScreen({
 }: {
   mode: PracticeMode;
   deckName: string;
+  /** URL of the deck's page; its name links there. */
+  deckHref: string;
   /** null when the session is finished. */
   card: Card | null;
   /** 1-based position of the current card. */
@@ -41,7 +44,8 @@ export function PracticeScreen({
     <section>
       <header>
         <h2>
-          {mode === "study" ? "Study" : "Practice"}: {deckName}
+          {mode === "study" ? "Study" : "Practice"}:{" "}
+          <a href={deckHref}>{deckName}</a>
         </h2>
         <button onClick={onExit} disabled={busy}>
           End session

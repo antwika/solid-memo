@@ -32,8 +32,9 @@ full URLs, carried URL-encoded in hash query parameters.
 | `#/decks?instance=…` | deck list (home) |
 | `#/new-deck?instance=…` | deck creator |
 | `#/deck?instance=…&deck=…` | deck detail |
-| `#/browse?instance=…&deck=…` | card browser |
-| `#/new-card?instance=…&deck=…&return=…` | card creator |
+| `#/browse?instance=…&deck=…` | Browser — the one place a deck and its cards are edited |
+| `#/new-card?instance=…&deck=…` | card creator (opened from, and returning to, the Browser) |
+| `#/card?instance=…&deck=…&card=…` | one card's own page: the card, its editor, remove (opened by clicking a Browser row; an unknown card falls back to the Browser) |
 | `#/practice?instance=…&deck=…&mode=…` | practice session |
 | `#/preferences?instance=…` | preferences |
 
@@ -62,3 +63,16 @@ flowchart LR
   instance picker, an unknown deck to that instance's deck list. All
   fallbacks use `history.replaceState`, so they are not Back stops;
   in-app navigation uses `pushState`, so Back walks the screens.
+
+## Breadcrumbs
+
+`breadcrumbsFor(route, names)` in
+[src/ui/Breadcrumbs.tsx](../src/ui/Breadcrumbs.tsx) derives a trail from
+the current route alone — Decks › *deck* › Browser › *card* — and
+`Workspace` renders it above every screen. Every crumb — the current page
+included, marked `aria-current="page"` — is a plain `<a href="#/…">` link
+built with `routeToHash`, so following one is an
+ordinary hash navigation: Back/Forward, new-tab and keyboard use all work
+without extra code. Top-level screens (deck list, instance picker) show a
+single crumb, so "Decks" is on hand everywhere inside an instance. The
+masthead's logo and "Solid Memo" title both link to `#/`, the root.

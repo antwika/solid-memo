@@ -27,19 +27,21 @@ function renderContainer(useCases: UseCases) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const onBack = vi.fn();
   const onAddCard = vi.fn();
+  const onDeckRemoved = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
       <BrowserContainer
         useCases={useCases}
         deck={deck}
-        onBack={onBack}
+        deckHref="#/deck?deck=d"
         onAddCard={onAddCard}
+        cardHref={(c) => `#/card?card=${c.id}`}
+        onDeckRemoved={onDeckRemoved}
       />
     </QueryClientProvider>,
   );
-  return { onBack, onAddCard };
+  return { onAddCard, onDeckRemoved, queryClient };
 }
 
 describe("BrowserContainer", () => {
@@ -68,48 +70,12 @@ describe("BrowserContainer", () => {
     expect(onAddCard).toHaveBeenCalledOnce();
   });
 
-  it("updates a card and refreshes the list", async () => {
-    const edited = { ...card, front: "수영하다", back: "to swim" };
-    const listCards = vi
-      .fn<() => Promise<Card[]>>()
-      .mockResolvedValueOnce([card])
-      .mockResolvedValue([edited]);
-    const useCases = makeUseCasesFake({
-      listCards,
-      updateCard: vi.fn(async () => edited),
-    });
-    renderContainer(useCases);
-
-    fireEvent.click(await screen.findByText("水"));
-    fireEvent.input(document.querySelector("#edit-front-card-1")!, {
-      target: { value: "수영하다" },
-    });
-    fireEvent.input(document.querySelector("#edit-back-card-1")!, {
-      target: { value: "to swim" },
-    });
-    fireEvent.submit(document.querySelector("form.card-edit")!);
-
-    expect(await screen.findByText("수영하다")).toBeInTheDocument();
-    expect(useCases.updateCard).toHaveBeenCalledWith(
-      deck,
-      card,
-      "수영하다",
-      "to swim",
+  it("links cards to their own page", async () => {
+    renderContainer(makeUseCasesFake({ listCards: vi.fn(async () => [card]) }));
+    expect(await screen.findByRole("link", { name: "水" })).toHaveAttribute(
+      "href",
+      "#/card?card=card-1",
     );
-  });
-
-  it("shows an update error", async () => {
-    const useCases = makeUseCasesFake({
-      listCards: vi.fn(async () => [card]),
-      updateCard: vi.fn(async () => {
-        throw new Error("update refused");
-      }),
-    });
-    renderContainer(useCases);
-
-    fireEvent.click(await screen.findByText("水"));
-    fireEvent.submit(document.querySelector("form.card-edit")!);
-    expect(await screen.findByText("update refused")).toBeInTheDocument();
   });
 
   it("removes a card and refreshes", async () => {
@@ -145,11 +111,71 @@ describe("BrowserContainer", () => {
     expect(await screen.findByText("remove refused")).toBeInTheDocument();
   });
 
-  it("navigates back", async () => {
-    const { onBack } = renderContainer(makeUseCasesFake());
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Back to deck" }),
+  it("renames the deck and refreshes every deck list", async () => {
+    const useCases = makeUseCasesFake();
+    const { queryClient } = renderContainer(useCases);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Rename deck" }));
+    fireEvent.input(screen.getByLabelText("Deck name"), {
+      target: { value: "Kanji N4" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+
+    await waitFor(() => {
+      expect(useCases.renameDeck).toHaveBeenCalledWith(deck, "Kanji N4");
+    });
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
+    });
+  });
+
+  it("shows a rename error", async () => {
+    renderContainer(
+      makeUseCasesFake({
+        renameDeck: vi.fn(async () => {
+          throw new Error("rename refused");
+        }),
+      }),
     );
-    expect(onBack).toHaveBeenCalledOnce();
+    fireEvent.click(await screen.findByRole("button", { name: "Rename deck" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+    expect(await screen.findByText("rename refused")).toBeInTheDocument();
+  });
+
+  it("removes the deck, refreshes the deck lists, then leaves", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    const useCases = makeUseCasesFake();
+    const { onDeckRemoved, queryClient } = renderContainer(useCases);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Remove deck" }));
+
+    await waitFor(() => {
+      expect(onDeckRemoved).toHaveBeenCalledOnce();
+    });
+    expect(useCases.removeDeck).toHaveBeenCalledWith(deck);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
+  });
+
+  it("shows a deck-remove error and stays", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    const { onDeckRemoved } = renderContainer(
+      makeUseCasesFake({
+        removeDeck: vi.fn(async () => {
+          throw new Error("deck remove refused");
+        }),
+      }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Remove deck" }));
+    expect(await screen.findByText("deck remove refused")).toBeInTheDocument();
+    expect(onDeckRemoved).not.toHaveBeenCalled();
+  });
+
+  it("links back to the deck", async () => {
+    renderContainer(makeUseCasesFake());
+    expect(
+      await screen.findByRole("link", { name: "Back to deck" }),
+    ).toHaveAttribute("href", "#/deck?deck=d");
   });
 });

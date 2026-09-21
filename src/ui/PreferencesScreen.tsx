@@ -6,13 +6,14 @@ export function PreferencesScreen({
   busy,
   error,
   onSave,
-  onBack,
+  decksHref,
 }: {
   preferences: StudyPreferences;
   busy: boolean;
   error: string | null;
   onSave: (preferences: StudyPreferences) => void;
-  onBack: () => void;
+  /** URL of the deck list, for "Back to decks". */
+  decksHref: string;
 }) {
   const [newCardsPerDay, setNewCardsPerDay] = useState(
     String(preferences.newCardsPerDay),
@@ -24,12 +25,17 @@ export function PreferencesScreen({
     String(preferences.dayBoundaryHour),
   );
 
+  const [developerMode, setDeveloperMode] = useState(
+    preferences.developerMode,
+  );
+
   function handleSubmit(event: Event) {
     event.preventDefault();
     onSave({
       newCardsPerDay: Number(newCardsPerDay),
       maxReviewsPerDay: Number(maxReviewsPerDay),
       dayBoundaryHour: Number(dayBoundaryHour),
+      developerMode,
     });
   }
 
@@ -37,9 +43,9 @@ export function PreferencesScreen({
     <section>
       <header>
         <h2>Study preferences</h2>
-        <button onClick={onBack} disabled={busy}>
+        <a class="button" href={decksHref}>
           Back to decks
-        </button>
+        </a>
       </header>
       <form onSubmit={handleSubmit}>
         <label for="pref-new">New cards per day</label>
@@ -73,6 +79,19 @@ export function PreferencesScreen({
           required
           disabled={busy}
         />
+        <fieldset>
+          <legend>Developer settings</legend>
+          <label>
+            <input
+              type="checkbox"
+              checked={developerMode}
+              onChange={(e) => setDeveloperMode(e.currentTarget.checked)}
+              disabled={busy}
+            />
+            Developer mode
+          </label>
+          <p class="hint">Shows your raw WebID document below the app.</p>
+        </fieldset>
         <button type="submit" disabled={busy}>
           Save
         </button>

@@ -4,12 +4,13 @@ export function DeckCreatorScreen({
   busy,
   error,
   onCreate,
-  onBack,
+  decksHref,
 }: {
   busy: boolean;
   error: string | null;
   onCreate: (name: string) => void;
-  onBack: () => void;
+  /** URL of the deck list, for "Back to decks". */
+  decksHref: string;
 }) {
   const [name, setName] = useState("");
 
@@ -22,9 +23,9 @@ export function DeckCreatorScreen({
     <section>
       <header>
         <h2>New deck</h2>
-        <button onClick={onBack} disabled={busy}>
+        <a class="button" href={decksHref}>
           Back to decks
-        </button>
+        </a>
       </header>
       <form onSubmit={handleSubmit}>
         <label for="deck-name">Name</label>

@@ -11,7 +11,7 @@ function renderScreen(
     busy: false,
     error: null,
     onSave: vi.fn(),
-    onBack: vi.fn(),
+    decksHref: "#/decks?instance=a",
     ...overrides,
   };
   const view = render(<PreferencesScreen {...props} />);
@@ -25,11 +25,32 @@ describe("PreferencesScreen", () => {
         newCardsPerDay: 10,
         maxReviewsPerDay: 50,
         dayBoundaryHour: 2,
+        developerMode: true,
       },
     });
     expect(screen.getByLabelText("New cards per day")).toHaveValue(10);
     expect(screen.getByLabelText("Max reviews per day")).toHaveValue(50);
     expect(screen.getByLabelText("Day starts at (hour)")).toHaveValue(2);
+    expect(screen.getByLabelText("Developer mode")).toBeChecked();
+  });
+
+  it("keeps developer mode off by default", () => {
+    renderScreen();
+    expect(screen.getByLabelText("Developer mode")).not.toBeChecked();
+  });
+
+  it("activates developer mode under Developer settings", () => {
+    const { props, container } = renderScreen();
+    expect(screen.getByRole("group", { name: "Developer settings" })).toContainElement(
+      screen.getByLabelText("Developer mode"),
+    );
+
+    fireEvent.click(screen.getByLabelText("Developer mode"));
+    fireEvent.submit(container.querySelector("form")!);
+    expect(props.onSave).toHaveBeenCalledWith({
+      ...DEFAULT_PREFERENCES,
+      developerMode: true,
+    });
   });
 
   it("saves the edited preferences as numbers", () => {
@@ -48,13 +69,16 @@ describe("PreferencesScreen", () => {
       newCardsPerDay: 15,
       maxReviewsPerDay: 120,
       dayBoundaryHour: 0,
+      developerMode: false,
     });
   });
 
-  it("navigates back", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Back to decks" }));
-    expect(props.onBack).toHaveBeenCalledOnce();
+  it("links back to the deck list", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Back to decks" })).toHaveAttribute(
+      "href",
+      "#/decks?instance=a",
+    );
   });
 
   it("shows busy state and errors", () => {

@@ -1,23 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
 import type { Deck } from "../domain/deck";
+import type { Instance } from "../domain/instance";
 import { DeckDetailScreen } from "./DeckDetailScreen";
 import { errorMessage } from "./errorMessage";
+import { deckHref, decksHref } from "./router";
 
-/** Owns the card count for one deck. */
+/** Owns the card count and today's study queue for one deck. */
 export function DeckDetailContainer({
   useCases,
+  instance,
   deck,
-  onBack,
-  onAddCard,
   onStudy,
   onPractice,
   onBrowse,
 }: {
   useCases: UseCases;
+  instance: Instance;
   deck: Deck;
-  onBack: () => void;
-  onAddCard: () => void;
   onStudy: () => void;
   onPractice: () => void;
   onBrowse: () => void;
@@ -27,10 +27,26 @@ export function DeckDetailContainer({
     queryFn: () => useCases.listCards(deck),
   });
 
-  if (cardsQuery.error) {
-    return <p class="error">{errorMessage(cardsQuery.error)}</p>;
+  // Shares its cache entry with PracticeContainer. Always refetched on
+  // mount and hidden while fetching: a queue cached before a session or
+  // before adding a card must never be shown as today's state.
+  const queueQuery = useQuery({
+    queryKey: ["studyQueue", deck.url],
+    queryFn: () => useCases.getStudyQueue(instance.url, deck, new Date()),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: "always",
+  });
+
+  const error = cardsQuery.error ?? queueQuery.error;
+  if (error) {
+    return <p class="error">{errorMessage(error)}</p>;
   }
-  if (cardsQuery.data === undefined) {
+  if (
+    cardsQuery.data === undefined ||
+    queueQuery.data === undefined ||
+    queueQuery.isFetching
+  ) {
     return <p>Loading cards…</p>;
   }
 
@@ -38,8 +54,10 @@ export function DeckDetailContainer({
     <DeckDetailScreen
       deck={deck}
       cardCount={cardsQuery.data.length}
-      onBack={onBack}
-      onAddCard={onAddCard}
+      dueCount={queueQuery.data.due.length}
+      newCount={queueQuery.data.newCards.length}
+      decksHref={decksHref(instance.url)}
+      deckHref={deckHref(instance.url, deck.url)}
       onStudy={onStudy}
       onPractice={onPractice}
       onBrowse={onBrowse}

@@ -24,12 +24,10 @@ function renderScreen(
 ) {
   const props = {
     decks: [deck, secondDeck],
-    busy: false,
-    error: null,
-    onOpen: vi.fn(),
+    decksHref: "#/decks?instance=a",
+    deckHref: (d: Deck) => `#/deck?deck=${d.id}`,
     onStudy: vi.fn(),
     onCreateDeck: vi.fn(),
-    onRemove: vi.fn(),
     ...overrides,
   };
   const view = render(<DeckListScreen {...props} />);
@@ -40,11 +38,16 @@ describe("DeckListScreen", () => {
   it("lists every deck under a Decks heading with a count", () => {
     renderScreen();
     expect(screen.getByRole("heading", { name: "Decks" })).toBeInTheDocument();
+    // Wherever the UI says "Decks", it links to the deck list.
+    expect(screen.getByRole("link", { name: "Decks" })).toHaveAttribute(
+      "href",
+      "#/decks?instance=a",
+    );
     expect(screen.getByText("2 decks")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Kanji N5" }),
+      screen.getByRole("link", { name: "Kanji N5" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Kana" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Kana" })).toBeInTheDocument();
   });
 
   it("uses the singular for one deck", () => {
@@ -57,35 +60,28 @@ describe("DeckListScreen", () => {
     expect(screen.getByText(/No decks yet/)).toBeInTheDocument();
   });
 
-  it("opens a deck", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Kanji N5" }));
-    expect(props.onOpen).toHaveBeenCalledWith(deck);
+  it("links each deck's name to that deck's page", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute(
+      "href",
+      "#/deck?deck=deck-1",
+    );
+    expect(screen.getByRole("link", { name: "Kana" })).toHaveAttribute(
+      "href",
+      "#/deck?deck=deck-2",
+    );
   });
 
   it("starts a study session for a deck", () => {
     const { props } = renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Study Kanji N5" }));
     expect(props.onStudy).toHaveBeenCalledWith(deck);
-    expect(props.onOpen).not.toHaveBeenCalled();
   });
 
-  it("removes a deck after confirmation", () => {
-    const confirm = vi.fn(() => true);
-    vi.stubGlobal("confirm", confirm);
-    const { props } = renderScreen();
-    fireEvent.click(screen.getAllByRole("button", { name: "Remove" })[0]);
-    expect(confirm).toHaveBeenCalledWith(
-      'Remove the deck "Kanji N5" and all its cards? This cannot be undone.',
-    );
-    expect(props.onRemove).toHaveBeenCalledWith(deck);
-  });
-
-  it("does not remove a deck when the confirmation is declined", () => {
-    vi.stubGlobal("confirm", vi.fn(() => false));
-    const { props } = renderScreen();
-    fireEvent.click(screen.getAllByRole("button", { name: "Remove" })[0]);
-    expect(props.onRemove).not.toHaveBeenCalled();
+  it("offers no editing: decks are renamed and removed in the Browser", () => {
+    renderScreen();
+    expect(screen.queryByRole("button", { name: /Remove/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Rename/ })).toBeNull();
   });
 
   it("navigates to the deck creator via a primary button", () => {
@@ -94,15 +90,5 @@ describe("DeckListScreen", () => {
     expect(button).toHaveClass("primary");
     fireEvent.click(button);
     expect(props.onCreateDeck).toHaveBeenCalledOnce();
-  });
-
-  it("disables controls while busy and shows errors", () => {
-    renderScreen({ busy: true, error: "deck failure" });
-    expect(screen.getByRole("button", { name: "Kanji N5" })).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "Study Kanji N5" }),
-    ).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Create deck" })).toBeDisabled();
-    expect(screen.getByText("deck failure")).toBeInTheDocument();
   });
 });

@@ -1,17 +1,35 @@
 import { useEffect, useState } from "preact/hooks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
+import { POD_PROVIDERS } from "../domain/podProvider";
 import type { Session } from "../domain/session";
 import illustrationUrl from "../assets/illustration.svg";
 import { errorMessage } from "./errorMessage";
-import { LoginForm } from "./LoginForm";
-import { WebIdDocumentView } from "./WebIdDocumentView";
+import { ExternalLink } from "./ExternalLink";
+import { Footer } from "./Footer";
+import { OnboardingFlow } from "./onboarding/OnboardingFlow";
+import { PodConnectionScreen } from "./onboarding/PodConnectionScreen";
 import { Workspace } from "./Workspace";
 
+/** The app in whichever state it is in, above the site-wide footer. */
 export function App({ useCases }: { useCases: UseCases }) {
+  return (
+    <>
+      <AppContent useCases={useCases} />
+      <Footer />
+    </>
+  );
+}
+
+function AppContent({ useCases }: { useCases: UseCases }) {
   const queryClient = useQueryClient();
   const [checkingSession, setCheckingSession] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
+  // True from a completed login redirect until the user leaves the "Pod
+  // connected" step. Silently restored sessions go straight to the app.
+  const [connecting, setConnecting] = useState(false);
+  // Someone who was logged in before skips the Pod-provider pitch.
+  const [returning, setReturning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -21,7 +39,11 @@ export function App({ useCases }: { useCases: UseCases }) {
   useEffect(() => {
     void (async () => {
       try {
-        setSession(await useCases.restoreSession());
+        const established = await useCases.restoreSession();
+        if (established !== null) {
+          setSession(established.session);
+          setConnecting(established.origin === "login");
+        }
       } catch (e) {
         setAuthError(errorMessage(e));
       } finally {
@@ -35,16 +57,20 @@ export function App({ useCases }: { useCases: UseCases }) {
   useEffect(() => {
     return useCases.onSessionExpired(() => {
       setSession(null);
+      setConnecting(false);
+      setReturning(true);
       setAuthError("Your session has expired. Please log in again.");
       queryClient.clear();
     });
   }, [useCases, queryClient]);
 
-  const documentQuery = useQuery({
-    queryKey: ["webIdDocument", session?.webId],
-    // enabled guarantees session is non-null when the queryFn runs.
-    queryFn: () => useCases.viewWebIdDocument(session!),
-    enabled: session !== null,
+  // Pod discovery for the onboarding step. No automatic retries: the
+  // step has its own "Try again".
+  const accountQuery = useQuery({
+    queryKey: ["account", session?.webId],
+    queryFn: () => useCases.discoverAccount(session!),
+    enabled: session !== null && connecting,
+    retry: false,
   });
 
   async function handleLogin(webId: string) {
@@ -61,6 +87,8 @@ export function App({ useCases }: { useCases: UseCases }) {
   async function handleLogout() {
     await useCases.logout();
     setSession(null);
+    setConnecting(false);
+    setReturning(true);
     setAuthError(null);
     // Cached Pod data belongs to the session that fetched it.
     queryClient.clear();
@@ -72,8 +100,7 @@ export function App({ useCases }: { useCases: UseCases }) {
 
   if (!session) {
     return (
-      <main>
-        <h1>Solid Memo</h1>
+      <main class="landing">
         <img
           class="hero"
           src={illustrationUrl}
@@ -81,15 +108,44 @@ export function App({ useCases }: { useCases: UseCases }) {
           width={640}
           height={427}
         />
-        <LoginForm busy={busy} onLogin={handleLogin} />
+        <h1>
+          <span class="wordmark">Solid Memo</span>
+        </h1>
+        <p class="tagline">
+          Spaced-repetition flashcards that live in your own Solid Pod.
+        </p>
+        <OnboardingFlow
+          providers={POD_PROVIDERS}
+          busy={busy}
+          returning={returning}
+          onLogin={handleLogin}
+        />
         {authError && <p class="error">{authError}</p>}
+      </main>
+    );
+  }
+
+  if (connecting) {
+    return (
+      <main class="landing">
+        <h1>
+          <span class="wordmark">Solid Memo</span>
+        </h1>
+        <PodConnectionScreen
+          account={accountQuery.data}
+          busy={accountQuery.isFetching}
+          error={errorMessage(accountQuery.error)}
+          onRetry={() => void accountQuery.refetch()}
+          onContinue={() => setConnecting(false)}
+          onLogout={handleLogout}
+        />
       </main>
     );
   }
 
   return (
     <main>
-      <header>
+      <header class="masthead">
         {/* An empty route: Workspace's default-route logic takes the
             user back to the start (deck list, or a picker). */}
         <a class="brand" href="#/">
@@ -101,23 +157,20 @@ export function App({ useCases }: { useCases: UseCases }) {
             height={40}
           />
         </a>
-        <h1>Solid Memo</h1>
+        <div class="masthead-title">
+          <h1>
+            {/* Like the logo: back to the root of the app. */}
+            <a class="wordmark" href="#/">
+              Solid Memo
+            </a>
+          </h1>
+          <p class="session-line">
+            Logged in as <ExternalLink url={session.webId} />
+          </p>
+        </div>
         <button onClick={handleLogout}>Log out</button>
       </header>
-      <p>
-        Logged in as <a href={session.webId}>{session.webId}</a>
-      </p>
       <Workspace useCases={useCases} session={session} />
-      <details>
-        <summary>WebID document</summary>
-        {documentQuery.isPending && <p>Loading profile…</p>}
-        {documentQuery.error && (
-          <p class="error">{errorMessage(documentQuery.error)}</p>
-        )}
-        {documentQuery.data && (
-          <WebIdDocumentView document={documentQuery.data} />
-        )}
-      </details>
     </main>
   );
 }

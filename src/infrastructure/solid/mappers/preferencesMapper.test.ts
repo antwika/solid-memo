@@ -12,11 +12,13 @@ describe("toPreferences", () => {
       .addInteger(SM.newCardsPerDay, 10)
       .addInteger(SM.maxReviewsPerDay, 50)
       .addInteger(SM.dayBoundaryHour, 2)
+      .addBoolean(SM.developerMode, true)
       .build();
     expect(toPreferences(thing)).toEqual({
       newCardsPerDay: 10,
       maxReviewsPerDay: 50,
       dayBoundaryHour: 2,
+      developerMode: true,
     });
   });
 
@@ -28,6 +30,7 @@ describe("toPreferences", () => {
       newCardsPerDay: 20,
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
+      developerMode: false,
     });
   });
 
@@ -40,6 +43,7 @@ describe("toPreferences", () => {
       newCardsPerDay: 10,
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
+      developerMode: false,
     });
   });
 });

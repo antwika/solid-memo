@@ -30,7 +30,12 @@ function renderContainer(useCases: UseCases) {
   const onBack = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
-      <CardCreatorContainer useCases={useCases} deck={deck} onBack={onBack} />
+      <CardCreatorContainer
+        useCases={useCases}
+        deck={deck}
+        deckHref="#/deck?deck=d"
+        onBack={onBack}
+      />
     </QueryClientProvider>,
   );
   return { onBack };

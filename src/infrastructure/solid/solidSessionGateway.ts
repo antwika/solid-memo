@@ -1,10 +1,14 @@
 import {
+  EVENTS,
+  events,
   handleIncomingRedirect,
   login,
   logout,
 } from "@inrupt/solid-client-authn-browser";
 import { getIriAll, getSolidDataset, getThing } from "@inrupt/solid-client";
 import type { SessionGateway } from "../../application/ports";
+import type { SessionOrigin } from "../../domain/session";
+import { isSecureUrl } from "../../domain/webId";
 import { SESSION_EXPIRED_EVENT } from "./authFetch";
 
 const SOLID_OIDC_ISSUER = "http://www.w3.org/ns/solid/terms#oidcIssuer";
@@ -12,6 +16,8 @@ const SOLID_OIDC_ISSUER = "http://www.w3.org/ns/solid/terms#oidcIssuer";
 /**
  * Dereference a WebID (unauthenticated) and read the solid:oidcIssuer
  * triple from the profile so the user only needs to type their WebID.
+ * The issuer is never guessed from the WebID's origin, and only an
+ * https issuer is accepted: the browser is about to be sent there.
  */
 async function discoverOidcIssuer(webId: string): Promise<string> {
   const dataset = await getSolidDataset(webId);
@@ -25,20 +31,39 @@ async function discoverOidcIssuer(webId: string): Promise<string> {
       `The WebID document does not declare a solid:oidcIssuer for <${webId}>.`,
     );
   }
-  return issuers[0];
+  const issuer = issuers.find(isSecureUrl);
+  if (issuer === undefined) {
+    throw new Error(
+      `The solid:oidcIssuer declared for <${webId}> is not a valid https:// URL.`,
+    );
+  }
+  return issuer;
 }
 
 export function createSolidSessionGateway(clientName: string): SessionGateway {
   return {
     async restore() {
-      const info = await handleIncomingRedirect({
-        restorePreviousSession: true,
-      });
-      if (info?.isLoggedIn && info.webId) {
-        return { webId: info.webId };
+      // The library emits LOGIN only when a login redirect completes; a
+      // silently restored session emits SESSION_RESTORED instead.
+      let origin: SessionOrigin = "restored";
+      const onLogin = () => {
+        origin = "login";
+      };
+      events().on(EVENTS.LOGIN, onLogin);
+      try {
+        const info = await handleIncomingRedirect({
+          restorePreviousSession: true,
+        });
+        if (info?.isLoggedIn && info.webId) {
+          return { session: { webId: info.webId }, origin };
+        }
+        return null;
+      } finally {
+        events().off(EVENTS.LOGIN, onLogin);
       }
-      return null;
     },
+
+    discoverOidcIssuer,
 
     async login(webId) {
       const issuer = await discoverOidcIssuer(webId);

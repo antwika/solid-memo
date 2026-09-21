@@ -1,3 +1,4 @@
+import type { SolidAccount } from "../domain/account";
 import type { Card, Deck } from "../domain/deck";
 import type {
   Instance,
@@ -14,9 +15,10 @@ import {
   nextDueDate,
   type StudyQueue,
 } from "../domain/scheduling";
-import type { Session } from "../domain/session";
+import type { EstablishedSession, Session } from "../domain/session";
 import { applySm2, INITIAL_SM2_STATE } from "../domain/sm2";
 import type { Storage } from "../domain/storage";
+import { validateWebId } from "../domain/webId";
 import type { WebIdDocument } from "../domain/webIdDocument";
 import type {
   DeckRepository,
@@ -29,11 +31,17 @@ import type {
 } from "./ports";
 
 export interface UseCases {
-  restoreSession(): Promise<Session | null>;
+  restoreSession(): Promise<EstablishedSession | null>;
+  /** Rejects, without any network request, unless the WebID is an https URL. */
   loginWithWebId(webId: string): Promise<void>;
   logout(): Promise<void>;
   /** Subscribe to session expiry; returns an unsubscribe function. */
   onSessionExpired(listener: () => void): () => void;
+  /**
+   * The account behind a session: its Pod, discovered through the WebID
+   * profile's storage link, and its identity provider.
+   */
+  discoverAccount(session: Session): Promise<SolidAccount>;
   viewWebIdDocument(session: Session): Promise<WebIdDocument>;
   listStorages(session: Session): Promise<Storage[]>;
   addManualStorage(url: string): Promise<Storage>;
@@ -54,6 +62,7 @@ export interface UseCases {
   ): Promise<Instance>;
   listDecks(instanceUrl: string): Promise<Deck[]>;
   createDeck(instanceUrl: string, name: string): Promise<Deck>;
+  renameDeck(deck: Deck, name: string): Promise<Deck>;
   removeDeck(deck: Deck): Promise<void>;
   listCards(deck: Deck): Promise<Card[]>;
   addCard(deck: Deck, front: string, back: string): Promise<Card>;
@@ -119,14 +128,28 @@ export function createUseCases({
     restoreSession() {
       return sessionGateway.restore();
     },
-    loginWithWebId(webId) {
-      return sessionGateway.login(webId.trim());
+    async loginWithWebId(webId) {
+      const validation = validateWebId(webId);
+      if (!validation.ok) {
+        throw new Error(validation.error);
+      }
+      return sessionGateway.login(validation.webId);
     },
     logout() {
       return sessionGateway.logout();
     },
     onSessionExpired(listener) {
       return sessionGateway.onSessionExpired(listener);
+    },
+    async discoverAccount(session) {
+      const [storages, oidcIssuer] = await Promise.all([
+        storageGateway.discoverStorages(session.webId),
+        // Informational only: the Pod matters, the issuer is a nicety.
+        sessionGateway
+          .discoverOidcIssuer(session.webId)
+          .catch(() => undefined),
+      ]);
+      return { webId: session.webId, podUrl: storages[0]?.url, oidcIssuer };
     },
     viewWebIdDocument(session) {
       return webIdDocumentRepository.fetchWebIdDocument(session.webId);
@@ -163,6 +186,9 @@ export function createUseCases({
     },
     createDeck(instanceUrl, name) {
       return deckRepository.createDeck(instanceUrl, name.trim());
+    },
+    renameDeck(deck, name) {
+      return deckRepository.renameDeck(deck, name.trim());
     },
     removeDeck(deck) {
       return deckRepository.removeDeck(deck);

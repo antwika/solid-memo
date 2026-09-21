@@ -20,6 +20,7 @@ export const SM = {
   newCardsPerDay: `${SM_NS}newCardsPerDay`,
   maxReviewsPerDay: `${SM_NS}maxReviewsPerDay`,
   dayBoundaryHour: `${SM_NS}dayBoundaryHour`,
+  developerMode: `${SM_NS}developerMode`,
 } as const;
 
 const SOLID_NS = "http://www.w3.org/ns/solid/terms#";

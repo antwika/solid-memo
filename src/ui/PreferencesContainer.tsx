@@ -4,6 +4,7 @@ import type { Instance } from "../domain/instance";
 import type { StudyPreferences } from "../domain/preferences";
 import { errorMessage } from "./errorMessage";
 import { PreferencesScreen } from "./PreferencesScreen";
+import { decksHref } from "./router";
 
 /** Owns the preferences query/mutation for one instance. */
 export function PreferencesContainer({
@@ -47,7 +48,7 @@ export function PreferencesContainer({
       busy={saveMutation.isPending}
       error={errorMessage(saveMutation.error)}
       onSave={(preferences) => saveMutation.mutate(preferences)}
-      onBack={onBack}
+      decksHref={decksHref(instance.url)}
     />
   );
 }

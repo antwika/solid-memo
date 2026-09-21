@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/preact";
+import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DeckDetailContainer } from "./DeckDetailContainer";
 import type { UseCases } from "../application/useCases";
 import type { Card, Deck } from "../domain/deck";
+import type { Instance } from "../domain/instance";
+import type { StudyQueue } from "../domain/scheduling";
 import { makeUseCasesFake } from "../test/useCasesFake";
+import { decksHref } from "./router";
 
 const deck: Deck = {
   id: "deck-1",
@@ -13,6 +16,11 @@ const deck: Deck = {
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
   createdAt: "2026-09-21T10:00:00.000Z",
+};
+
+const instance: Instance = {
+  url: "https://pod.example/solid-memo/a/",
+  name: "A",
 };
 
 const card: Card = {
@@ -27,8 +35,6 @@ function renderContainer(useCases: UseCases) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const onBack = vi.fn();
-  const onAddCard = vi.fn();
   const onStudy = vi.fn();
   const onPractice = vi.fn();
   const onBrowse = vi.fn();
@@ -36,16 +42,15 @@ function renderContainer(useCases: UseCases) {
     <QueryClientProvider client={queryClient}>
       <DeckDetailContainer
         useCases={useCases}
+        instance={instance}
         deck={deck}
-        onBack={onBack}
-        onAddCard={onAddCard}
         onStudy={onStudy}
         onPractice={onPractice}
         onBrowse={onBrowse}
       />
     </QueryClientProvider>,
   );
-  return { onBack, onAddCard, onStudy, onPractice, onBrowse };
+  return { onStudy, onPractice, onBrowse };
 }
 
 describe("DeckDetailContainer", () => {
@@ -55,6 +60,48 @@ describe("DeckDetailContainer", () => {
     expect(
       await screen.findByText(/1 card in this deck/),
     ).toBeInTheDocument();
+  });
+
+  it("keeps loading until today's study queue is known", async () => {
+    renderContainer(
+      makeUseCasesFake({
+        listCards: vi.fn(async () => [card]),
+        getStudyQueue: vi.fn(() => new Promise<StudyQueue>(() => {})),
+      }),
+    );
+    await waitFor(() => {
+      expect(screen.getByText("Loading cards…")).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/1 card in this deck/)).toBeNull();
+  });
+
+  it("says all cards are studied when today's queue is empty", async () => {
+    const useCases = makeUseCasesFake({
+      listCards: vi.fn(async () => [card]),
+      getStudyQueue: vi.fn(async () => ({ due: [], newCards: [] })),
+    });
+    renderContainer(useCases);
+    expect(
+      await screen.findByText(
+        "All cards have been studied — nothing more to study today.",
+      ),
+    ).toBeInTheDocument();
+    expect(useCases.getStudyQueue).toHaveBeenCalledWith(
+      instance.url,
+      deck,
+      expect.any(Date),
+    );
+  });
+
+  it("shows an error when the study queue fails", async () => {
+    renderContainer(
+      makeUseCasesFake({
+        getStudyQueue: vi.fn(async () => {
+          throw new Error("reviews unreachable");
+        }),
+      }),
+    );
+    expect(await screen.findByText("reviews unreachable")).toBeInTheDocument();
   });
 
   it("shows an error when listing cards fails", async () => {
@@ -69,14 +116,16 @@ describe("DeckDetailContainer", () => {
   });
 
   it("forwards the navigation callbacks", async () => {
-    const { onBack, onAddCard, onStudy, onPractice, onBrowse } =
-      renderContainer(makeUseCasesFake());
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Back to decks" }),
-    );
-    expect(onBack).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("button", { name: "Add card" }));
-    expect(onAddCard).toHaveBeenCalledOnce();
+    const { onStudy, onPractice, onBrowse } =
+      renderContainer(
+        makeUseCasesFake({
+          listCards: vi.fn(async () => [card]),
+          getStudyQueue: vi.fn(async () => ({ due: [card], newCards: [] })),
+        }),
+      );
+    expect(
+      await screen.findByRole("link", { name: "Back to decks" }),
+    ).toHaveAttribute("href", decksHref(instance.url));
     fireEvent.click(screen.getByRole("button", { name: "Study" }));
     expect(onStudy).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("button", { name: "Practice" }));

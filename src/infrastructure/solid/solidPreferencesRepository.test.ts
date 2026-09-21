@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildThing,
   createThing,
+  getBoolean,
   getInteger,
   getThing,
   mockSolidDatasetFrom,
@@ -60,6 +61,7 @@ describe("getPreferences", () => {
           .addInteger(SM.newCardsPerDay, 5)
           .addInteger(SM.maxReviewsPerDay, 42)
           .addInteger(SM.dayBoundaryHour, 3)
+          .addBoolean(SM.developerMode, true)
           .build(),
       ),
     );
@@ -67,6 +69,7 @@ describe("getPreferences", () => {
       newCardsPerDay: 5,
       maxReviewsPerDay: 42,
       dayBoundaryHour: 3,
+      developerMode: true,
     });
   });
 });
@@ -76,6 +79,7 @@ describe("savePreferences", () => {
     newCardsPerDay: 5,
     maxReviewsPerDay: 42,
     dayBoundaryHour: 3,
+    developerMode: true,
   };
 
   it("creates the document on first save", async () => {
@@ -89,6 +93,7 @@ describe("savePreferences", () => {
     expect(getInteger(thing, SM.newCardsPerDay)).toBe(5);
     expect(getInteger(thing, SM.maxReviewsPerDay)).toBe(42);
     expect(getInteger(thing, SM.dayBoundaryHour)).toBe(3);
+    expect(getBoolean(thing, SM.developerMode)).toBe(true);
   });
 
   it("replaces the subject in an existing document", async () => {

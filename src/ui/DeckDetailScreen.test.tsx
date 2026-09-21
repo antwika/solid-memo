@@ -17,9 +17,11 @@ function renderScreen(
 ) {
   const props = {
     deck,
+    deckHref: "#/deck?deck=d",
     cardCount: 3,
-    onBack: vi.fn(),
-    onAddCard: vi.fn(),
+    dueCount: 2,
+    newCount: 1,
+    decksHref: "#/decks?instance=a",
     onStudy: vi.fn(),
     onPractice: vi.fn(),
     onBrowse: vi.fn(),
@@ -30,6 +32,14 @@ function renderScreen(
 }
 
 describe("DeckDetailScreen", () => {
+  it("links the deck's name to the deck's page", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute(
+      "href",
+      "#/deck?deck=d",
+    );
+  });
+
   it("shows the deck name and card count", () => {
     renderScreen();
     expect(
@@ -51,15 +61,55 @@ describe("DeckDetailScreen", () => {
     expect(screen.getByRole("button", { name: "Practice" })).not.toHaveClass(
       "primary",
     );
-    expect(screen.getByRole("button", { name: "Add card" })).not.toHaveClass(
-      "primary",
-    );
   });
 
-  it("goes back to the deck list", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Back to decks" }));
-    expect(props.onBack).toHaveBeenCalledOnce();
+  it("says so, without offering a session, when everything is studied", () => {
+    renderScreen({ dueCount: 0, newCount: 0 });
+    expect(
+      screen.getByText(
+        "All cards have been studied — nothing more to study today.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Study" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Practice" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not claim an empty deck has been studied", () => {
+    renderScreen({ cardCount: 0, dueCount: 0, newCount: 0 });
+    expect(
+      screen.getByText("This deck has no cards yet. Add some in the Browser."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/All cards have been studied/)).toBeNull();
+  });
+
+  it("offers only Practice, as the primary action, when nothing is due but new cards remain", () => {
+    renderScreen({ dueCount: 0, newCount: 2 });
+    expect(
+      screen.queryByRole("button", { name: "Study" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Practice" })).toHaveClass(
+      "primary",
+    );
+    expect(screen.getByText(/No cards are due today/)).toBeInTheDocument();
+    expect(screen.queryByText(/All cards have been studied/)).toBeNull();
+  });
+
+  it("shows no status message while cards are due", () => {
+    renderScreen();
+    expect(screen.queryByText(/All cards have been studied/)).toBeNull();
+    expect(screen.queryByText(/No cards are due today/)).toBeNull();
+  });
+
+  it("links back to the deck list", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Back to decks" })).toHaveAttribute(
+      "href",
+      "#/decks?instance=a",
+    );
   });
 
   it("starts a practice session", () => {
@@ -80,9 +130,11 @@ describe("DeckDetailScreen", () => {
     expect(props.onBrowse).toHaveBeenCalledOnce();
   });
 
-  it("navigates to the card creator", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Add card" }));
-    expect(props.onAddCard).toHaveBeenCalledOnce();
+  it("offers no editing: cards are added and edited in the Browser", () => {
+    renderScreen();
+    expect(screen.queryByRole("button", { name: "Add card" })).toBeNull();
+    expect(
+      screen.getByText(/Add, edit or remove cards in the Browser/),
+    ).toBeInTheDocument();
   });
 });

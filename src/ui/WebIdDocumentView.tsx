@@ -3,6 +3,7 @@ import type {
   Subject,
   WebIdDocument,
 } from "../domain/webIdDocument";
+import { ExternalLink } from "./ExternalLink";
 
 export function WebIdDocumentView({ document }: { document: WebIdDocument }) {
   return (
@@ -18,12 +19,16 @@ export function WebIdDocumentView({ document }: { document: WebIdDocument }) {
 function SubjectView({ subject }: { subject: Subject }) {
   return (
     <section class="thing">
-      <h3>{subject.url}</h3>
+      <h3>
+        <ExternalLink url={subject.url} />
+      </h3>
       <table>
         <tbody>
           {subject.properties.map((property) => (
             <tr key={property.predicate}>
-              <th scope="row">{property.predicate}</th>
+              <th scope="row">
+                <ExternalLink url={property.predicate} />
+              </th>
               <td>
                 <ul>
                   {property.values.map((value) => (
@@ -43,7 +48,7 @@ function SubjectView({ subject }: { subject: Subject }) {
 
 function ValueView({ value }: { value: PropertyValue }) {
   if (value.type === "iri") {
-    return <a href={value.value}>{value.value}</a>;
+    return <ExternalLink url={value.value} />;
   }
   return <>{formatValue(value)}</>;
 }

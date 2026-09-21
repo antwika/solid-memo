@@ -43,7 +43,8 @@ flowchart LR
 <storage>solid-memo/<name>/          (default path; user-editable)
 ├── meta.ttl        #it: a sm:Instance; dcterms:title; dcterms:created;
 │                        sm:formatVersion 1
-├── preferences.ttl #it: a sm:Preferences (created on first explicit save)
+├── preferences.ttl #it: a sm:Preferences (created on first explicit save):
+│                        study caps + sm:developerMode (boolean, absent = off)
 ├── catalog.ttl     one subject per deck (titles live ONLY here)
 ├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn)
 └── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per fragment (fast churn)

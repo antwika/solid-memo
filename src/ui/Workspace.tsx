@@ -3,7 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
 import type { Instance, RegistrationTarget } from "../domain/instance";
 import type { Session } from "../domain/session";
+import { Breadcrumbs, breadcrumbsFor } from "./Breadcrumbs";
 import { BrowserContainer } from "./BrowserContainer";
+import { CardContainer } from "./CardContainer";
 import { CardCreatorContainer } from "./CardCreatorContainer";
 import { DeckCreatorContainer } from "./DeckCreatorContainer";
 import { DeckDetailContainer } from "./DeckDetailContainer";
@@ -15,7 +17,8 @@ import { InstancePicker } from "./InstancePicker";
 import { PracticeContainer } from "./PracticeContainer";
 import { PreferencesContainer } from "./PreferencesContainer";
 import { StoragePicker } from "./StoragePicker";
-import { useHashRoute } from "./router";
+import { deckHref, routeToHash, useHashRoute } from "./router";
+import { WebIdDocumentContainer } from "./WebIdDocumentContainer";
 
 export function Workspace({
   useCases,
@@ -93,6 +96,42 @@ export function Workspace({
       replace({ screen: "home", instanceUrl: instanceUrl! });
     }
   }, [needsDeck, decksQuery.data, deckUrl, instanceUrl]);
+
+  // A card page names its card by URL; resolve it from the deck's cards
+  // (the cache entry the Browser and the card page's saves share).
+  const cardUrl = route?.screen === "card" ? route.cardUrl : null;
+  const needsCard = cardUrl !== null && activeDeck !== null;
+  const cardsQuery = useQuery({
+    queryKey: ["cards", activeDeck?.cardsDocumentUrl],
+    queryFn: () => useCases.listCards(activeDeck!),
+    enabled: needsCard,
+  });
+  const activeCard = needsCard
+    ? (cardsQuery.data?.find((c) => c.url === cardUrl) ?? null)
+    : null;
+
+  // A deep link naming an unknown card (or a card just removed) falls
+  // back to the deck's Browser.
+  useEffect(() => {
+    if (!needsCard || cardsQuery.data === undefined) return;
+    if (!cardsQuery.data.some((c) => c.url === cardUrl)) {
+      replace({
+        screen: "browser",
+        instanceUrl: instanceUrl!,
+        deckUrl: deckUrl!,
+      });
+    }
+  }, [needsCard, cardsQuery.data, cardUrl, instanceUrl, deckUrl]);
+
+  // Developer settings are a per-instance preference. Shares the cache
+  // entry PreferencesContainer invalidates on save, so toggling takes
+  // effect immediately. A failed read just leaves developer tools hidden.
+  const preferencesQuery = useQuery({
+    queryKey: ["preferences", instanceUrl],
+    queryFn: () => useCases.getPreferences(instanceUrl!),
+    enabled: activeInstance !== null,
+  });
+  const developerMode = preferencesQuery.data?.developerMode === true;
 
   const storagesQuery = useQuery({
     queryKey: ["storages", webId],
@@ -179,6 +218,16 @@ export function Workspace({
       return <p>Loading deck…</p>;
     }
   }
+  if (needsCard) {
+    if (cardsQuery.error) {
+      return <p class="error">{errorMessage(cardsQuery.error)}</p>;
+    }
+    // Still loading, or unknown: the redirect effect is about to replace
+    // the route.
+    if (activeCard === null) {
+      return <p>Loading card…</p>;
+    }
+  }
 
   const screen = (() => {
     switch (route.screen) {
@@ -238,13 +287,6 @@ export function Workspace({
           <DeckListContainer
             useCases={useCases}
             instance={activeInstance!}
-            onOpenDeck={(deck) =>
-              navigate({
-                screen: "deckDetail",
-                instanceUrl: instanceUrl!,
-                deckUrl: deck.url,
-              })
-            }
             onStudyDeck={(deck) =>
               navigate({
                 screen: "practice",
@@ -258,34 +300,22 @@ export function Workspace({
             }
           />
         );
-      case "deckCreator": {
-        const backHome = () =>
-          navigate({ screen: "home", instanceUrl: instanceUrl! });
+      case "deckCreator":
         return (
           <DeckCreatorContainer
             useCases={useCases}
             instance={activeInstance!}
-            onDone={backHome}
-            onBack={backHome}
+            onDone={() =>
+              navigate({ screen: "home", instanceUrl: instanceUrl! })
+            }
           />
         );
-      }
       case "deckDetail":
         return (
           <DeckDetailContainer
             useCases={useCases}
+            instance={activeInstance!}
             deck={activeDeck!}
-            onBack={() =>
-              navigate({ screen: "home", instanceUrl: instanceUrl! })
-            }
-            onAddCard={() =>
-              navigate({
-                screen: "cardCreator",
-                instanceUrl: instanceUrl!,
-                deckUrl: deckUrl!,
-                returnTo: "deckDetail",
-              })
-            }
             onStudy={() =>
               navigate({
                 screen: "practice",
@@ -316,20 +346,25 @@ export function Workspace({
           <BrowserContainer
             useCases={useCases}
             deck={activeDeck!}
-            onBack={() =>
-              navigate({
-                screen: "deckDetail",
-                instanceUrl: instanceUrl!,
-                deckUrl: deckUrl!,
-              })
-            }
+            deckHref={deckHref(instanceUrl!, deckUrl!)}
             onAddCard={() =>
               navigate({
                 screen: "cardCreator",
                 instanceUrl: instanceUrl!,
                 deckUrl: deckUrl!,
-                returnTo: "browser",
               })
+            }
+            cardHref={(card) =>
+              routeToHash({
+                screen: "card",
+                instanceUrl: instanceUrl!,
+                deckUrl: deckUrl!,
+                cardUrl: card.url,
+              })
+            }
+            // Replace: the removed deck's Browser must not be a Back stop.
+            onDeckRemoved={() =>
+              replace({ screen: "home", instanceUrl: instanceUrl! })
             }
           />
         );
@@ -338,15 +373,35 @@ export function Workspace({
           <CardCreatorContainer
             useCases={useCases}
             deck={activeDeck!}
+            deckHref={deckHref(instanceUrl!, deckUrl!)}
             onBack={() =>
               navigate({
-                screen: route.returnTo,
+                screen: "browser",
                 instanceUrl: instanceUrl!,
                 deckUrl: deckUrl!,
               })
             }
           />
         );
+      case "card": {
+        const browser = {
+          screen: "browser",
+          instanceUrl: instanceUrl!,
+          deckUrl: deckUrl!,
+        } as const;
+        return (
+          <CardContainer
+            // Keyed by card: the form's draft must not leak between cards.
+            key={activeCard!.url}
+            useCases={useCases}
+            deck={activeDeck!}
+            card={activeCard!}
+            browserHref={routeToHash(browser)}
+            // Replace: the removed card's page must not be a Back stop.
+            onRemoved={() => replace(browser)}
+          />
+        );
+      }
       case "practice":
         return (
           <PracticeContainer
@@ -387,7 +442,16 @@ export function Workspace({
           }
         />
       )}
+      <Breadcrumbs
+        crumbs={breadcrumbsFor(route, {
+          deck: activeDeck?.name ?? "",
+          card: activeCard?.front ?? "",
+        })}
+      />
       {screen}
+      {developerMode && (
+        <WebIdDocumentContainer useCases={useCases} session={session} />
+      )}
     </>
   );
 }

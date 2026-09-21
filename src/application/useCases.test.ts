@@ -43,7 +43,8 @@ const card: Card = {
 
 function makeDeps() {
   const sessionGateway: SessionGateway = {
-    restore: vi.fn(async () => session),
+    restore: vi.fn(async () => ({ session, origin: "login" as const })),
+    discoverOidcIssuer: vi.fn(async () => "https://issuer.example"),
     login: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     onSessionExpired: vi.fn(() => () => undefined),
@@ -67,6 +68,7 @@ function makeDeps() {
   const deckRepository: DeckRepository = {
     listDecks: vi.fn(async () => [deck]),
     createDeck: vi.fn(async () => deck),
+    renameDeck: vi.fn(async () => deck),
     removeDeck: vi.fn(async () => undefined),
     listCards: vi.fn(async () => [card]),
     addCard: vi.fn(async () => card),
@@ -97,7 +99,10 @@ describe("createUseCases", () => {
   it("restoreSession delegates to the session gateway", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
-    await expect(useCases.restoreSession()).resolves.toEqual(session);
+    await expect(useCases.restoreSession()).resolves.toEqual({
+      session,
+      origin: "login",
+    });
     expect(deps.sessionGateway.restore).toHaveBeenCalledOnce();
   });
 
@@ -107,6 +112,63 @@ describe("createUseCases", () => {
     await useCases.loginWithWebId("  https://alice.example/profile/card#me ");
     expect(deps.sessionGateway.login).toHaveBeenCalledWith(
       "https://alice.example/profile/card#me",
+    );
+  });
+
+  it("loginWithWebId rejects an invalid WebID without contacting the gateway", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await expect(
+      useCases.loginWithWebId("http://alice.example/profile/card#me"),
+    ).rejects.toThrow("A WebID must start with https://.");
+    expect(deps.sessionGateway.login).not.toHaveBeenCalled();
+  });
+
+  it("discoverAccount combines the first storage with the profile's issuer", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await expect(useCases.discoverAccount(session)).resolves.toEqual({
+      webId: session.webId,
+      podUrl: storage.url,
+      oidcIssuer: "https://issuer.example",
+    });
+    expect(deps.storageGateway.discoverStorages).toHaveBeenCalledWith(
+      session.webId,
+    );
+    expect(deps.sessionGateway.discoverOidcIssuer).toHaveBeenCalledWith(
+      session.webId,
+    );
+  });
+
+  it("discoverAccount leaves the Pod out when no storage is advertised", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.storageGateway.discoverStorages).mockResolvedValue([]);
+    const useCases = createUseCases(deps);
+    const account = await useCases.discoverAccount(session);
+    expect(account.podUrl).toBeUndefined();
+  });
+
+  it("discoverAccount tolerates a failed issuer lookup", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.sessionGateway.discoverOidcIssuer).mockRejectedValue(
+      new Error("no issuer"),
+    );
+    const useCases = createUseCases(deps);
+    await expect(useCases.discoverAccount(session)).resolves.toEqual({
+      webId: session.webId,
+      podUrl: storage.url,
+      oidcIssuer: undefined,
+    });
+  });
+
+  it("discoverAccount fails when storage discovery fails", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.storageGateway.discoverStorages).mockRejectedValue(
+      new Error("profile unreachable"),
+    );
+    const useCases = createUseCases(deps);
+    await expect(useCases.discoverAccount(session)).rejects.toThrow(
+      "profile unreachable",
     );
   });
 
@@ -224,6 +286,12 @@ describe("createUseCases", () => {
       "Kanji N5",
     );
 
+    await useCases.renameDeck(deck, " Kanji N4 ");
+    expect(deps.deckRepository.renameDeck).toHaveBeenCalledWith(
+      deck,
+      "Kanji N4",
+    );
+
     await useCases.removeDeck(deck);
     expect(deps.deckRepository.removeDeck).toHaveBeenCalledWith(deck);
 
@@ -256,6 +324,7 @@ describe("createUseCases", () => {
       newCardsPerDay: 20,
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
+      developerMode: false,
     });
   });
 
@@ -265,6 +334,7 @@ describe("createUseCases", () => {
       newCardsPerDay: 5,
       maxReviewsPerDay: 50,
       dayBoundaryHour: 0,
+      developerMode: true,
     };
     vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue(
       stored,
@@ -282,6 +352,7 @@ describe("createUseCases", () => {
       newCardsPerDay: 5,
       maxReviewsPerDay: 50,
       dayBoundaryHour: 0,
+      developerMode: true,
     };
     await useCases.savePreferences(instance.url, preferences);
     expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledWith(

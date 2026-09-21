@@ -66,6 +66,22 @@ export function createSolidDeckRepository({
       return deck;
     },
 
+    async renameDeck(deck, name): Promise<Deck> {
+      const catalogUrl = documentUrlOf(deck.url);
+      const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
+      const thing = dataset === null ? null : getThing(dataset, deck.url);
+      if (dataset === null || thing === null) {
+        throw new Error(`The deck <${deck.name}> no longer exists.`);
+      }
+      // Edit the existing subject in place so unknown triples survive.
+      const updated = setThing(
+        dataset,
+        buildThing(thing).setStringNoLocale(DCTERMS.title, name).build(),
+      );
+      await saveSolidDatasetAt(catalogUrl, updated, { fetch });
+      return { ...deck, name };
+    },
+
     async removeDeck(deck): Promise<void> {
       await deleteDocumentIfPresent(deck.cardsDocumentUrl, fetch);
       await deleteDocumentIfPresent(deck.reviewsDocumentUrl, fetch);

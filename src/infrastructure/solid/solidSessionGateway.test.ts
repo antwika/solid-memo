@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  EVENTS,
+  events,
   handleIncomingRedirect,
   login as authnLogin,
   logout as authnLogout,
@@ -13,23 +15,66 @@ vi.mock("@inrupt/solid-client");
 
 const WEBID = "https://alice.example/profile/card#me";
 
+/** Minimal stand-in for the default session's event emitter. */
+function makeEmitter() {
+  const listeners = new Map<string, Set<() => void>>();
+  return {
+    on: vi.fn((event: string, listener: () => void) => {
+      listeners.set(event, (listeners.get(event) ?? new Set()).add(listener));
+    }),
+    off: vi.fn((event: string, listener: () => void) => {
+      listeners.get(event)?.delete(listener);
+    }),
+    emit(event: string) {
+      listeners.get(event)?.forEach((listener) => listener());
+    },
+    count: (event: string) => listeners.get(event)?.size ?? 0,
+  };
+}
+
 describe("createSolidSessionGateway", () => {
+  let emitter: ReturnType<typeof makeEmitter>;
+
   beforeEach(() => {
     vi.resetAllMocks();
+    emitter = makeEmitter();
+    vi.mocked(events).mockReturnValue(emitter as never);
   });
 
   describe("restore", () => {
-    it("returns a session when the redirect yields a logged-in WebID", async () => {
+    it("returns a restored session when no login redirect completed", async () => {
       vi.mocked(handleIncomingRedirect).mockResolvedValue({
         isLoggedIn: true,
         webId: WEBID,
         sessionId: "s",
       });
       const gateway = createSolidSessionGateway("Test App");
-      await expect(gateway.restore()).resolves.toEqual({ webId: WEBID });
+      await expect(gateway.restore()).resolves.toEqual({
+        session: { webId: WEBID },
+        origin: "restored",
+      });
       expect(handleIncomingRedirect).toHaveBeenCalledWith({
         restorePreviousSession: true,
       });
+    });
+
+    it("reports a login when the library announces one", async () => {
+      vi.mocked(handleIncomingRedirect).mockImplementation(async () => {
+        emitter.emit(EVENTS.LOGIN);
+        return { isLoggedIn: true, webId: WEBID, sessionId: "s" };
+      });
+      const gateway = createSolidSessionGateway("Test App");
+      await expect(gateway.restore()).resolves.toEqual({
+        session: { webId: WEBID },
+        origin: "login",
+      });
+    });
+
+    it("stops listening for logins afterwards, even on failure", async () => {
+      vi.mocked(handleIncomingRedirect).mockRejectedValue(new Error("boom"));
+      const gateway = createSolidSessionGateway("Test App");
+      await expect(gateway.restore()).rejects.toThrow("boom");
+      expect(emitter.count(EVENTS.LOGIN)).toBe(0);
     });
 
     it("returns null when there is no session info", async () => {
@@ -100,6 +145,45 @@ describe("createSolidSessionGateway", () => {
       const gateway = createSolidSessionGateway("Test App");
       await expect(gateway.login(WEBID)).rejects.toThrow(
         "does not declare a solid:oidcIssuer",
+      );
+      expect(authnLogin).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("discoverOidcIssuer", () => {
+    it("returns the issuer declared in the profile, not the WebID origin", async () => {
+      vi.mocked(getSolidDataset).mockResolvedValue({} as never);
+      vi.mocked(getThing).mockReturnValue({} as never);
+      vi.mocked(getIriAll).mockReturnValue(["https://idp.elsewhere.example"]);
+
+      const gateway = createSolidSessionGateway("Test App");
+      await expect(gateway.discoverOidcIssuer(WEBID)).resolves.toBe(
+        "https://idp.elsewhere.example",
+      );
+    });
+
+    it("skips issuers that are not https URLs", async () => {
+      vi.mocked(getSolidDataset).mockResolvedValue({} as never);
+      vi.mocked(getThing).mockReturnValue({} as never);
+      vi.mocked(getIriAll).mockReturnValue([
+        "http://insecure.example",
+        "https://issuer.example",
+      ]);
+
+      const gateway = createSolidSessionGateway("Test App");
+      await expect(gateway.discoverOidcIssuer(WEBID)).resolves.toBe(
+        "https://issuer.example",
+      );
+    });
+
+    it("rejects when no declared issuer is an https URL", async () => {
+      vi.mocked(getSolidDataset).mockResolvedValue({} as never);
+      vi.mocked(getThing).mockReturnValue({} as never);
+      vi.mocked(getIriAll).mockReturnValue(["javascript:alert(1)"]);
+
+      const gateway = createSolidSessionGateway("Test App");
+      await expect(gateway.login(WEBID)).rejects.toThrow(
+        "is not a valid https:// URL",
       );
       expect(authnLogin).not.toHaveBeenCalled();
     });

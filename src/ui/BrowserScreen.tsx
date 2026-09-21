@@ -2,83 +2,121 @@ import { useState } from "preact/hooks";
 import type { Card, Deck } from "../domain/deck";
 import { TrashIcon } from "./icons";
 
-/** Card management for one deck: list, edit in place, remove. */
+/**
+ * Management view for one deck: rename/remove the deck, add cards, and
+ * open any card's own page (where it is edited) by clicking it.
+ */
 export function BrowserScreen({
   deck,
+  deckHref,
   cards,
   busy,
   error,
-  onBack,
+  onRenameDeck,
+  onRemoveDeck,
   onAddCard,
-  onUpdateCard,
+  cardHref,
   onRemoveCard,
 }: {
   deck: Deck;
+  /** URL of the deck's page: its name and "Back to deck" link there. */
+  deckHref: string;
   cards: Card[];
   busy: boolean;
   error: string | null;
-  onBack: () => void;
+  onRenameDeck: (name: string) => void;
+  onRemoveDeck: () => void;
   /** Navigate to the card creator view. */
   onAddCard: () => void;
-  onUpdateCard: (card: Card, front: string, back: string) => void;
+  /** URL of a card's own page. */
+  cardHref: (card: Card) => string;
   onRemoveCard: (card: Card) => void;
 }) {
-  const [editing, setEditing] = useState<{
-    id: string;
-    front: string;
-    back: string;
-  } | null>(null);
+  /** The deck-name draft while renaming; null otherwise. */
+  const [deckName, setDeckName] = useState<string | null>(null);
 
-  function startEditing(card: Card) {
-    if (busy) return;
-    setEditing({ id: card.id, front: card.front, back: card.back });
-  }
-
-  function handleEditSubmit(
-    event: Event,
-    card: Card,
-    edit: { front: string; back: string },
-  ) {
+  function handleRenameSubmit(event: Event, name: string) {
     event.preventDefault();
-    onUpdateCard(card, edit.front.trim(), edit.back.trim());
-    setEditing(null);
+    onRenameDeck(name.trim());
+    setDeckName(null);
   }
 
-  /** Confirmed removal; returns whether the user went through with it. */
-  function handleRemove(card: Card): boolean {
+  function handleRemoveDeck() {
     if (
-      !window.confirm(
+      window.confirm(
+        `Remove the deck "${deck.name}" and all its cards? This cannot be undone.`,
+      )
+    ) {
+      onRemoveDeck();
+    }
+  }
+
+  function handleRemove(card: Card) {
+    if (
+      window.confirm(
         `Remove the card "${card.front}"? This cannot be undone.`,
       )
     ) {
-      return false;
-    }
-    onRemoveCard(card);
-    return true;
-  }
-
-  function handleRemoveFromEditor(card: Card) {
-    if (handleRemove(card)) {
-      setEditing(null);
+      onRemoveCard(card);
     }
   }
 
   return (
     <section>
       <header>
-        <h2>Browser: {deck.name}</h2>
+        <h2>
+          Browser: <a href={deckHref}>{deck.name}</a>
+        </h2>
         <button onClick={onAddCard} disabled={busy}>
           Add card
         </button>
-        <button onClick={onBack} disabled={busy}>
+        <a class="button" href={deckHref}>
           Back to deck
-        </button>
+        </a>
       </header>
+      {deckName === null ? (
+        <div class="edit-actions">
+          <button onClick={() => setDeckName(deck.name)} disabled={busy}>
+            Rename deck
+          </button>
+          <button class="danger" onClick={handleRemoveDeck} disabled={busy}>
+            Remove deck
+          </button>
+        </div>
+      ) : (
+        <form
+          class="card-edit"
+          onSubmit={(e) => handleRenameSubmit(e, deckName)}
+        >
+          <label for="deck-name">Deck name</label>
+          <input
+            id="deck-name"
+            type="text"
+            value={deckName}
+            onInput={(e) => setDeckName(e.currentTarget.value)}
+            required
+            disabled={busy}
+          />
+          <div class="edit-actions">
+            <button type="submit" disabled={busy}>
+              Save name
+            </button>
+            <button
+              type="button"
+              aria-label="Cancel renaming"
+              onClick={() => setDeckName(null)}
+              disabled={busy}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
       {cards.length === 0 ? (
         <p>No cards in this deck yet.</p>
       ) : (
         <>
-          <p class="hint">Click a card to edit it.</p>
+          <p class="hint">Click a card to open it.</p>
           <table class="card-table">
             <thead>
               <tr>
@@ -88,95 +126,31 @@ export function BrowserScreen({
               </tr>
             </thead>
             <tbody>
-              {cards.map((card) =>
-                editing !== null && editing.id === card.id ? (
-                  <tr key={card.url}>
-                    <td colSpan={3}>
-                      <form
-                        class="card-edit"
-                        onSubmit={(e) => handleEditSubmit(e, card, editing)}
-                      >
-                        <label for={`edit-front-${card.id}`}>Front</label>
-                        <input
-                          id={`edit-front-${card.id}`}
-                          type="text"
-                          value={editing.front}
-                          onInput={(e) =>
-                            setEditing({
-                              ...editing,
-                              front: e.currentTarget.value,
-                            })
-                          }
-                          required
-                          disabled={busy}
-                        />
-                        <label for={`edit-back-${card.id}`}>Back</label>
-                        <input
-                          id={`edit-back-${card.id}`}
-                          type="text"
-                          value={editing.back}
-                          onInput={(e) =>
-                            setEditing({
-                              ...editing,
-                              back: e.currentTarget.value,
-                            })
-                          }
-                          required
-                          disabled={busy}
-                        />
-                        <div class="edit-actions">
-                          <button type="submit" disabled={busy}>
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditing(null)}
-                            disabled={busy}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            class="danger icon"
-                            aria-label="Remove"
-                            title="Remove"
-                            onClick={() => handleRemoveFromEditor(card)}
-                            disabled={busy}
-                          >
-                            <TrashIcon />
-                          </button>
-                        </div>
-                      </form>
-                    </td>
-                  </tr>
-                ) : (
-                  <tr key={card.url}>
-                    <td class="clickable" onClick={() => startEditing(card)}>
-                      {card.front}
-                    </td>
-                    <td class="clickable" onClick={() => startEditing(card)}>
+              {cards.map((card) => (
+                <tr key={card.url}>
+                  <td class="clickable">
+                    <a href={cardHref(card)}>{card.front}</a>
+                  </td>
+                  <td class="clickable">
+                    {/* Same destination as the front: the whole row is
+                        clickable, but only one link is announced/tabbed. */}
+                    <a href={cardHref(card)} tabIndex={-1} aria-hidden="true">
                       {card.back}
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => startEditing(card)}
-                        disabled={busy}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        class="danger icon"
-                        aria-label="Remove"
-                        title="Remove"
-                        onClick={() => handleRemove(card)}
-                        disabled={busy}
-                      >
-                        <TrashIcon />
-                      </button>
-                    </td>
-                  </tr>
-                ),
-              )}
+                    </a>
+                  </td>
+                  <td>
+                    <button
+                      class="danger icon"
+                      aria-label="Remove"
+                      title="Remove"
+                      onClick={() => handleRemove(card)}
+                      disabled={busy}
+                    >
+                      <TrashIcon />
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </>

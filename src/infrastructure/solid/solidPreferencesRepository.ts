@@ -42,6 +42,7 @@ export function createSolidPreferencesRepository({
           .addInteger(SM.newCardsPerDay, preferences.newCardsPerDay)
           .addInteger(SM.maxReviewsPerDay, preferences.maxReviewsPerDay)
           .addInteger(SM.dayBoundaryHour, preferences.dayBoundaryHour)
+          .addBoolean(SM.developerMode, preferences.developerMode)
           .build(),
       );
       await saveSolidDatasetAt(documentUrl, updated, { fetch });

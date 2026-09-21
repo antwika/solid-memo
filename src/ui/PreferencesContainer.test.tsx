@@ -6,6 +6,7 @@ import type { UseCases } from "../application/useCases";
 import type { Instance } from "../domain/instance";
 import type { StudyPreferences } from "../domain/preferences";
 import { makeUseCasesFake } from "../test/useCasesFake";
+import { decksHref } from "./router";
 
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
@@ -70,6 +71,7 @@ describe("PreferencesContainer", () => {
       newCardsPerDay: 7,
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
+      developerMode: false,
     });
   });
 
@@ -88,11 +90,10 @@ describe("PreferencesContainer", () => {
     expect(await screen.findByText("write refused")).toBeInTheDocument();
   });
 
-  it("navigates back", async () => {
-    const { onBack } = renderContainer(makeUseCasesFake());
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Back to decks" }),
-    );
-    expect(onBack).toHaveBeenCalledOnce();
+  it("links back to this instance's deck list", async () => {
+    renderContainer(makeUseCasesFake());
+    expect(
+      await screen.findByRole("link", { name: "Back to decks" }),
+    ).toHaveAttribute("href", decksHref(instance.url));
   });
 });

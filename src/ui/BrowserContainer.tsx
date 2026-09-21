@@ -4,17 +4,23 @@ import type { Card, Deck } from "../domain/deck";
 import { BrowserScreen } from "./BrowserScreen";
 import { errorMessage } from "./errorMessage";
 
-/** Owns the card list and edit/remove mutations for the Browser view. */
+/** Owns the card list and the deck/card mutations for the Browser view. */
 export function BrowserContainer({
   useCases,
   deck,
-  onBack,
+  deckHref,
   onAddCard,
+  cardHref,
+  onDeckRemoved,
 }: {
   useCases: UseCases;
   deck: Deck;
-  onBack: () => void;
+  deckHref: string;
   onAddCard: () => void;
+  /** URL of a card's own page. */
+  cardHref: (card: Card) => string;
+  /** The deck is gone; leave the Browser. */
+  onDeckRemoved: () => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -23,13 +29,19 @@ export function BrowserContainer({
     queryFn: () => useCases.listCards(deck),
   });
 
-  const updateCardMutation = useMutation({
-    mutationFn: (args: { card: Card; front: string; back: string }) =>
-      useCases.updateCard(deck, args.card, args.front, args.back),
-    onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: ["cards", deck.cardsDocumentUrl],
-      }),
+  // The deck list is keyed by instance; match every ["decks", …] entry
+  // rather than threading the instance through for one cache key.
+  const renameDeckMutation = useMutation({
+    mutationFn: (name: string) => useCases.renameDeck(deck, name),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["decks"] }),
+  });
+
+  const removeDeckMutation = useMutation({
+    mutationFn: () => useCases.removeDeck(deck),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      onDeckRemoved();
+    },
   });
 
   const removeCardMutation = useMutation({
@@ -55,17 +67,22 @@ export function BrowserContainer({
   return (
     <BrowserScreen
       deck={deck}
+      deckHref={deckHref}
       cards={cardsQuery.data}
-      busy={updateCardMutation.isPending || removeCardMutation.isPending}
+      busy={
+        renameDeckMutation.isPending ||
+        removeDeckMutation.isPending ||
+        removeCardMutation.isPending
+      }
       error={
-        errorMessage(updateCardMutation.error) ??
+        errorMessage(renameDeckMutation.error) ??
+        errorMessage(removeDeckMutation.error) ??
         errorMessage(removeCardMutation.error)
       }
-      onBack={onBack}
+      onRenameDeck={(name) => renameDeckMutation.mutate(name)}
+      onRemoveDeck={() => removeDeckMutation.mutate()}
       onAddCard={onAddCard}
-      onUpdateCard={(card, front, back) =>
-        updateCardMutation.mutate({ card, front, back })
-      }
+      cardHref={cardHref}
       onRemoveCard={(card) => removeCardMutation.mutate(card)}
     />
   );

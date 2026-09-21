@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { act, renderHook } from "@testing-library/preact";
-import { parseHash, routeToHash, useHashRoute, type RouteRef } from "./router";
+import {
+  deckHref,
+  decksHref,
+  parseHash,
+  routeToHash,
+  type RouteRef,
+  useHashRoute,
+} from "./router";
 
 const roundTrips: RouteRef[] = [
   { screen: "storagePicker" },
@@ -26,7 +33,12 @@ const roundTrips: RouteRef[] = [
     screen: "cardCreator",
     instanceUrl: "https://pod.example/solid-memo/a/",
     deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
-    returnTo: "browser",
+  },
+  {
+    screen: "card",
+    instanceUrl: "https://pod.example/solid-memo/a/",
+    deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
+    cardUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl#card-1",
   },
   {
     screen: "practice",
@@ -65,15 +77,46 @@ describe("routeToHash / parseHash", () => {
     "#/deck",
     "#/deck?instance=https%3A%2F%2Fpod.example%2F",
     "#/browse?deck=https%3A%2F%2Fpod.example%2Fd%23deck-1",
-    "#/new-card?instance=a&deck=b",
-    "#/new-card?instance=a&deck=b&return=elsewhere",
-    "#/new-card?return=deckDetail",
+    "#/new-card?instance=a",
+    "#/new-card?deck=b",
+    "#/card?instance=a&deck=b",
+    "#/card?instance=a&card=c",
+    "#/card?deck=b&card=c",
     "#/practice?instance=a&deck=b",
     "#/practice?instance=a&deck=b&mode=cram",
     "#/practice?mode=study",
     "#/preferences",
   ])("rejects invalid hash %j", (hash) => {
     expect(parseHash(hash)).toBeNull();
+  });
+});
+
+describe("deckHref", () => {
+  it("is the hash URL of the deck's page", () => {
+    const href = deckHref("https://pod.example/a/", "https://pod.example/a/c#d");
+    expect(parseHash(href)).toEqual({
+      screen: "deckDetail",
+      instanceUrl: "https://pod.example/a/",
+      deckUrl: "https://pod.example/a/c#d",
+    });
+  });
+});
+
+describe("decksHref", () => {
+  it("is the hash URL of the instance's deck list", () => {
+    const href = decksHref("https://pod.example/solid-memo/a/");
+    expect(parseHash(href)).toEqual({
+      screen: "home",
+      instanceUrl: "https://pod.example/solid-memo/a/",
+    });
+  });
+});
+
+describe("parseHash legacy links", () => {
+  it("ignores the retired return parameter of card-creator links", () => {
+    expect(parseHash("#/new-card?instance=a&deck=b&return=deckDetail")).toEqual(
+      { screen: "cardCreator", instanceUrl: "a", deckUrl: "b" },
+    );
   });
 });
 

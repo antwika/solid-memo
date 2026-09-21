@@ -6,6 +6,7 @@ import type { UseCases } from "../application/useCases";
 import type { Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import { makeUseCasesFake } from "../test/useCasesFake";
+import { decksHref } from "./router";
 
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
@@ -26,18 +27,16 @@ function renderContainer(useCases: UseCases) {
     defaultOptions: { queries: { retry: false } },
   });
   const onDone = vi.fn();
-  const onBack = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
       <DeckCreatorContainer
         useCases={useCases}
         instance={instance}
         onDone={onDone}
-        onBack={onBack}
       />
     </QueryClientProvider>,
   );
-  return { onDone, onBack };
+  return { onDone };
 }
 
 describe("DeckCreatorContainer", () => {
@@ -79,9 +78,11 @@ describe("DeckCreatorContainer", () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
-  it("navigates back without creating", () => {
-    const { onBack } = renderContainer(makeUseCasesFake());
-    fireEvent.click(screen.getByRole("button", { name: "Back to decks" }));
-    expect(onBack).toHaveBeenCalledOnce();
+  it("links back to this instance's deck list", () => {
+    renderContainer(makeUseCasesFake());
+    expect(screen.getByRole("link", { name: "Back to decks" })).toHaveAttribute(
+      "href",
+      decksHref(instance.url),
+    );
   });
 });

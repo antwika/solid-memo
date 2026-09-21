@@ -17,6 +17,7 @@ function renderScreen(
   const props = {
     mode: "practice" as const,
     deckName: "Kanji N5",
+    deckHref: "#/deck?deck=d",
     card: card as Card | null,
     position: 1,
     total: 3,
@@ -31,6 +32,14 @@ function renderScreen(
 }
 
 describe("PracticeScreen", () => {
+  it("links the deck's name to the deck's page", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute(
+      "href",
+      "#/deck?deck=d",
+    );
+  });
+
   it("shows the front and hides the back until revealed", () => {
     renderScreen();
     expect(

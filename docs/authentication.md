@@ -7,9 +7,17 @@ behind the `SessionGateway` port.
 
 ## Login flow
 
-The user enters only their WebID. The app dereferences it (unauthenticated)
-and reads the `solid:oidcIssuer` triple to find their identity provider, then
-starts the OIDC redirect flow.
+The user enters only their WebID (collected by the
+[onboarding flow](onboarding.md), validated as an `https:` URL). The app
+dereferences it (unauthenticated) and reads the `solid:oidcIssuer` triple to
+find their identity provider, then starts the OIDC redirect flow. The issuer
+is never inferred from the WebID's origin — the two often differ (a WebID on
+`alice.datapod.igrant.io` is served by the issuer `datapod.igrant.io`) — and
+must itself be an `https:` URL.
+
+The app never handles credentials: no password field, no client secret, no
+hand-rolled OIDC. The authn library registers the client dynamically and
+runs the authorization-code + PKCE flow.
 
 ```mermaid
 sequenceDiagram
@@ -30,7 +38,7 @@ sequenceDiagram
     UI->>Gateway: restore()
     Gateway->>IdP: handleIncomingRedirect (token exchange)
     IdP-->>Gateway: session (WebID)
-    Gateway-->>UI: Session { webId }
+    Gateway-->>UI: { session: { webId }, origin: "login" }
 ```
 
 ## Session restore
@@ -38,7 +46,10 @@ sequenceDiagram
 `restore()` runs on every page load (App's boot effect). It completes a
 pending OIDC redirect if one is in flight, otherwise silently restores a
 previous session (`restorePreviousSession: true`). It returns a domain
-`Session` or `null`; the UI branches on that.
+`EstablishedSession` (`{ session, origin }`) or `null`. `origin` is
+`"login"` when the library emitted its `LOGIN` event (a login redirect just
+completed) and `"restored"` otherwise; the UI shows the "Pod connected"
+onboarding step only for the former.
 
 ## Authenticated requests
 

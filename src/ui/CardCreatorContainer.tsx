@@ -12,10 +12,12 @@ import { errorMessage } from "./errorMessage";
 export function CardCreatorContainer({
   useCases,
   deck,
+  deckHref,
   onBack,
 }: {
   useCases: UseCases;
   deck: Deck;
+  deckHref: string;
   onBack: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -32,6 +34,7 @@ export function CardCreatorContainer({
   return (
     <CardCreatorScreen
       deck={deck}
+      deckHref={deckHref}
       busy={addCardMutation.isPending}
       error={errorMessage(addCardMutation.error)}
       onAdd={(front, back) => addCardMutation.mutate({ front, back })}

@@ -49,6 +49,38 @@ describe("WebIdDocumentView", () => {
     expect(screen.getByText("_:b0")).toBeInTheDocument();
   });
 
+  it("makes subject and predicate URLs clickable links", () => {
+    render(<WebIdDocumentView document={document} />);
+    expect(
+      screen.getByRole("link", { name: "https://alice.example/profile/card#me" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "http://xmlns.com/foaf/0.1/name" }),
+    ).toHaveAttribute("href", "http://xmlns.com/foaf/0.1/name");
+  });
+
+  it("never turns a javascript: IRI from the pod into a link", () => {
+    render(
+      <WebIdDocumentView
+        document={{
+          url: "https://alice.example/profile/card",
+          subjects: [
+            {
+              url: "https://alice.example/profile/card#me",
+              properties: [
+                {
+                  predicate: "http://xmlns.com/foaf/0.1/homepage",
+                  values: [{ type: "iri", value: "javascript:alert(1)" }],
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByText("javascript:alert(1)").closest("a")).toBeNull();
+  });
+
   it("renders IRI values as links", () => {
     render(<WebIdDocumentView document={document} />);
 

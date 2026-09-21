@@ -28,6 +28,14 @@ describe("InstanceBar", () => {
     expect(screen.getByText(instance.url)).toBeInTheDocument();
   });
 
+  it("makes the instance URL a clickable link", () => {
+    renderBar();
+    expect(screen.getByRole("link", { name: instance.url })).toHaveAttribute(
+      "href",
+      instance.url,
+    );
+  });
+
   it("switches instance and opens preferences", () => {
     const { onSwitch, onOpenPreferences } = renderBar();
     fireEvent.click(screen.getByRole("button", { name: "Switch instance" }));

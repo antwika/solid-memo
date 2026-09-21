@@ -1,4 +1,4 @@
-import { getInteger, type Thing } from "@inrupt/solid-client";
+import { getBoolean, getInteger, type Thing } from "@inrupt/solid-client";
 import {
   DEFAULT_PREFERENCES,
   type StudyPreferences,
@@ -20,5 +20,7 @@ export function toPreferences(thing: Thing): StudyPreferences {
     dayBoundaryHour:
       getInteger(thing, SM.dayBoundaryHour) ??
       DEFAULT_PREFERENCES.dayBoundaryHour,
+    developerMode:
+      getBoolean(thing, SM.developerMode) ?? DEFAULT_PREFERENCES.developerMode,
   };
 }

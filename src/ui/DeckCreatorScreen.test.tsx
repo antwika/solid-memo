@@ -9,7 +9,7 @@ function renderScreen(
     busy: false,
     error: null,
     onCreate: vi.fn(),
-    onBack: vi.fn(),
+    decksHref: "#/decks?instance=a",
     ...overrides,
   };
   const view = render(<DeckCreatorScreen {...props} />);
@@ -26,10 +26,12 @@ describe("DeckCreatorScreen", () => {
     expect(props.onCreate).toHaveBeenCalledWith("Kana");
   });
 
-  it("navigates back", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Back to decks" }));
-    expect(props.onBack).toHaveBeenCalledOnce();
+  it("links back to the deck list", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Back to decks" })).toHaveAttribute(
+      "href",
+      "#/decks?instance=a",
+    );
   });
 
   it("disables the form while busy and shows errors", () => {

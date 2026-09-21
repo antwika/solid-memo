@@ -17,6 +17,7 @@ function renderScreen(
 ) {
   const props = {
     deck,
+    deckHref: "#/deck?deck=d",
     busy: false,
     error: null,
     onAdd: vi.fn(),
@@ -28,12 +29,27 @@ function renderScreen(
 }
 
 describe("CardCreatorScreen", () => {
+  it("links the deck's name to the deck's page", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute(
+      "href",
+      "#/deck?deck=d",
+    );
+  });
+
   it("names the deck it adds to", () => {
     renderScreen();
     expect(
       screen.getByRole("heading", { name: "New card" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Adding to "Kanji N5"/)).toBeInTheDocument();
+    // The deck's name is a link, so match the sentence across elements.
+    expect(
+      screen.getByText(
+        (_text, element) =>
+          element?.tagName === "P" &&
+          element.textContent === 'Adding to "Kanji N5".',
+      ),
+    ).toBeInTheDocument();
   });
 
   it("adds a card with trimmed values and clears the form", () => {

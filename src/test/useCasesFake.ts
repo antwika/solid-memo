@@ -9,6 +9,11 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     loginWithWebId: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     onSessionExpired: vi.fn(() => () => undefined),
+    discoverAccount: vi.fn(async (session) => ({
+      webId: session.webId,
+      podUrl: "https://pod.example/",
+      oidcIssuer: "https://issuer.example",
+    })),
     viewWebIdDocument: vi.fn(async () => ({ url: "", subjects: [] })),
     listStorages: vi.fn(async () => []),
     addManualStorage: vi.fn(async () => ({
@@ -32,6 +37,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     createDeck: vi.fn(async () => {
       throw new Error("createDeck fake not configured");
     }),
+    renameDeck: vi.fn(async (deck, name) => ({ ...deck, name })),
     removeDeck: vi.fn(async () => undefined),
     listCards: vi.fn(async () => []),
     addCard: vi.fn(async () => {

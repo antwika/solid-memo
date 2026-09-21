@@ -5,6 +5,7 @@ import type {
   RegistrationTarget,
 } from "../domain/instance";
 import { RegistrationTargetChooser } from "./RegistrationTargetChooser";
+import { ExternalLink } from "./ExternalLink";
 
 export function InstancePicker({
   instances,
@@ -43,7 +44,7 @@ export function InstancePicker({
               <button onClick={() => onSelect(instance)} disabled={busy}>
                 {instance.name}
               </button>{" "}
-              <span class="hint">{instance.url}</span>
+              <ExternalLink url={instance.url} class="hint" />
             </li>
           ))}
         </ul>

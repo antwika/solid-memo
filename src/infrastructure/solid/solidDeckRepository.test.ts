@@ -5,6 +5,7 @@ import {
   deleteSolidDataset,
   getStringNoLocale,
   getThing,
+  getUrl,
   mockSolidDatasetFrom,
   saveSolidDatasetAt,
   setThing,
@@ -116,6 +117,40 @@ describe("createDeck", () => {
     expect(
       getThing(saved as SolidDataset, `${CATALOG}#deck-fixed`),
     ).not.toBeNull();
+  });
+});
+
+describe("renameDeck", () => {
+  it("replaces the title in place and returns the renamed deck", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(catalogWithDeck());
+
+    const renamed = await makeRepository().renameDeck(deck, "Kanji N4");
+
+    expect(renamed).toEqual({ ...deck, name: "Kanji N4" });
+    const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    expect(saveUrl).toBe(CATALOG);
+    const thing = getThing(saved as SolidDataset, deck.url)!;
+    expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Kanji N4");
+    // The links to the deck's documents survive the rename.
+    expect(getUrl(thing, SM.cardsDocument)).toBe(deck.cardsDocumentUrl);
+  });
+
+  it("rejects when the catalog no longer exists", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
+    await expect(makeRepository().renameDeck(deck, "x")).rejects.toThrow(
+      "no longer exists",
+    );
+    expect(saveSolidDatasetAt).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the deck is no longer in the catalog", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      mockSolidDatasetFrom(CATALOG),
+    );
+    await expect(makeRepository().renameDeck(deck, "x")).rejects.toThrow(
+      "no longer exists",
+    );
+    expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });
 });
 

@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
+import { fireEvent, render, screen } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DeckListContainer } from "./DeckListContainer";
 import type { UseCases } from "../application/useCases";
 import type { Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import { makeUseCasesFake } from "../test/useCasesFake";
+import { deckHref, decksHref } from "./router";
 
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
@@ -25,7 +26,6 @@ function renderContainer(useCases: UseCases) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const onOpenDeck = vi.fn();
   const onStudyDeck = vi.fn();
   const onCreateDeck = vi.fn();
   render(
@@ -33,13 +33,12 @@ function renderContainer(useCases: UseCases) {
       <DeckListContainer
         useCases={useCases}
         instance={instance}
-        onOpenDeck={onOpenDeck}
         onStudyDeck={onStudyDeck}
         onCreateDeck={onCreateDeck}
       />
     </QueryClientProvider>,
   );
-  return { onOpenDeck, onStudyDeck, onCreateDeck };
+  return { onStudyDeck, onCreateDeck };
 }
 
 describe("DeckListContainer", () => {
@@ -50,8 +49,12 @@ describe("DeckListContainer", () => {
     renderContainer(useCases);
     expect(screen.getByText("Loading decks…")).toBeInTheDocument();
     expect(
-      await screen.findByRole("button", { name: "Kanji N5" }),
+      await screen.findByRole("link", { name: "Kanji N5" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Decks" })).toHaveAttribute(
+      "href",
+      decksHref(instance.url),
+    );
   });
 
   it("shows an error when listing decks fails", async () => {
@@ -77,43 +80,13 @@ describe("DeckListContainer", () => {
     expect(onCreateDeck).toHaveBeenCalledOnce();
   });
 
-  it("removes a deck and refreshes the list", async () => {
-    vi.stubGlobal("confirm", vi.fn(() => true));
-    const listDecks = vi
-      .fn<() => Promise<Deck[]>>()
-      .mockResolvedValueOnce([deck])
-      .mockResolvedValue([]);
-    const useCases = makeUseCasesFake({ listDecks });
-    renderContainer(useCases);
-
-    fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
-
-    await waitFor(() => {
-      expect(useCases.removeDeck).toHaveBeenCalledWith(deck);
-    });
-    expect(await screen.findByText(/No decks yet/)).toBeInTheDocument();
-  });
-
-  it("shows a remove error", async () => {
-    vi.stubGlobal("confirm", vi.fn(() => true));
-    const useCases = makeUseCasesFake({
-      listDecks: vi.fn(async () => [deck]),
-      removeDeck: vi.fn(async () => {
-        throw new Error("remove refused");
-      }),
-    });
-    renderContainer(useCases);
-
-    fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
-    expect(await screen.findByText("remove refused")).toBeInTheDocument();
-  });
-
-  it("forwards deck opening", async () => {
+  it("links a deck's name to its page in this instance", async () => {
     const useCases = makeUseCasesFake({ listDecks: vi.fn(async () => [deck]) });
-    const { onOpenDeck } = renderContainer(useCases);
+    renderContainer(useCases);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Kanji N5" }));
-    expect(onOpenDeck).toHaveBeenCalledWith(deck);
+    expect(
+      await screen.findByRole("link", { name: "Kanji N5" }),
+    ).toHaveAttribute("href", deckHref(instance.url, deck.url));
   });
 
   it("forwards starting a study session", async () => {

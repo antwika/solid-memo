@@ -39,6 +39,16 @@ describe("InstancePicker", () => {
     ).toBeInTheDocument();
   });
 
+  it("makes every instance URL a clickable link", () => {
+    renderPicker();
+    for (const instance of instances) {
+      expect(screen.getByRole("link", { name: instance.url })).toHaveAttribute(
+        "href",
+        instance.url,
+      );
+    }
+  });
+
   it("starts the new-instance flow", () => {
     const { props } = renderPicker();
     fireEvent.click(screen.getByRole("button", { name: "New instance…" }));

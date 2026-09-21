@@ -1,39 +1,29 @@
 import type { Deck } from "../domain/deck";
-import { TrashIcon } from "./icons";
 
+/** Decks to open or study. Decks are renamed and removed in the Browser. */
 export function DeckListScreen({
   decks,
-  busy,
-  error,
-  onOpen,
+  decksHref,
+  deckHref,
   onStudy,
   onCreateDeck,
-  onRemove,
 }: {
   decks: Deck[];
-  busy: boolean;
-  error: string | null;
-  onOpen: (deck: Deck) => void;
+  /** URL of this deck list; wherever the UI says "Decks", it links here. */
+  decksHref: string;
+  /** URL of a deck's page; wherever the UI names a deck, it links there. */
+  deckHref: (deck: Deck) => string;
   /** Start a due-only study session for the deck. */
   onStudy: (deck: Deck) => void;
   /** Navigate to the deck creator view. */
   onCreateDeck: () => void;
-  onRemove: (deck: Deck) => void;
 }) {
-  function handleRemove(deck: Deck) {
-    if (
-      window.confirm(
-        `Remove the deck "${deck.name}" and all its cards? This cannot be undone.`,
-      )
-    ) {
-      onRemove(deck);
-    }
-  }
-
   return (
     <section>
       <header>
-        <h2>Decks</h2>
+        <h2>
+          <a href={decksHref}>Decks</a>
+        </h2>
         <span class="hint">
           {decks.length === 1 ? "1 deck" : `${decks.length} decks`}
         </span>
@@ -44,38 +34,23 @@ export function DeckListScreen({
         <ul class="deck-list">
           {decks.map((deck) => (
             <li key={deck.url}>
-              <button
-                class="deck-open"
-                onClick={() => onOpen(deck)}
-                disabled={busy}
-              >
+              <a class="deck-open" href={deckHref(deck)}>
                 {deck.name}
-              </button>
+              </a>
               <button
                 class="primary"
                 aria-label={`Study ${deck.name}`}
                 onClick={() => onStudy(deck)}
-                disabled={busy}
               >
                 Study
-              </button>
-              <button
-                class="danger icon"
-                aria-label="Remove"
-                title="Remove"
-                onClick={() => handleRemove(deck)}
-                disabled={busy}
-              >
-                <TrashIcon />
               </button>
             </li>
           ))}
         </ul>
       )}
-      <button class="primary" onClick={onCreateDeck} disabled={busy}>
+      <button class="primary" onClick={onCreateDeck}>
         Create deck
       </button>
-      {error && <p class="error">{error}</p>}
     </section>
   );
 }

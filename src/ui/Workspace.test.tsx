@@ -1,13 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Workspace } from "./Workspace";
 import type { UseCases } from "../application/useCases";
-import type { Deck } from "../domain/deck";
+import type { Card, Deck } from "../domain/deck";
+import { DEFAULT_PREFERENCES } from "../domain/preferences";
 import type { Instance } from "../domain/instance";
 import type { Session } from "../domain/session";
 import type { Storage } from "../domain/storage";
 import { makeUseCasesFake } from "../test/useCasesFake";
+import { routeToHash } from "./router";
 
 const session: Session = { webId: "https://alice.example/profile/card#me" };
 const storageA: Storage = { url: "https://pod.example/", source: "profile" };
@@ -288,7 +297,7 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Back to decks" }),
+      await screen.findByRole("link", { name: "Back to decks" }),
     );
     expect(
       await screen.findByRole("heading", { name: "Decks" }),
@@ -334,7 +343,7 @@ describe("Workspace", () => {
       await screen.findByRole("heading", { name: "Decks" }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole("button", { name: "Kana" }),
+      await screen.findByRole("link", { name: "Kana" }),
     ).toBeInTheDocument();
   });
 
@@ -354,20 +363,20 @@ describe("Workspace", () => {
       }),
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     expect(
       await screen.findByRole("heading", { name: "Kanji N5" }),
     ).toBeInTheDocument();
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Back to decks" }),
+      await screen.findByRole("link", { name: "Back to decks" }),
     );
     expect(
       await screen.findByRole("heading", { name: "Decks" }),
     ).toBeInTheDocument();
   });
 
-  it("reaches the card creator from both the deck detail and the Browser", async () => {
+  it("reaches the card creator from the Browser only, and returns there", async () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
@@ -383,19 +392,14 @@ describe("Workspace", () => {
       }),
     );
 
-    // From the deck detail; Back returns to the deck detail.
-    fireEvent.click(await screen.findByRole("button", { name: "Kanji N5" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Add card" }));
-    expect(
-      await screen.findByRole("heading", { name: "New card" }),
-    ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(
-      await screen.findByRole("heading", { name: "Kanji N5" }),
-    ).toBeInTheDocument();
+    // The deck detail is for studying: no card editing there.
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
+    const browserButton = await screen.findByRole("button", {
+      name: "Browser",
+    });
+    expect(screen.queryByRole("button", { name: "Add card" })).toBeNull();
 
-    // From the Browser; Back returns to the Browser.
-    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    fireEvent.click(browserButton);
     fireEvent.click(await screen.findByRole("button", { name: "Add card" }));
     expect(
       await screen.findByRole("heading", { name: "New card" }),
@@ -403,6 +407,69 @@ describe("Workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(
       await screen.findByRole("heading", { name: "Browser: Kanji N5" }),
+    ).toBeInTheDocument();
+  });
+
+  it("removes a deck from the Browser and lands on the deck list", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    const deck: Deck = {
+      id: "deck-1",
+      url: `${instanceA.url}catalog.ttl#deck-1`,
+      name: "Kanji N5",
+      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
+      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      createdAt: "2026-09-21T10:00:00.000Z",
+    };
+    let removed = false;
+    const useCases = makeUseCases({
+      listInstances: vi.fn(async () => [instanceA]),
+      listDecks: vi.fn(async () => (removed ? [] : [deck])),
+      removeDeck: vi.fn(async () => {
+        removed = true;
+      }),
+    });
+    renderWorkspace(useCases);
+
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Remove deck" }));
+
+    expect(await screen.findByText(/No decks yet/)).toBeInTheDocument();
+    expect(useCases.removeDeck).toHaveBeenCalledWith(deck);
+    expect(window.location.hash).toContain("#/decks");
+  });
+
+  it("shows a deck's new name after renaming it in the Browser", async () => {
+    const deck: Deck = {
+      id: "deck-1",
+      url: `${instanceA.url}catalog.ttl#deck-1`,
+      name: "Kanji N5",
+      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
+      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      createdAt: "2026-09-21T10:00:00.000Z",
+    };
+    let name = deck.name;
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [{ ...deck, name }]),
+        renameDeck: vi.fn(async (renamed: Deck, newName: string) => {
+          name = newName;
+          return { ...renamed, name: newName };
+        }),
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Rename deck" }));
+    fireEvent.input(screen.getByLabelText("Deck name"), {
+      target: { value: "Kanji N4" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Browser: Kanji N4" }),
     ).toBeInTheDocument();
   });
 
@@ -422,14 +489,14 @@ describe("Workspace", () => {
       }),
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
     expect(
       await screen.findByRole("heading", { name: "Browser: Kanji N5" }),
     ).toBeInTheDocument();
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Back to deck" }),
+      await screen.findByRole("link", { name: "Back to deck" }),
     );
     expect(
       await screen.findByRole("heading", { name: "Kanji N5" }),
@@ -449,10 +516,23 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listDecks: vi.fn(async () => [deck]),
+        // A due card, so the deck detail offers both sessions.
+        getStudyQueue: vi.fn(async () => ({
+          due: [
+            {
+              id: "card-1",
+              url: `${deck.cardsDocumentUrl}#card-1`,
+              front: "水",
+              back: "water",
+              createdAt: "2026-09-21T10:00:00.000Z",
+            } satisfies Card,
+          ],
+          newCards: [],
+        })),
       }),
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     fireEvent.click(await screen.findByRole("button", { name: "Practice" }));
     expect(
       await screen.findByRole("heading", { name: "Practice: Kanji N5" }),
@@ -479,10 +559,23 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listDecks: vi.fn(async () => [deck]),
+        // A due card, so the deck detail offers both sessions.
+        getStudyQueue: vi.fn(async () => ({
+          due: [
+            {
+              id: "card-1",
+              url: `${deck.cardsDocumentUrl}#card-1`,
+              front: "水",
+              back: "water",
+              createdAt: "2026-09-21T10:00:00.000Z",
+            } satisfies Card,
+          ],
+          newCards: [],
+        })),
       }),
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     fireEvent.click(await screen.findByRole("button", { name: "Study" }));
     expect(
       await screen.findByRole("heading", { name: "Study: Kanji N5" }),
@@ -528,7 +621,7 @@ describe("Workspace", () => {
       `#/decks?instance=${encodeURIComponent(instanceA.url)}`,
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     await screen.findByRole("heading", { name: "Kanji N5" });
     expect(window.location.hash).toBe(
       `#/deck?instance=${encodeURIComponent(
@@ -565,7 +658,7 @@ describe("Workspace", () => {
       }),
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     await screen.findByRole("heading", { name: "Kanji N5" });
 
     // The browser fires hashchange when the user walks history.
@@ -581,6 +674,269 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
+  describe("card pages", () => {
+    const card: Card = {
+      id: "card-1",
+      url: `${deck.cardsDocumentUrl}#card-1`,
+      front: "水",
+      back: "water",
+      createdAt: "2026-09-21T10:00:00.000Z",
+    };
+
+    function openBrowser(useCases: UseCases) {
+      renderWorkspace(useCases);
+      return (async () => {
+        fireEvent.click(await screen.findByRole("link", { name: deck.name }));
+        fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+      })();
+    }
+
+    it("opens a card on its own page, with its own breadcrumb", async () => {
+      await openBrowser(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck]),
+          listCards: vi.fn(async () => [card]),
+        }),
+      );
+
+      fireEvent.click(await screen.findByRole("link", { name: "水" }));
+
+      expect(
+        await screen.findByRole("heading", { name: "Card" }),
+      ).toBeInTheDocument();
+      expect(window.location.hash).toContain("#/card?");
+      const trail = within(
+        screen.getByRole("navigation", { name: "Breadcrumb" }),
+      );
+      expect(
+        trail.getAllByRole("link").map((link) => link.textContent),
+      ).toEqual(["Decks", deck.name, "Browser", "水"]);
+      expect(trail.getByRole("link", { name: "水" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+
+      // And back, by link.
+      fireEvent.click(screen.getByRole("link", { name: "Back to Browser" }));
+      expect(
+        await screen.findByRole("heading", { name: `Browser: ${deck.name}` }),
+      ).toBeInTheDocument();
+    });
+
+    it("shows a saved edit on the page and in its breadcrumb", async () => {
+      let front = card.front;
+      await openBrowser(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck]),
+          listCards: vi.fn(async () => [{ ...card, front }]),
+          updateCard: vi.fn(async (_deck, edited: Card, newFront: string) => {
+            front = newFront;
+            return { ...edited, front: newFront };
+          }),
+        }),
+      );
+      fireEvent.click(await screen.findByRole("link", { name: "水" }));
+
+      fireEvent.input(await screen.findByLabelText("Front"), {
+        target: { value: "火" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      expect(await screen.findByRole("link", { name: "火" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+    });
+
+    it("returns to the Browser after removing the card", async () => {
+      vi.stubGlobal("confirm", vi.fn(() => true));
+      let removed = false;
+      await openBrowser(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck]),
+          listCards: vi.fn(async () => (removed ? [] : [card])),
+          removeCard: vi.fn(async () => {
+            removed = true;
+          }),
+        }),
+      );
+      fireEvent.click(await screen.findByRole("link", { name: "水" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Remove card" }),
+      );
+
+      expect(
+        await screen.findByText("No cards in this deck yet."),
+      ).toBeInTheDocument();
+      expect(window.location.hash).toContain("#/browse?");
+    });
+
+    it("sends a deep link to an unknown card back to the Browser", async () => {
+      window.history.replaceState(
+        null,
+        "",
+        routeToHash({
+          screen: "card",
+          instanceUrl: instanceA.url,
+          deckUrl: deck.url,
+          cardUrl: `${deck.cardsDocumentUrl}#gone`,
+        }),
+      );
+      renderWorkspace(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck]),
+          listCards: vi.fn(async () => [card]),
+        }),
+      );
+      expect(
+        await screen.findByRole("heading", { name: `Browser: ${deck.name}` }),
+      ).toBeInTheDocument();
+    });
+
+    it("shows a loading state, then an error, when the cards cannot be read", async () => {
+      window.history.replaceState(
+        null,
+        "",
+        routeToHash({
+          screen: "card",
+          instanceUrl: instanceA.url,
+          deckUrl: deck.url,
+          cardUrl: card.url,
+        }),
+      );
+      let fail: (error: Error) => void = () => undefined;
+      const useCases = makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+        listCards: vi.fn(
+          () => new Promise<Card[]>((_resolve, reject) => (fail = reject)),
+        ),
+      });
+      renderWorkspace(useCases);
+      expect(await screen.findByText("Loading card…")).toBeInTheDocument();
+      // The query starts a tick after the loading state renders.
+      await waitFor(() => {
+        expect(useCases.listCards).toHaveBeenCalled();
+      });
+      await act(async () => fail(new Error("cards unreachable")));
+      expect(await screen.findByText("cards unreachable")).toBeInTheDocument();
+    });
+  });
+
+  describe("developer settings", () => {
+    it("hides the WebID document by default, without fetching it", async () => {
+      const useCases = makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+      });
+      renderWorkspace(useCases);
+
+      await screen.findByRole("heading", { name: "Decks" });
+      await waitFor(() => {
+        expect(useCases.getPreferences).toHaveBeenCalledWith(instanceA.url);
+      });
+      expect(screen.queryByText("WebID document")).toBeNull();
+      expect(useCases.viewWebIdDocument).not.toHaveBeenCalled();
+    });
+
+    it("shows the WebID document once developer mode is activated", async () => {
+      const useCases = makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+        getPreferences: vi.fn(async () => ({
+          ...DEFAULT_PREFERENCES,
+          developerMode: true,
+        })),
+      });
+      renderWorkspace(useCases);
+
+      expect(await screen.findByText("WebID document")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(useCases.viewWebIdDocument).toHaveBeenCalledWith(session);
+      });
+    });
+
+    it("keeps developer tools hidden when preferences cannot be read", async () => {
+      renderWorkspace(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck]),
+          getPreferences: vi.fn(async () => {
+            throw new Error("preferences unreachable");
+          }),
+        }),
+      );
+
+      await screen.findByRole("heading", { name: "Decks" });
+      expect(screen.queryByText("WebID document")).toBeNull();
+      expect(screen.queryByText("preferences unreachable")).toBeNull();
+    });
+
+    it("turns on as soon as the setting is saved", async () => {
+      let developerMode = false;
+      const useCases = makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+        getPreferences: vi.fn(async () => ({
+          ...DEFAULT_PREFERENCES,
+          developerMode,
+        })),
+        savePreferences: vi.fn(async (_url, preferences) => {
+          developerMode = preferences.developerMode;
+        }),
+      });
+      renderWorkspace(useCases);
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Preferences" }),
+      );
+      fireEvent.click(await screen.findByLabelText("Developer mode"));
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      expect(await screen.findByText("WebID document")).toBeInTheDocument();
+    });
+  });
+
+  it("shows a breadcrumb trail whose links lead back up", async () => {
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+      }),
+    );
+
+    // Top level: "Decks" is already there, as a link to the deck list.
+    await screen.findByRole("heading", { name: "Decks" });
+    expect(
+      within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole(
+        "link",
+        { name: "Decks" },
+      ),
+    ).toHaveAttribute("aria-current", "page");
+
+    fireEvent.click(screen.getByRole("link", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    await screen.findByRole("heading", { name: "Browser: Kanji N5" });
+
+    const trail = within(
+      screen.getByRole("navigation", { name: "Breadcrumb" }),
+    );
+    expect(trail.getByText("Browser")).toHaveAttribute("aria-current", "page");
+
+    // Following a crumb is an ordinary hash navigation.
+    const decksHref = trail.getByRole("link", { name: "Decks" }).getAttribute("href")!;
+    window.history.pushState(null, "", decksHref);
+    fireEvent(window, new Event("hashchange"));
+
+    expect(
+      await screen.findByRole("heading", { name: "Decks" }),
+    ).toBeInTheDocument();
+  });
+
   it("returns to the deck list when the brand link empties the route", async () => {
     renderWorkspace(
       makeUseCases({
@@ -589,7 +945,7 @@ describe("Workspace", () => {
       }),
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     await screen.findByRole("heading", { name: "Kanji N5" });
 
     // Clicking the logotype navigates to "#/", which parses to no

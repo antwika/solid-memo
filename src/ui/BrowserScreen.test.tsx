@@ -25,12 +25,14 @@ function renderScreen(
 ) {
   const props = {
     deck,
+    deckHref: "#/deck?deck=d",
     cards: [card],
     busy: false,
     error: null,
-    onBack: vi.fn(),
+    onRenameDeck: vi.fn(),
+    onRemoveDeck: vi.fn(),
     onAddCard: vi.fn(),
-    onUpdateCard: vi.fn(),
+    cardHref: (c: Card) => `#/card?card=${c.id}`,
     onRemoveCard: vi.fn(),
     ...overrides,
   };
@@ -38,7 +40,66 @@ function renderScreen(
   return { ...view, props };
 }
 
+describe("BrowserScreen deck editing", () => {
+  it("renames the deck, trimmed, and closes the form", () => {
+    const { props } = renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
+
+    const field = screen.getByLabelText("Deck name");
+    expect(field).toHaveValue("Kanji N5");
+    fireEvent.input(field, { target: { value: "  Kanji N4 " } });
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+
+    expect(props.onRenameDeck).toHaveBeenCalledWith("Kanji N4");
+    expect(screen.queryByLabelText("Deck name")).toBeNull();
+  });
+
+  it("cancels renaming without saving", () => {
+    const { props } = renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel renaming" }));
+
+    expect(props.onRenameDeck).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Rename deck" }),
+    ).toBeInTheDocument();
+  });
+
+  it("removes the deck after confirmation", () => {
+    const confirm = vi.fn(() => true);
+    vi.stubGlobal("confirm", confirm);
+    const { props } = renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Remove deck" }));
+
+    expect(confirm).toHaveBeenCalledWith(
+      'Remove the deck "Kanji N5" and all its cards? This cannot be undone.',
+    );
+    expect(props.onRemoveDeck).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the deck when the confirmation is declined", () => {
+    vi.stubGlobal("confirm", vi.fn(() => false));
+    const { props } = renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Remove deck" }));
+    expect(props.onRemoveDeck).not.toHaveBeenCalled();
+  });
+
+  it("disables deck editing while busy", () => {
+    renderScreen({ busy: true });
+    expect(screen.getByRole("button", { name: "Rename deck" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Remove deck" })).toBeDisabled();
+  });
+});
+
 describe("BrowserScreen", () => {
+  it("links the deck's name to the deck's page", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute(
+      "href",
+      "#/deck?deck=d",
+    );
+  });
+
   it("lists the deck's cards under a Browser heading", () => {
     renderScreen();
     expect(
@@ -55,10 +116,12 @@ describe("BrowserScreen", () => {
     ).toBeInTheDocument();
   });
 
-  it("navigates back to the deck", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Back to deck" }));
-    expect(props.onBack).toHaveBeenCalledOnce();
+  it("links back to the deck", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Back to deck" })).toHaveAttribute(
+      "href",
+      "#/deck?deck=d",
+    );
   });
 
   it("removes a card after confirmation", () => {
@@ -79,82 +142,26 @@ describe("BrowserScreen", () => {
     expect(props.onRemoveCard).not.toHaveBeenCalled();
   });
 
-  it("removes a card from the editor after confirmation and closes it", () => {
-    const confirm = vi.fn(() => true);
-    vi.stubGlobal("confirm", confirm);
-    const { props, container } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
-
-    expect(confirm).toHaveBeenCalledWith(
-      'Remove the card "水"? This cannot be undone.',
+  it("links each row to the card's own page", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "水" })).toHaveAttribute(
+      "href",
+      "#/card?card=card-1",
     );
-    expect(props.onRemoveCard).toHaveBeenCalledWith(card);
-    expect(container.querySelector("form.card-edit")).toBeNull();
+    // The back cell goes to the same place, without a second announced link.
+    const back = screen.getByText("water").closest("a")!;
+    expect(back).toHaveAttribute("href", "#/card?card=card-1");
+    expect(back).toHaveAttribute("aria-hidden", "true");
+    // The card is announced once: its back-cell link is not in the list.
+    expect(
+      screen.getAllByRole("link").map((link) => link.textContent?.trim()),
+    ).toEqual(["Kanji N5", "Back to deck", "水"]);
   });
 
-  it("keeps the editor open when removal is declined from the editor", () => {
-    vi.stubGlobal("confirm", vi.fn(() => false));
-    const { props, container } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
-
-    expect(props.onRemoveCard).not.toHaveBeenCalled();
-    expect(container.querySelector("form.card-edit")).not.toBeNull();
-  });
-
-  it("opens an editor prefilled with the card when clicked", () => {
+  it("no longer edits cards in place", () => {
     renderScreen();
-    fireEvent.click(screen.getByText("水"));
-    expect(document.querySelector("#edit-front-card-1")).toHaveValue("水");
-    expect(document.querySelector("#edit-back-card-1")).toHaveValue("water");
-  });
-
-  it("opens the editor via the row's Edit button", () => {
-    renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    expect(document.querySelector("#edit-front-card-1")).toHaveValue("水");
-    expect(document.querySelector("#edit-back-card-1")).toHaveValue("water");
-  });
-
-  it("opens the editor from the back cell too", () => {
-    renderScreen();
-    fireEvent.click(screen.getByText("water"));
-    expect(document.querySelector("#edit-front-card-1")).toBeInTheDocument();
-  });
-
-  it("saves an edited card with trimmed values and closes the editor", () => {
-    const { props, container } = renderScreen();
-    fireEvent.click(screen.getByText("水"));
-    fireEvent.input(container.querySelector("#edit-front-card-1")!, {
-      target: { value: " 수영하다 " },
-    });
-    fireEvent.input(container.querySelector("#edit-back-card-1")!, {
-      target: { value: " to swim " },
-    });
-    fireEvent.submit(container.querySelector("form.card-edit")!);
-
-    expect(props.onUpdateCard).toHaveBeenCalledWith(
-      card,
-      "수영하다",
-      "to swim",
-    );
-    expect(container.querySelector("form.card-edit")).toBeNull();
-  });
-
-  it("cancels editing without saving", () => {
-    const { props, container } = renderScreen();
-    fireEvent.click(screen.getByText("水"));
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(container.querySelector("form.card-edit")).toBeNull();
-    expect(props.onUpdateCard).not.toHaveBeenCalled();
-    expect(screen.getByText("水")).toBeInTheDocument();
-  });
-
-  it("does not open the editor while busy", () => {
-    const { container } = renderScreen({ busy: true });
-    fireEvent.click(screen.getByText("水"));
-    expect(container.querySelector("form.card-edit")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    expect(screen.queryByLabelText("Front")).toBeNull();
   });
 
   it("shows errors", () => {

@@ -6,6 +6,7 @@ import type { Instance } from "../domain/instance";
 import type { ReviewQuality } from "../domain/review";
 import { errorMessage } from "./errorMessage";
 import { PracticeScreen, type PracticeMode } from "./PracticeScreen";
+import { deckHref } from "./router";
 
 /**
  * Owns one study session. The queue is fetched once when the session
@@ -85,6 +86,7 @@ export function PracticeContainer({
     <PracticeScreen
       mode={mode}
       deckName={deck.name}
+      deckHref={deckHref(instance.url, deck.url)}
       card={card}
       position={position + 1}
       total={cards.length}

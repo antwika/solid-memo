@@ -6,7 +6,7 @@ import type {
 } from "../domain/instance";
 import type { StudyPreferences } from "../domain/preferences";
 import type { ReviewState } from "../domain/review";
-import type { Session } from "../domain/session";
+import type { EstablishedSession } from "../domain/session";
 import type { Storage } from "../domain/storage";
 import type { WebIdDocument } from "../domain/webIdDocument";
 
@@ -15,13 +15,21 @@ import type { WebIdDocument } from "../domain/webIdDocument";
  * Implemented by the Solid infrastructure layer.
  */
 export interface SessionGateway {
-  /** Complete a pending login redirect or restore a stored session. */
-  restore(): Promise<Session | null>;
+  /**
+   * Complete a pending login redirect or restore a stored session. The
+   * origin tells a just-completed login from a silent restore.
+   */
+  restore(): Promise<EstablishedSession | null>;
   /**
    * Subscribe to session expiry (e.g. a 401 from the pod). Returns an
    * unsubscribe function.
    */
   onSessionExpired(listener: () => void): () => void;
+  /**
+   * The identity provider the WebID profile declares (solid:oidcIssuer).
+   * Never derived from the WebID's own origin: the two may differ.
+   */
+  discoverOidcIssuer(webId: string): Promise<string>;
   /**
    * Start the login flow for the given WebID. On success the browser
    * navigates away to the identity provider, so this never resolves
@@ -65,6 +73,8 @@ export interface InstanceRepository {
 export interface DeckRepository {
   listDecks(instanceUrl: string): Promise<Deck[]>;
   createDeck(instanceUrl: string, name: string): Promise<Deck>;
+  /** Replaces the deck's name; cards and review state are untouched. */
+  renameDeck(deck: Deck, name: string): Promise<Deck>;
   /** Removes the deck's catalog entry, cards document and reviews document. */
   removeDeck(deck: Deck): Promise<void>;
   listCards(deck: Deck): Promise<Card[]>;
