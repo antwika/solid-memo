@@ -26,7 +26,7 @@ function renderScreen(
     decks: [deck, secondDeck],
     decksHref: "#/decks?instance=a",
     deckHref: (d: Deck) => `#/deck?deck=${d.id}`,
-    onStudy: vi.fn(),
+    renderStudyAction: (d: Deck) => <span>action for {d.name}</span>,
     onCreateDeck: vi.fn(),
     ...overrides,
   };
@@ -72,10 +72,21 @@ describe("DeckListScreen", () => {
     );
   });
 
-  it("starts a study session for a deck", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Study Kanji N5" }));
-    expect(props.onStudy).toHaveBeenCalledWith(deck);
+  it("leaves each row's study suggestion to the container", () => {
+    renderScreen();
+    expect(screen.getByText("action for Kanji N5")).toBeInTheDocument();
+    expect(screen.getByText("action for Kana")).toBeInTheDocument();
+    // The screen itself never suggests studying.
+    expect(screen.queryByRole("button", { name: /Study/ })).toBeNull();
+  });
+
+  it("marks the title and every deck with a decorative icon", () => {
+    const { container } = renderScreen();
+    expect(container.querySelector("h2 svg.icon")).toHaveAttribute("aria-hidden", "true");
+    expect(container.querySelectorAll(".deck-open svg.icon")).toHaveLength(2);
+    // Icons never change a link's accessible name.
+    expect(screen.getByRole("link", { name: "Decks" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Kanji N5" })).toBeInTheDocument();
   });
 
   it("offers no editing: decks are renamed and removed in the Browser", () => {

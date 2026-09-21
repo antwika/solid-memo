@@ -7,7 +7,6 @@ import type { Card, Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { StudyQueue } from "../domain/scheduling";
 import { makeUseCasesFake } from "../test/useCasesFake";
-import { decksHref } from "./router";
 
 const deck: Deck = {
   id: "deck-1",
@@ -78,7 +77,7 @@ describe("DeckDetailContainer", () => {
   it("says all cards are studied when today's queue is empty", async () => {
     const useCases = makeUseCasesFake({
       listCards: vi.fn(async () => [card]),
-      getStudyQueue: vi.fn(async () => ({ due: [], newCards: [] })),
+      getStudyQueue: vi.fn(async () => ({ due: [], newCards: [], studiedToday: 0 })),
     });
     renderContainer(useCases);
     expect(
@@ -91,6 +90,66 @@ describe("DeckDetailContainer", () => {
       deck,
       expect.any(Date),
     );
+  });
+
+  it("resets the day, then shows the refreshed queue", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    let reset = false;
+    const useCases = makeUseCasesFake({
+      listCards: vi.fn(async () => [card]),
+      getStudyQueue: vi.fn(async () =>
+        reset
+          ? { due: [card], newCards: [], studiedToday: 0 }
+          : { due: [], newCards: [], studiedToday: 1 },
+      ),
+      resetStudyDay: vi.fn(async () => {
+        reset = true;
+        return 1;
+      }),
+    });
+    renderContainer(useCases);
+
+    expect(
+      await screen.findByText(/All cards have been studied/),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Reset today's study" }),
+    );
+
+    // The card is due again, and there is nothing left to reset.
+    expect(
+      await screen.findByRole("button", { name: "Study" }),
+    ).toBeEnabled();
+    expect(useCases.resetStudyDay).toHaveBeenCalledWith(
+      instance.url,
+      deck,
+      expect.any(Date),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Reset today's study" }),
+    ).toBeNull();
+  });
+
+  it("shows an error when the reset fails, and keeps the day", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    renderContainer(
+      makeUseCasesFake({
+        listCards: vi.fn(async () => [card]),
+        getStudyQueue: vi.fn(async () => ({
+          due: [],
+          newCards: [],
+          studiedToday: 2,
+        })),
+        resetStudyDay: vi.fn(async () => {
+          throw new Error("reset refused");
+        }),
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Reset today's study" }),
+    );
+    expect(await screen.findByText("reset refused")).toBeInTheDocument();
+    expect(screen.getByText("2 cards studied today.")).toBeInTheDocument();
   });
 
   it("shows an error when the study queue fails", async () => {
@@ -120,13 +179,10 @@ describe("DeckDetailContainer", () => {
       renderContainer(
         makeUseCasesFake({
           listCards: vi.fn(async () => [card]),
-          getStudyQueue: vi.fn(async () => ({ due: [card], newCards: [] })),
+          getStudyQueue: vi.fn(async () => ({ due: [card], newCards: [], studiedToday: 0 })),
         }),
       );
-    expect(
-      await screen.findByRole("link", { name: "Back to decks" }),
-    ).toHaveAttribute("href", decksHref(instance.url));
-    fireEvent.click(screen.getByRole("button", { name: "Study" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Study" }));
     expect(onStudy).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("button", { name: "Practice" }));
     expect(onPractice).toHaveBeenCalledOnce();

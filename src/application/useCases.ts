@@ -13,12 +13,14 @@ import type { ReviewQuality, ReviewState } from "../domain/review";
 import {
   buildStudyQueue,
   nextDueDate,
+  resetStudyDay,
+  snapshotBeforeReview,
   type StudyQueue,
 } from "../domain/scheduling";
 import type { EstablishedSession, Session } from "../domain/session";
 import { applySm2, INITIAL_SM2_STATE } from "../domain/sm2";
 import type { Storage } from "../domain/storage";
-import { validateWebId } from "../domain/webId";
+import { isSecureUrl, validateWebId } from "../domain/webId";
 import type { WebIdDocument } from "../domain/webIdDocument";
 import type {
   DeckRepository,
@@ -34,6 +36,8 @@ export interface UseCases {
   restoreSession(): Promise<EstablishedSession | null>;
   /** Rejects, without any network request, unless the WebID is an https URL. */
   loginWithWebId(webId: string): Promise<void>;
+  /** Log in at a chosen identity provider; rejects unless it is an https URL. */
+  loginWithProvider(oidcIssuer: string): Promise<void>;
   logout(): Promise<void>;
   /** Subscribe to session expiry; returns an unsubscribe function. */
   onSessionExpired(listener: () => void): () => void;
@@ -96,6 +100,12 @@ export interface UseCases {
     quality: ReviewQuality,
     now: Date,
   ): Promise<ReviewState>;
+  /**
+   * Undo the current study day for a deck: cards reviewed today go back
+   * to how they were before, cards introduced today become new again.
+   * Resolves to the number of cards reset.
+   */
+  resetStudyDay(instanceUrl: string, deck: Deck, now: Date): Promise<number>;
 }
 
 export interface Dependencies {
@@ -117,11 +127,20 @@ export function createUseCases({
   preferencesRepository,
   reviewStateRepository,
 }: Dependencies): UseCases {
-  async function getPreferences(
-    instanceUrl: string,
-  ): Promise<StudyPreferences> {
-    const stored = await preferencesRepository.getPreferences(instanceUrl);
-    return stored ?? DEFAULT_PREFERENCES;
+  // Concurrent reads of one instance's preferences share a single request
+  // (every deck-list row asks at once). Only in-flight reads are shared:
+  // nothing is cached once a read settles, so saves are seen immediately.
+  const preferenceReads = new Map<string, Promise<StudyPreferences>>();
+
+  function getPreferences(instanceUrl: string): Promise<StudyPreferences> {
+    const inFlight = preferenceReads.get(instanceUrl);
+    if (inFlight !== undefined) return inFlight;
+    const read = preferencesRepository
+      .getPreferences(instanceUrl)
+      .then((stored) => stored ?? DEFAULT_PREFERENCES)
+      .finally(() => preferenceReads.delete(instanceUrl));
+    preferenceReads.set(instanceUrl, read);
+    return read;
   }
 
   return {
@@ -134,6 +153,12 @@ export function createUseCases({
         throw new Error(validation.error);
       }
       return sessionGateway.login(validation.webId);
+    },
+    async loginWithProvider(oidcIssuer) {
+      if (!isSecureUrl(oidcIssuer)) {
+        throw new Error("An identity provider must be an https:// URL.");
+      }
+      return sessionGateway.loginWithIssuer(oidcIssuer);
     },
     logout() {
       return sessionGateway.logout();
@@ -223,15 +248,37 @@ export function createUseCases({
         reviewStateRepository.getReviewState(deck, card.id),
       ]);
       const next = applySm2(current ?? INITIAL_SM2_STATE, quality);
+      // What a reset of today would restore.
+      const previous = snapshotBeforeReview(
+        current,
+        now,
+        prefs.dayBoundaryHour,
+      );
       const state: ReviewState = {
         cardId: card.id,
         ...next,
         due: nextDueDate(now, next.intervalDays, prefs.dayBoundaryHour),
         firstReviewedAt: current?.firstReviewedAt ?? now.toISOString(),
         lastReviewedAt: now.toISOString(),
+        ...(previous === undefined ? {} : { previous }),
       };
       await reviewStateRepository.saveReviewState(deck, state);
       return state;
+    },
+    async resetStudyDay(instanceUrl, deck, now) {
+      const [prefs, reviews] = await Promise.all([
+        getPreferences(instanceUrl),
+        reviewStateRepository.listReviewStates(deck),
+      ]);
+      const reset = resetStudyDay(reviews, now, prefs.dayBoundaryHour);
+      const count = reset.restore.length + reset.removeCardIds.length;
+      if (count > 0) {
+        await reviewStateRepository.applyReviewChanges(deck, {
+          save: reset.restore,
+          removeCardIds: reset.removeCardIds,
+        });
+      }
+      return count;
     },
   };
 }

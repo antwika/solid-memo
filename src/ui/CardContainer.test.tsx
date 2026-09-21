@@ -35,7 +35,6 @@ function renderContainer(useCases: UseCases) {
         useCases={useCases}
         deck={deck}
         card={card}
-        browserHref="#/browse?deck=d"
         onRemoved={onRemoved}
       />
     </QueryClientProvider>,

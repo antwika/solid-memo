@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
 import type { Session } from "../domain/session";
 import { errorMessage } from "./errorMessage";
+import { Loading } from "./Loading";
 import { WebIdDocumentView } from "./WebIdDocumentView";
 
 /**
@@ -24,7 +25,7 @@ export function WebIdDocumentContainer({
   return (
     <details>
       <summary>WebID document</summary>
-      {documentQuery.isPending && <p>Loading profile…</p>}
+      {documentQuery.isPending && <Loading label="Loading profile…" />}
       {documentQuery.error && (
         <p class="error">{errorMessage(documentQuery.error)}</p>
       )}

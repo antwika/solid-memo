@@ -14,6 +14,7 @@ import { errorMessage } from "./errorMessage";
 import { InstanceBar } from "./InstanceBar";
 import { InstanceCreator } from "./InstanceCreator";
 import { InstancePicker } from "./InstancePicker";
+import { Loading } from "./Loading";
 import { PracticeContainer } from "./PracticeContainer";
 import { PreferencesContainer } from "./PreferencesContainer";
 import { StoragePicker } from "./StoragePicker";
@@ -199,23 +200,23 @@ export function Workspace({
     return <p class="error">{errorMessage(instancesQuery.error)}</p>;
   }
   if (route === null || instances === undefined) {
-    return <p>Loading your Solid Memo instances…</p>;
+    return <Loading label="Loading your Solid Memo instances…" />;
   }
   // An unknown instance in the URL: the redirect effect is about to
   // replace the route.
   if (instanceUrl !== null && activeInstance === null) {
-    return <p>Loading your Solid Memo instances…</p>;
+    return <Loading label="Loading your Solid Memo instances…" />;
   }
   if (needsDeck) {
     if (decksQuery.error) {
       return <p class="error">{errorMessage(decksQuery.error)}</p>;
     }
     if (decksQuery.data === undefined) {
-      return <p>Loading deck…</p>;
+      return <Loading label="Loading deck…" />;
     }
     // Unknown deck: the redirect effect is about to replace the route.
     if (activeDeck === null) {
-      return <p>Loading deck…</p>;
+      return <Loading label="Loading deck…" />;
     }
   }
   if (needsCard) {
@@ -225,7 +226,7 @@ export function Workspace({
     // Still loading, or unknown: the redirect effect is about to replace
     // the route.
     if (activeCard === null) {
-      return <p>Loading card…</p>;
+      return <Loading label="Loading card…" />;
     }
   }
 
@@ -236,7 +237,7 @@ export function Workspace({
           return <p class="error">{errorMessage(storagesQuery.error)}</p>;
         }
         if (storagesQuery.data === undefined) {
-          return <p>Discovering storages…</p>;
+          return <Loading label="Discovering storages…" />;
         }
         return (
           <StoragePicker
@@ -293,6 +294,14 @@ export function Workspace({
                 instanceUrl: instanceUrl!,
                 deckUrl: deck.url,
                 mode: "study",
+              })
+            }
+            onPracticeDeck={(deck) =>
+              navigate({
+                screen: "practice",
+                instanceUrl: instanceUrl!,
+                deckUrl: deck.url,
+                mode: "practice",
               })
             }
             onCreateDeck={() =>
@@ -396,7 +405,6 @@ export function Workspace({
             useCases={useCases}
             deck={activeDeck!}
             card={activeCard!}
-            browserHref={routeToHash(browser)}
             // Replace: the removed card's page must not be a Back stop.
             onRemoved={() => replace(browser)}
           />

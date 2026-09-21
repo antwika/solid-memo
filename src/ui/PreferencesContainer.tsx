@@ -3,8 +3,8 @@ import type { UseCases } from "../application/useCases";
 import type { Instance } from "../domain/instance";
 import type { StudyPreferences } from "../domain/preferences";
 import { errorMessage } from "./errorMessage";
+import { Loading } from "./Loading";
 import { PreferencesScreen } from "./PreferencesScreen";
-import { decksHref } from "./router";
 
 /** Owns the preferences query/mutation for one instance. */
 export function PreferencesContainer({
@@ -39,7 +39,7 @@ export function PreferencesContainer({
     return <p class="error">{errorMessage(preferencesQuery.error)}</p>;
   }
   if (preferencesQuery.data === undefined) {
-    return <p>Loading preferences…</p>;
+    return <Loading label="Loading preferences…" />;
   }
 
   return (
@@ -48,7 +48,6 @@ export function PreferencesContainer({
       busy={saveMutation.isPending}
       error={errorMessage(saveMutation.error)}
       onSave={(preferences) => saveMutation.mutate(preferences)}
-      decksHref={decksHref(instance.url)}
     />
   );
 }

@@ -296,9 +296,9 @@ describe("Workspace", () => {
       await screen.findByRole("heading", { name: "Study preferences" }),
     ).toBeInTheDocument();
 
-    fireEvent.click(
-      await screen.findByRole("link", { name: "Back to decks" }),
-    );
+    // No "Back to decks" button: the breadcrumb takes you back.
+    const trail = within(screen.getByRole("navigation", { name: "Breadcrumb" }));
+    fireEvent.click(trail.getByRole("link", { name: "Decks" }));
     expect(
       await screen.findByRole("heading", { name: "Decks" }),
     ).toBeInTheDocument();
@@ -368,9 +368,9 @@ describe("Workspace", () => {
       await screen.findByRole("heading", { name: "Kanji N5" }),
     ).toBeInTheDocument();
 
-    fireEvent.click(
-      await screen.findByRole("link", { name: "Back to decks" }),
-    );
+    // No "Back to decks" button: the breadcrumb takes you back.
+    const trail = within(screen.getByRole("navigation", { name: "Breadcrumb" }));
+    fireEvent.click(trail.getByRole("link", { name: "Decks" }));
     expect(
       await screen.findByRole("heading", { name: "Decks" }),
     ).toBeInTheDocument();
@@ -495,9 +495,9 @@ describe("Workspace", () => {
       await screen.findByRole("heading", { name: "Browser: Kanji N5" }),
     ).toBeInTheDocument();
 
-    fireEvent.click(
-      await screen.findByRole("link", { name: "Back to deck" }),
-    );
+    // No "Back to deck" button: the deck's name in the breadcrumb.
+    const trail = within(screen.getByRole("navigation", { name: "Breadcrumb" }));
+    fireEvent.click(trail.getByRole("link", { name: "Kanji N5" }));
     expect(
       await screen.findByRole("heading", { name: "Kanji N5" }),
     ).toBeInTheDocument();
@@ -528,6 +528,7 @@ describe("Workspace", () => {
             } satisfies Card,
           ],
           newCards: [],
+          studiedToday: 0,
         })),
       }),
     );
@@ -571,6 +572,7 @@ describe("Workspace", () => {
             } satisfies Card,
           ],
           newCards: [],
+          studiedToday: 0,
         })),
       }),
     );
@@ -582,11 +584,46 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
+  const dueCard: Card = {
+    id: "card-1",
+    url: `${instanceA.url}decks/deck-1.ttl#card-1`,
+    front: "水",
+    back: "water",
+    createdAt: "2026-09-21T10:00:00.000Z",
+  };
+
+  it("starts a practice session from the deck list when only new cards remain", async () => {
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+        getStudyQueue: vi.fn(async () => ({
+          due: [],
+          newCards: [dueCard],
+          studiedToday: 0,
+        })),
+      }),
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Practice Kanji N5" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Practice: Kanji N5" }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toContain("mode=practice");
+  });
+
   it("starts a study session straight from the deck list", async () => {
     renderWorkspace(
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listDecks: vi.fn(async () => [deck]),
+        getStudyQueue: vi.fn(async () => ({
+          due: [dueCard],
+          newCards: [],
+          studiedToday: 0,
+        })),
       }),
     );
 
@@ -717,8 +754,8 @@ describe("Workspace", () => {
         "page",
       );
 
-      // And back, by link.
-      fireEvent.click(screen.getByRole("link", { name: "Back to Browser" }));
+      // And back, via the breadcrumb.
+      fireEvent.click(trail.getByRole("link", { name: "Browser" }));
       expect(
         await screen.findByRole("heading", { name: `Browser: ${deck.name}` }),
       ).toBeInTheDocument();

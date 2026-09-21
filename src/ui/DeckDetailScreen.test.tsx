@@ -21,10 +21,13 @@ function renderScreen(
     cardCount: 3,
     dueCount: 2,
     newCount: 1,
-    decksHref: "#/decks?instance=a",
+    studiedToday: 0,
+    busy: false,
+    error: null,
     onStudy: vi.fn(),
     onPractice: vi.fn(),
     onBrowse: vi.fn(),
+    onResetDay: vi.fn(),
     ...overrides,
   };
   const view = render(<DeckDetailScreen {...props} />);
@@ -32,6 +35,14 @@ function renderScreen(
 }
 
 describe("DeckDetailScreen", () => {
+  it("marks the title with a decorative icon", () => {
+    const { container } = renderScreen();
+    expect(container.querySelector("h2 svg.icon")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+  });
+
   it("links the deck's name to the deck's page", () => {
     renderScreen();
     expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute(
@@ -104,12 +115,58 @@ describe("DeckDetailScreen", () => {
     expect(screen.queryByText(/No cards are due today/)).toBeNull();
   });
 
-  it("links back to the deck list", () => {
-    renderScreen();
-    expect(screen.getByRole("link", { name: "Back to decks" })).toHaveAttribute(
-      "href",
-      "#/decks?instance=a",
-    );
+  describe("resetting the day", () => {
+    it("is not offered when nothing was studied today", () => {
+      renderScreen();
+      expect(
+        screen.queryByRole("button", { name: "Reset today's study" }),
+      ).toBeNull();
+    });
+
+    it("shows how much was studied and resets after confirmation", () => {
+      const confirm = vi.fn(() => true);
+      vi.stubGlobal("confirm", confirm);
+      const { props } = renderScreen({ studiedToday: 12 });
+      expect(screen.getByText("12 cards studied today.")).toBeInTheDocument();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Reset today's study" }),
+      );
+      expect(confirm).toHaveBeenCalledWith(
+        expect.stringContaining('Reset today\'s study of "Kanji N5"? The 12 cards'),
+      );
+      expect(props.onResetDay).toHaveBeenCalledOnce();
+    });
+
+    it("uses the singular for one card", () => {
+      renderScreen({ studiedToday: 1 });
+      expect(screen.getByText("1 card studied today.")).toBeInTheDocument();
+    });
+
+    it("keeps the day when the confirmation is declined", () => {
+      vi.stubGlobal("confirm", vi.fn(() => false));
+      const { props } = renderScreen({ studiedToday: 3 });
+      fireEvent.click(
+        screen.getByRole("button", { name: "Reset today's study" }),
+      );
+      expect(props.onResetDay).not.toHaveBeenCalled();
+    });
+
+    it("is offered on the 'all studied' screen — where it is wanted most", () => {
+      renderScreen({ dueCount: 0, newCount: 0, studiedToday: 5 });
+      expect(screen.getByText(/All cards have been studied/)).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Reset today's study" }),
+      ).toBeEnabled();
+    });
+
+    it("locks the screen while resetting, and shows a failure", () => {
+      renderScreen({ studiedToday: 3, busy: true, error: "reset refused" });
+      expect(screen.getByRole("button", { name: "Resetting…" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Study" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Practice" })).toBeDisabled();
+      expect(screen.getByText("reset refused")).toBeInTheDocument();
+    });
   });
 
   it("starts a practice session", () => {

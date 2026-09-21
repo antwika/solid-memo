@@ -16,7 +16,6 @@ function renderScreen(
 ) {
   const props = {
     card,
-    browserHref: "#/browse?deck=d",
     busy: false,
     saved: false,
     error: null,
@@ -29,6 +28,14 @@ function renderScreen(
 }
 
 describe("CardScreen", () => {
+  it("marks the title with a decorative icon", () => {
+    const { container } = renderScreen();
+    expect(container.querySelector("h2 svg.icon")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+  });
+
   it("shows the card and an editor prefilled with it", () => {
     const { container } = renderScreen();
     expect(screen.getByRole("heading", { name: "Card" })).toBeInTheDocument();
@@ -36,13 +43,6 @@ describe("CardScreen", () => {
     expect(container.querySelector(".card-back")).toHaveTextContent("water");
     expect(screen.getByLabelText("Front")).toHaveValue("水");
     expect(screen.getByLabelText("Back")).toHaveValue("water");
-  });
-
-  it("links back to the Browser", () => {
-    renderScreen();
-    expect(
-      screen.getByRole("link", { name: "Back to Browser" }),
-    ).toHaveAttribute("href", "#/browse?deck=d");
   });
 
   it("saves the edited card with trimmed values", () => {

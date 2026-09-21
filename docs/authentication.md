@@ -15,6 +15,10 @@ is never inferred from the WebID's origin — the two often differ (a WebID on
 `alice.datapod.igrant.io` is served by the issuer `datapod.igrant.io`) — and
 must itself be an `https:` URL.
 
+Alternatively the user picks a suggested provider ([onboarding](onboarding.md));
+`loginWithIssuer` then skips the profile lookup and starts the same flow at
+that issuer.
+
 The app never handles credentials: no password field, no client secret, no
 hand-rolled OIDC. The authn library registers the client dynamically and
 runs the authorization-code + PKCE flow.

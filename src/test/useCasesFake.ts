@@ -7,6 +7,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
   return {
     restoreSession: vi.fn(async () => null),
     loginWithWebId: vi.fn(async () => undefined),
+    loginWithProvider: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     onSessionExpired: vi.fn(() => () => undefined),
     discoverAccount: vi.fn(async (session) => ({
@@ -49,7 +50,12 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     removeCard: vi.fn(async () => undefined),
     getPreferences: vi.fn(async () => DEFAULT_PREFERENCES),
     savePreferences: vi.fn(async () => undefined),
-    getStudyQueue: vi.fn(async () => ({ due: [], newCards: [] })),
+    getStudyQueue: vi.fn(async () => ({
+      due: [],
+      newCards: [],
+      studiedToday: 0,
+    })),
+    resetStudyDay: vi.fn(async () => 0),
     recordReview: vi.fn(async () => ({
       cardId: "card-1",
       easeFactor: 2.6,

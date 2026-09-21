@@ -9,7 +9,6 @@ function renderScreen(
     busy: false,
     error: null,
     onCreate: vi.fn(),
-    decksHref: "#/decks?instance=a",
     ...overrides,
   };
   const view = render(<DeckCreatorScreen {...props} />);
@@ -24,14 +23,6 @@ describe("DeckCreatorScreen", () => {
     });
     fireEvent.submit(container.querySelector("form")!);
     expect(props.onCreate).toHaveBeenCalledWith("Kana");
-  });
-
-  it("links back to the deck list", () => {
-    renderScreen();
-    expect(screen.getByRole("link", { name: "Back to decks" })).toHaveAttribute(
-      "href",
-      "#/decks?instance=a",
-    );
   });
 
   it("disables the form while busy and shows errors", () => {

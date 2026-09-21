@@ -54,4 +54,46 @@ describe("review state mapping", () => {
     };
     expect(toReviewState(withoutField)).toBeNull();
   });
+
+  const snapshot = {
+    easeFactor: 2.5,
+    intervalDays: 1,
+    repetitions: 1,
+    due: "2026-09-21",
+    lastReviewedAt: "2026-09-20T08:00:00.000Z",
+  };
+
+  it("round-trips the snapshot a day reset restores", () => {
+    const withSnapshot: ReviewState = { ...state, previous: snapshot };
+    const thing = toReviewStateThing(REVIEWS_DOC, withSnapshot);
+    expect(toReviewState(thing)).toEqual(withSnapshot);
+  });
+
+  it("reads states written before snapshots existed", () => {
+    const thing = toReviewStateThing(REVIEWS_DOC, state);
+    expect(toReviewState(thing)).not.toHaveProperty("previous");
+  });
+
+  it.each([
+    "previousEaseFactor",
+    "previousIntervalDays",
+    "previousRepetitions",
+    "previousDue",
+    "previousLastReviewedAt",
+  ])("treats a snapshot missing sm:%s as absent, keeping the state", (field) => {
+    const thing = toReviewStateThing(REVIEWS_DOC, {
+      ...state,
+      previous: snapshot,
+    });
+    const partial = {
+      ...thing,
+      predicates: Object.fromEntries(
+        Object.entries(thing.predicates).filter(
+          ([predicate]) =>
+            predicate !== `https://solid-memo.com/vocab/v1#${field}`,
+        ),
+      ),
+    };
+    expect(toReviewState(partial)).toEqual(state);
+  });
 });

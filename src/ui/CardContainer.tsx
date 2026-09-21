@@ -13,13 +13,11 @@ export function CardContainer({
   useCases,
   deck,
   card,
-  browserHref,
   onRemoved,
 }: {
   useCases: UseCases;
   deck: Deck;
   card: Card;
-  browserHref: string;
   /** The card is gone; leave its page. */
   onRemoved: () => void;
 }) {
@@ -51,7 +49,6 @@ export function CardContainer({
   return (
     <CardScreen
       card={card}
-      browserHref={browserHref}
       busy={updateCardMutation.isPending || removeCardMutation.isPending}
       saved={updateCardMutation.isSuccess}
       error={

@@ -7,6 +7,7 @@ import illustrationUrl from "../assets/illustration.svg";
 import { errorMessage } from "./errorMessage";
 import { ExternalLink } from "./ExternalLink";
 import { Footer } from "./Footer";
+import { Loading } from "./Loading";
 import { OnboardingFlow } from "./onboarding/OnboardingFlow";
 import { PodConnectionScreen } from "./onboarding/PodConnectionScreen";
 import { Workspace } from "./Workspace";
@@ -73,11 +74,13 @@ function AppContent({ useCases }: { useCases: UseCases }) {
     retry: false,
   });
 
-  async function handleLogin(webId: string) {
+  // Either way of logging in ends in a redirect to the identity provider,
+  // so the flow stays busy unless starting it fails.
+  async function startLogin(login: () => Promise<void>) {
     setAuthError(null);
     setBusy(true);
     try {
-      await useCases.loginWithWebId(webId);
+      await login();
     } catch (e) {
       setAuthError(errorMessage(e));
       setBusy(false);
@@ -95,7 +98,11 @@ function AppContent({ useCases }: { useCases: UseCases }) {
   }
 
   if (checkingSession) {
-    return <main>Restoring session…</main>;
+    return (
+      <main>
+        <Loading label="Restoring session…" />
+      </main>
+    );
   }
 
   if (!session) {
@@ -118,7 +125,14 @@ function AppContent({ useCases }: { useCases: UseCases }) {
           providers={POD_PROVIDERS}
           busy={busy}
           returning={returning}
-          onLogin={handleLogin}
+          onLogin={(webId) =>
+            void startLogin(() => useCases.loginWithWebId(webId))
+          }
+          onLoginWithProvider={(provider) =>
+            void startLogin(() =>
+              useCases.loginWithProvider(provider.oidcIssuer),
+            )
+          }
         />
         {authError && <p class="error">{authError}</p>}
       </main>

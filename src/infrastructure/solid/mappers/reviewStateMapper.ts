@@ -9,7 +9,7 @@ import {
   getUrlAll,
   type Thing,
 } from "@inrupt/solid-client";
-import type { ReviewState } from "../../../domain/review";
+import type { ReviewSnapshot, ReviewState } from "../../../domain/review";
 import { RDF, SM } from "../vocab";
 import { fragmentIdOf } from "./deckMapper";
 
@@ -39,6 +39,7 @@ export function toReviewState(thing: Thing): ReviewState | null {
   ) {
     return null;
   }
+  const previous = toSnapshot(thing);
   return {
     cardId: fragmentIdOf(asUrl(thing)),
     easeFactor,
@@ -46,6 +47,35 @@ export function toReviewState(thing: Thing): ReviewState | null {
     repetitions,
     due,
     firstReviewedAt: firstReviewedAt.toISOString(),
+    lastReviewedAt: lastReviewedAt.toISOString(),
+    ...(previous === null ? {} : { previous }),
+  };
+}
+
+/**
+ * The sm:previous* snapshot, all or nothing: a partial snapshot could only
+ * restore a state that never existed, so it reads as absent.
+ */
+function toSnapshot(thing: Thing): ReviewSnapshot | null {
+  const easeFactor = getDecimal(thing, SM.previousEaseFactor);
+  const intervalDays = getInteger(thing, SM.previousIntervalDays);
+  const repetitions = getInteger(thing, SM.previousRepetitions);
+  const due = getStringNoLocale(thing, SM.previousDue);
+  const lastReviewedAt = getDatetime(thing, SM.previousLastReviewedAt);
+  if (
+    easeFactor === null ||
+    intervalDays === null ||
+    repetitions === null ||
+    due === null ||
+    lastReviewedAt === null
+  ) {
+    return null;
+  }
+  return {
+    easeFactor,
+    intervalDays,
+    repetitions,
+    due,
     lastReviewedAt: lastReviewedAt.toISOString(),
   };
 }
@@ -55,7 +85,7 @@ export function toReviewStateThing(
   reviewsDocumentUrl: string,
   state: ReviewState,
 ): Thing {
-  return buildThing(
+  const thing = buildThing(
     createThing({ url: `${reviewsDocumentUrl}#${state.cardId}` }),
   )
     .addIri(RDF.type, SM.ReviewState)
@@ -64,6 +94,16 @@ export function toReviewStateThing(
     .addInteger(SM.repetitions, state.repetitions)
     .addStringNoLocale(SM.due, state.due)
     .addDatetime(SM.firstReviewedAt, new Date(state.firstReviewedAt))
-    .addDatetime(SM.lastReviewedAt, new Date(state.lastReviewedAt))
+    .addDatetime(SM.lastReviewedAt, new Date(state.lastReviewedAt));
+  if (state.previous === undefined) return thing.build();
+  return thing
+    .addDecimal(SM.previousEaseFactor, state.previous.easeFactor)
+    .addInteger(SM.previousIntervalDays, state.previous.intervalDays)
+    .addInteger(SM.previousRepetitions, state.previous.repetitions)
+    .addStringNoLocale(SM.previousDue, state.previous.due)
+    .addDatetime(
+      SM.previousLastReviewedAt,
+      new Date(state.previous.lastReviewedAt),
+    )
     .build();
 }

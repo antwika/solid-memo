@@ -15,6 +15,7 @@ stateDiagram-v2
     Choose --> WebID: I already have a Pod
     WebID --> Choose: Back
     WebID --> IdP: valid https WebID → Solid-OIDC redirect
+    WebID --> IdP: or pick a suggested provider → Solid-OIDC redirect
     IdP --> Discovering: redirect back (origin "login")
     Discovering --> Connected: storage found
     Discovering --> NoPod: profile has no storage link
@@ -39,11 +40,25 @@ redirect just completed.
 ## Pod providers
 
 [src/domain/podProvider.ts](../src/domain/podProvider.ts) lists the
-providers offered (`POD_PROVIDERS`). A provider is a name and a sign-up
-link, nothing more: login is driven by the WebID and the Pod by the
-profile, so adding a provider is adding a list entry.
+providers suggested (`POD_PROVIDERS`). A provider is data, nothing more —
+a name, its Solid-OIDC issuer, and optionally a sign-up link — so adding a
+provider is adding a list entry:
+
+- providers **with a `signUpUrl`** are offered on the first step for
+  creating a Pod (currently iGrant.io Data Pod);
+- **every** provider is suggested on the WebID step under "Or pick your
+  provider", for users who do not want to type their WebID. Picking one
+  calls `loginWithProvider(oidcIssuer)`, which starts the same Solid-OIDC
+  redirect directly at that issuer; the WebID then arrives with the session,
+  and Pod discovery proceeds exactly as after a WebID login.
+
+Issuers are the exact values each provider advertises in its
+`/.well-known/openid-configuration`.
 
 ## WebID validation
+
+A chosen provider's issuer passes `isSecureUrl` in the use case, like every
+other URL that steers authentication.
 
 `validateWebId` ([src/domain/webId.ts](../src/domain/webId.ts)) accepts
 only absolute `https:` URLs without embedded credentials. It runs in the

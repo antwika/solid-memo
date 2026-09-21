@@ -2,6 +2,7 @@ import {
   createSolidDataset,
   getThing,
   getThingAll,
+  removeThing,
   saveSolidDatasetAt,
   setThing,
 } from "@inrupt/solid-client";
@@ -51,6 +52,29 @@ export function createSolidReviewStateRepository({
         dataset,
         toReviewStateThing(deck.reviewsDocumentUrl, state),
       );
+      await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
+    },
+
+    async applyReviewChanges(deck, { save, removeCardIds }): Promise<void> {
+      const dataset = await getSolidDatasetOrNull(
+        deck.reviewsDocumentUrl,
+        fetch,
+      );
+      // No document means no states: nothing to restore or remove.
+      if (dataset === null) return;
+      let updated = dataset;
+      for (const state of save) {
+        updated = setThing(
+          updated,
+          toReviewStateThing(deck.reviewsDocumentUrl, state),
+        );
+      }
+      for (const cardId of removeCardIds) {
+        updated = removeThing(
+          updated,
+          `${deck.reviewsDocumentUrl}#${cardId}`,
+        );
+      }
       await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
     },
   };

@@ -1,5 +1,6 @@
 import type { SolidAccount } from "../../domain/account";
 import { ExternalLink } from "../ExternalLink";
+import { Loading } from "../Loading";
 
 /**
  * Post-login onboarding step: shows Pod discovery in progress, then the
@@ -23,9 +24,7 @@ export function PodConnectionScreen({
   const discovering = (
     <section class="onboarding" aria-busy="true">
       <h2>Discovering your Pod…</h2>
-      <p class="hint">
-        Reading your WebID profile to find where your data lives.
-      </p>
+      <Loading label="Reading your WebID profile to find where your data lives." />
     </section>
   );
 

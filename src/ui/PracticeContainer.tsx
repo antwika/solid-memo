@@ -5,6 +5,7 @@ import type { Card, Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { ReviewQuality } from "../domain/review";
 import { errorMessage } from "./errorMessage";
+import { Loading } from "./Loading";
 import { PracticeScreen, type PracticeMode } from "./PracticeScreen";
 import { deckHref } from "./router";
 
@@ -78,7 +79,7 @@ export function PracticeContainer({
     return <p class="error">{errorMessage(queueQuery.error)}</p>;
   }
   if (cards === undefined) {
-    return <p>Preparing your study session…</p>;
+    return <Loading label="Preparing your study session…" />;
   }
 
   const card = position < cards.length ? cards[position] : null;

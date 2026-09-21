@@ -1,6 +1,6 @@
 import type { Card } from "./deck";
 import type { StudyPreferences } from "./preferences";
-import type { ReviewState } from "./review";
+import type { ReviewSnapshot, ReviewState } from "./review";
 
 /**
  * The study day ("YYYY-MM-DD", device-local time) an instant belongs to.
@@ -32,6 +32,8 @@ export interface StudyQueue {
   due: Card[];
   /** Never-reviewed cards, capped by the daily new-card budget. */
   newCards: Card[];
+  /** Cards reviewed during the current study day (what a reset would undo). */
+  studiedToday: number;
 }
 
 export function buildStudyQueue(args: {
@@ -71,7 +73,71 @@ export function buildStudyQueue(args: {
     .filter((card) => !reviewByCardId.has(card.id))
     .slice(0, newBudget);
 
-  return { due, newCards };
+  return { due, newCards, studiedToday: reviewedToday };
+}
+
+/**
+ * The snapshot a review must carry forward: the state from before the
+ * study day's FIRST review. A second review on the same day keeps the
+ * snapshot it already has; a card without earlier state has none.
+ */
+export function snapshotBeforeReview(
+  current: ReviewState | null,
+  now: Date,
+  dayBoundaryHour: number,
+): ReviewSnapshot | undefined {
+  if (current === null) return undefined;
+  const reviewedToday =
+    studyDayOf(new Date(current.lastReviewedAt), dayBoundaryHour) ===
+    studyDayOf(now, dayBoundaryHour);
+  if (reviewedToday) return current.previous;
+  return {
+    easeFactor: current.easeFactor,
+    intervalDays: current.intervalDays,
+    repetitions: current.repetitions,
+    due: current.due,
+    lastReviewedAt: current.lastReviewedAt,
+  };
+}
+
+/** The writes that undo one study day. */
+export interface StudyDayReset {
+  /** States to write back, restored to before today's reviews. */
+  restore: ReviewState[];
+  /** Cards introduced today: their state goes, making them new again. */
+  removeCardIds: string[];
+}
+
+/**
+ * Undo the current study day: every card reviewed today goes back to how
+ * it was before. Untouched cards are not mentioned in the result.
+ *
+ * A card reviewed today that has no snapshot (state written before
+ * snapshots existed) cannot be restored; it is made due today instead, so
+ * it can at least be studied again.
+ */
+export function resetStudyDay(
+  reviews: ReviewState[],
+  now: Date,
+  dayBoundaryHour: number,
+): StudyDayReset {
+  const today = studyDayOf(now, dayBoundaryHour);
+  const isToday = (instant: string) =>
+    studyDayOf(new Date(instant), dayBoundaryHour) === today;
+
+  const reset: StudyDayReset = { restore: [], removeCardIds: [] };
+  for (const review of reviews) {
+    if (!isToday(review.lastReviewedAt)) continue;
+    if (isToday(review.firstReviewedAt)) {
+      reset.removeCardIds.push(review.cardId);
+    } else if (review.previous !== undefined) {
+      const { previous, ...state } = review;
+      reset.restore.push({ ...state, ...previous });
+    } else {
+      reset.restore.push({ ...review, due: today });
+    }
+  }
+  return reset;
 }
 
 function formatLocalDate(date: Date): string {

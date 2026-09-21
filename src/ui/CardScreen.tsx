@@ -1,11 +1,10 @@
 import { useState } from "preact/hooks";
 import type { Card } from "../domain/deck";
-import { TrashIcon } from "./icons";
+import { CardIcon, TrashIcon } from "./icons";
 
 /** One card's own page: the card as it looks in study, and its editor. */
 export function CardScreen({
   card,
-  browserHref,
   busy,
   saved,
   error,
@@ -13,8 +12,6 @@ export function CardScreen({
   onRemove,
 }: {
   card: Card;
-  /** URL of the deck's Browser, for "Back to Browser". */
-  browserHref: string;
   busy: boolean;
   /** The last save succeeded (and nothing was edited since). */
   saved: boolean;
@@ -41,10 +38,10 @@ export function CardScreen({
   return (
     <section>
       <header>
-        <h2>Card</h2>
-        <a class="button" href={browserHref}>
-          Back to Browser
-        </a>
+        <h2>
+          <CardIcon />
+          Card
+        </h2>
       </header>
       <div class="practice-card">
         <p class="card-front">{card.front}</p>

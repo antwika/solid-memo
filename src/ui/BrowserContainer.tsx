@@ -3,6 +3,7 @@ import type { UseCases } from "../application/useCases";
 import type { Card, Deck } from "../domain/deck";
 import { BrowserScreen } from "./BrowserScreen";
 import { errorMessage } from "./errorMessage";
+import { Loading } from "./Loading";
 
 /** Owns the card list and the deck/card mutations for the Browser view. */
 export function BrowserContainer({
@@ -61,7 +62,7 @@ export function BrowserContainer({
     return <p class="error">{errorMessage(cardsQuery.error)}</p>;
   }
   if (cardsQuery.data === undefined) {
-    return <p>Loading cards…</p>;
+    return <Loading label="Loading cards…" />;
   }
 
   return (

@@ -61,6 +61,7 @@ describe("PracticeContainer", () => {
         getStudyQueue: vi.fn(async () => ({
           due: [makeCard("card-a", "front-a")],
           newCards: [makeCard("card-b", "front-b")],
+          studiedToday: 0,
         })),
       }),
     );
@@ -87,6 +88,7 @@ describe("PracticeContainer", () => {
       getStudyQueue: vi.fn(async () => ({
         due: [makeCard("card-a", "front-a")],
         newCards: [makeCard("card-b", "front-b")],
+        studiedToday: 0,
       })),
     });
     renderContainer(useCases);
@@ -120,6 +122,7 @@ describe("PracticeContainer", () => {
       getStudyQueue: vi.fn(async () => ({
         due: [makeCard("card-a", "front-a")],
         newCards: [],
+        studiedToday: 0,
       })),
       recordReview: vi.fn(async () => {
         throw new Error("review save failed");
@@ -140,6 +143,7 @@ describe("PracticeContainer", () => {
         getStudyQueue: vi.fn(async () => ({
           due: [makeCard("card-a", "front-a")],
           newCards: [makeCard("card-b", "front-b")],
+          studiedToday: 0,
         })),
       }),
       "study",
@@ -156,7 +160,7 @@ describe("PracticeContainer", () => {
     renderContainer(
       makeUseCasesFake({
         getStudyQueue: vi.fn(
-          async (): Promise<StudyQueue> => ({ due: [], newCards: [] }),
+          async (): Promise<StudyQueue> => ({ due: [], newCards: [], studiedToday: 0 }),
         ),
       }),
     );

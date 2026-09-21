@@ -1,7 +1,12 @@
-/* Heading typeface, self-hosted (bundled by Vite — no third-party font
-   requests). The "soft" build carries the weight and SOFT axes; per-script
-   files load on demand. */
-@import "@fontsource-variable/fraunces/soft.css";
+/* The app's typeface: Fredoka — round and a little cartoonish, like the
+   logotype. SIL Open Font License 1.1 (free to use, bundle and embed).
+   Self-hosted: bundled by Vite, so no third-party font requests; variable
+   weight 300–700, per-script files load on demand. */
+@import "@fontsource-variable/fredoka";
+
+/* Display face for the big headings (h1, h2): Bangers — comic-book cover
+   lettering. Also SIL OFL 1.1 and self-hosted. */
+@import "@fontsource/bangers";
 
 /* Design tokens. The palette comes from the logotype illustration — cream
    ground, navy ink, green primary, with its light blue, yellow and red as
@@ -24,6 +29,10 @@
   --primary-soft: #e6f1e8;
   --on-primary: #ffffff;
   --link: #25603a;
+  /* A hovered link: a gray ground inside a rounded outline. Always a
+     neutral gray — only its lightness follows the surface it sits on. */
+  --link-hover-bg: #e4e5e7;
+  --link-hover-border: #9a9fa6;
 
   --accent-blue: #b1cfe3;
   --accent-yellow: #e8ab14;
@@ -53,15 +62,25 @@
   --shadow: 0 1px 2px rgba(22, 32, 42, 0.05), 0 8px 24px -12px rgba(22, 32, 42, 0.18);
   --ring: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
 
-  /* Headings: a soft, heavy serif — deliberately unlike the sans body, and
-     warm like the logotype's cut paper. Deck names in scripts it does not
-     cover (CJK) fall back to the system fonts. */
-  --font-heading:
-    "Fraunces Variable", Georgia, "Times New Roman", "Hiragino Mincho ProN",
-    "Noto Serif CJK JP", "Yu Mincho", "Noto Serif KR", serif;
+  /* The "pop" behind big headings: a small offset shadow, like a colour
+     plate printed slightly off-register. Yellow on the page, red on the
+     navy masthead. */
+  --heading-pop: var(--accent-yellow);
 
+  /* Big headings (h1, h2). Falls back to the body family, so a script
+     Bangers does not cover still gets a rounded face. */
+  --font-display:
+    "Bangers", "Fredoka Variable", ui-rounded,
+    "Hiragino Maru Gothic ProN", "Arial Rounded MT Bold", system-ui,
+    "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic",
+    "Noto Sans KR", sans-serif;
+
+  /* One family for everything else; h3 is simply its heaviest weight.
+     Text in scripts Fredoka does not cover (CJK card text and deck names)
+     falls back to rounded, then ordinary, system fonts. */
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Fredoka Variable", ui-rounded, "Hiragino Maru Gothic ProN",
+    "Arial Rounded MT Bold", system-ui, -apple-system, "Segoe UI", Roboto,
     "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic",
     "Noto Sans KR", sans-serif;
   font-size: 100%;
@@ -88,6 +107,8 @@
     --primary-soft: #1b3324;
     --on-primary: #0b1a10;
     --link: #74cc8e;
+    --link-hover-bg: #3a414b;
+    --link-hover-border: #7d8692;
 
     --danger: #ff8a75;
     --danger-soft: #38201c;
@@ -161,23 +182,42 @@ main {
 h1,
 h2,
 h3 {
-  font-family: var(--font-heading);
-  /* Fully rounded terminals. */
-  font-variation-settings: "SOFT" 100;
+  /* Fredoka's heaviest weight. Its word space is tight when this bold
+     ("Study: Verbs" reads as one word), so open it up a little. */
+  font-weight: 700;
   line-height: 1.15;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
+  word-spacing: 0.12em;
   text-wrap: balance;
 }
 
+/* The big headings borrow from cartoon magazines — comic lettering, set
+   at a tilt, with a small off-register shadow — but stay in the page's
+   own text colour, so they read as titles rather than shouting.
+   Links inside them (deck names, "Decks") inherit it. */
+h1,
+h2 {
+  font-family: var(--font-display);
+  /* Bangers has one weight; synthetic bold would smear it. */
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  word-spacing: 0.1em;
+  text-shadow: 0.06em 0.06em 0 var(--heading-pop);
+  transform-origin: left center;
+}
+
 h1 {
-  font-size: 1.5rem;
-  font-weight: 800;
+  --tilt: -3deg;
+  font-size: 1.8rem;
+  transform: rotate(var(--tilt));
 }
 
 h2 {
-  font-size: 1.45rem;
-  font-weight: 700;
-  margin: 0 0 0.75rem;
+  --tilt: -2deg;
+  font-size: 1.6rem;
+  margin: 0 0 0.85rem;
+  transform: rotate(var(--tilt));
 }
 
 h3 {
@@ -198,10 +238,43 @@ a:hover {
   text-decoration-thickness: 2px;
 }
 
+/* Hovered text links get a gray background inside a rounded outline. Both are painted with box-shadow rings (a pad in the background
+   colour, then a thin outline), so the link takes no extra space and
+   nothing shifts. Links with a look of their own — buttons, the logo, the
+   wordmark — are left alone. */
+a:not(.button, .brand, .wordmark) {
+  border-radius: 0.35em;
+  transition:
+    background-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+a:not(.button, .brand, .wordmark):hover {
+  background-color: var(--link-hover-bg);
+  box-shadow:
+    0 0 0 0.22em var(--link-hover-bg),
+    0 0 0 calc(0.22em + 1.5px) var(--link-hover-border);
+}
+
 /* The outline follows each element's own radius. */
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Inline icons beside titles and names: sized to the text, vertically
+   centred, a touch of air before the word. */
+svg.icon {
+  width: 1em;
+  height: 1em;
+  margin-right: 0.35em;
+  vertical-align: -0.12em;
+  flex: none;
+}
+
+h2 svg.icon {
+  /* Comic lettering sits high; the icon meets it mid-height. */
+  vertical-align: -0.08em;
 }
 
 /* Header rows: title left, actions right. Wraps instead of squeezing, so
@@ -226,14 +299,14 @@ section > header h2 {
   flex: 1 1 14rem;
 }
 
-/* A heading that is also a link (the deck list's "Decks"): heading ink,
-   with a link-coloured underline to show it can be clicked. */
+/* A link inside a heading (deck names, "Decks"): heading ink, with a
+   link-coloured underline to show it can be clicked. */
 h2 a {
   color: inherit;
   text-decoration: underline;
   text-decoration-color: var(--link);
   text-decoration-thickness: 2px;
-  text-underline-offset: 0.2em;
+  text-underline-offset: 0.18em;
 }
 
 h2 a:hover {
@@ -244,6 +317,9 @@ h2 a:hover {
    logo as a tilted sticker and hard-edged paper shapes (blue, yellow, red)
    tucked into the right-hand side behind the Log out button. */
 .masthead {
+  /* The navy band carries light text, so its gray is a darker one. */
+  --link-hover-bg: #4a525d;
+  --link-hover-border: #8d96a2;
   /* Shape sizes and positions; the phone breakpoint shrinks them so they
      stay clear of the title. */
   --blob: 6.5rem;
@@ -304,26 +380,24 @@ header img.logo {
 }
 
 .masthead h1 {
+  /* Red pops on the navy band. */
+  --heading-pop: var(--accent-red);
   margin: 0;
-  font-size: 1.7rem;
+  font-size: 1.9rem;
   white-space: nowrap;
 }
 
-/* The wordmark, underlined with a stroke of yellow marker. In the
-   masthead it is a link to the root; the stroke thickens on hover. */
+/* The wordmark is the cover title (see h1). In the masthead it is a link
+   to the root, and jumps a little on hover. */
 .wordmark {
-  padding: 0 0.12em;
-  margin: 0 -0.12em;
+  display: inline-block;
   color: inherit;
   text-decoration: none;
-  background: linear-gradient(var(--accent-yellow), var(--accent-yellow))
-    no-repeat 0 88% / 100% 0.2em;
-  border-radius: 0.1em;
-  transition: background-size 0.15s ease;
+  transition: transform 0.15s ease;
 }
 
 a.wordmark:hover {
-  background-size: 100% 0.36em;
+  transform: scale(1.06) rotate(1.5deg);
 }
 
 a.wordmark:focus-visible {
@@ -331,7 +405,10 @@ a.wordmark:focus-visible {
 }
 
 .session-line {
-  margin: 0;
+  /* Clips its overflow for the ellipsis, so give the hover ring of the
+     link inside room on every side (cancelled out by the margin). */
+  margin: -0.3rem;
+  padding: 0.3rem;
   font-size: 0.8rem;
   color: color-mix(in srgb, var(--masthead-text) 72%, transparent);
   white-space: nowrap;
@@ -356,8 +433,17 @@ a.wordmark:focus-visible {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.masthead button:hover:not(:disabled) {
+/* Log out leans to the right under the pointer (and on keyboard focus),
+   keeping the small lift every button gets. */
+.masthead button:hover:not(:disabled),
+.masthead button:focus-visible {
   background: #ffffff;
+  transform: translateY(-1px) rotate(2deg);
+}
+
+/* Pressed: still leaning, pushed in a little. */
+.masthead button:active:not(:disabled) {
+  transform: rotate(2deg) scale(0.96);
 }
 
 .masthead button:focus-visible {
@@ -371,9 +457,11 @@ main.landing {
 }
 
 main.landing > h1 {
-  margin: 0;
-  font-size: 2.4rem;
+  margin: 0.25rem 0 0.4rem;
+  font-size: 2.8rem;
   text-align: center;
+  /* Centred, so it tilts about its middle. */
+  transform-origin: center;
 }
 
 .tagline {
@@ -567,6 +655,29 @@ button.icon {
   font-size: 1.05rem;
 }
 
+/* "N cards studied today" with the option to undo the day */
+.day-reset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.6rem 0.6rem 0.9rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.day-reset .hint {
+  margin-right: auto;
+}
+
+.day-reset button {
+  min-height: 2.15rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  box-shadow: none;
+}
+
 details.add-cards summary {
   cursor: pointer;
   color: var(--text-muted);
@@ -640,6 +751,22 @@ a.hint:hover {
 
 .provider-name {
   font-weight: 650;
+}
+
+/* Alternative to typing a WebID: log in at a suggested provider. */
+.provider-login {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.provider-login h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+}
+
+.provider-login .hint {
+  margin-bottom: 0;
 }
 
 .onboarding-actions {
@@ -813,9 +940,33 @@ dl.account dd {
   font-size: 0.8rem;
 }
 
+/* Deck rows: the whole line opens the deck. The name stays the one real
+   link (keyboard, middle-click, screen readers); an invisible layer
+   stretches it over its row. The layer is positioned against the row —
+   the link itself must stay unpositioned, or its ellipsis clipping would
+   clip the layer too. The row's action floats above the layer. */
+.deck-list li {
+  position: relative;
+}
+
+.deck-list .deck-open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.deck-list li > button {
+  position: relative;
+  z-index: 1;
+}
+
 /* Deck rows: the deck name is the main, prominent link */
 .deck-list .deck-open {
-  flex: 1;
+  /* Hugs the name (so the hover highlight wraps just the name, not the
+     whole row) and pushes the row's action to the right. */
+  flex: 0 1 auto;
+  margin-right: auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -905,6 +1056,12 @@ td.clickable a {
   color: inherit;
   text-decoration: none;
   overflow-wrap: anywhere;
+}
+
+/* The row itself is the hover target here. */
+td.clickable a:hover {
+  background-color: transparent;
+  box-shadow: none;
 }
 
 td.clickable:first-child a {
@@ -1076,11 +1233,9 @@ details summary:hover {
   word-break: break-all;
 }
 
-/* Subject URLs, not titles: keep them in the body face. */
+/* Subject URLs, not titles: body weight. */
 .thing h3 {
-  font-family: inherit;
-  font-variation-settings: normal;
-  letter-spacing: 0;
+  font-weight: 500;
 }
 
 .thing th {
@@ -1111,6 +1266,12 @@ details summary:hover {
     border-radius: var(--radius);
   }
 
+  /* The instance's name and URL always get their own row on a phone, with
+     both actions together beneath. */
+  .instance-bar-identity {
+    flex-basis: 100%;
+  }
+
   /* Smaller shapes, so they stay clear of the title on a phone. */
   .masthead {
     --blob: 4.2rem;
@@ -1130,11 +1291,238 @@ details summary:hover {
   }
 }
 
+/* ------------------------------------------------------------------
+   Motion. Two jobs: a loader while data is on its way, and entrances
+   when it lands. Everything is short (≤ 0.45s) with a little overshoot,
+   runs once on mount (fill-mode backwards: it lets go of the element
+   afterwards, so hover effects keep working), and is switched off by
+   prefers-reduced-motion.
+   ------------------------------------------------------------------ */
+
+/* Loader: the logotype's four colours bouncing in turn */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0.25rem;
+  color: var(--text-muted);
+  animation: fade-in 0.3s ease backwards;
+  /* Fast loads never flash a loader: it only fades in after a beat. */
+  animation-delay: 0.15s;
+}
+
+.loading-dots {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.3rem;
+  height: 1.4rem;
+}
+
+.loading-dots i {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--accent-red);
+  animation: dot-bounce 0.9s cubic-bezier(0.3, 0, 0.4, 1) infinite;
+}
+
+.loading-dots i:nth-child(2) {
+  background: var(--accent-yellow);
+  animation-delay: 0.12s;
+}
+
+.loading-dots i:nth-child(3) {
+  background: var(--primary);
+  animation-delay: 0.24s;
+}
+
+.loading-dots i:nth-child(4) {
+  background: var(--accent-blue);
+  animation-delay: 0.36s;
+}
+
+@keyframes dot-bounce {
+  0%,
+  55%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  /* squash on landing, stretch on the way up */
+  10% {
+    transform: translateY(0) scale(1.15, 0.8);
+  }
+  30% {
+    transform: translateY(-0.75rem) scale(0.92, 1.1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* A screen (card) arriving with its data */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.004);
+  }
+}
+
+section,
+.instance-bar {
+  animation: pop-in 0.42s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+/* Nested cards (WebID document subjects) ride in with their parent. */
+section section {
+  animation: none;
+}
+
+.breadcrumbs {
+  animation: fade-in 0.35s ease backwards;
+}
+
+/* A title stamped on: it drops in over-rotated and settles at its tilt */
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: rotate(calc(var(--tilt) - 7deg)) scale(1.25);
+  }
+  70% {
+    opacity: 1;
+    transform: rotate(calc(var(--tilt) + 1deg)) scale(0.98);
+  }
+}
+
+h1,
+h2 {
+  animation: stamp-in 0.4s cubic-bezier(0.2, 0.8, 0.3, 1) 0.08s backwards;
+}
+
+/* List rows and table rows cascade in */
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+.storage-list li,
+.instance-list li,
+.deck-list li,
+.provider-list li,
+.card-table tbody tr {
+  animation: row-in 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+:is(.storage-list, .instance-list, .deck-list, .provider-list) li:nth-child(2),
+.card-table tbody tr:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+:is(.storage-list, .instance-list, .deck-list, .provider-list) li:nth-child(3),
+.card-table tbody tr:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+:is(.storage-list, .instance-list, .deck-list, .provider-list) li:nth-child(4),
+.card-table tbody tr:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+:is(.storage-list, .instance-list, .deck-list, .provider-list) li:nth-child(5),
+.card-table tbody tr:nth-child(5) {
+  animation-delay: 0.2s;
+}
+
+/* From the sixth on they arrive together: a long list must not crawl. */
+:is(.storage-list, .instance-list, .deck-list, .provider-list) li:nth-child(n + 6),
+.card-table tbody tr:nth-child(n + 6) {
+  animation-delay: 0.25s;
+}
+
+/* Things that appear once their own data has loaded — a deck row's
+   Study/Practice suggestion, the day-reset note — bounce into place */
+@keyframes bounce-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.deck-list li > button,
+.deck-list li > .hint,
+.day-reset,
+.session-actions button,
+p[role="status"]:not(.loading) {
+  animation: bounce-in 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+/* The flashcard is dealt onto the table; its answer slides out from
+   under the rule, and the grades fan out after it */
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) rotate(-3deg) scale(0.96);
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.practice-card {
+  animation: deal-in 0.4s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+.card-back {
+  animation: reveal 0.3s ease backwards;
+}
+
+.quality-buttons button {
+  animation: bounce-in 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+.quality-buttons button:nth-child(2) {
+  animation-delay: 0.03s;
+}
+
+.quality-buttons button:nth-child(3) {
+  animation-delay: 0.06s;
+}
+
+.quality-buttons button:nth-child(4) {
+  animation-delay: 0.09s;
+}
+
+.quality-buttons button:nth-child(5) {
+  animation-delay: 0.12s;
+}
+
+.quality-buttons button:nth-child(6) {
+  animation-delay: 0.15s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition: none !important;
+    /* No entrances, and a loader whose dots simply sit still. */
+    animation: none !important;
   }
 
   img.hero {

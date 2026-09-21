@@ -41,6 +41,18 @@ async function discoverOidcIssuer(webId: string): Promise<string> {
 }
 
 export function createSolidSessionGateway(clientName: string): SessionGateway {
+  /** Redirects the browser to the identity provider; does not return. */
+  async function startLogin(oidcIssuer: string): Promise<void> {
+    await login({
+      oidcIssuer,
+      redirectUrl: new URL(
+        window.location.pathname,
+        window.location.origin,
+      ).toString(),
+      clientName,
+    });
+  }
+
   return {
     async restore() {
       // The library emits LOGIN only when a login redirect completes; a
@@ -66,17 +78,10 @@ export function createSolidSessionGateway(clientName: string): SessionGateway {
     discoverOidcIssuer,
 
     async login(webId) {
-      const issuer = await discoverOidcIssuer(webId);
-      // Redirects the browser to the identity provider; does not return.
-      await login({
-        oidcIssuer: issuer,
-        redirectUrl: new URL(
-          window.location.pathname,
-          window.location.origin,
-        ).toString(),
-        clientName,
-      });
+      await startLogin(await discoverOidcIssuer(webId));
     },
+
+    loginWithIssuer: startLogin,
 
     async logout() {
       await logout();

@@ -129,3 +129,42 @@ describe("saveReviewState", () => {
     expect(toReviewState(thing)).toEqual(updated);
   });
 });
+
+describe("applyReviewChanges", () => {
+  const other: ReviewState = { ...state, cardId: "card-2" };
+
+  function twoStates() {
+    return setThing(
+      reviewsDataset(),
+      toReviewStateThing(deck.reviewsDocumentUrl, other),
+    );
+  }
+
+  it("saves and removes states in a single write", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(twoStates());
+    const restored: ReviewState = { ...state, due: "2026-09-21" };
+
+    await makeRepository().applyReviewChanges(deck, {
+      save: [restored],
+      removeCardIds: ["card-2"],
+    });
+
+    expect(saveSolidDatasetAt).toHaveBeenCalledOnce();
+    const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    expect(saveUrl).toBe(deck.reviewsDocumentUrl);
+    const dataset = saved as SolidDataset;
+    expect(
+      toReviewState(getThing(dataset, `${deck.reviewsDocumentUrl}#card-1`)!),
+    ).toEqual(restored);
+    expect(getThing(dataset, `${deck.reviewsDocumentUrl}#card-2`)).toBeNull();
+  });
+
+  it("does nothing when the reviews document does not exist", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
+    await makeRepository().applyReviewChanges(deck, {
+      save: [state],
+      removeCardIds: ["card-2"],
+    });
+    expect(saveSolidDatasetAt).not.toHaveBeenCalled();
+  });
+});

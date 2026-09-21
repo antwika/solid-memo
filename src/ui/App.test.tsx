@@ -102,6 +102,44 @@ describe("App", () => {
     ).toBeInTheDocument();
   });
 
+  it("logs in at a suggested provider without a WebID", async () => {
+    const loginWithProvider = vi.fn(() => new Promise<void>(() => {}));
+    const useCases = makeUseCases({ loginWithProvider });
+    renderApp(useCases);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "I already have a Pod" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Inrupt PodSpaces" }));
+
+    expect(loginWithProvider).toHaveBeenCalledWith("https://login.inrupt.com");
+    expect(useCases.loginWithWebId).not.toHaveBeenCalled();
+    // Busy while the browser heads to the provider.
+    expect(
+      await screen.findByRole("button", { name: "Redirecting…" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Inrupt PodSpaces" }),
+    ).toBeDisabled();
+  });
+
+  it("shows an error when a provider login cannot start", async () => {
+    renderApp(
+      makeUseCases({
+        loginWithProvider: vi.fn(async () => {
+          throw new Error("provider unreachable");
+        }),
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "I already have a Pod" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "solidweb.org" }));
+
+    expect(await screen.findByText("provider unreachable")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "solidweb.org" })).toBeEnabled();
+  });
+
   it("shows a login error (Error instance) and re-enables the form", async () => {
     renderApp(
       makeUseCases({

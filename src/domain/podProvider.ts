@@ -1,20 +1,45 @@
 /**
- * A service where a user can sign up for a Solid Pod. Providers are only
- * ever linked to: login and Pod discovery are driven by the WebID, so no
- * provider needs code of its own.
+ * A Solid Pod provider the app can suggest. Providers are data only: login
+ * and Pod discovery are driven by the WebID / OIDC issuer, so no provider
+ * needs code of its own.
  */
 export interface PodProvider {
   id: string;
   name: string;
-  /** Page where a new user creates a Pod. */
-  signUpUrl: string;
+  /**
+   * The provider's Solid-OIDC issuer: lets a user log in by picking the
+   * provider instead of typing their WebID.
+   */
+  oidcIssuer: string;
+  /** Page where a new user creates a Pod; absent = not offered for sign-up. */
+  signUpUrl?: string;
 }
 
-/** Providers offered during onboarding. Add an entry to offer another. */
+/**
+ * Providers suggested during onboarding. Add an entry to suggest another.
+ * Issuers are the exact values each provider advertises in its
+ * /.well-known/openid-configuration (checked 2026-09-22).
+ */
 export const POD_PROVIDERS: readonly PodProvider[] = [
   {
     id: "igrant",
     name: "iGrant.io Data Pod",
+    oidcIssuer: "https://datapod.igrant.io",
     signUpUrl: "https://igrant.io/datapod.html",
+  },
+  {
+    id: "solidcommunity",
+    name: "solidcommunity.net",
+    oidcIssuer: "https://solidcommunity.net/",
+  },
+  {
+    id: "inrupt",
+    name: "Inrupt PodSpaces",
+    oidcIssuer: "https://login.inrupt.com",
+  },
+  {
+    id: "solidweb",
+    name: "solidweb.org",
+    oidcIssuer: "https://solidweb.org",
   },
 ];

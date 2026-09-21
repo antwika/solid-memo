@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks";
 import type { Card, Deck } from "../domain/deck";
-import { TrashIcon } from "./icons";
+import { BrowserIcon, TrashIcon } from "./icons";
 
 /**
  * Management view for one deck: rename/remove the deck, add cards, and
@@ -19,7 +19,7 @@ export function BrowserScreen({
   onRemoveCard,
 }: {
   deck: Deck;
-  /** URL of the deck's page: its name and "Back to deck" link there. */
+  /** URL of the deck's page; its name links there. */
   deckHref: string;
   cards: Card[];
   busy: boolean;
@@ -65,14 +65,12 @@ export function BrowserScreen({
     <section>
       <header>
         <h2>
+          <BrowserIcon />
           Browser: <a href={deckHref}>{deck.name}</a>
         </h2>
         <button onClick={onAddCard} disabled={busy}>
           Add card
         </button>
-        <a class="button" href={deckHref}>
-          Back to deck
-        </a>
       </header>
       {deckName === null ? (
         <div class="edit-actions">

@@ -150,6 +150,23 @@ describe("createSolidSessionGateway", () => {
     });
   });
 
+  describe("loginWithIssuer", () => {
+    it("starts login at the given issuer without reading any profile", async () => {
+      const gateway = createSolidSessionGateway("Test App");
+      await gateway.loginWithIssuer("https://login.inrupt.com");
+
+      expect(getSolidDataset).not.toHaveBeenCalled();
+      expect(authnLogin).toHaveBeenCalledWith({
+        oidcIssuer: "https://login.inrupt.com",
+        redirectUrl: new URL(
+          window.location.pathname,
+          window.location.origin,
+        ).toString(),
+        clientName: "Test App",
+      });
+    });
+  });
+
   describe("discoverOidcIssuer", () => {
     it("returns the issuer declared in the profile, not the WebID origin", async () => {
       vi.mocked(getSolidDataset).mockResolvedValue({} as never);

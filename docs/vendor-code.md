@@ -10,7 +10,7 @@ replacing one would cost.
 | Inrupt Solid clients | `@inrupt/solid-client`, `@inrupt/solid-client-authn-browser` | `src/infrastructure/solid/` | RDF datasets, pod I/O, Solid-OIDC auth |
 | TanStack | `@tanstack/react-query` (via `preact/compat`) | `src/ui/`, `src/main.tsx` | Async-state caching and invalidation |
 | Preact | `preact` | `src/ui/`, `src/main.tsx` | Rendering |
-| Fontsource | `@fontsource-variable/fraunces` (OFL-1.1) | `src/style.css` (`@import`) | Heading typeface, self-hosted: bundled into `dist/`, no third-party font requests |
+| Fontsource | `@fontsource-variable/fredoka`, `@fontsource/bangers` (both SIL OFL-1.1) | `src/style.css` (`@import`) | Typefaces — Fredoka for text, Bangers (comic lettering) for `h1`/`h2` — self-hosted: bundled into `dist/`, no third-party font requests |
 
 ## Vendor-independent code
 

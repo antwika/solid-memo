@@ -6,14 +6,11 @@ export function PreferencesScreen({
   busy,
   error,
   onSave,
-  decksHref,
 }: {
   preferences: StudyPreferences;
   busy: boolean;
   error: string | null;
   onSave: (preferences: StudyPreferences) => void;
-  /** URL of the deck list, for "Back to decks". */
-  decksHref: string;
 }) {
   const [newCardsPerDay, setNewCardsPerDay] = useState(
     String(preferences.newCardsPerDay),
@@ -43,9 +40,6 @@ export function PreferencesScreen({
     <section>
       <header>
         <h2>Study preferences</h2>
-        <a class="button" href={decksHref}>
-          Back to decks
-        </a>
       </header>
       <form onSubmit={handleSubmit}>
         <label for="pref-new">New cards per day</label>

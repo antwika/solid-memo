@@ -10,7 +10,7 @@ codebase; a change that violates them is wrong even if it works.
 | `@inrupt/solid-client`, `@inrupt/solid-client-authn-browser` | `src/infrastructure/solid/` only | UI, application, domain |
 | `@tanstack/react-query` | `src/ui/` and `src/main.tsx` | application, domain, infrastructure |
 | `preact` | `src/ui/`, `src/main.tsx` | application, domain, infrastructure |
-| `@fontsource-variable/*` | `src/style.css` | any TypeScript module |
+| `@fontsource/*`, `@fontsource-variable/*` | `src/style.css` | any TypeScript module |
 | Anything (imports at all) | — | `src/domain/` imports nothing except sibling domain modules |
 
 Additional rules:

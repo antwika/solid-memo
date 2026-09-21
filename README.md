@@ -10,6 +10,9 @@ sees the data server-side — there is no backend.
 - **Pod onboarding** — create a Pod with a provider (iGrant.io Data Pod)
   or connect one you already have; after login the app finds your Pod
   through your WebID profile and confirms the connection.
+- **Login without typing a WebID** — pick a suggested identity provider
+  (iGrant.io, solidcommunity.net, Inrupt PodSpaces, solidweb.org) and log in
+  there; the WebID comes back with the session.
 - **Login with a WebID** — the app dereferences the WebID, discovers the
   `solid:oidcIssuer`, and runs the Solid-OIDC redirect flow. Session
   restore and logout included; expired sessions drop back to login.
@@ -23,6 +26,8 @@ sees the data server-side — there is no backend.
   list and deck view are for studying.
 - **Daily practice** — due and new cards queued per SM-2 with daily caps;
   answers graded 0–5.
+- **Reset the day** — undo today's study of a deck: reviewed cards return
+  to their earlier schedule, cards introduced today become new again.
 - **Study preferences** — new cards/day, max reviews/day, day-boundary
   hour; stored per instance in the pod.
 - **Developer settings** — a per-instance developer mode (off by default)

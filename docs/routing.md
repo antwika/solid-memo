@@ -71,7 +71,8 @@ flowchart LR
 the current route alone — Decks › *deck* › Browser › *card* — and
 `Workspace` renders it above every screen. Every crumb — the current page
 included, marked `aria-current="page"` — is a plain `<a href="#/…">` link
-built with `routeToHash`, so following one is an
+built with `routeToHash` — and the only way back up: screens have no
+"Back to …" buttons — so following one is an
 ordinary hash navigation: Back/Forward, new-tab and keyboard use all work
 without extra code. Top-level screens (deck list, instance picker) show a
 single crumb, so "Decks" is on hand everywhere inside an instance. The

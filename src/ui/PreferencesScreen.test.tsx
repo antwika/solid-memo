@@ -11,7 +11,6 @@ function renderScreen(
     busy: false,
     error: null,
     onSave: vi.fn(),
-    decksHref: "#/decks?instance=a",
     ...overrides,
   };
   const view = render(<PreferencesScreen {...props} />);
@@ -71,14 +70,6 @@ describe("PreferencesScreen", () => {
       dayBoundaryHour: 0,
       developerMode: false,
     });
-  });
-
-  it("links back to the deck list", () => {
-    renderScreen();
-    expect(screen.getByRole("link", { name: "Back to decks" })).toHaveAttribute(
-      "href",
-      "#/decks?instance=a",
-    );
   });
 
   it("shows busy state and errors", () => {

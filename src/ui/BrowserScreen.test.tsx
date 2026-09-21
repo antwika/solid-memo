@@ -92,6 +92,14 @@ describe("BrowserScreen deck editing", () => {
 });
 
 describe("BrowserScreen", () => {
+  it("marks the title with a decorative icon", () => {
+    const { container } = renderScreen();
+    expect(container.querySelector("h2 svg.icon")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+  });
+
   it("links the deck's name to the deck's page", () => {
     renderScreen();
     expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute(
@@ -114,14 +122,6 @@ describe("BrowserScreen", () => {
     expect(
       screen.getByText("No cards in this deck yet."),
     ).toBeInTheDocument();
-  });
-
-  it("links back to the deck", () => {
-    renderScreen();
-    expect(screen.getByRole("link", { name: "Back to deck" })).toHaveAttribute(
-      "href",
-      "#/deck?deck=d",
-    );
   });
 
   it("removes a card after confirmation", () => {
@@ -155,7 +155,7 @@ describe("BrowserScreen", () => {
     // The card is announced once: its back-cell link is not in the list.
     expect(
       screen.getAllByRole("link").map((link) => link.textContent?.trim()),
-    ).toEqual(["Kanji N5", "Back to deck", "水"]);
+    ).toEqual(["Kanji N5", "水"]);
   });
 
   it("no longer edits cards in place", () => {

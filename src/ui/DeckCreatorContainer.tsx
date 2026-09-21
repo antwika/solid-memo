@@ -3,7 +3,6 @@ import type { UseCases } from "../application/useCases";
 import type { Instance } from "../domain/instance";
 import { DeckCreatorScreen } from "./DeckCreatorScreen";
 import { errorMessage } from "./errorMessage";
-import { decksHref } from "./router";
 
 /** Owns the create-deck mutation; returns to the deck list on success. */
 export function DeckCreatorContainer({
@@ -33,7 +32,6 @@ export function DeckCreatorContainer({
       busy={createDeckMutation.isPending}
       error={errorMessage(createDeckMutation.error)}
       onCreate={(name) => createDeckMutation.mutate(name)}
-      decksHref={decksHref(instance.url)}
     />
   );
 }

@@ -83,3 +83,58 @@ other screens see fresh state.
 Storage note: `sm:due` is stored as a plain `"YYYY-MM-DD"` string literal,
 not `xsd:date` — a study day is a calendar label, and date round-trips
 through `Date` objects risk timezone off-by-one shifts.
+
+## Suggesting a session
+
+The app only suggests a session that has something in it, so nobody starts
+one to learn there was nothing to study. Both the deck page and each
+deck-list row read the deck's queue for today:
+
+| Today's queue | Deck page | Deck-list row |
+|---|---|---|
+| cards due | **Study** (primary) + Practice | **Study** |
+| nothing due, new cards within budget | **Practice** only | **Practice** |
+| nothing | "All cards have been studied" | "Nothing to study today" |
+| unknown (loading / unreadable) | loading or error | no suggestion |
+
+Rows load independently and share the `["studyQueue", deckUrl]` cache entry
+with the deck page. Concurrent reads of the instance's preferences are
+shared (one request for all rows) but never cached beyond the request.
+
+## Resetting the day
+
+The deck page offers **Reset today's study** once something has been
+studied today. It undoes the current study day for that deck, as if the
+day's sessions had not happened.
+
+A review overwrites a card's state, so undoing needs a record of what was
+overwritten. `recordReview` therefore stores a snapshot (`ReviewState.previous`,
+the `sm:previous*` triples) of the state from **before the study day's first
+review** — a second review the same day keeps that snapshot instead of
+replacing it (`snapshotBeforeReview`).
+
+`resetStudyDay` (pure, in [scheduling.ts](../src/domain/scheduling.ts)) then
+decides, per card reviewed today:
+
+| Card | Reset does |
+|---|---|
+| introduced today (`firstReviewedAt` is today) | removes its state — it is a new card again |
+| reviewed today, has a snapshot | restores the snapshot (ease, interval, repetitions, due, last review) |
+| reviewed today, no snapshot (state written before snapshots existed) | can't be restored: made due today, so it can at least be studied again |
+| not reviewed today | untouched |
+
+```mermaid
+flowchart LR
+    R[review today] -->|first of the day| S[snapshot previous state]
+    R -->|again today| K[keep the morning's snapshot]
+    X[Reset today's study] --> Q{card reviewed today?}
+    Q -->|introduced today| N[remove state → new again]
+    Q -->|has snapshot| B[restore snapshot]
+    Q -->|no snapshot| D[due today]
+```
+
+Because the daily budgets are derived from the same timestamps
+(`lastReviewedAt` / `firstReviewedAt` falling in today), restoring them also
+frees today's review and new-card budget. All changes go out in one save of
+the reviews document (`applyReviewChanges`), so a reset is never half-applied.
+"Today" honours the instance's `dayBoundaryHour`, like the queue.

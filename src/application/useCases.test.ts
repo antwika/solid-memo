@@ -46,6 +46,7 @@ function makeDeps() {
     restore: vi.fn(async () => ({ session, origin: "login" as const })),
     discoverOidcIssuer: vi.fn(async () => "https://issuer.example"),
     login: vi.fn(async () => undefined),
+    loginWithIssuer: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     onSessionExpired: vi.fn(() => () => undefined),
   };
@@ -83,6 +84,7 @@ function makeDeps() {
     listReviewStates: vi.fn(async () => []),
     getReviewState: vi.fn(async () => null),
     saveReviewState: vi.fn(async () => undefined),
+    applyReviewChanges: vi.fn(async () => undefined),
   };
   return {
     sessionGateway,
@@ -122,6 +124,25 @@ describe("createUseCases", () => {
       useCases.loginWithWebId("http://alice.example/profile/card#me"),
     ).rejects.toThrow("A WebID must start with https://.");
     expect(deps.sessionGateway.login).not.toHaveBeenCalled();
+  });
+
+  it("loginWithProvider starts login at the chosen issuer", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await useCases.loginWithProvider("https://login.inrupt.com");
+    expect(deps.sessionGateway.loginWithIssuer).toHaveBeenCalledWith(
+      "https://login.inrupt.com",
+    );
+    expect(deps.sessionGateway.login).not.toHaveBeenCalled();
+  });
+
+  it("loginWithProvider rejects an issuer that is not an https URL", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await expect(
+      useCases.loginWithProvider("http://idp.example"),
+    ).rejects.toThrow("An identity provider must be an https:// URL.");
+    expect(deps.sessionGateway.loginWithIssuer).not.toHaveBeenCalled();
   });
 
   it("discoverAccount combines the first storage with the profile's issuer", async () => {
@@ -328,6 +349,40 @@ describe("createUseCases", () => {
     });
   });
 
+  it("getPreferences shares one read between concurrent callers, but never caches", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+
+    // Every deck-list row asks at once: one request.
+    await Promise.all([
+      useCases.getPreferences(instance.url),
+      useCases.getPreferences(instance.url),
+      useCases.getStudyQueue(instance.url, deck, new Date()),
+    ]);
+    expect(deps.preferencesRepository.getPreferences).toHaveBeenCalledOnce();
+
+    // A later read goes to the pod again, so a save is seen immediately.
+    await useCases.getPreferences(instance.url);
+    expect(deps.preferencesRepository.getPreferences).toHaveBeenCalledTimes(2);
+  });
+
+  it("getPreferences does not share reads across instances, nor keep a failed one", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.preferencesRepository.getPreferences).mockRejectedValueOnce(
+      new Error("preferences unreachable"),
+    );
+    const useCases = createUseCases(deps);
+
+    await expect(useCases.getPreferences(instance.url)).rejects.toThrow(
+      "preferences unreachable",
+    );
+    await expect(
+      useCases.getPreferences("https://alice.example/solid-memo/other/"),
+    ).resolves.toEqual(expect.objectContaining({ dayBoundaryHour: 4 }));
+    await expect(useCases.getPreferences(instance.url)).resolves.toBeDefined();
+    expect(deps.preferencesRepository.getPreferences).toHaveBeenCalledTimes(3);
+  });
+
   it("getPreferences returns stored preferences unchanged", async () => {
     const deps = makeDeps();
     const stored = {
@@ -448,6 +503,129 @@ describe("createUseCases", () => {
     expect(state.due).toBe("2026-10-06");
     expect(state.firstReviewedAt).toBe("2026-09-10T10:00:00.000Z");
     expect(state.lastReviewedAt).toBe(now.toISOString());
+    // The state from before today's first review rides along, so the day
+    // can be reset.
+    expect(state.previous).toEqual({
+      easeFactor: 2.5,
+      intervalDays: 6,
+      repetitions: 2,
+      due: "2026-09-21",
+      lastReviewedAt: "2026-09-15T10:00:00.000Z",
+    });
+  });
+
+  it("recordReview stores no snapshot for a never-reviewed card", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    const state = await useCases.recordReview(
+      instance.url,
+      deck,
+      card,
+      4,
+      new Date(2026, 8, 21, 12, 0),
+    );
+    expect(state).not.toHaveProperty("previous");
+  });
+
+  describe("resetStudyDay", () => {
+    const now = new Date(2026, 8, 21, 12, 0);
+    const earlier = new Date(2026, 8, 15, 12, 0).toISOString();
+    const morning = {
+      easeFactor: 2.5,
+      intervalDays: 6,
+      repetitions: 2,
+      due: "2026-09-21",
+      lastReviewedAt: earlier,
+    };
+
+    it("restores reviewed cards and forgets cards introduced today, in one write", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
+        {
+          cardId: "reviewed",
+          easeFactor: 2.6,
+          intervalDays: 15,
+          repetitions: 3,
+          due: "2026-10-06",
+          firstReviewedAt: earlier,
+          lastReviewedAt: now.toISOString(),
+          previous: morning,
+        },
+        {
+          cardId: "introduced",
+          easeFactor: 2.5,
+          intervalDays: 1,
+          repetitions: 1,
+          due: "2026-09-22",
+          firstReviewedAt: now.toISOString(),
+          lastReviewedAt: now.toISOString(),
+        },
+        {
+          cardId: "untouched",
+          easeFactor: 2.5,
+          intervalDays: 6,
+          repetitions: 2,
+          due: "2026-09-30",
+          firstReviewedAt: earlier,
+          lastReviewedAt: earlier,
+        },
+      ]);
+      const useCases = createUseCases(deps);
+
+      await expect(
+        useCases.resetStudyDay(instance.url, deck, now),
+      ).resolves.toBe(2);
+
+      expect(
+        deps.reviewStateRepository.applyReviewChanges,
+      ).toHaveBeenCalledExactlyOnceWith(deck, {
+        save: [{ cardId: "reviewed", firstReviewedAt: earlier, ...morning }],
+        removeCardIds: ["introduced"],
+      });
+    });
+
+    it("writes nothing when nothing was studied today", async () => {
+      const deps = makeDeps();
+      const useCases = createUseCases(deps);
+      await expect(
+        useCases.resetStudyDay(instance.url, deck, now),
+      ).resolves.toBe(0);
+      expect(
+        deps.reviewStateRepository.applyReviewChanges,
+      ).not.toHaveBeenCalled();
+    });
+
+    it("uses the instance's day boundary", async () => {
+      const deps = makeDeps();
+      // 03:00 belongs to the previous study day with the default boundary
+      // of 4, but to today with a boundary of 0.
+      const lateNight = new Date(2026, 8, 21, 3, 0).toISOString();
+      vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
+        {
+          cardId: "night-owl",
+          easeFactor: 2.5,
+          intervalDays: 1,
+          repetitions: 1,
+          due: "2026-09-22",
+          firstReviewedAt: lateNight,
+          lastReviewedAt: lateNight,
+        },
+      ]);
+      const useCases = createUseCases(deps);
+      await expect(
+        useCases.resetStudyDay(instance.url, deck, now),
+      ).resolves.toBe(0);
+
+      vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
+        newCardsPerDay: 20,
+        maxReviewsPerDay: 200,
+        dayBoundaryHour: 0,
+        developerMode: false,
+      });
+      await expect(
+        useCases.resetStudyDay(instance.url, deck, now),
+      ).resolves.toBe(1);
+    });
   });
 
   it("recordReview resets on a lapse and reschedules for tomorrow", async () => {

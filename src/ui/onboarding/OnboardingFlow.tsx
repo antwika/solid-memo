@@ -6,24 +6,33 @@ type Step = "choose" | "webId";
 
 /**
  * Signed-out onboarding: get a Pod from a provider, or connect an
- * existing one by WebID. Login itself happens on the identity provider's
- * page; this flow only collects the WebID.
+ * existing one — by typing a WebID, or by picking the provider to log in
+ * at. Login itself happens on the identity provider's page; this flow
+ * only finds out which provider that is.
  */
 export function OnboardingFlow({
   providers,
   busy,
   returning,
   onLogin,
+  onLoginWithProvider,
 }: {
   providers: readonly PodProvider[];
   busy: boolean;
   /** The user was logged in before: skip straight to the WebID step. */
   returning: boolean;
   onLogin: (webId: string) => void;
+  /** Log in at a suggested provider, without typing a WebID. */
+  onLoginWithProvider: (provider: PodProvider) => void;
 }) {
   const [step, setStep] = useState<Step>(returning ? "webId" : "choose");
   // Only steal focus when the user navigated to the form themselves.
   const [cameFromChoice, setCameFromChoice] = useState(false);
+
+  // Not every suggested provider is offered for creating a Pod.
+  const signUpProviders = providers.filter(
+    (provider) => provider.signUpUrl !== undefined,
+  );
 
   if (step === "webId") {
     return (
@@ -35,6 +44,24 @@ export function OnboardingFlow({
           onSubmit={onLogin}
           onBack={() => setStep("choose")}
         />
+        <div class="provider-login">
+          <h3>Or pick your provider</h3>
+          <p class="hint">
+            No WebID at hand? Choose where your Pod lives and log in there —
+            your WebID comes back with the login.
+          </p>
+          <div class="onboarding-actions">
+            {providers.map((provider) => (
+              <button
+                key={provider.id}
+                onClick={() => onLoginWithProvider(provider)}
+                disabled={busy}
+              >
+                {provider.name}
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
     );
   }
@@ -47,7 +74,7 @@ export function OnboardingFlow({
         a Pod provider, or connect a Pod you already have.
       </p>
       <ul class="provider-list">
-        {providers.map((provider) => (
+        {signUpProviders.map((provider) => (
           <li key={provider.id}>
             <span class="provider-name">{provider.name}</span>
             <a

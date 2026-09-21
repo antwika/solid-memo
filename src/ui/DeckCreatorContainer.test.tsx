@@ -6,7 +6,6 @@ import type { UseCases } from "../application/useCases";
 import type { Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import { makeUseCasesFake } from "../test/useCasesFake";
-import { decksHref } from "./router";
 
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
@@ -78,11 +77,4 @@ describe("DeckCreatorContainer", () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
-  it("links back to this instance's deck list", () => {
-    renderContainer(makeUseCasesFake());
-    expect(screen.getByRole("link", { name: "Back to decks" })).toHaveAttribute(
-      "href",
-      decksHref(instance.url),
-    );
-  });
 });

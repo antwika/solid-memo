@@ -36,6 +36,12 @@ export interface SessionGateway {
    * normally; it only rejects on failure.
    */
   login(webId: string): Promise<void>;
+  /**
+   * Start the login flow at a known identity provider, for users who pick
+   * a provider instead of typing their WebID. Like login(), it only ever
+   * rejects; the WebID arrives with the session after the redirect.
+   */
+  loginWithIssuer(oidcIssuer: string): Promise<void>;
   logout(): Promise<void>;
 }
 
@@ -96,6 +102,14 @@ export interface ReviewStateRepository {
   /** null when the card has never been reviewed. */
   getReviewState(deck: Deck, cardId: string): Promise<ReviewState | null>;
   saveReviewState(deck: Deck, state: ReviewState): Promise<void>;
+  /**
+   * Write several states and drop others in ONE save of the reviews
+   * document, so a day reset cannot be left half-applied.
+   */
+  applyReviewChanges(
+    deck: Deck,
+    changes: { save: ReviewState[]; removeCardIds: string[] },
+  ): Promise<void>;
 }
 
 /** Driven port: per-instance study preferences. */

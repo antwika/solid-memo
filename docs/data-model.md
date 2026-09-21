@@ -47,7 +47,9 @@ flowchart LR
 │                        study caps + sm:developerMode (boolean, absent = off)
 ├── catalog.ttl     one subject per deck (titles live ONLY here)
 ├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn)
-└── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per fragment (fast churn)
+└── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per fragment (fast churn);
+                          optional sm:previous* snapshot = state before the
+                          day's first review (restored by "reset the day")
 ```
 
 ## Decks and cards

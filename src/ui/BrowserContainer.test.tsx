@@ -172,10 +172,4 @@ describe("BrowserContainer", () => {
     expect(onDeckRemoved).not.toHaveBeenCalled();
   });
 
-  it("links back to the deck", async () => {
-    renderContainer(makeUseCasesFake());
-    expect(
-      await screen.findByRole("link", { name: "Back to deck" }),
-    ).toHaveAttribute("href", "#/deck?deck=d");
-  });
 });

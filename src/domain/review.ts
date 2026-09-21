@@ -1,6 +1,15 @@
 /** SM-2 answer quality: 0 (blackout) to 5 (perfect). */
 export type ReviewQuality = 0 | 1 | 2 | 3 | 4 | 5;
 
+/** The scheduling fields a review overwrites. */
+export interface ReviewSnapshot {
+  easeFactor: number;
+  intervalDays: number;
+  repetitions: number;
+  due: string;
+  lastReviewedAt: string;
+}
+
 /** Scheduling state of one card, stored separately from its content. */
 export interface ReviewState {
   /** Fragment id of the card this state belongs to. */
@@ -16,4 +25,11 @@ export interface ReviewState {
   firstReviewedAt: string;
   /** ISO dateTime of the most recent review. */
   lastReviewedAt: string;
+  /**
+   * The state as it was before the first review of the study day in
+   * `lastReviewedAt` — what resetting that day restores. Absent for a card
+   * introduced that day (it had no earlier state) and on states written
+   * before snapshots existed.
+   */
+  previous?: ReviewSnapshot;
 }
