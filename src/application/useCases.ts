@@ -1,0 +1,211 @@
+import type { Card, Deck } from "../domain/deck";
+import type {
+  Instance,
+  RegistrationOptions,
+  RegistrationTarget,
+} from "../domain/instance";
+import {
+  DEFAULT_PREFERENCES,
+  type StudyPreferences,
+} from "../domain/preferences";
+import type { ReviewQuality, ReviewState } from "../domain/review";
+import {
+  buildStudyQueue,
+  nextDueDate,
+  type StudyQueue,
+} from "../domain/scheduling";
+import type { Session } from "../domain/session";
+import { applySm2, INITIAL_SM2_STATE } from "../domain/sm2";
+import type { Storage } from "../domain/storage";
+import type { WebIdDocument } from "../domain/webIdDocument";
+import type {
+  DeckRepository,
+  InstanceRepository,
+  PreferencesRepository,
+  ReviewStateRepository,
+  SessionGateway,
+  StorageGateway,
+  WebIdDocumentRepository,
+} from "./ports";
+
+export interface UseCases {
+  restoreSession(): Promise<Session | null>;
+  loginWithWebId(webId: string): Promise<void>;
+  logout(): Promise<void>;
+  /** Subscribe to session expiry; returns an unsubscribe function. */
+  onSessionExpired(listener: () => void): () => void;
+  viewWebIdDocument(session: Session): Promise<WebIdDocument>;
+  listStorages(session: Session): Promise<Storage[]>;
+  addManualStorage(url: string): Promise<Storage>;
+  listInstances(session: Session): Promise<Instance[]>;
+  getRegistrationOptions(session: Session): Promise<RegistrationOptions>;
+  createInstance(
+    session: Session,
+    args: {
+      containerUrl: string;
+      name: string;
+      registrationTarget: RegistrationTarget;
+    },
+  ): Promise<Instance>;
+  attachInstanceByUrl(
+    session: Session,
+    instanceUrl: string,
+    registrationTarget: RegistrationTarget,
+  ): Promise<Instance>;
+  listDecks(instanceUrl: string): Promise<Deck[]>;
+  createDeck(instanceUrl: string, name: string): Promise<Deck>;
+  removeDeck(deck: Deck): Promise<void>;
+  listCards(deck: Deck): Promise<Card[]>;
+  addCard(deck: Deck, front: string, back: string): Promise<Card>;
+  updateCard(
+    deck: Deck,
+    card: Card,
+    front: string,
+    back: string,
+  ): Promise<Card>;
+  removeCard(deck: Deck, card: Card): Promise<void>;
+  /** Stored preferences overlaid on the defaults. */
+  getPreferences(instanceUrl: string): Promise<StudyPreferences>;
+  savePreferences(
+    instanceUrl: string,
+    preferences: StudyPreferences,
+  ): Promise<void>;
+  /** Today's due and new cards for a deck, respecting the daily caps. */
+  getStudyQueue(
+    instanceUrl: string,
+    deck: Deck,
+    now: Date,
+  ): Promise<StudyQueue>;
+  /**
+   * Apply one SM-2 review: load the card's state (or start fresh),
+   * transition it, persist it, and return the new state.
+   */
+  recordReview(
+    instanceUrl: string,
+    deck: Deck,
+    card: Card,
+    quality: ReviewQuality,
+    now: Date,
+  ): Promise<ReviewState>;
+}
+
+export interface Dependencies {
+  sessionGateway: SessionGateway;
+  webIdDocumentRepository: WebIdDocumentRepository;
+  storageGateway: StorageGateway;
+  instanceRepository: InstanceRepository;
+  deckRepository: DeckRepository;
+  preferencesRepository: PreferencesRepository;
+  reviewStateRepository: ReviewStateRepository;
+}
+
+export function createUseCases({
+  sessionGateway,
+  webIdDocumentRepository,
+  storageGateway,
+  instanceRepository,
+  deckRepository,
+  preferencesRepository,
+  reviewStateRepository,
+}: Dependencies): UseCases {
+  async function getPreferences(
+    instanceUrl: string,
+  ): Promise<StudyPreferences> {
+    const stored = await preferencesRepository.getPreferences(instanceUrl);
+    return stored ?? DEFAULT_PREFERENCES;
+  }
+
+  return {
+    restoreSession() {
+      return sessionGateway.restore();
+    },
+    loginWithWebId(webId) {
+      return sessionGateway.login(webId.trim());
+    },
+    logout() {
+      return sessionGateway.logout();
+    },
+    onSessionExpired(listener) {
+      return sessionGateway.onSessionExpired(listener);
+    },
+    viewWebIdDocument(session) {
+      return webIdDocumentRepository.fetchWebIdDocument(session.webId);
+    },
+    listStorages(session) {
+      return storageGateway.discoverStorages(session.webId);
+    },
+    addManualStorage(url) {
+      return storageGateway.probeStorage(url.trim());
+    },
+    listInstances(session) {
+      return instanceRepository.listInstances(session.webId);
+    },
+    getRegistrationOptions(session) {
+      return instanceRepository.getRegistrationOptions(session.webId);
+    },
+    createInstance(session, { containerUrl, name, registrationTarget }) {
+      return instanceRepository.createInstance({
+        webId: session.webId,
+        containerUrl: containerUrl.trim(),
+        name: name.trim(),
+        registrationTarget,
+      });
+    },
+    attachInstanceByUrl(session, instanceUrl, registrationTarget) {
+      return instanceRepository.attachInstance({
+        webId: session.webId,
+        instanceUrl: instanceUrl.trim(),
+        registrationTarget,
+      });
+    },
+    listDecks(instanceUrl) {
+      return deckRepository.listDecks(instanceUrl);
+    },
+    createDeck(instanceUrl, name) {
+      return deckRepository.createDeck(instanceUrl, name.trim());
+    },
+    removeDeck(deck) {
+      return deckRepository.removeDeck(deck);
+    },
+    listCards(deck) {
+      return deckRepository.listCards(deck);
+    },
+    addCard(deck, front, back) {
+      return deckRepository.addCard(deck, front.trim(), back.trim());
+    },
+    updateCard(deck, card, front, back) {
+      return deckRepository.updateCard(deck, card, front.trim(), back.trim());
+    },
+    removeCard(deck, card) {
+      return deckRepository.removeCard(deck, card);
+    },
+    getPreferences,
+    savePreferences(instanceUrl, preferences) {
+      return preferencesRepository.savePreferences(instanceUrl, preferences);
+    },
+    async getStudyQueue(instanceUrl, deck, now) {
+      const [cards, reviews, prefs] = await Promise.all([
+        deckRepository.listCards(deck),
+        reviewStateRepository.listReviewStates(deck),
+        getPreferences(instanceUrl),
+      ]);
+      return buildStudyQueue({ cards, reviews, prefs, now });
+    },
+    async recordReview(instanceUrl, deck, card, quality, now) {
+      const [prefs, current] = await Promise.all([
+        getPreferences(instanceUrl),
+        reviewStateRepository.getReviewState(deck, card.id),
+      ]);
+      const next = applySm2(current ?? INITIAL_SM2_STATE, quality);
+      const state: ReviewState = {
+        cardId: card.id,
+        ...next,
+        due: nextDueDate(now, next.intervalDays, prefs.dayBoundaryHour),
+        firstReviewedAt: current?.firstReviewedAt ?? now.toISOString(),
+        lastReviewedAt: now.toISOString(),
+      };
+      await reviewStateRepository.saveReviewState(deck, state);
+      return state;
+    },
+  };
+}
