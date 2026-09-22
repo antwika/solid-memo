@@ -10,6 +10,8 @@ const deck: Deck = {
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
+  authors: [],
 };
 
 function renderScreen(

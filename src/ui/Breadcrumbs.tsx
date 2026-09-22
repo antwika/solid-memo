@@ -41,6 +41,9 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
   if (route.screen === "deckCreator") {
     return [decks, { label: "New deck", route }];
   }
+  if (route.screen === "library") {
+    return [decks, { label: "Deck library", route }];
+  }
   if (route.screen === "preferences") {
     return [decks, { label: "Preferences", route }];
   }

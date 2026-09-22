@@ -10,6 +10,7 @@ const card: Card = {
   front: "水",
   back: "water",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
 };
 
 function renderAction(queue: StudyQueue | undefined) {
@@ -35,6 +36,7 @@ describe("DeckStudyAction", () => {
     });
     const study = screen.getByRole("button", { name: "Study Kanji N5" });
     expect(study).toHaveClass("primary");
+    expect(screen.getByText("1 due · 1 new")).toBeInTheDocument();
     fireEvent.click(study);
     expect(onStudy).toHaveBeenCalledOnce();
     expect(onPractice).not.toHaveBeenCalled();
@@ -47,15 +49,23 @@ describe("DeckStudyAction", () => {
       studiedToday: 3,
     });
     expect(screen.queryByRole("button", { name: /^Study/ })).toBeNull();
+    expect(screen.getByText("1 new")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Practice Kanji N5" }));
     expect(onPractice).toHaveBeenCalledOnce();
     expect(onStudy).not.toHaveBeenCalled();
+  });
+
+  it("shows how many cards are due when none are new", () => {
+    renderAction({ due: [card, card, card], newCards: [], studiedToday: 0 });
+    expect(screen.getByText("3 due")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Study Kanji N5" })).toBeInTheDocument();
   });
 
   it("does not suggest studying when there is nothing to study", () => {
     renderAction({ due: [], newCards: [], studiedToday: 12 });
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByText("Nothing to study today")).toBeInTheDocument();
+    expect(screen.queryByText(/due|new/)).toBeNull();
   });
 
   it("suggests nothing while the queue is unknown", () => {

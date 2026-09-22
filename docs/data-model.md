@@ -31,11 +31,23 @@ flowchart LR
   sm:Instance`, in the private type index by default. `dcterms:title` on the
   registration names the instance (harmless extra triples). Reading accepts
   both `solid:instanceContainer` and `solid:instance`.
+- **Type index links** are read from the WebID subject in the WebID
+  document and in its extended profile documents (`rdfs:seeAlso` /
+  `foaf:isPrimaryTopicOf`), plus `pim:preferencesFile` for the private one.
 - **Missing indexes** (normal on Community Solid Server pods): the user is
   warned and chooses — create the private index (document under
-  `<storage>settings/` plus a profile link) or register publicly. If
+  `<storage>settings/` plus a profile link) or register publicly. The link
+  goes in the WebID document when it is writable, else in the first
+  extended profile that accepts it (Inrupt PodSpaces: the WebID document on
+  `id.inrupt.com` is read-only; `<storage>profile` is the writable one). An
+  index document already at the target URL is adopted, not overwritten. If
   registration fails, instance creation fails loudly and the created
   container is cleaned up; there is no local fallback.
+- **Deleting an instance** wipes the container recursively (children
+  first, `meta.ttl` last, so a half-deleted instance still attaches by
+  URL), then removes its registrations from both type indexes. Data goes
+  before registration so a failure leaves the instance listed and the
+  delete retryable.
 
 ## Instance layout
 
@@ -45,8 +57,10 @@ flowchart LR
 │                        sm:formatVersion 1
 ├── preferences.ttl #it: a sm:Preferences (created on first explicit save):
 │                        study caps + sm:developerMode (boolean, absent = off)
-├── catalog.ttl     one subject per deck (titles live ONLY here)
-├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn)
+├── catalog.ttl     one subject per deck (titles live ONLY here);
+│                        sm:formatVersion, optional dcterms:creator/license/source
+├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn),
+│                        each with sm:formatVersion
 └── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per fragment (fast churn);
                           optional sm:previous* snapshot = state before the
                           day's first review (restored by "reset the day")
@@ -60,8 +74,8 @@ never rewrites card content.
 
 ```mermaid
 graph LR
-    C["catalog.ttl#deck-X<br/>a sm:Deck<br/>dcterms:title<br/>sm:cardsDocument<br/>sm:reviewsDocument"]
-    D["decks/deck-X.ttl#card-N<br/>a sm:Card<br/>sm:front / sm:back"]
+    C["catalog.ttl#deck-X<br/>a sm:Deck<br/>dcterms:title<br/>sm:formatVersion<br/>sm:cardsDocument<br/>sm:reviewsDocument"]
+    D["decks/deck-X.ttl#card-N<br/>a sm:Card<br/>sm:front / sm:back<br/>sm:formatVersion"]
     R["reviews/deck-X.ttl#card-N<br/>a sm:ReviewState<br/>SM-2 fields"]
     C -->|sm:cardsDocument| D
     C -->|sm:reviewsDocument| R
@@ -69,9 +83,19 @@ graph LR
 ```
 
 - The **catalog** holds one subject per deck with its title and links to the
-  two documents — the deck list renders from a single fetch.
-- **Cards** are hash-fragment subjects (`#card-<uuid>`) inside one document
-  per deck. Fragment ids are generated once at creation and never re-derived.
+  two documents — the deck list renders from a single fetch. A deck may
+  name its authors (`dcterms:creator`, one literal each) and licence
+  (`dcterms:license`, a URL); a deck copied from the
+  [deck library](deck-library.md) inherits those and also carries
+  `dcterms:source` (the library document it came from).
+- **Format versions**: every deck and card the app writes carries
+  `sm:formatVersion` (the same term `meta.ttl` uses for the instance),
+  currently 1 for both. Readers treat a missing version as 1 — data
+  written before the field existed — and pass a stored version through
+  unchanged, so a future migration can tell formats apart.
+- **Cards** are hash-fragment subjects (`#card-<uuid>`, or the library's
+  own ids such as `#sweden` for imported decks) inside one document per
+  deck. Fragment ids are generated once at creation and never re-derived.
 - **Review state** lives in a separate document per deck, joined to cards by
   the same fragment id. Card edits and review updates never touch each
   other's documents.

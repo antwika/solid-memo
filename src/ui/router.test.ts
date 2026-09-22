@@ -3,6 +3,7 @@ import { act, renderHook } from "@testing-library/preact";
 import {
   deckHref,
   decksHref,
+  libraryHref,
   parseHash,
   routeToHash,
   type RouteRef,
@@ -19,6 +20,7 @@ const roundTrips: RouteRef[] = [
   },
   { screen: "home", instanceUrl: "https://pod.example/solid-memo/a/" },
   { screen: "deckCreator", instanceUrl: "https://pod.example/solid-memo/a/" },
+  { screen: "library", instanceUrl: "https://pod.example/solid-memo/a/" },
   {
     screen: "deckDetail",
     instanceUrl: "https://pod.example/solid-memo/a/",
@@ -28,6 +30,12 @@ const roundTrips: RouteRef[] = [
     screen: "browser",
     instanceUrl: "https://pod.example/solid-memo/a/",
     deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
+  },
+  {
+    screen: "browser",
+    instanceUrl: "https://pod.example/solid-memo/a/",
+    deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
+    page: 3,
   },
   {
     screen: "cardCreator",
@@ -54,6 +62,29 @@ describe("routeToHash / parseHash", () => {
     expect(parseHash(routeToHash(ref))).toEqual(ref);
   });
 
+  it("keeps the first Browser page out of the URL", () => {
+    const first = {
+      screen: "browser",
+      instanceUrl: "https://pod.example/a/",
+      deckUrl: "https://pod.example/a/catalog.ttl#deck-1",
+    } as const;
+    expect(routeToHash({ ...first, page: 1 })).toBe(routeToHash(first));
+    expect(routeToHash({ ...first, page: 1 })).not.toContain("page");
+    expect(parseHash(routeToHash({ ...first, page: 1 }))).toEqual(first);
+  });
+
+  it.each(["0", "1", "-2", "2.5", "abc", ""])(
+    "treats Browser page %j as the first page",
+    (page) => {
+      const hash = `#/browse?instance=a&deck=b&page=${page}`;
+      expect(parseHash(hash)).toEqual({
+        screen: "browser",
+        instanceUrl: "a",
+        deckUrl: "b",
+      });
+    },
+  );
+
   it("parses identifiers containing URL metacharacters", () => {
     const ref: RouteRef = {
       screen: "deckDetail",
@@ -74,6 +105,7 @@ describe("routeToHash / parseHash", () => {
     "#/new-instance?source=profile",
     "#/decks",
     "#/new-deck",
+    "#/library",
     "#/deck",
     "#/deck?instance=https%3A%2F%2Fpod.example%2F",
     "#/browse?deck=https%3A%2F%2Fpod.example%2Fd%23deck-1",
@@ -88,6 +120,14 @@ describe("routeToHash / parseHash", () => {
     "#/preferences",
   ])("rejects invalid hash %j", (hash) => {
     expect(parseHash(hash)).toBeNull();
+  });
+});
+
+describe("libraryHref", () => {
+  it("is the hash URL of the instance's deck library", () => {
+    expect(libraryHref("https://pod.example/a/")).toBe(
+      "#/library?instance=https%3A%2F%2Fpod.example%2Fa%2F",
+    );
   });
 });
 

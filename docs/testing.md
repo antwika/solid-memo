@@ -13,7 +13,7 @@ npm run test:watch
 
 ## Coverage policy
 
-100% across `src/**` with exactly two documented exclusions
+100% across `src/**` and `tooling/**` with exactly two documented exclusions
 (configured in [vite.config.ts](../vite.config.ts)):
 
 - `src/main.tsx` — composition root; pure wiring, no logic.

@@ -41,8 +41,27 @@ Decisions fixed in code (and tests):
   interval, per Wozniak's original description).
 - Lapses (`q < 3`) keep the ease factor; only repetitions and interval reset.
   The card returns the next study day (interval 1).
-- No in-session relearning loop in v1: a failed card reappears tomorrow,
-  not later in the same session.
+- A grade of 0 or 1 additionally sends the card round again **within the
+  session** (`repeatsInSession`); see *Practice sessions*. Each pass is a
+  full SM-2 review, so the state stored after the repeat is the one that
+  counts.
+
+## Answer scales
+
+Sessions grade with one of two button sets, chosen per instance in the
+preferences (`sm:answerScale`, default `sm2`):
+
+| Scale | Buttons | Records |
+|---|---|---|
+| `sm2` | 0 — Blackout … 5 — Easy | that grade |
+| `minimal` | Again · Hard · Good · Easy | 1 · 3 · 4 · 5 |
+
+The minimal scale is a view over SM-2, not a second algorithm. Again stands
+for 0–1 and Hard for 2–3, but each button must record one value: Again
+records 1 (0 and 1 schedule identically) and Hard records **3**, the lowest
+passing grade — recording 2 would make Hard a lapse, indistinguishable from
+Again. So on the minimal scale only Again repeats in the session
+([answerScale.ts](../src/domain/answerScale.ts)).
 
 ## Study days and the queue
 
@@ -57,11 +76,14 @@ it deterministic and testable):
 
 - **due**: cards whose `due <= today`, oldest due first, capped at
   `maxReviewsPerDay` minus reviews already done today.
-- **new**: cards without review state, capped at `newCardsPerDay` minus
-  cards introduced today.
+- **new**: cards without review state, **drawn at random** (Fisher–Yates
+  over an injected `random` source, so tests stay deterministic), capped at
+  `newCardsPerDay` minus cards introduced today. A long deck is therefore
+  not introduced front to back.
 
-Both budgets clamp at zero. The queue is a snapshot: the practice screen
-freezes it at session start and answered cards do not reshuffle it.
+Both budgets clamp at zero. The queue is a snapshot taken at session start;
+the session then owns its own order (below) and a refetch never reshuffles
+it.
 
 ## Practice sessions
 
@@ -71,8 +93,12 @@ A deck offers two session modes ([PracticeContainer](../src/ui/PracticeContainer
 - **Practice** — due cards first, then new cards up to the daily new-card
   budget.
 
-A session walks the frozen queue one card at a time:
-front → reveal → grade 0–5. Each answer runs the `recordReview` use case
+A session walks its queue one card at a time: front → reveal → grade.
+A card graded 0 or 1 is put back into the *remainder* of the session at a
+random position (`requeueCard`) — never as the very next card, unless it is
+the only card left, in which case it simply repeats until it passes. The
+"Card x of y" counter grows with each repeat. Each answer runs the
+`recordReview` use case
 ([useCases.ts](../src/application/useCases.ts)): load the card's stored
 state (or start from the initial SM-2 state), apply the transition, compute
 the next due day, persist to `reviews/<deckId>.ttl`, and return the new

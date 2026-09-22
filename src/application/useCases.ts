@@ -5,6 +5,7 @@ import type {
   RegistrationOptions,
   RegistrationTarget,
 } from "../domain/instance";
+import type { LibraryDeck } from "../domain/library";
 import {
   DEFAULT_PREFERENCES,
   type StudyPreferences,
@@ -23,6 +24,7 @@ import type { Storage } from "../domain/storage";
 import { isSecureUrl, validateWebId } from "../domain/webId";
 import type { WebIdDocument } from "../domain/webIdDocument";
 import type {
+  DeckLibrary,
   DeckRepository,
   InstanceRepository,
   PreferencesRepository,
@@ -64,10 +66,16 @@ export interface UseCases {
     instanceUrl: string,
     registrationTarget: RegistrationTarget,
   ): Promise<Instance>;
+  /** Permanently delete an instance and all its decks and cards. */
+  deleteInstance(session: Session, instance: Instance): Promise<void>;
   listDecks(instanceUrl: string): Promise<Deck[]>;
   createDeck(instanceUrl: string, name: string): Promise<Deck>;
   renameDeck(deck: Deck, name: string): Promise<Deck>;
   removeDeck(deck: Deck): Promise<void>;
+  /** The ready-made decks the app offers for import. */
+  listLibraryDecks(): Promise<LibraryDeck[]>;
+  /** Copy a library deck, cards included, into an instance as a new deck. */
+  importLibraryDeck(instanceUrl: string, deck: LibraryDeck): Promise<Deck>;
   listCards(deck: Deck): Promise<Card[]>;
   addCard(deck: Deck, front: string, back: string): Promise<Card>;
   updateCard(
@@ -110,20 +118,25 @@ export interface UseCases {
 
 export interface Dependencies {
   sessionGateway: SessionGateway;
+  /** Uniform [0, 1) source; defaults to Math.random. Injected for tests. */
+  random?: () => number;
   webIdDocumentRepository: WebIdDocumentRepository;
   storageGateway: StorageGateway;
   instanceRepository: InstanceRepository;
   deckRepository: DeckRepository;
+  deckLibrary: DeckLibrary;
   preferencesRepository: PreferencesRepository;
   reviewStateRepository: ReviewStateRepository;
 }
 
 export function createUseCases({
   sessionGateway,
+  random = Math.random,
   webIdDocumentRepository,
   storageGateway,
   instanceRepository,
   deckRepository,
+  deckLibrary,
   preferencesRepository,
   reviewStateRepository,
 }: Dependencies): UseCases {
@@ -206,6 +219,12 @@ export function createUseCases({
         registrationTarget,
       });
     },
+    deleteInstance(session, instance) {
+      return instanceRepository.deleteInstance({
+        webId: session.webId,
+        instance,
+      });
+    },
     listDecks(instanceUrl) {
       return deckRepository.listDecks(instanceUrl);
     },
@@ -217,6 +236,13 @@ export function createUseCases({
     },
     removeDeck(deck) {
       return deckRepository.removeDeck(deck);
+    },
+    listLibraryDecks() {
+      return deckLibrary.listLibraryDecks();
+    },
+    async importLibraryDeck(instanceUrl, deck) {
+      const content = await deckLibrary.fetchLibraryDeck(deck.url);
+      return deckRepository.importDeck(instanceUrl, content);
     },
     listCards(deck) {
       return deckRepository.listCards(deck);
@@ -240,7 +266,7 @@ export function createUseCases({
         reviewStateRepository.listReviewStates(deck),
         getPreferences(instanceUrl),
       ]);
-      return buildStudyQueue({ cards, reviews, prefs, now });
+      return buildStudyQueue({ cards, reviews, prefs, now, random });
     },
     async recordReview(instanceUrl, deck, card, quality, now) {
       const [prefs, current] = await Promise.all([

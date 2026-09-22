@@ -961,6 +961,12 @@ dl.account dd {
   z-index: 1;
 }
 
+/* "12 due · 5 new" beside the row's action. */
+.deck-list .study-counts {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Deck rows: the deck name is the main, prominent link */
 .deck-list .deck-open {
   /* Hugs the name (so the hover highlight wraps just the name, not the
@@ -976,6 +982,96 @@ dl.account dd {
   font-size: 1.02rem;
   color: var(--link);
   text-decoration: underline;
+}
+
+/* The deck list's footer: create a deck, or visit the library. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Library rows: a tile per ready-made deck, ticked to import. The whole
+   label (checkbox + name) is the click target; the counts sit right. */
+.library-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.library-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.library-list li:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.library-list label {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0.25rem 0;
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.library-list .library-deck-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-list .hint {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* "By … · CC0 1.0" under a deck's name: a block on the deck page, and in
+   a library row its own line below the title, aligned with it (past the
+   checkbox) rather than with the tile's edge. */
+.provenance {
+  display: block;
+  margin: -0.25rem 0 0.75rem;
+}
+
+.library-list .provenance {
+  order: 1;
+  flex-basis: 100%;
+  margin: -0.2rem 0 0.1rem;
+  /* Checkbox width + its right margin, so the text sits under the title. */
+  padding-left: 1.6rem;
+  white-space: normal;
+}
+
+.library-imported {
+  /* Wraps after the provenance line when the row is too narrow. */
+  order: 2;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.library-list + button {
+  align-self: flex-start;
 }
 
 /* Links inside muted text keep its colour. */
@@ -1092,6 +1188,21 @@ td.clickable:first-child a {
   background: var(--surface-hover);
 }
 
+/* Browser pager: Previous · "Page x of y" · Next, under the card table. */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.pager span {
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
 form.card-edit {
   margin: 0.25rem 0 0.75rem;
 }
@@ -1179,28 +1290,46 @@ form.card-edit {
   background: color-mix(in srgb, var(--grade) 24%, var(--surface));
 }
 
-.quality-buttons button:nth-child(1) {
+/* Coloured by the SM-2 grade a button records, so the minimal scale's
+   four buttons take the colours of the grades they map to. */
+.quality-buttons button[data-grade="0"] {
   --grade: #d63a25;
 }
 
-.quality-buttons button:nth-child(2) {
+.quality-buttons button[data-grade="1"] {
   --grade: #e2662a;
 }
 
-.quality-buttons button:nth-child(3) {
+.quality-buttons button[data-grade="2"] {
   --grade: #e8932a;
 }
 
-.quality-buttons button:nth-child(4) {
+.quality-buttons button[data-grade="3"] {
   --grade: #d9b11c;
 }
 
-.quality-buttons button:nth-child(5) {
+.quality-buttons button[data-grade="4"] {
   --grade: #7fb13c;
 }
 
-.quality-buttons button:nth-child(6) {
+.quality-buttons button[data-grade="5"] {
   --grade: #2f8a4a;
+}
+
+.quality-buttons.minimal {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 480px) {
+  .quality-buttons.minimal {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Radio options with a one-line explanation underneath */
+fieldset label.radio-option .hint {
+  display: block;
+  margin: 0.1rem 0 0.4rem 1.6rem;
 }
 
 /* Disclosure widgets (attach instance, WebID document viewer) */

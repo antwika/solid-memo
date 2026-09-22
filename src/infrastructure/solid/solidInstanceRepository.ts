@@ -3,7 +3,9 @@ import {
   createSolidDataset,
   createThing,
   deleteContainer,
+  deleteFile,
   deleteSolidDataset,
+  getContainedResourceUrlAll,
   getSolidDataset,
   getStringNoLocale,
   getThing,
@@ -12,12 +14,14 @@ import {
 } from "@inrupt/solid-client";
 import type { InstanceRepository } from "../../application/ports";
 import type { Instance } from "../../domain/instance";
+import { getSolidDatasetOrNull } from "./datasets";
 import { toInstance } from "./mappers/instanceMapper";
 import {
   addInstanceRegistration,
   ensureTypeIndex,
   locateTypeIndexes,
   readInstanceRegistrations,
+  removeInstanceRegistrations,
   type InstanceRegistration,
 } from "./typeIndex";
 import { ensureTrailingSlash, lastPathSegment } from "./urls";
@@ -111,7 +115,49 @@ export function createSolidInstanceRepository({
       }
       return { url, name };
     },
+
+    async deleteInstance({ webId, instance }) {
+      const url = ensureTrailingSlash(instance.url);
+      await deleteContainerRecursively(url, fetch);
+      const locations = await locateTypeIndexes(webId, fetch);
+      for (const indexUrl of [
+        locations.privateIndexUrl,
+        locations.publicIndexUrl,
+      ]) {
+        if (indexUrl === null) continue;
+        await removeInstanceRegistrations(indexUrl, url, fetch);
+      }
+    },
   };
+}
+
+/**
+ * Delete a container and everything below it. Solid only deletes empty
+ * containers, so children go first; the instance's meta.ttl goes last so
+ * a partly deleted instance still attaches by URL. A container that is
+ * already gone counts as deleted.
+ */
+async function deleteContainerRecursively(
+  containerUrl: string,
+  fetch: typeof globalThis.fetch,
+): Promise<void> {
+  const container = await getSolidDatasetOrNull(containerUrl, fetch);
+  if (container === null) return;
+  const children = getContainedResourceUrlAll(container).sort(
+    (a, b) => Number(isMetaDocument(a)) - Number(isMetaDocument(b)),
+  );
+  for (const child of children) {
+    if (child.endsWith("/")) {
+      await deleteContainerRecursively(child, fetch);
+    } else {
+      await deleteFile(child, { fetch });
+    }
+  }
+  await deleteContainer(containerUrl, { fetch });
+}
+
+function isMetaDocument(url: string): boolean {
+  return url.endsWith("/meta.ttl");
 }
 
 async function readRegistrationsSafely(

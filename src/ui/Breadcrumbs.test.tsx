@@ -48,6 +48,11 @@ describe("breadcrumbsFor", () => {
       { label: "Decks", route: home },
       { label: "Preferences", route: preferences },
     ]);
+    const library: RouteRef = { screen: "library", instanceUrl };
+    expect(breadcrumbsFor(library, NO_NAMES)).toEqual([
+      { label: "Decks", route: home },
+      { label: "Deck library", route: library },
+    ]);
   });
 
   it("ends the deck view's trail with a link to the deck itself", () => {

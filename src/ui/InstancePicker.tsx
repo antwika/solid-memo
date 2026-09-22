@@ -15,6 +15,7 @@ export function InstancePicker({
   onSelect,
   onNewInstance,
   onAttach,
+  onDelete,
 }: {
   instances: Instance[];
   options: RegistrationOptions | null;
@@ -23,6 +24,7 @@ export function InstancePicker({
   onSelect: (instance: Instance) => void;
   onNewInstance: () => void;
   onAttach: (url: string, target: RegistrationTarget) => void;
+  onDelete: (instance: Instance) => void;
 }) {
   const [attachUrl, setAttachUrl] = useState("");
   const [target, setTarget] = useState<RegistrationTarget>("private");
@@ -30,6 +32,16 @@ export function InstancePicker({
   function handleAttach(event: Event) {
     event.preventDefault();
     onAttach(attachUrl.trim(), target);
+  }
+
+  function handleDelete(instance: Instance) {
+    if (
+      window.confirm(
+        `Delete the instance "${instance.name}" and all its decks and cards? This cannot be undone.`,
+      )
+    ) {
+      onDelete(instance);
+    }
   }
 
   return (
@@ -44,7 +56,15 @@ export function InstancePicker({
               <button onClick={() => onSelect(instance)} disabled={busy}>
                 {instance.name}
               </button>{" "}
-              <ExternalLink url={instance.url} class="hint" />
+              <ExternalLink url={instance.url} class="hint" />{" "}
+              <button
+                class="danger"
+                onClick={() => handleDelete(instance)}
+                disabled={busy}
+                aria-label={`Delete instance ${instance.name}`}
+              >
+                Delete…
+              </button>
             </li>
           ))}
         </ul>

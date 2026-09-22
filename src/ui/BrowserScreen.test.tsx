@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
-import { BrowserScreen } from "./BrowserScreen";
+import { BrowserScreen, CARDS_PER_PAGE } from "./BrowserScreen";
 import type { Card, Deck } from "../domain/deck";
 
 const deck: Deck = {
@@ -10,6 +10,8 @@ const deck: Deck = {
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
+  authors: [],
 };
 
 const card: Card = {
@@ -18,6 +20,7 @@ const card: Card = {
   front: "水",
   back: "water",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
 };
 
 function renderScreen(
@@ -27,6 +30,7 @@ function renderScreen(
     deck,
     deckHref: "#/deck?deck=d",
     cards: [card],
+    page: 1,
     busy: false,
     error: null,
     onRenameDeck: vi.fn(),
@@ -34,6 +38,7 @@ function renderScreen(
     onAddCard: vi.fn(),
     cardHref: (c: Card) => `#/card?card=${c.id}`,
     onRemoveCard: vi.fn(),
+    onPageChange: vi.fn(),
     ...overrides,
   };
   const view = render(<BrowserScreen {...props} />);
@@ -173,5 +178,72 @@ describe("BrowserScreen", () => {
     const { props } = renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Add card" }));
     expect(props.onAddCard).toHaveBeenCalledOnce();
+  });
+});
+
+describe("BrowserScreen pagination", () => {
+  /** `count` cards named "Card 1" … "Card N". */
+  function manyCards(count: number): Card[] {
+    return Array.from({ length: count }, (_, i) => ({
+      ...card,
+      id: `card-${i + 1}`,
+      url: `${deck.cardsDocumentUrl}#card-${i + 1}`,
+      front: `Card ${i + 1}`,
+      back: `Back ${i + 1}`,
+    }));
+  }
+
+  it("shows no pager when everything fits on one page", () => {
+    renderScreen({ cards: manyCards(CARDS_PER_PAGE) });
+    expect(screen.queryByRole("navigation", { name: "Card pages" })).toBeNull();
+    expect(screen.getAllByRole("row")).toHaveLength(CARDS_PER_PAGE + 1);
+    expect(screen.getByText("Click a card to open it.")).toBeInTheDocument();
+  });
+
+  it("shows only the current page and where it sits in the deck", () => {
+    const cards = manyCards(CARDS_PER_PAGE * 2 + 3);
+    renderScreen({ cards, page: 2 });
+
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(CARDS_PER_PAGE);
+    expect(rows[0]).toHaveTextContent(`Card ${CARDS_PER_PAGE + 1}`);
+    expect(rows[rows.length - 1]).toHaveTextContent(`Card ${CARDS_PER_PAGE * 2}`);
+    expect(
+      screen.getByText(
+        `Cards ${CARDS_PER_PAGE + 1}–${CARDS_PER_PAGE * 2} of ${cards.length}. Click a card to open it.`,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
+  });
+
+  it("moves to the previous and next page", () => {
+    const { props } = renderScreen({ cards: manyCards(CARDS_PER_PAGE * 3), page: 2 });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(props.onPageChange).toHaveBeenLastCalledWith(3);
+    fireEvent.click(screen.getByRole("button", { name: "Previous" }));
+    expect(props.onPageChange).toHaveBeenLastCalledWith(1);
+  });
+
+  it("disables Previous on the first page and Next on the last", () => {
+    const cards = manyCards(CARDS_PER_PAGE + 1);
+    const first = renderScreen({ cards, page: 1 });
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
+    first.unmount();
+
+    renderScreen({ cards, page: 2 });
+    expect(screen.getByRole("button", { name: "Previous" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+    expect(screen.getAllByRole("row").slice(1)).toHaveLength(1);
+  });
+
+  it("clamps an out-of-range page to the nearest one", () => {
+    const cards = manyCards(CARDS_PER_PAGE + 1);
+    const high = renderScreen({ cards, page: 99 });
+    expect(screen.getByText("Page 2 of 2")).toBeInTheDocument();
+    high.unmount();
+
+    renderScreen({ cards, page: 0 });
+    expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
   });
 });

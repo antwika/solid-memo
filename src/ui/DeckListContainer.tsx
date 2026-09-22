@@ -6,7 +6,7 @@ import { DeckListScreen } from "./DeckListScreen";
 import { DeckStudyActionContainer } from "./DeckStudyAction";
 import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
-import { deckHref, decksHref } from "./router";
+import { deckHref, decksHref, libraryHref } from "./router";
 
 /** Owns the deck list query for one instance. */
 export function DeckListContainer({
@@ -38,6 +38,7 @@ export function DeckListContainer({
     <DeckListScreen
       decks={decksQuery.data}
       decksHref={decksHref(instance.url)}
+      libraryHref={libraryHref(instance.url)}
       deckHref={(deck) => deckHref(instance.url, deck.url)}
       renderStudyAction={(deck) => (
         <DeckStudyActionContainer

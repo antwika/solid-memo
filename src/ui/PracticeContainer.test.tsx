@@ -5,6 +5,7 @@ import { PracticeContainer } from "./PracticeContainer";
 import type { UseCases } from "../application/useCases";
 import type { Card, Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
+import { DEFAULT_PREFERENCES } from "../domain/preferences";
 import type { StudyQueue } from "../domain/scheduling";
 import { makeUseCasesFake } from "../test/useCasesFake";
 
@@ -20,6 +21,8 @@ const deck: Deck = {
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
+  authors: [],
 };
 
 function makeCard(id: string, front: string): Card {
@@ -29,12 +32,14 @@ function makeCard(id: string, front: string): Card {
     front,
     back: `${front}-back`,
     createdAt: "2026-09-21T10:00:00.000Z",
+    formatVersion: 1,
   };
 }
 
 function renderContainer(
   useCases: UseCases,
   mode: "practice" | "study" = "practice",
+  random: () => number = () => 0,
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -48,10 +53,19 @@ function renderContainer(
         deck={deck}
         mode={mode}
         onExit={onExit}
+        random={random}
       />
     </QueryClientProvider>,
   );
   return { onExit };
+}
+
+/** Reveal the current card and grade it. */
+async function answer(grade: string) {
+  const reveal = await screen.findByRole("button", { name: "Reveal" });
+  await waitFor(() => expect(reveal).toBeEnabled());
+  fireEvent.click(reveal);
+  fireEvent.click(screen.getByRole("button", { name: grade }));
 }
 
 describe("PracticeContainer", () => {
@@ -166,6 +180,131 @@ describe("PracticeContainer", () => {
     );
     expect(
       await screen.findByText("Nothing to study today — come back tomorrow!"),
+    ).toBeInTheDocument();
+  });
+
+  it("puts a failed card back later in the session, not straight away", async () => {
+    const useCases = makeUseCasesFake({
+      getStudyQueue: vi.fn(async () => ({
+        due: [
+          makeCard("card-a", "front-a"),
+          makeCard("card-b", "front-b"),
+          makeCard("card-c", "front-c"),
+        ],
+        newCards: [],
+        studiedToday: 0,
+      })),
+    });
+    // random() = 0 requeues at the earliest allowed slot: after one card.
+    renderContainer(useCases, "practice", () => 0);
+
+    expect(await screen.findByText("front-a")).toBeInTheDocument();
+    expect(screen.getByText("Card 1 of 3")).toBeInTheDocument();
+    await answer("1 — Wrong");
+
+    // b comes next, not a again; the session has grown by one.
+    expect(await screen.findByText("front-b")).toBeInTheDocument();
+    expect(screen.getByText("Card 2 of 4")).toBeInTheDocument();
+    await answer("4 — Good");
+
+    expect(await screen.findByText("front-a")).toBeInTheDocument();
+    expect(screen.getByText("Card 3 of 4")).toBeInTheDocument();
+    await answer("5 — Easy");
+
+    expect(await screen.findByText("front-c")).toBeInTheDocument();
+    await answer("4 — Good");
+    expect(
+      await screen.findByText("Session finished — all cards reviewed."),
+    ).toBeInTheDocument();
+    expect(useCases.recordReview).toHaveBeenCalledTimes(4);
+  });
+
+  it("repeats the only remaining card immediately until it passes", async () => {
+    const useCases = makeUseCasesFake({
+      getStudyQueue: vi.fn(async () => ({
+        due: [makeCard("card-a", "front-a")],
+        newCards: [],
+        studiedToday: 0,
+      })),
+    });
+    renderContainer(useCases);
+
+    await answer("0 — Blackout");
+    expect(await screen.findByText("Card 2 of 2")).toBeInTheDocument();
+    expect(screen.getByText("front-a")).toBeInTheDocument();
+    // The repeat starts hidden again.
+    expect(screen.queryByText("front-a-back")).toBeNull();
+
+    await answer("2 — Almost");
+    expect(
+      await screen.findByText("Session finished — all cards reviewed."),
+    ).toBeInTheDocument();
+    expect(useCases.recordReview).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not repeat a card graded 2 or better", async () => {
+    const useCases = makeUseCasesFake({
+      getStudyQueue: vi.fn(async () => ({
+        due: [makeCard("card-a", "front-a")],
+        newCards: [],
+        studiedToday: 0,
+      })),
+    });
+    renderContainer(useCases);
+
+    await answer("2 — Almost");
+    expect(
+      await screen.findByText("Session finished — all cards reviewed."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the answer buttons the preferences ask for", async () => {
+    const useCases = makeUseCasesFake({
+      getStudyQueue: vi.fn(async () => ({
+        due: [makeCard("card-a", "front-a"), makeCard("card-b", "front-b")],
+        newCards: [],
+        studiedToday: 0,
+      })),
+      getPreferences: vi.fn(async () => ({
+        ...DEFAULT_PREFERENCES,
+        answerScale: "minimal" as const,
+      })),
+    });
+    renderContainer(useCases);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Reveal" }));
+    expect(screen.getByRole("button", { name: "Again" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "1 — Wrong" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Again" }));
+    expect(await screen.findByText("front-b")).toBeInTheDocument();
+    expect(useCases.recordReview).toHaveBeenCalledWith(
+      instance.url,
+      deck,
+      expect.objectContaining({ id: "card-a" }),
+      1,
+      expect.any(Date),
+    );
+    // Again requeues: a comes back after b.
+    expect(screen.getByText("Card 2 of 3")).toBeInTheDocument();
+  });
+
+  it("falls back to the default answer buttons when preferences are unreadable", async () => {
+    const useCases = makeUseCasesFake({
+      getPreferences: vi.fn(async () => {
+        throw new Error("no prefs");
+      }),
+      getStudyQueue: vi.fn(async () => ({
+        due: [makeCard("card-a", "front-a")],
+        newCards: [],
+        studiedToday: 0,
+      })),
+    });
+    renderContainer(useCases);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Reveal" }));
+    expect(
+      screen.getByRole("button", { name: "0 — Blackout" }),
     ).toBeInTheDocument();
   });
 

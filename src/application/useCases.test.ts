@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type {
+  DeckLibrary,
   DeckRepository,
   InstanceRepository,
   PreferencesRepository,
@@ -11,6 +12,7 @@ import type {
 import { createUseCases } from "./useCases";
 import type { Card, Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
+import type { LibraryDeck, LibraryDeckContent } from "../domain/library";
 import type { Session } from "../domain/session";
 import type { Storage } from "../domain/storage";
 import type { WebIdDocument } from "../domain/webIdDocument";
@@ -32,6 +34,8 @@ const deck: Deck = {
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
+  authors: [],
 };
 const card: Card = {
   id: "card-1",
@@ -39,6 +43,22 @@ const card: Card = {
   front: "水",
   back: "water",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
+};
+const libraryDeck: LibraryDeck = {
+  url: "https://solid-memo.com/decks/capitals.ttl",
+  name: "Capitals",
+  cardCount: 1,
+  authors: ["Anton Wiklund"],
+  license: "https://creativecommons.org/publicdomain/zero/1.0/",
+};
+const libraryContent: LibraryDeckContent = {
+  url: libraryDeck.url,
+  name: "Capitals",
+  formatVersion: 1,
+  authors: ["Anton Wiklund"],
+  license: "https://creativecommons.org/publicdomain/zero/1.0/",
+  cards: [{ id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 }],
 };
 
 function makeDeps() {
@@ -65,6 +85,7 @@ function makeDeps() {
     })),
     createInstance: vi.fn(async () => instance),
     attachInstance: vi.fn(async () => instance),
+    deleteInstance: vi.fn(async () => undefined),
   };
   const deckRepository: DeckRepository = {
     listDecks: vi.fn(async () => [deck]),
@@ -75,6 +96,11 @@ function makeDeps() {
     addCard: vi.fn(async () => card),
     updateCard: vi.fn(async () => card),
     removeCard: vi.fn(async () => undefined),
+    importDeck: vi.fn(async () => deck),
+  };
+  const deckLibrary: DeckLibrary = {
+    listLibraryDecks: vi.fn(async () => [libraryDeck]),
+    fetchLibraryDeck: vi.fn(async () => libraryContent),
   };
   const preferencesRepository: PreferencesRepository = {
     getPreferences: vi.fn(async () => null),
@@ -92,6 +118,7 @@ function makeDeps() {
     storageGateway,
     instanceRepository,
     deckRepository,
+    deckLibrary,
     preferencesRepository,
     reviewStateRepository,
   };
@@ -294,6 +321,16 @@ describe("createUseCases", () => {
     });
   });
 
+  it("deleteInstance passes the WebID and the instance", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await useCases.deleteInstance(session, instance);
+    expect(deps.instanceRepository.deleteInstance).toHaveBeenCalledWith({
+      webId: session.webId,
+      instance,
+    });
+  });
+
   it("deck use cases delegate to the deck repository", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
@@ -338,6 +375,28 @@ describe("createUseCases", () => {
     expect(deps.deckRepository.removeCard).toHaveBeenCalledWith(deck, card);
   });
 
+  it("listLibraryDecks delegates to the deck library", async () => {
+    const deps = makeDeps();
+    await expect(createUseCases(deps).listLibraryDecks()).resolves.toEqual([
+      libraryDeck,
+    ]);
+  });
+
+  it("importLibraryDeck fetches the deck's content and imports it", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await expect(
+      useCases.importLibraryDeck(instance.url, libraryDeck),
+    ).resolves.toEqual(deck);
+    expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(
+      libraryDeck.url,
+    );
+    expect(deps.deckRepository.importDeck).toHaveBeenCalledWith(
+      instance.url,
+      libraryContent,
+    );
+  });
+
   it("getPreferences overlays defaults when nothing is stored", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
@@ -345,6 +404,7 @@ describe("createUseCases", () => {
       newCardsPerDay: 20,
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
+      answerScale: "sm2",
       developerMode: false,
     });
   });
@@ -389,6 +449,7 @@ describe("createUseCases", () => {
       newCardsPerDay: 5,
       maxReviewsPerDay: 50,
       dayBoundaryHour: 0,
+      answerScale: "minimal" as const,
       developerMode: true,
     };
     vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue(
@@ -407,6 +468,7 @@ describe("createUseCases", () => {
       newCardsPerDay: 5,
       maxReviewsPerDay: 50,
       dayBoundaryHour: 0,
+      answerScale: "minimal" as const,
       developerMode: true,
     };
     await useCases.savePreferences(instance.url, preferences);
@@ -414,6 +476,26 @@ describe("createUseCases", () => {
       instance.url,
       preferences,
     );
+  });
+
+  it("getStudyQueue draws new cards with the injected random source", async () => {
+    const deps = makeDeps();
+    const newCards = ["n1", "n2", "n3"].map((id) => ({
+      ...card,
+      id,
+      url: `${deck.cardsDocumentUrl}#${id}`,
+    }));
+    vi.mocked(deps.deckRepository.listCards).mockResolvedValue(newCards);
+    vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([]);
+    const useCases = createUseCases({ ...deps, random: () => 0 });
+
+    const queue = await useCases.getStudyQueue(
+      instance.url,
+      deck,
+      new Date(2026, 8, 21, 12, 0),
+    );
+    // random() = 0 reverses a Fisher–Yates shuffle.
+    expect(queue.newCards.map((c) => c.id)).toEqual(["n2", "n3", "n1"]);
   });
 
   it("getStudyQueue composes cards, review states and preferences", async () => {
@@ -620,6 +702,7 @@ describe("createUseCases", () => {
         newCardsPerDay: 20,
         maxReviewsPerDay: 200,
         dayBoundaryHour: 0,
+        answerScale: "sm2",
         developerMode: false,
       });
       await expect(

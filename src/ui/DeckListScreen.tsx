@@ -1,11 +1,12 @@
 import type { ComponentChildren } from "preact";
 import type { Deck } from "../domain/deck";
-import { CollectionIcon, DeckIcon } from "./icons";
+import { CollectionIcon, DeckIcon, LibraryIcon } from "./icons";
 
 /** Decks to open or study. Decks are renamed and removed in the Browser. */
 export function DeckListScreen({
   decks,
   decksHref,
+  libraryHref,
   deckHref,
   renderStudyAction,
   onCreateDeck,
@@ -13,6 +14,8 @@ export function DeckListScreen({
   decks: Deck[];
   /** URL of this deck list; wherever the UI says "Decks", it links here. */
   decksHref: string;
+  /** URL of the deck library, where ready-made decks are imported from. */
+  libraryHref: string;
   /** URL of a deck's page; wherever the UI names a deck, it links there. */
   deckHref: (deck: Deck) => string;
   /**
@@ -37,7 +40,10 @@ export function DeckListScreen({
         </span>
       </header>
       {decks.length === 0 ? (
-        <p>No decks yet. Create your first deck below.</p>
+        <p>
+          No decks yet. Create your first deck below, or import one from
+          the deck library.
+        </p>
       ) : (
         <ul class="deck-list">
           {decks.map((deck) => (
@@ -51,9 +57,15 @@ export function DeckListScreen({
           ))}
         </ul>
       )}
-      <button class="primary" onClick={onCreateDeck}>
-        Create deck
-      </button>
+      <div class="actions">
+        <button class="primary" onClick={onCreateDeck}>
+          Create deck
+        </button>
+        <a class="button" href={libraryHref}>
+          <LibraryIcon />
+          Deck library
+        </a>
+      </div>
     </section>
   );
 }

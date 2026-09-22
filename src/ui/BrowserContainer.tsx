@@ -10,18 +10,23 @@ export function BrowserContainer({
   useCases,
   deck,
   deckHref,
+  page,
   onAddCard,
   cardHref,
   onDeckRemoved,
+  onPageChange,
 }: {
   useCases: UseCases;
   deck: Deck;
   deckHref: string;
+  /** 1-based Browser page, from the route. */
+  page: number;
   onAddCard: () => void;
   /** URL of a card's own page. */
   cardHref: (card: Card) => string;
   /** The deck is gone; leave the Browser. */
   onDeckRemoved: () => void;
+  onPageChange: (page: number) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -70,6 +75,7 @@ export function BrowserContainer({
       deck={deck}
       deckHref={deckHref}
       cards={cardsQuery.data}
+      page={page}
       busy={
         renameDeckMutation.isPending ||
         removeDeckMutation.isPending ||
@@ -85,6 +91,7 @@ export function BrowserContainer({
       onAddCard={onAddCard}
       cardHref={cardHref}
       onRemoveCard={(card) => removeCardMutation.mutate(card)}
+      onPageChange={onPageChange}
     />
   );
 }

@@ -20,6 +20,8 @@ const deck: Deck = {
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
+  authors: [],
 };
 
 const card: Card = {
@@ -28,6 +30,7 @@ const card: Card = {
   front: "水",
   back: "water",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
 };
 
 function renderContainer(useCases: UseCases) {

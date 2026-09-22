@@ -2,14 +2,20 @@ import { useState } from "preact/hooks";
 import type { Card, Deck } from "../domain/deck";
 import { BrowserIcon, TrashIcon } from "./icons";
 
+/** Cards per Browser page: about one screen of rows. */
+export const CARDS_PER_PAGE = 25;
+
 /**
  * Management view for one deck: rename/remove the deck, add cards, and
- * open any card's own page (where it is edited) by clicking it.
+ * open any card's own page (where it is edited) by clicking it. Long
+ * decks are paged; the page is route state, so it survives a round trip
+ * to a card's page.
  */
 export function BrowserScreen({
   deck,
   deckHref,
   cards,
+  page,
   busy,
   error,
   onRenameDeck,
@@ -17,11 +23,14 @@ export function BrowserScreen({
   onAddCard,
   cardHref,
   onRemoveCard,
+  onPageChange,
 }: {
   deck: Deck;
   /** URL of the deck's page; its name links there. */
   deckHref: string;
   cards: Card[];
+  /** 1-based; out-of-range values show the nearest page. */
+  page: number;
   busy: boolean;
   error: string | null;
   onRenameDeck: (name: string) => void;
@@ -31,9 +40,17 @@ export function BrowserScreen({
   /** URL of a card's own page. */
   cardHref: (card: Card) => string;
   onRemoveCard: (card: Card) => void;
+  onPageChange: (page: number) => void;
 }) {
   /** The deck-name draft while renaming; null otherwise. */
   const [deckName, setDeckName] = useState<string | null>(null);
+
+  // Clamp rather than redirect: after removing the last card of the last
+  // page, the previous page simply shows without a route change.
+  const pageCount = Math.max(1, Math.ceil(cards.length / CARDS_PER_PAGE));
+  const currentPage = Math.min(Math.max(1, page), pageCount);
+  const firstIndex = (currentPage - 1) * CARDS_PER_PAGE;
+  const pageCards = cards.slice(firstIndex, firstIndex + CARDS_PER_PAGE);
 
   function handleRenameSubmit(event: Event, name: string) {
     event.preventDefault();
@@ -114,7 +131,12 @@ export function BrowserScreen({
         <p>No cards in this deck yet.</p>
       ) : (
         <>
-          <p class="hint">Click a card to open it.</p>
+          <p class="hint">
+            {pageCount > 1
+              ? `Cards ${firstIndex + 1}–${firstIndex + pageCards.length} of ${cards.length}. `
+              : ""}
+            Click a card to open it.
+          </p>
           <table class="card-table">
             <thead>
               <tr>
@@ -124,7 +146,7 @@ export function BrowserScreen({
               </tr>
             </thead>
             <tbody>
-              {cards.map((card) => (
+              {pageCards.map((card) => (
                 <tr key={card.url}>
                   <td class="clickable">
                     <a href={cardHref(card)}>{card.front}</a>
@@ -151,6 +173,25 @@ export function BrowserScreen({
               ))}
             </tbody>
           </table>
+          {pageCount > 1 && (
+            <nav class="pager" aria-label="Card pages">
+              <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+              <span aria-current="page">
+                Page {currentPage} of {pageCount}
+              </span>
+              <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === pageCount}
+              >
+                Next
+              </button>
+            </nav>
+          )}
         </>
       )}
       {error && <p class="error">{error}</p>}

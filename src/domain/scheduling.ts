@@ -1,6 +1,6 @@
 import type { Card } from "./deck";
 import type { StudyPreferences } from "./preferences";
-import type { ReviewSnapshot, ReviewState } from "./review";
+import type { ReviewQuality, ReviewSnapshot, ReviewState } from "./review";
 
 /**
  * The study day ("YYYY-MM-DD", device-local time) an instant belongs to.
@@ -41,8 +41,10 @@ export function buildStudyQueue(args: {
   reviews: ReviewState[];
   prefs: StudyPreferences;
   now: Date;
+  /** Uniform [0, 1) source deciding which new cards are introduced. */
+  random: () => number;
 }): StudyQueue {
-  const { cards, reviews, prefs, now } = args;
+  const { cards, reviews, prefs, now, random } = args;
   const today = studyDayOf(now, prefs.dayBoundaryHour);
   const reviewByCardId = new Map(reviews.map((r) => [r.cardId, r]));
 
@@ -69,11 +71,44 @@ export function buildStudyQueue(args: {
     })
     .slice(0, dueBudget);
 
-  const newCards = cards
-    .filter((card) => !reviewByCardId.has(card.id))
-    .slice(0, newBudget);
+  // New cards are drawn at random, not in deck order, so a long deck is
+  // not always introduced front to back.
+  const newCards = shuffle(
+    cards.filter((card) => !reviewByCardId.has(card.id)),
+    random,
+  ).slice(0, newBudget);
 
   return { due, newCards, studiedToday: reviewedToday };
+}
+
+/** Fisher–Yates; returns a new array. */
+function shuffle<T>(items: T[], random: () => number): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/** A grade this low sends the card round again within the session. */
+export function repeatsInSession(quality: ReviewQuality): boolean {
+  return quality <= 1;
+}
+
+/**
+ * Put a failed card back into the rest of the session at a random spot —
+ * never straight away, unless nothing else is left to come between.
+ */
+export function requeueCard<T>(
+  remaining: T[],
+  card: T,
+  random: () => number,
+): T[] {
+  if (remaining.length === 0) return [card];
+  // Positions 1 … length (after at least one other card).
+  const at = 1 + Math.floor(random() * remaining.length);
+  return [...remaining.slice(0, at), card, ...remaining.slice(at)];
 }
 
 /**

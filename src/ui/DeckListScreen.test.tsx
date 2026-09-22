@@ -10,6 +10,8 @@ const deck: Deck = {
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
+  authors: [],
 };
 
 const secondDeck: Deck = {
@@ -25,6 +27,7 @@ function renderScreen(
   const props = {
     decks: [deck, secondDeck],
     decksHref: "#/decks?instance=a",
+    libraryHref: "#/library?instance=a",
     deckHref: (d: Deck) => `#/deck?deck=${d.id}`,
     renderStudyAction: (d: Deck) => <span>action for {d.name}</span>,
     onCreateDeck: vi.fn(),
@@ -93,6 +96,14 @@ describe("DeckListScreen", () => {
     renderScreen();
     expect(screen.queryByRole("button", { name: /Remove/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Rename/ })).toBeNull();
+  });
+
+  it("links to the deck library", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Deck library" })).toHaveAttribute(
+      "href",
+      "#/library?instance=a",
+    );
   });
 
   it("navigates to the deck creator via a primary button", () => {

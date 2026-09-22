@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createUseCases } from "./application/useCases";
 import { authFetch } from "./infrastructure/solid/authFetch";
 import { createSolidSessionGateway } from "./infrastructure/solid/solidSessionGateway";
+import { createSolidDeckLibrary } from "./infrastructure/solid/solidDeckLibrary";
 import { createSolidDeckRepository } from "./infrastructure/solid/solidDeckRepository";
 import { createSolidInstanceRepository } from "./infrastructure/solid/solidInstanceRepository";
 import { createSolidPreferencesRepository } from "./infrastructure/solid/solidPreferencesRepository";
@@ -29,6 +30,13 @@ const useCases = createUseCases({
     fetch: authFetch,
     now: () => new Date(),
     randomId: () => crypto.randomUUID(),
+  }),
+  deckLibrary: createSolidDeckLibrary({
+    // Public static files next to the app, so no authenticated fetch. The
+    // index is resolved relative to the page, like every other asset
+    // (the build serves the app from any base path).
+    fetch: (input, init) => globalThis.fetch(input, init),
+    indexUrl: new URL("decks/index.ttl", document.baseURI).href,
   }),
   preferencesRepository: createSolidPreferencesRepository({
     fetch: authFetch,

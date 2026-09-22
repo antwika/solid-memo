@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   buildStudyQueue,
   nextDueDate,
+  repeatsInSession,
+  requeueCard,
   resetStudyDay,
   snapshotBeforeReview,
   studyDayOf,
 } from "./scheduling";
+import type { ReviewQuality } from "./review";
 import type { Card } from "./deck";
 import { DEFAULT_PREFERENCES, type StudyPreferences } from "./preferences";
 import type { ReviewState } from "./review";
@@ -17,6 +20,7 @@ function card(id: string): Card {
     front: "front",
     back: "back",
     createdAt: "2026-09-01T00:00:00.000Z",
+    formatVersion: 1,
   };
 }
 
@@ -38,6 +42,9 @@ function review(
 }
 
 const prefs: StudyPreferences = DEFAULT_PREFERENCES;
+
+/** A "random" source that leaves the shuffle in deck order. */
+const keepOrder = () => 0.999999;
 
 // Local-time instants around the study-day boundary.
 const yesterday = new Date(2026, 8, 20, 12, 0);
@@ -81,9 +88,33 @@ describe("buildStudyQueue", () => {
       review("future", "2026-09-22", yesterday),
     ];
 
-    const queue = buildStudyQueue({ cards, reviews, prefs, now });
+    const queue = buildStudyQueue({ cards, reviews, prefs, now, random: keepOrder });
     expect(queue.due.map((c) => c.id)).toEqual(["a", "b"]);
     expect(queue.newCards.map((c) => c.id)).toEqual(["new1", "new2"]);
+  });
+
+  it("draws new cards at random rather than in deck order", () => {
+    const cards = [card("n1"), card("n2"), card("n3"), card("n4")];
+    // A source that always picks index 0 reverses the order in a
+    // Fisher–Yates shuffle: every step swaps the current card to the front.
+    const queue = buildStudyQueue({
+      cards,
+      reviews: [],
+      prefs: { ...prefs, newCardsPerDay: 2 },
+      now,
+      random: () => 0,
+    });
+    expect(queue.newCards.map((c) => c.id)).toEqual(["n2", "n3"]);
+  });
+
+  it("uses the random source only for new cards, never for due order", () => {
+    const cards = [card("b"), card("a")];
+    const reviews = [
+      review("a", "2026-09-19", yesterday),
+      review("b", "2026-09-20", yesterday),
+    ];
+    const queue = buildStudyQueue({ cards, reviews, prefs, now, random: () => 0 });
+    expect(queue.due.map((c) => c.id)).toEqual(["a", "b"]);
   });
 
   it("keeps a stable order for cards due on the same day", () => {
@@ -93,7 +124,7 @@ describe("buildStudyQueue", () => {
       review("y", "2026-09-21", yesterday),
     ];
 
-    const queue = buildStudyQueue({ cards, reviews, prefs, now });
+    const queue = buildStudyQueue({ cards, reviews, prefs, now, random: keepOrder });
     expect(queue.due.map((c) => c.id)).toEqual(["x", "y"]);
   });
 
@@ -111,6 +142,7 @@ describe("buildStudyQueue", () => {
       reviews,
       prefs: { ...prefs, maxReviewsPerDay: 2 },
       now,
+      random: keepOrder,
     });
     expect(queue.due.map((c) => c.id)).toEqual(["due1"]);
   });
@@ -128,6 +160,7 @@ describe("buildStudyQueue", () => {
       reviews,
       prefs: { ...prefs, maxReviewsPerDay: 1 },
       now,
+      random: keepOrder,
     });
     expect(queue.due).toEqual([]);
   });
@@ -144,6 +177,7 @@ describe("buildStudyQueue", () => {
       reviews,
       prefs: { ...prefs, newCardsPerDay: 2 },
       now,
+      random: keepOrder,
     });
     expect(queue.newCards.map((c) => c.id)).toEqual(["new1"]);
   });
@@ -160,6 +194,7 @@ describe("buildStudyQueue studiedToday", () => {
       ],
       prefs,
       now,
+      random: keepOrder,
     });
     expect(queue.studiedToday).toBe(2);
   });
@@ -261,6 +296,7 @@ describe("resetStudyDay", () => {
       reviews: restore,
       prefs: { ...prefs, maxReviewsPerDay: 1 },
       now,
+      random: keepOrder,
     });
     expect(queue.due.map((c) => c.id)).toEqual(["a"]);
     expect(queue.studiedToday).toBe(0);
@@ -271,5 +307,46 @@ describe("resetStudyDay", () => {
     expect(
       resetStudyDay([review("a", "2026-09-22", lateNight)], now, 4),
     ).toEqual({ restore: [], removeCardIds: [] });
+  });
+});
+
+describe("repeatsInSession", () => {
+  it("repeats only the two lowest grades", () => {
+    const repeats = ([0, 1, 2, 3, 4, 5] as ReviewQuality[]).filter(
+      repeatsInSession,
+    );
+    expect(repeats).toEqual([0, 1]);
+  });
+});
+
+describe("requeueCard", () => {
+  it("puts the card straight back when nothing else remains", () => {
+    expect(requeueCard([], "x", () => 0)).toEqual(["x"]);
+  });
+
+  it("never puts the card back as the very next one", () => {
+    expect(requeueCard(["a", "b", "c"], "x", () => 0)).toEqual([
+      "a",
+      "x",
+      "b",
+      "c",
+    ]);
+  });
+
+  it("can put the card at the very end", () => {
+    expect(requeueCard(["a", "b", "c"], "x", () => 0.999)).toEqual([
+      "a",
+      "b",
+      "c",
+      "x",
+    ]);
+  });
+
+  it("spreads the card over every allowed position", () => {
+    const positions = new Set<number>();
+    for (let r = 0; r < 1; r += 0.05) {
+      positions.add(requeueCard(["a", "b", "c"], "x", () => r).indexOf("x"));
+    }
+    expect([...positions].sort()).toEqual([1, 2, 3]);
   });
 });

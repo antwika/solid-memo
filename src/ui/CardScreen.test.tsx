@@ -9,6 +9,7 @@ const card: Card = {
   front: "水",
   back: "water",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
 };
 
 function renderScreen(

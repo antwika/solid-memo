@@ -70,6 +70,7 @@ describe("PreferencesContainer", () => {
       newCardsPerDay: 7,
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
+      answerScale: "sm2",
       developerMode: false,
     });
   });

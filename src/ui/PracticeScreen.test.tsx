@@ -9,6 +9,7 @@ const card: Card = {
   front: "水",
   back: "water",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
 };
 
 function renderScreen(
@@ -21,6 +22,7 @@ function renderScreen(
     card: card as Card | null,
     position: 1,
     total: 3,
+    answerScale: "sm2" as const,
     busy: false,
     error: null,
     onAnswer: vi.fn(),
@@ -64,6 +66,41 @@ describe("PracticeScreen", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "4 — Good" }));
     expect(props.onAnswer).toHaveBeenCalledWith(4);
+  });
+
+  it("offers Again / Hard / Good / Easy on the minimal scale", () => {
+    const { props } = renderScreen({ answerScale: "minimal" });
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+
+    const buttons = screen
+      .getAllByRole("button")
+      .filter((b) => b.closest(".quality-buttons") !== null);
+    expect(buttons.map((b) => b.textContent)).toEqual([
+      "Again",
+      "Hard",
+      "Good",
+      "Easy",
+    ]);
+    expect(buttons.map((b) => b.dataset.grade)).toEqual(["1", "3", "4", "5"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Again" }));
+    expect(props.onAnswer).toHaveBeenLastCalledWith(1);
+    fireEvent.click(screen.getByRole("button", { name: "Hard" }));
+    expect(props.onAnswer).toHaveBeenLastCalledWith(3);
+    fireEvent.click(screen.getByRole("button", { name: "Good" }));
+    expect(props.onAnswer).toHaveBeenLastCalledWith(4);
+    fireEvent.click(screen.getByRole("button", { name: "Easy" }));
+    expect(props.onAnswer).toHaveBeenLastCalledWith(5);
+  });
+
+  it("hides the answer again when the same card comes round a second time", () => {
+    const { rerender, props } = renderScreen({ position: 1, total: 2 });
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    expect(screen.getByText("water")).toBeInTheDocument();
+
+    rerender(<PracticeScreen {...props} position={2} total={2} />);
+    expect(screen.queryByText("water")).toBeNull();
+    expect(screen.getByRole("button", { name: "Reveal" })).toBeInTheDocument();
   });
 
   it("shows the finished state after the last card", () => {

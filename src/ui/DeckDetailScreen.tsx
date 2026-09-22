@@ -1,5 +1,7 @@
 import type { Deck } from "../domain/deck";
+import { DeckProvenance } from "./DeckProvenance";
 import { DeckIcon } from "./icons";
+import { cardCount as formatCardCount } from "./studyCounts";
 
 export function DeckDetailScreen({
   deck,
@@ -41,7 +43,7 @@ export function DeckDetailScreen({
   // start one to learn there is nothing to study.
   const canStudy = dueCount > 0;
   const canPractice = dueCount + newCount > 0;
-  const studied = studiedToday === 1 ? "1 card" : `${studiedToday} cards`;
+  const studied = formatCardCount(studiedToday);
 
   function handleResetDay() {
     if (
@@ -64,6 +66,7 @@ export function DeckDetailScreen({
         </h2>
         <button onClick={onBrowse}>Browser</button>
       </header>
+      <DeckProvenance authors={deck.authors} license={deck.license} />
       {!canPractice && (
         <p>
           {cardCount === 0
@@ -71,8 +74,19 @@ export function DeckDetailScreen({
             : "All cards have been studied — nothing more to study today."}
         </p>
       )}
+      {canStudy && (
+        <p class="hint">
+          {formatCardCount(dueCount)} due today
+          {newCount > 0
+            ? `, and ${newCount} new to introduce with Practice.`
+            : "."}
+        </p>
+      )}
       {canPractice && !canStudy && (
-        <p class="hint">No cards are due today. Practice introduces new cards.</p>
+        <p class="hint">
+          No cards are due today. Practice introduces new cards (
+          {newCount} left today).
+        </p>
       )}
       <div class="session-actions">
         {canStudy && (
@@ -100,8 +114,8 @@ export function DeckDetailScreen({
       )}
       {error && <p class="error">{error}</p>}
       <p class="hint">
-        {cardCount === 1 ? "1 card" : `${cardCount} cards`} in this deck.
-        Add, edit or remove cards in the Browser.
+        {formatCardCount(cardCount)} in this deck. Add, edit or remove cards
+        in the Browser.
       </p>
     </section>
   );

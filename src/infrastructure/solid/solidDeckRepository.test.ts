@@ -3,7 +3,9 @@ import {
   buildThing,
   createThing,
   deleteSolidDataset,
+  getInteger,
   getStringNoLocale,
+  getStringNoLocaleAll,
   getThing,
   getUrl,
   mockSolidDatasetFrom,
@@ -15,6 +17,7 @@ import { createSolidDeckRepository } from "./solidDeckRepository";
 import { getSolidDatasetOrNull } from "./datasets";
 import { DCTERMS, RDF, SM } from "./vocab";
 import type { Card, Deck } from "../../domain/deck";
+import type { LibraryDeckContent } from "../../domain/library";
 
 vi.mock("@inrupt/solid-client", async (importOriginal) => {
   const actual =
@@ -37,6 +40,8 @@ const deck: Deck = {
   cardsDocumentUrl: `${INSTANCE}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${INSTANCE}reviews/deck-1.ttl`,
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
+  authors: [],
 };
 
 const card: Card = {
@@ -45,6 +50,7 @@ const card: Card = {
   front: "水",
   back: "water",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
 };
 
 function makeRepository() {
@@ -100,11 +106,17 @@ describe("createDeck", () => {
       cardsDocumentUrl: `${INSTANCE}decks/deck-fixed.ttl`,
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
     const thing = getThing(saved as SolidDataset, created.url)!;
     expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Kanji N5");
+    expect(getInteger(thing, SM.formatVersion)).toBe(1);
+    // Own decks state no author or licence.
+    expect(getStringNoLocaleAll(thing, DCTERMS.creator)).toEqual([]);
+    expect(getUrl(thing, DCTERMS.license)).toBeNull();
   });
 
   it("appends to an existing catalog", async () => {
@@ -117,6 +129,73 @@ describe("createDeck", () => {
     expect(
       getThing(saved as SolidDataset, `${CATALOG}#deck-fixed`),
     ).not.toBeNull();
+  });
+});
+
+describe("importDeck", () => {
+  const content: LibraryDeckContent = {
+    url: "https://solid-memo.com/decks/capitals.ttl",
+    name: "Capitals",
+    formatVersion: 1,
+    authors: ["Anton Wiklund", "A friend"],
+    license: "https://creativecommons.org/publicdomain/zero/1.0/",
+    cards: [
+      { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+      { id: "norway", front: "Norway", back: "Oslo", formatVersion: 1 },
+    ],
+  };
+
+  it("writes the cards document once, then the catalog entry with its source", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
+
+    const imported = await makeRepository().importDeck(INSTANCE, content);
+
+    expect(imported).toEqual({
+      id: "deck-fixed",
+      url: `${CATALOG}#deck-fixed`,
+      name: "Capitals",
+      cardsDocumentUrl: `${INSTANCE}decks/deck-fixed.ttl`,
+      reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: ["Anton Wiklund", "A friend"],
+      license: content.license,
+      sourceUrl: content.url,
+    });
+    const calls = vi.mocked(saveSolidDatasetAt).mock.calls;
+    expect(calls.map((c) => c[0])).toEqual([
+      imported.cardsDocumentUrl,
+      CATALOG,
+    ]);
+    const cards = calls[0][1] as SolidDataset;
+    const sweden = getThing(cards, `${imported.cardsDocumentUrl}#sweden`)!;
+    expect(getStringNoLocale(sweden, SM.front)).toBe("Sweden");
+    expect(getStringNoLocale(sweden, SM.back)).toBe("Stockholm");
+    expect(getInteger(sweden, SM.formatVersion)).toBe(1);
+    expect(
+      getThing(cards, `${imported.cardsDocumentUrl}#norway`),
+    ).not.toBeNull();
+    // The catalog is only read once the cards are safely written.
+    expect(getSolidDatasetOrNull).toHaveBeenCalledTimes(1);
+    const entry = getThing(calls[1][1] as SolidDataset, imported.url)!;
+    expect(getStringNoLocale(entry, DCTERMS.title)).toBe("Capitals");
+    expect(getUrl(entry, DCTERMS.source)).toBe(content.url);
+    expect(getInteger(entry, SM.formatVersion)).toBe(1);
+    expect(getStringNoLocaleAll(entry, DCTERMS.creator)).toEqual([
+      "Anton Wiklund",
+      "A friend",
+    ]);
+    expect(getUrl(entry, DCTERMS.license)).toBe(content.license);
+  });
+
+  it("leaves the catalog alone when the cards document fails to save", async () => {
+    vi.mocked(saveSolidDatasetAt).mockRejectedValueOnce(new Error("403"));
+
+    await expect(
+      makeRepository().importDeck(INSTANCE, content),
+    ).rejects.toThrow("403");
+    expect(getSolidDatasetOrNull).not.toHaveBeenCalled();
+    expect(saveSolidDatasetAt).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -222,6 +301,7 @@ describe("addCard", () => {
     const thing = getThing(saved as SolidDataset, created.url)!;
     expect(getStringNoLocale(thing, SM.front)).toBe("火");
     expect(getStringNoLocale(thing, SM.back)).toBe("fire");
+    expect(getInteger(thing, SM.formatVersion)).toBe(1);
   });
 });
 

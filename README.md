@@ -24,6 +24,9 @@ sees the data server-side — there is no backend.
   editing happens under each deck's Browser (rename/remove the deck, add
   cards; every card has its own page to view, edit or remove it); the deck
   list and deck view are for studying.
+- **Deck library** — ready-made decks published with the site
+  (`decks/*.ttl`); browse them in the app and import any selection into
+  your instance as your own copies.
 - **Daily practice** — due and new cards queued per SM-2 with daily caps;
   answers graded 0–5.
 - **Reset the day** — undo today's study of a deck: reviewed cards return
@@ -59,6 +62,7 @@ Architecture and design docs live in [docs/](docs/):
 - [authentication.md](docs/authentication.md) — Solid-OIDC login/session flow
 - [onboarding.md](docs/onboarding.md) — Pod provider choice, WebID login, Pod discovery
 - [data-model.md](docs/data-model.md) — pod layout, vocabulary, type-index discovery
+- [deck-library.md](docs/deck-library.md) — authoring and publishing ready-made decks
 - [srs.md](docs/srs.md) — SM-2 and the scheduling model
 - [testing.md](docs/testing.md) — test strategy and the 100% coverage policy
 

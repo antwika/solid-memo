@@ -11,6 +11,7 @@ codebase; a change that violates them is wrong even if it works.
 | `@tanstack/react-query` | `src/ui/` and `src/main.tsx` | application, domain, infrastructure |
 | `preact` | `src/ui/`, `src/main.tsx` | application, domain, infrastructure |
 | `@fontsource/*`, `@fontsource-variable/*` | `src/style.css` | any TypeScript module |
+| `n3` | `tooling/` (build-time deck-library index) | `src/` — the app reads RDF through `@inrupt/solid-client` |
 | Anything (imports at all) | — | `src/domain/` imports nothing except sibling domain modules |
 
 Additional rules:
@@ -39,9 +40,10 @@ Currently by convention, verified with:
 ```sh
 grep -rn "@inrupt" src --include="*.ts" --include="*.tsx" | grep -v infrastructure
 grep -rn "@tanstack" src | grep -vE "src/(ui|main)"
+grep -rn "from \"n3\"" src
 ```
 
-Both must return nothing (test files mirror their subject's layer and follow
+All must return nothing (test files mirror their subject's layer and follow
 the same rules). Lint enforcement (`eslint-plugin-boundaries` or
 `import/no-restricted-paths`) is planned but not yet configured.
 

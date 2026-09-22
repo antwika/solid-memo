@@ -17,8 +17,10 @@ export type RouteRef =
   | { screen: "instanceCreator"; storageUrl: string; source: StorageSource }
   | { screen: "home"; instanceUrl: string }
   | { screen: "deckCreator"; instanceUrl: string }
+  | { screen: "library"; instanceUrl: string }
   | { screen: "deckDetail"; instanceUrl: string; deckUrl: string }
-  | { screen: "browser"; instanceUrl: string; deckUrl: string }
+  /** `page` is 1-based; absent means the first page. */
+  | { screen: "browser"; instanceUrl: string; deckUrl: string; page?: number }
   | { screen: "cardCreator"; instanceUrl: string; deckUrl: string }
   | { screen: "card"; instanceUrl: string; deckUrl: string; cardUrl: string }
   | {
@@ -50,10 +52,19 @@ export function routeToHash(ref: RouteRef): string {
       return `#/decks${params({ instance: ref.instanceUrl })}`;
     case "deckCreator":
       return `#/new-deck${params({ instance: ref.instanceUrl })}`;
+    case "library":
+      return `#/library${params({ instance: ref.instanceUrl })}`;
     case "deckDetail":
       return `#/deck${params({ instance: ref.instanceUrl, deck: ref.deckUrl })}`;
     case "browser":
-      return `#/browse${params({ instance: ref.instanceUrl, deck: ref.deckUrl })}`;
+      return `#/browse${params({
+        instance: ref.instanceUrl,
+        deck: ref.deckUrl,
+        // The first page is the default, so it stays out of the URL.
+        ...(ref.page !== undefined && ref.page > 1
+          ? { page: String(ref.page) }
+          : {}),
+      })}`;
     case "cardCreator":
       return `#/new-card${params({
         instance: ref.instanceUrl,
@@ -82,6 +93,11 @@ export function routeToHash(ref: RouteRef): string {
  */
 export function decksHref(instanceUrl: string): string {
   return routeToHash({ screen: "home", instanceUrl });
+}
+
+/** Hash URL of the deck library, where ready-made decks are imported. */
+export function libraryHref(instanceUrl: string): string {
+  return routeToHash({ screen: "library", instanceUrl });
 }
 
 /**
@@ -117,14 +133,19 @@ export function parseHash(hash: string): RouteRef | null {
       return instanceUrl === null
         ? null
         : { screen: "deckCreator", instanceUrl };
+    case "/library":
+      return instanceUrl === null ? null : { screen: "library", instanceUrl };
     case "/deck":
       return instanceUrl === null || deckUrl === null
         ? null
         : { screen: "deckDetail", instanceUrl, deckUrl };
-    case "/browse":
-      return instanceUrl === null || deckUrl === null
-        ? null
-        : { screen: "browser", instanceUrl, deckUrl };
+    case "/browse": {
+      if (instanceUrl === null || deckUrl === null) return null;
+      const page = parsePage(query.get("page"));
+      return page === null
+        ? { screen: "browser", instanceUrl, deckUrl }
+        : { screen: "browser", instanceUrl, deckUrl, page };
+    }
     case "/new-card":
       return instanceUrl === null || deckUrl === null
         ? null
@@ -148,6 +169,13 @@ export function parseHash(hash: string): RouteRef | null {
     default:
       return null;
   }
+}
+
+/** A page number beyond the first, or null for anything else. */
+function parsePage(value: string | null): number | null {
+  if (value === null || !/^\d+$/.test(value)) return null;
+  const page = Number(value);
+  return page > 1 ? page : null;
 }
 
 /**

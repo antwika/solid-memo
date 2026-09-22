@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { InstancePicker } from "./InstancePicker";
 import type { Instance } from "../domain/instance";
@@ -19,6 +19,7 @@ function renderPicker(
     onSelect: vi.fn(),
     onNewInstance: vi.fn(),
     onAttach: vi.fn(),
+    onDelete: vi.fn(),
     ...overrides,
   };
   const view = render(<InstancePicker {...props} />);
@@ -26,6 +27,10 @@ function renderPicker(
 }
 
 describe("InstancePicker", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("lists instances and selects one", () => {
     const { props } = renderPicker();
     fireEvent.click(screen.getByRole("button", { name: "Deck set A" }));
@@ -72,6 +77,35 @@ describe("InstancePicker", () => {
     renderPicker({ busy: true, error: "attach failed" });
     expect(screen.getByRole("button", { name: "Deck set A" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Attach" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Delete instance Deck set A" }),
+    ).toBeDisabled();
     expect(screen.getByText("attach failed")).toBeInTheDocument();
+  });
+
+  it("deletes an instance after the user confirms", () => {
+    const confirm = vi.fn(() => true);
+    vi.stubGlobal("confirm", confirm);
+    const { props } = renderPicker();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Delete instance Deck set B" }),
+    );
+
+    expect(confirm).toHaveBeenCalledWith(
+      'Delete the instance "Deck set B" and all its decks and cards? This cannot be undone.',
+    );
+    expect(props.onDelete).toHaveBeenCalledWith(instances[1]);
+  });
+
+  it("does not delete when the user cancels the confirmation", () => {
+    vi.stubGlobal("confirm", vi.fn(() => false));
+    const { props } = renderPicker();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Delete instance Deck set A" }),
+    );
+
+    expect(props.onDelete).not.toHaveBeenCalled();
   });
 });

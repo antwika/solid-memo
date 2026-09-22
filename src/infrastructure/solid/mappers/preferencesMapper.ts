@@ -1,4 +1,10 @@
-import { getBoolean, getInteger, type Thing } from "@inrupt/solid-client";
+import {
+  getBoolean,
+  getInteger,
+  getStringNoLocale,
+  type Thing,
+} from "@inrupt/solid-client";
+import { isAnswerScale } from "../../../domain/answerScale";
 import {
   DEFAULT_PREFERENCES,
   type StudyPreferences,
@@ -10,6 +16,7 @@ import { SM } from "../vocab";
  * its default, so old documents survive new preference fields.
  */
 export function toPreferences(thing: Thing): StudyPreferences {
+  const answerScale = getStringNoLocale(thing, SM.answerScale);
   return {
     newCardsPerDay:
       getInteger(thing, SM.newCardsPerDay) ??
@@ -20,6 +27,10 @@ export function toPreferences(thing: Thing): StudyPreferences {
     dayBoundaryHour:
       getInteger(thing, SM.dayBoundaryHour) ??
       DEFAULT_PREFERENCES.dayBoundaryHour,
+    // An unknown scale (from a newer version, say) falls back too.
+    answerScale: isAnswerScale(answerScale)
+      ? answerScale
+      : DEFAULT_PREFERENCES.answerScale,
     developerMode:
       getBoolean(thing, SM.developerMode) ?? DEFAULT_PREFERENCES.developerMode,
   };

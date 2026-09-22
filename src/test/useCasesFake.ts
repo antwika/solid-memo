@@ -34,12 +34,17 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       url: "https://pod.example/solid-memo/main/",
       name: "Main",
     })),
+    deleteInstance: vi.fn(async () => undefined),
     listDecks: vi.fn(async () => []),
     createDeck: vi.fn(async () => {
       throw new Error("createDeck fake not configured");
     }),
     renameDeck: vi.fn(async (deck, name) => ({ ...deck, name })),
     removeDeck: vi.fn(async () => undefined),
+    listLibraryDecks: vi.fn(async () => []),
+    importLibraryDeck: vi.fn(async () => {
+      throw new Error("importLibraryDeck fake not configured");
+    }),
     listCards: vi.fn(async () => []),
     addCard: vi.fn(async () => {
       throw new Error("addCard fake not configured");

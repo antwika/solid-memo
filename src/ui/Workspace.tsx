@@ -14,6 +14,7 @@ import { errorMessage } from "./errorMessage";
 import { InstanceBar } from "./InstanceBar";
 import { InstanceCreator } from "./InstanceCreator";
 import { InstancePicker } from "./InstancePicker";
+import { LibraryContainer } from "./LibraryContainer";
 import { Loading } from "./Loading";
 import { PracticeContainer } from "./PracticeContainer";
 import { PreferencesContainer } from "./PreferencesContainer";
@@ -196,6 +197,18 @@ export function Workspace({
     },
   });
 
+  const deleteInstanceMutation = useMutation({
+    mutationFn: (instance: Instance) =>
+      useCases.deleteInstance(session, instance),
+    onSuccess: async (_, instance) => {
+      // Drop the deleted instance's cached documents so a later instance
+      // at the same URL never shows stale decks or preferences.
+      queryClient.removeQueries({ queryKey: ["decks", instance.url] });
+      queryClient.removeQueries({ queryKey: ["preferences", instance.url] });
+      await queryClient.invalidateQueries({ queryKey: ["instances", webId] });
+    },
+  });
+
   if (instancesQuery.error) {
     return <p class="error">{errorMessage(instancesQuery.error)}</p>;
   }
@@ -259,8 +272,14 @@ export function Workspace({
           <InstancePicker
             instances={instances}
             options={registrationOptions}
-            busy={attachInstanceMutation.isPending}
-            error={errorMessage(attachInstanceMutation.error)}
+            busy={
+              attachInstanceMutation.isPending ||
+              deleteInstanceMutation.isPending
+            }
+            error={
+              errorMessage(attachInstanceMutation.error) ??
+              errorMessage(deleteInstanceMutation.error)
+            }
             onSelect={(instance: Instance) =>
               navigate({ screen: "home", instanceUrl: instance.url })
             }
@@ -268,6 +287,7 @@ export function Workspace({
             onAttach={(url, target) =>
               attachInstanceMutation.mutate({ url, target })
             }
+            onDelete={(instance) => deleteInstanceMutation.mutate(instance)}
           />
         );
       case "instanceCreator":
@@ -319,6 +339,16 @@ export function Workspace({
             }
           />
         );
+      case "library":
+        return (
+          <LibraryContainer
+            useCases={useCases}
+            instance={activeInstance!}
+            onDone={() =>
+              navigate({ screen: "home", instanceUrl: instanceUrl! })
+            }
+          />
+        );
       case "deckDetail":
         return (
           <DeckDetailContainer
@@ -356,6 +386,7 @@ export function Workspace({
             useCases={useCases}
             deck={activeDeck!}
             deckHref={deckHref(instanceUrl!, deckUrl!)}
+            page={route.page ?? 1}
             onAddCard={() =>
               navigate({
                 screen: "cardCreator",
@@ -375,6 +406,8 @@ export function Workspace({
             onDeckRemoved={() =>
               replace({ screen: "home", instanceUrl: instanceUrl! })
             }
+            // Replace: paging through a deck is one Back stop, not many.
+            onPageChange={(page) => replace({ ...route, page })}
           />
         );
       case "cardCreator":

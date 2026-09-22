@@ -85,3 +85,13 @@ export function CardIcon() {
     </Icon>
   );
 }
+
+/** The deck library: books on a shelf. */
+export function LibraryIcon() {
+  return (
+    <Icon>
+      <path d="M4 4h4v16H4zM10 4h4v16h-4z" />
+      <path d="m16 5 4-1 4 15-4 1z" transform="translate(-2 0)" />
+    </Icon>
+  );
+}

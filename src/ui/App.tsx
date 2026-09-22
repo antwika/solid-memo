@@ -115,9 +115,6 @@ function AppContent({ useCases }: { useCases: UseCases }) {
           width={640}
           height={427}
         />
-        <h1>
-          <span class="wordmark">Solid Memo</span>
-        </h1>
         <p class="tagline">
           Spaced-repetition flashcards that live in your own Solid Pod.
         </p>
@@ -142,9 +139,13 @@ function AppContent({ useCases }: { useCases: UseCases }) {
   if (connecting) {
     return (
       <main class="landing">
-        <h1>
-          <span class="wordmark">Solid Memo</span>
-        </h1>
+        <img
+          class="hero"
+          src={illustrationUrl}
+          alt="Solid Memo illustration"
+          width={640}
+          height={427}
+        />
         <PodConnectionScreen
           account={accountQuery.data}
           busy={accountQuery.isFetching}

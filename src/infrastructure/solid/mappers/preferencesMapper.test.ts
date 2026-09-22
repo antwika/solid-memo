@@ -12,14 +12,24 @@ describe("toPreferences", () => {
       .addInteger(SM.newCardsPerDay, 10)
       .addInteger(SM.maxReviewsPerDay, 50)
       .addInteger(SM.dayBoundaryHour, 2)
+      .addStringNoLocale(SM.answerScale, "minimal")
       .addBoolean(SM.developerMode, true)
       .build();
     expect(toPreferences(thing)).toEqual({
       newCardsPerDay: 10,
       maxReviewsPerDay: 50,
       dayBoundaryHour: 2,
+      answerScale: "minimal",
       developerMode: true,
     });
+  });
+
+  it("falls back to the default scale for an unknown answer scale", () => {
+    const thing = buildThing(createThing({ url: SUBJECT }))
+      .addIri(RDF.type, SM.Preferences)
+      .addStringNoLocale(SM.answerScale, "emoji")
+      .build();
+    expect(toPreferences(thing).answerScale).toBe("sm2");
   });
 
   it("returns pure defaults for an empty subject", () => {
@@ -30,6 +40,7 @@ describe("toPreferences", () => {
       newCardsPerDay: 20,
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
+      answerScale: "sm2",
       developerMode: false,
     });
   });
@@ -43,6 +54,7 @@ describe("toPreferences", () => {
       newCardsPerDay: 10,
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
+      answerScale: "sm2",
       developerMode: false,
     });
   });

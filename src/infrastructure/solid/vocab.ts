@@ -25,7 +25,10 @@ export const SM = {
   newCardsPerDay: `${SM_NS}newCardsPerDay`,
   maxReviewsPerDay: `${SM_NS}maxReviewsPerDay`,
   dayBoundaryHour: `${SM_NS}dayBoundaryHour`,
+  answerScale: `${SM_NS}answerScale`,
   developerMode: `${SM_NS}developerMode`,
+  /** Library index only: how many cards a listed deck document holds. */
+  cardCount: `${SM_NS}cardCount`,
 } as const;
 
 const SOLID_NS = "http://www.w3.org/ns/solid/terms#";
@@ -51,8 +54,22 @@ export const PIM = {
 export const DCTERMS = {
   title: "http://purl.org/dc/terms/title",
   created: "http://purl.org/dc/terms/created",
+  /** On an imported deck: the library document it was copied from. */
+  source: "http://purl.org/dc/terms/source",
+  /** A deck's author (one triple per name). */
+  creator: "http://purl.org/dc/terms/creator",
+  /** The licence URL a deck's content is offered under. */
+  license: "http://purl.org/dc/terms/license",
 } as const;
 
 export const RDF = {
   type: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+} as const;
+
+export const RDFS = {
+  seeAlso: "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+} as const;
+
+export const FOAF = {
+  isPrimaryTopicOf: "http://xmlns.com/foaf/0.1/isPrimaryTopicOf",
 } as const;

@@ -1,5 +1,23 @@
 import { useState } from "preact/hooks";
+import type { AnswerScale } from "../domain/answerScale";
 import type { StudyPreferences } from "../domain/preferences";
+
+const ANSWER_SCALE_OPTIONS: {
+  value: AnswerScale;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "sm2",
+    label: "0 to 5 scale",
+    hint: "The full SM-2 grades, from 0 (blackout) to 5 (easy).",
+  },
+  {
+    value: "minimal",
+    label: "Again · Hard · Good · Easy",
+    hint: "Four buttons. Again repeats the card later in the session.",
+  },
+];
 
 export function PreferencesScreen({
   preferences,
@@ -22,6 +40,9 @@ export function PreferencesScreen({
     String(preferences.dayBoundaryHour),
   );
 
+  const [answerScale, setAnswerScale] = useState<AnswerScale>(
+    preferences.answerScale,
+  );
   const [developerMode, setDeveloperMode] = useState(
     preferences.developerMode,
   );
@@ -32,6 +53,7 @@ export function PreferencesScreen({
       newCardsPerDay: Number(newCardsPerDay),
       maxReviewsPerDay: Number(maxReviewsPerDay),
       dayBoundaryHour: Number(dayBoundaryHour),
+      answerScale,
       developerMode,
     });
   }
@@ -73,6 +95,23 @@ export function PreferencesScreen({
           required
           disabled={busy}
         />
+        <fieldset>
+          <legend>Answer buttons</legend>
+          {ANSWER_SCALE_OPTIONS.map((option) => (
+            <label key={option.value} class="radio-option">
+              <input
+                type="radio"
+                name="answer-scale"
+                value={option.value}
+                checked={answerScale === option.value}
+                onChange={() => setAnswerScale(option.value)}
+                disabled={busy}
+              />
+              {option.label}
+              <span class="hint">{option.hint}</span>
+            </label>
+          ))}
+        </fieldset>
         <fieldset>
           <legend>Developer settings</legend>
           <label>

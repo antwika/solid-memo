@@ -10,6 +10,8 @@ const deck: Deck = {
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
   createdAt: "2026-09-21T10:00:00.000Z",
+  formatVersion: 1,
+  authors: [],
 };
 
 function renderScreen(
@@ -35,6 +37,23 @@ function renderScreen(
 }
 
 describe("DeckDetailScreen", () => {
+  it("credits an imported deck's author and licence", () => {
+    renderScreen({
+      deck: {
+        ...deck,
+        authors: ["Anton Wiklund"],
+        license: "https://creativecommons.org/publicdomain/zero/1.0/",
+      },
+    });
+    expect(screen.getByText(/By Anton Wiklund/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "CC0 1.0" })).toBeInTheDocument();
+  });
+
+  it("says nothing about provenance for a home-made deck", () => {
+    renderScreen();
+    expect(screen.queryByText(/^By /)).toBeNull();
+  });
+
   it("marks the title with a decorative icon", () => {
     const { container } = renderScreen();
     expect(container.querySelector("h2 svg.icon")).toHaveAttribute(
@@ -105,14 +124,26 @@ describe("DeckDetailScreen", () => {
     expect(screen.getByRole("button", { name: "Practice" })).toHaveClass(
       "primary",
     );
-    expect(screen.getByText(/No cards are due today/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "No cards are due today. Practice introduces new cards (2 left today).",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/All cards have been studied/)).toBeNull();
   });
 
-  it("shows no status message while cards are due", () => {
-    renderScreen();
+  it("says how many cards are due and new while cards are due", () => {
+    renderScreen({ dueCount: 2, newCount: 1 });
+    expect(
+      screen.getByText("2 cards due today, and 1 new to introduce with Practice."),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/All cards have been studied/)).toBeNull();
     expect(screen.queryByText(/No cards are due today/)).toBeNull();
+  });
+
+  it("says how many cards are due when none are new", () => {
+    renderScreen({ dueCount: 1, newCount: 0 });
+    expect(screen.getByText("1 card due today.")).toBeInTheDocument();
   });
 
   describe("resetting the day", () => {

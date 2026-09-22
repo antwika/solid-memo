@@ -1,12 +1,19 @@
 import {
   asUrl,
   getDatetime,
+  getInteger,
   getStringNoLocale,
+  getStringNoLocaleAll,
   getUrl,
   getUrlAll,
   type Thing,
 } from "@inrupt/solid-client";
-import type { Card, Deck } from "../../../domain/deck";
+import {
+  CARD_FORMAT_VERSION,
+  DECK_FORMAT_VERSION,
+  type Card,
+  type Deck,
+} from "../../../domain/deck";
 import { DCTERMS, RDF, SM } from "../vocab";
 
 /** Fragment id of a subject URL, e.g. "deck-1" for ".../catalog.ttl#deck-1". */
@@ -25,6 +32,8 @@ export function toDeck(thing: Thing): Deck | null {
   const reviewsDocumentUrl = getUrl(thing, SM.reviewsDocument);
   if (cardsDocumentUrl === null || reviewsDocumentUrl === null) return null;
   const id = fragmentIdOf(url);
+  const license = getUrl(thing, DCTERMS.license);
+  const sourceUrl = getUrl(thing, DCTERMS.source);
   return {
     id,
     url,
@@ -32,6 +41,11 @@ export function toDeck(thing: Thing): Deck | null {
     cardsDocumentUrl,
     reviewsDocumentUrl,
     createdAt: getDatetime(thing, DCTERMS.created)?.toISOString() ?? "",
+    // Data written before the field existed is the first format.
+    formatVersion: getInteger(thing, SM.formatVersion) ?? DECK_FORMAT_VERSION,
+    authors: getStringNoLocaleAll(thing, DCTERMS.creator),
+    ...(license === null ? {} : { license }),
+    ...(sourceUrl === null ? {} : { sourceUrl }),
   };
 }
 
@@ -51,5 +65,6 @@ export function toCard(thing: Thing): Card | null {
     front,
     back,
     createdAt: getDatetime(thing, DCTERMS.created)?.toISOString() ?? "",
+    formatVersion: getInteger(thing, SM.formatVersion) ?? CARD_FORMAT_VERSION,
   };
 }

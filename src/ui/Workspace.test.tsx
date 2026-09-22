@@ -17,6 +17,7 @@ import type { Session } from "../domain/session";
 import type { Storage } from "../domain/storage";
 import { makeUseCasesFake } from "../test/useCasesFake";
 import { routeToHash } from "./router";
+import { CARDS_PER_PAGE } from "./BrowserScreen";
 
 const session: Session = { webId: "https://alice.example/profile/card#me" };
 const storageA: Storage = { url: "https://pod.example/", source: "profile" };
@@ -271,6 +272,52 @@ describe("Workspace", () => {
     expect(screen.getByText("Deck set B")).toBeInTheDocument();
   });
 
+  it("deletes an instance from the Switch instance view", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    let deleted = false;
+    const useCases = makeUseCases({
+      listInstances: vi.fn(async () =>
+        deleted ? [instanceA] : [instanceA, instanceB],
+      ),
+      deleteInstance: vi.fn(async () => {
+        deleted = true;
+      }),
+    });
+    renderWorkspace(useCases);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Delete instance Deck set B" }),
+    );
+
+    await waitFor(() => {
+      expect(useCases.deleteInstance).toHaveBeenCalledWith(session, instanceB);
+    });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: "Deck set B" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Deck set A" })).toBeInTheDocument();
+  });
+
+  it("shows the error when deleting an instance fails", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    const useCases = makeUseCases({
+      listInstances: vi.fn(async () => [instanceA, instanceB]),
+      deleteInstance: vi.fn(async () => {
+        throw new Error("pod said no");
+      }),
+    });
+    renderWorkspace(useCases);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Delete instance Deck set B" }),
+    );
+
+    expect(await screen.findByText("pod said no")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Deck set B" })).toBeInTheDocument();
+  });
+
   it("returns to the instance picker from home", async () => {
     renderWorkspace(makeUseCases({ listInstances: vi.fn(async () => [instanceA]) }));
 
@@ -312,6 +359,8 @@ describe("Workspace", () => {
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     };
     const listDecks = vi
       .fn<() => Promise<Deck[]>>()
@@ -347,6 +396,59 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
+  it("imports a library deck and returns to the deck list", async () => {
+    const deck: Deck = {
+      id: "deck-1",
+      url: `${instanceA.url}catalog.ttl#deck-1`,
+      name: "Capitals",
+      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
+      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
+      sourceUrl: "https://solid-memo.com/decks/capitals.ttl",
+    };
+    const listDecks = vi
+      .fn<() => Promise<Deck[]>>()
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([deck]);
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks,
+        listLibraryDecks: vi.fn(async () => [
+          {
+            url: deck.sourceUrl!,
+            name: "Capitals",
+            cardCount: 3,
+            authors: [],
+          },
+        ]),
+        importLibraryDeck: vi.fn(async () => deck),
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole("link", { name: "Deck library" }));
+    expect(
+      await screen.findByRole("heading", { name: "Deck library" }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe(
+      routeToHash({ screen: "library", instanceUrl: instanceA.url }),
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Capitals" }));
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Import 1 deck" }).closest("form")!,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Decks" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "Capitals" }),
+    ).toBeInTheDocument();
+  });
+
   it("opens a deck from home and navigates back", async () => {
     const deck: Deck = {
       id: "deck-1",
@@ -355,6 +457,8 @@ describe("Workspace", () => {
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     };
     renderWorkspace(
       makeUseCases({
@@ -384,6 +488,8 @@ describe("Workspace", () => {
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     };
     renderWorkspace(
       makeUseCases({
@@ -410,6 +516,54 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps the Browser page in the URL and restores it on Back from a card", async () => {
+    const deck: Deck = {
+      id: "deck-1",
+      url: `${instanceA.url}catalog.ttl#deck-1`,
+      name: "Capitals",
+      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
+      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
+    };
+    const cards: Card[] = Array.from({ length: CARDS_PER_PAGE + 1 }, (_, i) => ({
+      id: `card-${i + 1}`,
+      url: `${deck.cardsDocumentUrl}#card-${i + 1}`,
+      front: `Country ${i + 1}`,
+      back: `Capital ${i + 1}`,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+    }));
+    const useCases = makeUseCases({
+      listInstances: vi.fn(async () => [instanceA]),
+      listDecks: vi.fn(async () => [deck]),
+      listCards: vi.fn(async () => cards),
+    });
+    renderWorkspace(useCases);
+
+    fireEvent.click(await screen.findByRole("link", { name: "Capitals" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    const browserHash = window.location.hash;
+    const historyBefore = window.history.length;
+
+    fireEvent.click(await screen.findByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Page 2 of 2")).toBeInTheDocument();
+    // Paging replaces the entry rather than pushing one.
+    expect(window.history.length).toBe(historyBefore);
+    expect(window.location.hash).toBe(`${browserHash}&page=2`);
+
+    fireEvent.click(
+      screen.getByRole("link", { name: `Country ${CARDS_PER_PAGE + 1}` }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Card" }),
+    ).toBeInTheDocument();
+
+    window.history.back();
+    expect(await screen.findByText("Page 2 of 2")).toBeInTheDocument();
+  });
+
   it("removes a deck from the Browser and lands on the deck list", async () => {
     vi.stubGlobal("confirm", vi.fn(() => true));
     const deck: Deck = {
@@ -419,6 +573,8 @@ describe("Workspace", () => {
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     };
     let removed = false;
     const useCases = makeUseCases({
@@ -447,6 +603,8 @@ describe("Workspace", () => {
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     };
     let name = deck.name;
     renderWorkspace(
@@ -481,6 +639,8 @@ describe("Workspace", () => {
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     };
     renderWorkspace(
       makeUseCases({
@@ -511,6 +671,8 @@ describe("Workspace", () => {
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     };
     renderWorkspace(
       makeUseCases({
@@ -525,6 +687,7 @@ describe("Workspace", () => {
               front: "水",
               back: "water",
               createdAt: "2026-09-21T10:00:00.000Z",
+              formatVersion: 1,
             } satisfies Card,
           ],
           newCards: [],
@@ -555,6 +718,8 @@ describe("Workspace", () => {
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     };
     renderWorkspace(
       makeUseCases({
@@ -569,6 +734,7 @@ describe("Workspace", () => {
               front: "水",
               back: "water",
               createdAt: "2026-09-21T10:00:00.000Z",
+              formatVersion: 1,
             } satisfies Card,
           ],
           newCards: [],
@@ -590,6 +756,7 @@ describe("Workspace", () => {
     front: "水",
     back: "water",
     createdAt: "2026-09-21T10:00:00.000Z",
+    formatVersion: 1,
   };
 
   it("starts a practice session from the deck list when only new cards remain", async () => {
@@ -643,6 +810,8 @@ describe("Workspace", () => {
     cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
     reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
     createdAt: "2026-09-21T10:00:00.000Z",
+    formatVersion: 1,
+    authors: [],
   };
 
   it("keeps the URL in sync while navigating", async () => {
@@ -718,6 +887,7 @@ describe("Workspace", () => {
       front: "水",
       back: "water",
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
     };
 
     function openBrowser(useCases: UseCases) {

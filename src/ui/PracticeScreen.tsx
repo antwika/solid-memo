@@ -1,4 +1,11 @@
 import { useState } from "preact/hooks";
+import {
+  MINIMAL_ANSWER_QUALITY,
+  MINIMAL_ANSWERS,
+  SM2_QUALITIES,
+  type AnswerScale,
+  type MinimalAnswer,
+} from "../domain/answerScale";
 import type { Card } from "../domain/deck";
 import type { ReviewQuality } from "../domain/review";
 
@@ -14,6 +21,28 @@ const QUALITY_LABELS: Record<ReviewQuality, string> = {
   5: "5 — Easy",
 };
 
+const MINIMAL_LABELS: Record<MinimalAnswer, string> = {
+  again: "Again",
+  hard: "Hard",
+  good: "Good",
+  easy: "Easy",
+};
+
+/** The grading buttons a scale shows, in display order. */
+function answerButtons(
+  scale: AnswerScale,
+): { label: string; quality: ReviewQuality }[] {
+  return scale === "minimal"
+    ? MINIMAL_ANSWERS.map((answer) => ({
+        label: MINIMAL_LABELS[answer],
+        quality: MINIMAL_ANSWER_QUALITY[answer],
+      }))
+    : SM2_QUALITIES.map((quality) => ({
+        label: QUALITY_LABELS[quality],
+        quality,
+      }));
+}
+
 export function PracticeScreen({
   mode,
   deckName,
@@ -21,6 +50,7 @@ export function PracticeScreen({
   card,
   position,
   total,
+  answerScale,
   busy,
   error,
   onAnswer,
@@ -34,7 +64,9 @@ export function PracticeScreen({
   card: Card | null;
   /** 1-based position of the current card. */
   position: number;
+  /** Cards in the session, including repeats of failed cards. */
   total: number;
+  answerScale: AnswerScale;
   busy: boolean;
   error: string | null;
   onAnswer: (quality: ReviewQuality) => void;
@@ -62,7 +94,15 @@ export function PracticeScreen({
           <p class="hint">
             Card {position} of {total}
           </p>
-          <CardFace key={card.id} card={card} busy={busy} onAnswer={onAnswer} />
+          <CardFace
+            // Keyed by position, not card id: a card repeated after a
+            // lapse must start hidden again.
+            key={position}
+            card={card}
+            answerScale={answerScale}
+            busy={busy}
+            onAnswer={onAnswer}
+          />
         </>
       )}
       {error && <p class="error">{error}</p>}
@@ -70,13 +110,15 @@ export function PracticeScreen({
   );
 }
 
-/** Keyed by card id so the reveal state resets on every new card. */
+/** Keyed by the caller so the reveal state resets on every new card. */
 function CardFace({
   card,
+  answerScale,
   busy,
   onAnswer,
 }: {
   card: Card;
+  answerScale: AnswerScale;
   busy: boolean;
   onAnswer: (quality: ReviewQuality) => void;
 }) {
@@ -88,14 +130,17 @@ function CardFace({
       {revealed ? (
         <>
           <p class="card-back">{card.back}</p>
-          <div class="quality-buttons">
-            {([0, 1, 2, 3, 4, 5] as ReviewQuality[]).map((quality) => (
+          <div
+            class={`quality-buttons${answerScale === "minimal" ? " minimal" : ""}`}
+          >
+            {answerButtons(answerScale).map(({ label, quality }) => (
               <button
-                key={quality}
+                key={label}
+                data-grade={quality}
                 onClick={() => onAnswer(quality)}
                 disabled={busy}
               >
-                {QUALITY_LABELS[quality]}
+                {label}
               </button>
             ))}
           </div>

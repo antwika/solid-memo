@@ -41,7 +41,40 @@ describe("toDeck", () => {
       cardsDocumentUrl: CARDS_DOC,
       reviewsDocumentUrl: REVIEWS_DOC,
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
     });
+  });
+
+  it("keeps the provenance of an imported deck", () => {
+    const thing = deckThing((t) =>
+      t
+        .addIri(RDF.type, SM.Deck)
+        .addIri(SM.cardsDocument, CARDS_DOC)
+        .addIri(SM.reviewsDocument, REVIEWS_DOC)
+        .addInteger(SM.formatVersion, 1)
+        .addStringNoLocale(DCTERMS.creator, "Anton Wiklund")
+        .addStringNoLocale(DCTERMS.creator, "A friend")
+        .addIri(DCTERMS.license, "https://creativecommons.org/publicdomain/zero/1.0/")
+        .addIri(DCTERMS.source, "https://solid-memo.com/decks/capitals.ttl"),
+    );
+    expect(toDeck(thing)).toMatchObject({
+      formatVersion: 1,
+      authors: ["Anton Wiklund", "A friend"],
+      license: "https://creativecommons.org/publicdomain/zero/1.0/",
+      sourceUrl: "https://solid-memo.com/decks/capitals.ttl",
+    });
+  });
+
+  it("reads a newer format version as stored", () => {
+    const thing = deckThing((t) =>
+      t
+        .addIri(RDF.type, SM.Deck)
+        .addIri(SM.cardsDocument, CARDS_DOC)
+        .addIri(SM.reviewsDocument, REVIEWS_DOC)
+        .addInteger(SM.formatVersion, 7),
+    );
+    expect(toDeck(thing)?.formatVersion).toBe(7);
   });
 
   it("falls back to the fragment id when the title is missing", () => {
@@ -101,10 +134,11 @@ describe("toCard", () => {
       front: "水",
       back: "water (mizu)",
       createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
     });
   });
 
-  it("tolerates a missing created date", () => {
+  it("tolerates a missing created date; a missing version is the first", () => {
     const thing = cardThing((t) =>
       t
         .addIri(RDF.type, SM.Card)
@@ -112,6 +146,18 @@ describe("toCard", () => {
         .addStringNoLocale(SM.back, "b"),
     );
     expect(toCard(thing)!.createdAt).toBe("");
+    expect(toCard(thing)!.formatVersion).toBe(1);
+  });
+
+  it("reads a stored format version", () => {
+    const thing = cardThing((t) =>
+      t
+        .addIri(RDF.type, SM.Card)
+        .addStringNoLocale(SM.front, "f")
+        .addStringNoLocale(SM.back, "b")
+        .addInteger(SM.formatVersion, 2),
+    );
+    expect(toCard(thing)!.formatVersion).toBe(2);
   });
 
   it("rejects subjects that are not sm:Card", () => {

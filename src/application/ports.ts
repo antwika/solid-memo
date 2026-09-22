@@ -4,6 +4,7 @@ import type {
   RegistrationOptions,
   RegistrationTarget,
 } from "../domain/instance";
+import type { LibraryDeck, LibraryDeckContent } from "../domain/library";
 import type { StudyPreferences } from "../domain/preferences";
 import type { ReviewState } from "../domain/review";
 import type { EstablishedSession } from "../domain/session";
@@ -73,6 +74,14 @@ export interface InstanceRepository {
     instanceUrl: string;
     registrationTarget: RegistrationTarget;
   }): Promise<Instance>;
+  /**
+   * Delete the instance container with everything in it (decks, cards,
+   * review state, preferences) and drop its type index registrations.
+   * Data goes first: a failure part-way leaves the instance registered,
+   * so the user can retry rather than lose track of a half-deleted pod
+   * container.
+   */
+  deleteInstance(args: { webId: string; instance: Instance }): Promise<void>;
 }
 
 /** Driven port: decks and their cards inside one instance. */
@@ -83,6 +92,12 @@ export interface DeckRepository {
   renameDeck(deck: Deck, name: string): Promise<Deck>;
   /** Removes the deck's catalog entry, cards document and reviews document. */
   removeDeck(deck: Deck): Promise<void>;
+  /**
+   * Create a deck with all its cards at once — one write of the cards
+   * document rather than one per card — remembering the library deck it
+   * came from. The cards keep their library ids.
+   */
+  importDeck(instanceUrl: string, content: LibraryDeckContent): Promise<Deck>;
   listCards(deck: Deck): Promise<Card[]>;
   addCard(deck: Deck, front: string, back: string): Promise<Card>;
   /** Replaces the card's front and back; review state is untouched. */
@@ -94,6 +109,14 @@ export interface DeckRepository {
   ): Promise<Card>;
   /** Removes the card and its review state. */
   removeCard(deck: Deck, card: Card): Promise<void>;
+}
+
+/** Driven port: the app's read-only library of ready-made decks. */
+export interface DeckLibrary {
+  /** Every deck the library's index lists; empty when the library is. */
+  listLibraryDecks(): Promise<LibraryDeck[]>;
+  /** The deck document with its cards. */
+  fetchLibraryDeck(url: string): Promise<LibraryDeckContent>;
 }
 
 /** Driven port: SM-2 review state, stored separately from card content. */

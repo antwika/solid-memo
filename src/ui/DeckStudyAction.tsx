@@ -3,10 +3,12 @@ import type { UseCases } from "../application/useCases";
 import type { Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { StudyQueue } from "../domain/scheduling";
+import { studyCountsSummary } from "./studyCounts";
 
 /**
- * What a deck-list row suggests doing with its deck today. Nothing is
- * suggested unless there is something to do: no "Study" without due cards.
+ * What a deck-list row suggests doing with its deck today, with how much
+ * is left ("12 due · 5 new"). Nothing is suggested unless there is
+ * something to do: no "Study" without due cards.
  */
 export function DeckStudyAction({
   deckName,
@@ -23,25 +25,29 @@ export function DeckStudyAction({
   onPractice: () => void;
 }) {
   if (queue === undefined) return null;
-  if (queue.due.length > 0) {
-    return (
-      <button class="primary" aria-label={`Study ${deckName}`} onClick={onStudy}>
-        Study
-      </button>
-    );
+  const summary = studyCountsSummary({
+    dueCount: queue.due.length,
+    newCount: queue.newCards.length,
+  });
+  if (summary === null) {
+    return <span class="hint">Nothing to study today</span>;
   }
-  if (queue.newCards.length > 0) {
-    return (
+  const action =
+    queue.due.length > 0
+      ? { label: "Study", onClick: onStudy }
+      : { label: "Practice", onClick: onPractice };
+  return (
+    <>
+      <span class="hint study-counts">{summary}</span>
       <button
         class="primary"
-        aria-label={`Practice ${deckName}`}
-        onClick={onPractice}
+        aria-label={`${action.label} ${deckName}`}
+        onClick={action.onClick}
       >
-        Practice
+        {action.label}
       </button>
-    );
-  }
-  return <span class="hint">Nothing to study today</span>;
+    </>
+  );
 }
 
 /** Owns one deck's queue query for its deck-list row. */

@@ -24,6 +24,7 @@ describe("PreferencesScreen", () => {
         newCardsPerDay: 10,
         maxReviewsPerDay: 50,
         dayBoundaryHour: 2,
+        answerScale: "minimal",
         developerMode: true,
       },
     });
@@ -31,6 +32,7 @@ describe("PreferencesScreen", () => {
     expect(screen.getByLabelText("Max reviews per day")).toHaveValue(50);
     expect(screen.getByLabelText("Day starts at (hour)")).toHaveValue(2);
     expect(screen.getByLabelText("Developer mode")).toBeChecked();
+    expect(screen.getByLabelText(/Again · Hard · Good · Easy/)).toBeChecked();
   });
 
   it("keeps developer mode off by default", () => {
@@ -52,6 +54,19 @@ describe("PreferencesScreen", () => {
     });
   });
 
+  it("switches the answer scale and saves it", () => {
+    const { props, container } = renderScreen();
+    expect(screen.getByLabelText(/0 to 5 scale/)).toBeChecked();
+
+    fireEvent.click(screen.getByLabelText(/Again · Hard · Good · Easy/));
+    fireEvent.submit(container.querySelector("form")!);
+
+    expect(props.onSave).toHaveBeenCalledWith({
+      ...DEFAULT_PREFERENCES,
+      answerScale: "minimal",
+    });
+  });
+
   it("saves the edited preferences as numbers", () => {
     const { props, container } = renderScreen();
     fireEvent.input(screen.getByLabelText("New cards per day"), {
@@ -68,6 +83,7 @@ describe("PreferencesScreen", () => {
       newCardsPerDay: 15,
       maxReviewsPerDay: 120,
       dayBoundaryHour: 0,
+      answerScale: "sm2",
       developerMode: false,
     });
   });

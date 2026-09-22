@@ -4,6 +4,7 @@ import {
   createThing,
   getBoolean,
   getInteger,
+  getStringNoLocale,
   getThing,
   mockSolidDatasetFrom,
   saveSolidDatasetAt,
@@ -61,6 +62,7 @@ describe("getPreferences", () => {
           .addInteger(SM.newCardsPerDay, 5)
           .addInteger(SM.maxReviewsPerDay, 42)
           .addInteger(SM.dayBoundaryHour, 3)
+          .addStringNoLocale(SM.answerScale, "minimal")
           .addBoolean(SM.developerMode, true)
           .build(),
       ),
@@ -69,6 +71,7 @@ describe("getPreferences", () => {
       newCardsPerDay: 5,
       maxReviewsPerDay: 42,
       dayBoundaryHour: 3,
+      answerScale: "minimal",
       developerMode: true,
     });
   });
@@ -79,6 +82,7 @@ describe("savePreferences", () => {
     newCardsPerDay: 5,
     maxReviewsPerDay: 42,
     dayBoundaryHour: 3,
+    answerScale: "minimal" as const,
     developerMode: true,
   };
 
@@ -93,6 +97,7 @@ describe("savePreferences", () => {
     expect(getInteger(thing, SM.newCardsPerDay)).toBe(5);
     expect(getInteger(thing, SM.maxReviewsPerDay)).toBe(42);
     expect(getInteger(thing, SM.dayBoundaryHour)).toBe(3);
+    expect(getStringNoLocale(thing, SM.answerScale)).toBe("minimal");
     expect(getBoolean(thing, SM.developerMode)).toBe(true);
   });
 
