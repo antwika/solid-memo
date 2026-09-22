@@ -170,6 +170,10 @@ main {
   color: var(--text-muted);
 }
 
+.site-footer p {
+  margin: 0;
+}
+
 .site-footer a {
   color: inherit;
   font-weight: 600;

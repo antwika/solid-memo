@@ -1,8 +1,28 @@
+import { execFileSync } from "node:child_process";
 import { defineConfig } from "vitest/config";
 import preact from "@preact/preset-vite";
 import { deckLibraryPlugin } from "./tooling/deckLibrary.ts";
 
+/**
+ * The commit being built, shown as the site's version in the footer. Read
+ * from the checkout itself (the deploy workflow builds a specific commit,
+ * which GITHUB_SHA need not equal); null outside a git checkout.
+ */
+function commitSha(): string | null {
+  try {
+    return execFileSync("git", ["rev-parse", "HEAD"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return process.env.GITHUB_SHA ?? null;
+  }
+}
+
 export default defineConfig({
+  define: {
+    __COMMIT_SHA__: JSON.stringify(commitSha()),
+  },
   // Relative asset URLs: the built site works from the domain root or
   // any subfolder of a static host (one.com web space), no rewrites
   // needed thanks to hash routing.
