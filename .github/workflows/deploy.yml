@@ -1,9 +1,11 @@
-# Build and publish the site to GitHub Pages on every push to main.
-# The whole suite runs first: a red build never deploys.
+# Publish the site to GitHub Pages after CI (ci.yml) succeeds on main.
+# CI already ran the test suite, so this only builds and deploys.
 name: Deploy to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -19,15 +21,19 @@ concurrency:
 
 jobs:
   build:
+    # workflow_run fires on failure too; only deploy a green CI run.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Build the exact commit CI verified, not whatever main is now.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
       - run: npm run build
       - uses: actions/configure-pages@v5
         with:
