@@ -45,7 +45,7 @@ function renderContainer(
     defaultOptions: { queries: { retry: false } },
   });
   const onExit = vi.fn();
-  render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
       <PracticeContainer
         useCases={useCases}
@@ -57,7 +57,7 @@ function renderContainer(
       />
     </QueryClientProvider>,
   );
-  return { onExit };
+  return { onExit, queryClient, unmount: view.unmount };
 }
 
 /** Reveal the current card and grade it. */
@@ -308,7 +308,7 @@ describe("PracticeContainer", () => {
     ).toBeInTheDocument();
   });
 
-  it("invalidates caches and exits when the session ends", async () => {
+  it("exits when the session ends", async () => {
     const { onExit } = renderContainer(makeUseCasesFake());
     fireEvent.click(
       await screen.findByRole("button", { name: "End session" }),
@@ -316,5 +316,23 @@ describe("PracticeContainer", () => {
     await waitFor(() => {
       expect(onExit).toHaveBeenCalledOnce();
     });
+  });
+
+  it("drops the deck's cached queue when the session is left", async () => {
+    const useCases = makeUseCasesFake({
+      getStudyQueue: vi.fn(async () => ({
+        due: [makeCard("card-a", "front-a")],
+        newCards: [],
+        studiedToday: 0,
+      })),
+    });
+    const { queryClient, unmount } = renderContainer(useCases);
+    const queueKey = ["studyQueue", deck.url];
+    await screen.findByText("front-a");
+    expect(queryClient.getQueryData(queueKey)).toBeDefined();
+
+    // Any way out: no End session click, just navigating away.
+    unmount();
+    expect(queryClient.getQueryData(queueKey)).toBeUndefined();
   });
 });

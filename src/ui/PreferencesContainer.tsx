@@ -30,6 +30,8 @@ export function PreferencesContainer({
       await queryClient.invalidateQueries({
         queryKey: ["preferences", instance.url],
       });
+      // The daily caps shape every deck's queue.
+      queryClient.removeQueries({ queryKey: ["studyQueue"] });
       // A successful save returns the user to the deck list.
       onBack();
     },

@@ -26,10 +26,13 @@ export function CardContainer({
   const updateCardMutation = useMutation({
     mutationFn: (args: { front: string; back: string }) =>
       useCases.updateCard(deck, card, args.front, args.back),
-    onSuccess: () =>
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ["cards", deck.cardsDocumentUrl],
-      }),
+      });
+      // The cached queue carries the card's old text.
+      queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
+    },
   });
 
   const removeCardMutation = useMutation({
@@ -42,6 +45,7 @@ export function CardContainer({
       await queryClient.invalidateQueries({
         queryKey: ["reviews", deck.reviewsDocumentUrl],
       });
+      queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
       onRemoved();
     },
   });

@@ -60,6 +60,7 @@ export function BrowserContainer({
       await queryClient.invalidateQueries({
         queryKey: ["reviews", deck.reviewsDocumentUrl],
       });
+      queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
     },
   });
 

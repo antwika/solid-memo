@@ -90,7 +90,9 @@ describe("BrowserContainer", () => {
       .mockResolvedValueOnce([card])
       .mockResolvedValue([]);
     const useCases = makeUseCasesFake({ listCards });
-    renderContainer(useCases);
+    const { queryClient } = renderContainer(useCases);
+    const queueKey = ["studyQueue", deck.url];
+    queryClient.setQueryData(queueKey, { due: [card], newCards: [], studiedToday: 0 });
 
     fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
 
@@ -100,6 +102,8 @@ describe("BrowserContainer", () => {
     expect(
       await screen.findByText("No cards in this deck yet."),
     ).toBeInTheDocument();
+    // The removed card may have been in the cached queue.
+    expect(queryClient.getQueryData(queueKey)).toBeUndefined();
   });
 
   it("shows a remove error", async () => {

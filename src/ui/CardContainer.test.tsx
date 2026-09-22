@@ -42,7 +42,7 @@ function renderContainer(useCases: UseCases) {
       />
     </QueryClientProvider>,
   );
-  return { onRemoved, invalidate };
+  return { onRemoved, invalidate, queryClient };
 }
 
 describe("CardContainer", () => {
@@ -50,7 +50,9 @@ describe("CardContainer", () => {
     const useCases = makeUseCasesFake({
       updateCard: vi.fn(async () => ({ ...card, back: "water (mizu)" })),
     });
-    const { invalidate } = renderContainer(useCases);
+    const { invalidate, queryClient } = renderContainer(useCases);
+    const queueKey = ["studyQueue", deck.url];
+    queryClient.setQueryData(queueKey, { due: [card], newCards: [], studiedToday: 0 });
 
     fireEvent.input(screen.getByLabelText("Back"), {
       target: { value: "water (mizu)" },
@@ -66,6 +68,10 @@ describe("CardContainer", () => {
     );
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["cards", deck.cardsDocumentUrl],
+    });
+    // The cached queue carried the old text.
+    await waitFor(() => {
+      expect(queryClient.getQueryData(queueKey)).toBeUndefined();
     });
   });
 
@@ -84,7 +90,9 @@ describe("CardContainer", () => {
   it("removes the card, refreshes cards and reviews, then leaves", async () => {
     vi.stubGlobal("confirm", vi.fn(() => true));
     const useCases = makeUseCasesFake();
-    const { onRemoved, invalidate } = renderContainer(useCases);
+    const { onRemoved, invalidate, queryClient } = renderContainer(useCases);
+    const queueKey = ["studyQueue", deck.url];
+    queryClient.setQueryData(queueKey, { due: [card], newCards: [], studiedToday: 0 });
 
     fireEvent.click(screen.getByRole("button", { name: "Remove card" }));
 
@@ -98,6 +106,7 @@ describe("CardContainer", () => {
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["reviews", deck.reviewsDocumentUrl],
     });
+    expect(queryClient.getQueryData(queueKey)).toBeUndefined();
   });
 
   it("shows a remove error and stays", async () => {

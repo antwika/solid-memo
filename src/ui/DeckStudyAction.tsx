@@ -76,9 +76,11 @@ export function DeckStudyActionContainer({
   onStudy: () => void;
   onPractice: () => void;
 }) {
-  // Same cache entry and freshness rules as the deck page: always
-  // refetched on mount, and a queue still being fetched is not shown — a
-  // stale one could suggest studying cards that were just studied.
+  // Shares the cache entry of the deck page and the study session. The
+  // cached queue is shown at once — every local write that changes a
+  // queue (a session, a card added or removed, a reset, new caps) drops
+  // the entry, so whatever is cached is not known to be wrong — and a
+  // background refetch picks up changes made elsewhere.
   const queueQuery = useQuery({
     queryKey: ["studyQueue", deck.url],
     queryFn: () => useCases.getStudyQueue(instance.url, deck, new Date()),
@@ -90,7 +92,7 @@ export function DeckStudyActionContainer({
   return (
     <DeckStudyAction
       deckName={deck.name}
-      queue={queueQuery.isFetching ? undefined : queueQuery.data}
+      queue={queueQuery.data}
       onStudy={onStudy}
       onPractice={onPractice}
     />

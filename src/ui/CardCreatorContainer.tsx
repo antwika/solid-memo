@@ -25,10 +25,13 @@ export function CardCreatorContainer({
   const addCardMutation = useMutation({
     mutationFn: (args: { front: string; back: string }) =>
       useCases.addCard(deck, args.front, args.back),
-    onSuccess: () =>
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ["cards", deck.cardsDocumentUrl],
-      }),
+      });
+      // A new card is a new card to study; the cached queue predates it.
+      queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
+    },
   });
 
   return (

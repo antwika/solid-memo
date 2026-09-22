@@ -5,6 +5,7 @@ import { DeckListContainer } from "./DeckListContainer";
 import type { UseCases } from "../application/useCases";
 import type { Card, Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
+import type { StudyQueue } from "../domain/scheduling";
 import { makeUseCasesFake } from "../test/useCasesFake";
 import { deckHref, decksHref } from "./router";
 
@@ -33,10 +34,14 @@ const card: Card = {
   formatVersion: 1,
 };
 
-function renderContainer(useCases: UseCases) {
+function renderContainer(
+  useCases: UseCases,
+  seed: (queryClient: QueryClient) => void = () => {},
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
+  seed(queryClient);
   const onStudyDeck = vi.fn();
   const onPracticeDeck = vi.fn();
   const onCreateDeck = vi.fn();
@@ -122,6 +127,30 @@ describe("DeckListContainer", () => {
       deck,
       expect.any(Date),
     );
+  });
+
+  it("shows a cached queue at once while a fresh one is fetched", async () => {
+    const useCases = makeUseCasesFake({
+      listDecks: vi.fn(async () => [deck]),
+      // The refetch never resolves: what shows is the cache.
+      getStudyQueue: vi.fn(() => new Promise<StudyQueue>(() => {})),
+    });
+    renderContainer(useCases, (queryClient) =>
+      queryClient.setQueryData(["studyQueue", deck.url], {
+        due: [card, card],
+        newCards: [],
+        studiedToday: 0,
+      }),
+    );
+
+    expect(
+      await screen.findByRole("button", { name: "Study Kanji N5" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("2 due")).toBeInTheDocument();
+    // …and the background refresh was still asked for.
+    await waitFor(() => {
+      expect(useCases.getStudyQueue).toHaveBeenCalledOnce();
+    });
   });
 
   it("suggests Practice, not Study, when only new cards remain", async () => {

@@ -41,7 +41,7 @@ function renderContainer(useCases: UseCases) {
       />
     </QueryClientProvider>,
   );
-  return { onBack };
+  return { onBack, queryClient };
 }
 
 function submitCard(front: string, back: string) {
@@ -57,12 +57,18 @@ function submitCard(front: string, back: string) {
 describe("CardCreatorContainer", () => {
   it("adds a card and stays on the page for the next one", async () => {
     const useCases = makeUseCasesFake({ addCard: vi.fn(async () => card) });
-    const { onBack } = renderContainer(useCases);
+    const { onBack, queryClient } = renderContainer(useCases);
+    const queueKey = ["studyQueue", deck.url];
+    queryClient.setQueryData(queueKey, { due: [], newCards: [], studiedToday: 0 });
 
     submitCard("水", "water");
 
     await waitFor(() => {
       expect(useCases.addCard).toHaveBeenCalledWith(deck, "水", "water");
+    });
+    // The deck now has a card to study; the cached queue is dropped.
+    await waitFor(() => {
+      expect(queryClient.getQueryData(queueKey)).toBeUndefined();
     });
     // Still on the creator, ready for the next card.
     expect(onBack).not.toHaveBeenCalled();

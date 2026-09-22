@@ -15,8 +15,9 @@ import { deckHref } from "./router";
  * Owns one study session. The queue is fetched once when the session
  * starts and then walked in order; answering a card badly puts it back
  * into the remainder (never as the very next card unless it is the only
- * one left). Caches are invalidated when the session ends. "study" mode
- * limits the session to due cards; "practice" also introduces new cards.
+ * one left). The deck's cached queue is dropped when the session ends,
+ * however it is left. "study" mode limits the session to due cards;
+ * "practice" also introduces new cards.
  */
 export function PracticeContainer({
   useCases,
@@ -100,12 +101,19 @@ export function PracticeContainer({
     },
   });
 
+  // Whatever the way out (End session, the deck link, browser back), the
+  // queue the session started from is no longer today's: drop it rather
+  // than mark it stale, so no screen shows it while refetching.
+  useEffect(
+    () => () => {
+      queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
+    },
+    [queryClient, deck.url],
+  );
+
   async function handleExit() {
     await queryClient.invalidateQueries({
       queryKey: ["reviews", deck.reviewsDocumentUrl],
-    });
-    await queryClient.invalidateQueries({
-      queryKey: ["studyQueue", deck.url],
     });
     onExit();
   }

@@ -26,7 +26,7 @@ function renderContainer(useCases: UseCases) {
       />
     </QueryClientProvider>,
   );
-  return { onBack };
+  return { onBack, queryClient };
 }
 
 describe("PreferencesContainer", () => {
@@ -54,7 +54,9 @@ describe("PreferencesContainer", () => {
 
   it("saves and returns to the deck list", async () => {
     const useCases = makeUseCasesFake();
-    const { onBack } = renderContainer(useCases);
+    const { onBack, queryClient } = renderContainer(useCases);
+    const queueKey = ["studyQueue", "https://pod.example/catalog.ttl#deck-1"];
+    queryClient.setQueryData(queueKey, { due: [], newCards: [], studiedToday: 0 });
 
     fireEvent.input(await screen.findByLabelText("New cards per day"), {
       target: { value: "7" },
@@ -66,6 +68,8 @@ describe("PreferencesContainer", () => {
     await waitFor(() => {
       expect(onBack).toHaveBeenCalledOnce();
     });
+    // New caps reshape every deck's queue.
+    expect(queryClient.getQueryData(queueKey)).toBeUndefined();
     expect(useCases.savePreferences).toHaveBeenCalledWith(instance.url, {
       newCardsPerDay: 7,
       maxReviewsPerDay: 200,
