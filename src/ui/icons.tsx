@@ -86,6 +86,15 @@ export function CardIcon() {
   );
 }
 
+/** A checkmark: done for today. */
+export function CheckIcon() {
+  return (
+    <Icon>
+      <path d="m5 12 5 5L20 7" />
+    </Icon>
+  );
+}
+
 /** The deck library: books on a shelf. */
 export function LibraryIcon() {
   return (

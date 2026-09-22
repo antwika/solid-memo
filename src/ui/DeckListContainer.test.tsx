@@ -147,7 +147,7 @@ describe("DeckListContainer", () => {
       makeUseCasesFake({ listDecks: vi.fn(async () => [deck]) }),
     );
     expect(
-      await screen.findByText("Nothing to study today"),
+      await screen.findByRole("img", { name: "Nothing to study today" }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Study|Practice/ })).toBeNull();
   });
@@ -165,7 +165,9 @@ describe("DeckListContainer", () => {
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: /Study|Practice/ })).toBeNull();
     });
-    expect(screen.queryByText("Nothing to study today")).toBeNull();
+    expect(
+      screen.queryByRole("img", { name: "Nothing to study today" }),
+    ).toBeNull();
     // The deck itself stays reachable; the error shows up on its page.
     expect(screen.queryByText("reviews unreachable")).toBeNull();
   });

@@ -3,12 +3,14 @@ import type { UseCases } from "../application/useCases";
 import type { Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { StudyQueue } from "../domain/scheduling";
+import { CheckIcon } from "./icons";
 import { studyCountsSummary } from "./studyCounts";
 
 /**
  * What a deck-list row suggests doing with its deck today, with how much
  * is left ("12 due · 5 new"). Nothing is suggested unless there is
- * something to do: no "Study" without due cards.
+ * something to do: no "Study" without due cards, and a green tick when
+ * the deck is done for the day.
  */
 export function DeckStudyAction({
   deckName,
@@ -30,7 +32,17 @@ export function DeckStudyAction({
     newCount: queue.newCards.length,
   });
   if (summary === null) {
-    return <span class="hint">Nothing to study today</span>;
+    // A green tick says "done" at a glance; the label carries the words.
+    return (
+      <span
+        class="hint study-done"
+        role="img"
+        aria-label="Nothing to study today"
+        title="Nothing to study today"
+      >
+        <CheckIcon />
+      </span>
+    );
   }
   const action =
     queue.due.length > 0

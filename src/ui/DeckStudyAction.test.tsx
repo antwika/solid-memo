@@ -61,11 +61,16 @@ describe("DeckStudyAction", () => {
     expect(screen.getByRole("button", { name: "Study Kanji N5" })).toBeInTheDocument();
   });
 
-  it("does not suggest studying when there is nothing to study", () => {
-    renderAction({ due: [], newCards: [], studiedToday: 12 });
+  it("shows a checkmark instead of an action when there is nothing to study", () => {
+    const { container } = renderAction({ due: [], newCards: [], studiedToday: 12 });
     expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByText("Nothing to study today")).toBeInTheDocument();
-    expect(screen.queryByText(/due|new/)).toBeNull();
+    const done = screen.getByRole("img", { name: "Nothing to study today" });
+    expect(done).toHaveClass("study-done");
+    expect(container.querySelector(".study-done svg.icon")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    expect(screen.queryByText(/due|new|Nothing/)).toBeNull();
   });
 
   it("suggests nothing while the queue is unknown", () => {

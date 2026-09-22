@@ -967,6 +967,24 @@ dl.account dd {
   font-variant-numeric: tabular-nums;
 }
 
+/* A green tick where the row's action would be: nothing left today. */
+.deck-list .study-done {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Same height as the Study button it stands in for, so rows line up. */
+  min-height: 2.5rem;
+  padding: 0 0.6rem;
+  font-size: 1.25rem;
+  color: var(--primary);
+}
+
+.deck-list .study-done svg.icon {
+  margin-right: 0;
+  vertical-align: 0;
+  stroke-width: 2.5;
+}
+
 /* Deck rows: the deck name is the main, prominent link */
 .deck-list .deck-open {
   /* Hugs the name (so the hover highlight wraps just the name, not the
