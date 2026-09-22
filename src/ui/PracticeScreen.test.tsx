@@ -52,6 +52,24 @@ describe("PracticeScreen", () => {
     expect(screen.getByText("Card 1 of 3")).toBeInTheDocument();
   });
 
+  it("shows a picture card: the flag on the front, the name once revealed", () => {
+    const { container } = renderScreen({
+      card: {
+        ...card,
+        front: "",
+        frontImageUrl: "https://flagcdn.com/af.svg",
+        back: "Afghanistan",
+      },
+    });
+    expect(container.querySelector(".card-front img")).toHaveAttribute(
+      "src",
+      "https://flagcdn.com/af.svg",
+    );
+    expect(screen.queryByText("Afghanistan")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    expect(screen.getByText("Afghanistan")).toBeInTheDocument();
+  });
+
   it("titles a due-only session as Study", () => {
     renderScreen({ mode: "study" });
     expect(

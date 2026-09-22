@@ -11,6 +11,9 @@ export const SM = {
   reviewsDocument: `${SM_NS}reviewsDocument`,
   front: `${SM_NS}front`,
   back: `${SM_NS}back`,
+  /** Card format 2: a picture on a side, always an IRI, never a literal. */
+  frontImage: `${SM_NS}frontImage`,
+  backImage: `${SM_NS}backImage`,
   easeFactor: `${SM_NS}easeFactor`,
   intervalDays: `${SM_NS}intervalDays`,
   repetitions: `${SM_NS}repetitions`,
@@ -60,6 +63,8 @@ export const DCTERMS = {
   creator: "http://purl.org/dc/terms/creator",
   /** The licence URL a deck's content is offered under. */
   license: "http://purl.org/dc/terms/license",
+  /** A deck's blurb: what it covers, where its content came from. */
+  description: "http://purl.org/dc/terms/description",
 } as const;
 
 export const RDF = {

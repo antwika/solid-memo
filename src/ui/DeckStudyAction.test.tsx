@@ -13,13 +13,14 @@ const card: Card = {
   formatVersion: 1,
 };
 
-function renderAction(queue: StudyQueue | undefined) {
+function renderAction(queue: StudyQueue | undefined, loading = false) {
   const onStudy = vi.fn();
   const onPractice = vi.fn();
   const view = render(
     <DeckStudyAction
       deckName="Kanji N5"
       queue={queue}
+      loading={loading}
       onStudy={onStudy}
       onPractice={onPractice}
     />,
@@ -73,7 +74,18 @@ describe("DeckStudyAction", () => {
     expect(screen.queryByText(/due|new|Nothing/)).toBeNull();
   });
 
-  it("suggests nothing while the queue is unknown", () => {
+  it("shows a loader in the slot while the queue is first fetched", () => {
+    const { container } = renderAction(undefined, true);
+    const status = screen.getByRole("status", { name: "Checking what is due" });
+    expect(status).toHaveClass("study-loading");
+    expect(container.querySelector(".loading-dots")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("suggests nothing when the queue is unknown and not being fetched", () => {
     const { container } = renderAction(undefined);
     expect(container).toBeEmptyDOMElement();
   });

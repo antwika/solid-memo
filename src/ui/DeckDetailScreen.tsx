@@ -66,7 +66,11 @@ export function DeckDetailScreen({
         </h2>
         <button onClick={onBrowse}>Browser</button>
       </header>
-      <DeckProvenance authors={deck.authors} license={deck.license} />
+      <DeckProvenance
+        authors={deck.authors}
+        license={deck.license}
+        description={deck.description}
+      />
       {!canPractice && (
         <p>
           {cardCount === 0

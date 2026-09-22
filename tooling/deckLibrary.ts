@@ -20,6 +20,7 @@ const RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 const DCTERMS_TITLE = "http://purl.org/dc/terms/title";
 const DCTERMS_CREATOR = "http://purl.org/dc/terms/creator";
 const DCTERMS_LICENSE = "http://purl.org/dc/terms/license";
+const DCTERMS_DESCRIPTION = "http://purl.org/dc/terms/description";
 const SM_FORMAT_VERSION = `${SM}formatVersion`;
 const XSD_INTEGER = "http://www.w3.org/2001/XMLSchema#integer";
 const TURTLE = "text/turtle; charset=utf-8";
@@ -35,14 +36,17 @@ export interface DeckSummary {
   authors: string[];
   /** Licence URL, when the deck states one. */
   license?: string;
+  /** The deck's blurb (what it covers, where it came from), when stated. */
+  description?: string;
 }
 
 /**
- * Summarize one deck document. Throws when the file is not a deck, or
- * when the deck or any card lacks its `sm:formatVersion`: a broken
- * library file should fail the build, not vanish from the index. (Pod
- * data is read more leniently; the library is authored, so it is held
- * to the full format.)
+ * Summarize one deck document. Throws when the file is not a deck, when
+ * the deck or any card lacks its `sm:formatVersion`, or when a card's
+ * side has neither text nor a picture (or a picture written as a string
+ * instead of an IRI): a broken library file should fail the build, not
+ * vanish from the index. (Pod data is read more leniently; the library
+ * is authored, so it is held to the full format.)
  */
 export function summarizeDeck(file: string, turtle: string): DeckSummary {
   // The base only matters for resolving relative IRIs, which the summary
@@ -77,8 +81,29 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
       );
     }
   }
+  for (const card of cards) {
+    for (const side of ["front", "back"] as const) {
+      // A picture is a link to an image, so it is an IRI; a string in its
+      // place would be ignored by the app and the side would be blank.
+      const pictures = of(card, `${SM}${side}Image`);
+      const literal = pictures.find((object) => object.termType === "Literal");
+      if (literal !== undefined) {
+        throw new Error(
+          `decks/${file}: <${card}> solid-memo:${side}Image must be an IRI (<${literal.value}>), not a string literal.`,
+        );
+      }
+      if (pictures.length === 0 && of(card, `${SM}${side}`).length === 0) {
+        throw new Error(
+          `decks/${file}: <${card}> has neither solid-memo:${side} nor solid-memo:${side}Image.`,
+        );
+      }
+    }
+  }
   const license = of(deck, DCTERMS_LICENSE).find(
     (object) => object.termType === "NamedNode",
+  );
+  const description = of(deck, DCTERMS_DESCRIPTION).find(
+    (object) => object.termType === "Literal",
   );
   return {
     file,
@@ -88,6 +113,7 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
       .filter((object) => object.termType === "Literal")
       .map((object) => object.value),
     ...(license === undefined ? {} : { license: license.value }),
+    ...(description === undefined ? {} : { description: description.value }),
   };
 }
 
@@ -114,6 +140,13 @@ export function buildIndex(summaries: DeckSummary[]): string {
     }
     if (deck.license !== undefined) {
       writer.addQuad(subject, namedNode(DCTERMS_LICENSE), namedNode(deck.license));
+    }
+    if (deck.description !== undefined) {
+      writer.addQuad(
+        subject,
+        namedNode(DCTERMS_DESCRIPTION),
+        literal(deck.description),
+      );
     }
   }
   let output = "";

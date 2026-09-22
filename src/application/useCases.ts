@@ -1,11 +1,22 @@
 import type { SolidAccount } from "../domain/account";
-import type { Card, Deck } from "../domain/deck";
+import {
+  validateCardContent,
+  type Card,
+  type CardContent,
+  type Deck,
+} from "../domain/deck";
 import type {
   Instance,
   RegistrationOptions,
   RegistrationTarget,
 } from "../domain/instance";
 import type { LibraryDeck } from "../domain/library";
+import {
+  isOutdated,
+  planMigration,
+  upgradeCard,
+  type MigrationPlan,
+} from "../domain/migration";
 import {
   DEFAULT_PREFERENCES,
   type StudyPreferences,
@@ -77,14 +88,27 @@ export interface UseCases {
   /** Copy a library deck, cards included, into an instance as a new deck. */
   importLibraryDeck(instanceUrl: string, deck: LibraryDeck): Promise<Deck>;
   listCards(deck: Deck): Promise<Card[]>;
-  addCard(deck: Deck, front: string, back: string): Promise<Card>;
-  updateCard(
-    deck: Deck,
-    card: Card,
-    front: string,
-    back: string,
-  ): Promise<Card>;
+  /**
+   * Rejects, without any pod write, unless each side has text or an
+   * http(s) image URL.
+   */
+  addCard(deck: Deck, content: CardContent): Promise<Card>;
+  /** Same validation as addCard. */
+  updateCard(deck: Deck, card: Card, content: CardContent): Promise<Card>;
   removeCard(deck: Deck, card: Card): Promise<void>;
+  /**
+   * What bringing the instance's cards up to this app's format would
+   * touch — reads every deck's cards, writes nothing. Empty when there is
+   * nothing to migrate.
+   */
+  planMigration(instanceUrl: string): Promise<MigrationPlan>;
+  /**
+   * Rewrite every outdated card in the instance in the current format,
+   * one write per deck (cards are re-read first, so an edit made since
+   * the plan is never overwritten). Resolves to the number of cards
+   * migrated. Only ever run after the user has agreed to the plan.
+   */
+  migrateInstance(instanceUrl: string): Promise<number>;
   /** Stored preferences overlaid on the defaults. */
   getPreferences(instanceUrl: string): Promise<StudyPreferences>;
   savePreferences(
@@ -140,6 +164,15 @@ export function createUseCases({
   preferencesRepository,
   reviewStateRepository,
 }: Dependencies): UseCases {
+  /** Normalized card content, or a throw naming what is missing. */
+  function validContent(content: CardContent): CardContent {
+    const validation = validateCardContent(content);
+    if (!validation.ok) {
+      throw new Error(validation.error);
+    }
+    return validation.content;
+  }
+
   // Concurrent reads of one instance's preferences share a single request
   // (every deck-list row asks at once). Only in-flight reads are shared:
   // nothing is cached once a read settles, so saves are seen immediately.
@@ -247,14 +280,38 @@ export function createUseCases({
     listCards(deck) {
       return deckRepository.listCards(deck);
     },
-    addCard(deck, front, back) {
-      return deckRepository.addCard(deck, front.trim(), back.trim());
+    async addCard(deck, content) {
+      return deckRepository.addCard(deck, validContent(content));
     },
-    updateCard(deck, card, front, back) {
-      return deckRepository.updateCard(deck, card, front.trim(), back.trim());
+    async updateCard(deck, card, content) {
+      return deckRepository.updateCard(deck, card, validContent(content));
     },
     removeCard(deck, card) {
       return deckRepository.removeCard(deck, card);
+    },
+    async planMigration(instanceUrl) {
+      const decks = await deckRepository.listDecks(instanceUrl);
+      const entries = await Promise.all(
+        decks.map(async (deck) => ({
+          deck,
+          cards: await deckRepository.listCards(deck),
+        })),
+      );
+      return planMigration(entries);
+    },
+    async migrateInstance(instanceUrl) {
+      let migrated = 0;
+      // Deck by deck: a failure part-way leaves whole decks either done or
+      // untouched, and the plan shown afterwards says which remain.
+      for (const deck of await deckRepository.listDecks(instanceUrl)) {
+        const outdated = (await deckRepository.listCards(deck)).filter(
+          isOutdated,
+        );
+        if (outdated.length === 0) continue;
+        await deckRepository.saveCards(deck, outdated.map(upgradeCard));
+        migrated += outdated.length;
+      }
+      return migrated;
     },
     getPreferences,
     savePreferences(instanceUrl, preferences) {

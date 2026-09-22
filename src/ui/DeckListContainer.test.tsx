@@ -147,10 +147,38 @@ describe("DeckListContainer", () => {
       await screen.findByRole("button", { name: "Study Kanji N5" }),
     ).toBeInTheDocument();
     expect(screen.getByText("2 due")).toBeInTheDocument();
-    // …and the background refresh was still asked for.
+    // …and the background refresh was still asked for, without a loader
+    // replacing what is cached.
     await waitFor(() => {
       expect(useCases.getStudyQueue).toHaveBeenCalledOnce();
     });
+    expect(screen.queryByRole("status", { name: "Checking what is due" })).toBeNull();
+  });
+
+  it("shows a loader in the action slot until the first queue arrives", async () => {
+    let resolveQueue: (queue: StudyQueue) => void = () => {};
+    const useCases = makeUseCasesFake({
+      listDecks: vi.fn(async () => [deck]),
+      getStudyQueue: vi.fn(
+        () => new Promise<StudyQueue>((resolve) => (resolveQueue = resolve)),
+      ),
+    });
+    renderContainer(useCases);
+
+    expect(
+      await screen.findByRole("status", { name: "Checking what is due" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Nothing to study today" })).toBeNull();
+
+    // The loader shows from the first render; the fetch starts a beat later.
+    await waitFor(() => {
+      expect(useCases.getStudyQueue).toHaveBeenCalledOnce();
+    });
+    resolveQueue({ due: [], newCards: [], studiedToday: 0 });
+    expect(
+      await screen.findByRole("img", { name: "Nothing to study today" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: "Checking what is due" })).toBeNull();
   });
 
   it("suggests Practice, not Study, when only new cards remain", async () => {
@@ -197,6 +225,12 @@ describe("DeckListContainer", () => {
     expect(
       screen.queryByRole("img", { name: "Nothing to study today" }),
     ).toBeNull();
+    // A failed fetch is not a pending one: no loader lingers either.
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("status", { name: "Checking what is due" }),
+      ).toBeNull();
+    });
     // The deck itself stays reachable; the error shows up on its page.
     expect(screen.queryByText("reviews unreachable")).toBeNull();
   });

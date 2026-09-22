@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
-import type { Deck } from "../domain/deck";
+import type { CardContent, Deck } from "../domain/deck";
 import { CardCreatorScreen } from "./CardCreatorScreen";
 import { errorMessage } from "./errorMessage";
 
@@ -23,8 +23,7 @@ export function CardCreatorContainer({
   const queryClient = useQueryClient();
 
   const addCardMutation = useMutation({
-    mutationFn: (args: { front: string; back: string }) =>
-      useCases.addCard(deck, args.front, args.back),
+    mutationFn: (content: CardContent) => useCases.addCard(deck, content),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["cards", deck.cardsDocumentUrl],
@@ -40,7 +39,7 @@ export function CardCreatorContainer({
       deckHref={deckHref}
       busy={addCardMutation.isPending}
       error={errorMessage(addCardMutation.error)}
-      onAdd={(front, back) => addCardMutation.mutate({ front, back })}
+      onAdd={(content) => addCardMutation.mutate(content)}
       onBack={onBack}
     />
   );

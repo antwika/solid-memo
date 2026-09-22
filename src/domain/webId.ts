@@ -37,6 +37,15 @@ export function isLinkableUrl(value: string): boolean {
 }
 
 /**
+ * True for an absolute http(s) URL: what may be loaded into the page as
+ * an image. Narrower than isLinkableUrl, which also allows mailto:.
+ */
+export function isHttpUrl(value: string): boolean {
+  const url = parseUrl(value);
+  return url !== null && (url.protocol === "https:" || url.protocol === "http:");
+}
+
+/**
  * Validate user input as a WebID: an absolute https: URL. Returns the
  * normalized WebID, or a message suitable for showing next to the field.
  */

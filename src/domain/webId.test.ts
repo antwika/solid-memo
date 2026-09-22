@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { isLinkableUrl, isSecureUrl, validateWebId } from "./webId";
+import {
+  isHttpUrl,
+  isLinkableUrl,
+  isSecureUrl,
+  validateWebId,
+} from "./webId";
+
+describe("isHttpUrl", () => {
+  it.each(["https://flagcdn.com/h80/af.png", "http://localhost:3000/a.png"])(
+    "accepts %s",
+    (value) => {
+      expect(isHttpUrl(value)).toBe(true);
+    },
+  );
+
+  it.each([
+    "mailto:alice@example.org",
+    "javascript:alert(1)",
+    "data:image/png;base64,AAAA",
+    "/data/flags/h80/af.png",
+    "",
+  ])("rejects %j", (value) => {
+    expect(isHttpUrl(value)).toBe(false);
+  });
+});
 
 describe("isSecureUrl", () => {
   it("accepts an https URL", () => {

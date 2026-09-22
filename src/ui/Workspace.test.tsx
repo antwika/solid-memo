@@ -938,9 +938,9 @@ describe("Workspace", () => {
           listInstances: vi.fn(async () => [instanceA]),
           listDecks: vi.fn(async () => [deck]),
           listCards: vi.fn(async () => [{ ...card, front }]),
-          updateCard: vi.fn(async (_deck, edited: Card, newFront: string) => {
-            front = newFront;
-            return { ...edited, front: newFront };
+          updateCard: vi.fn(async (_deck, edited: Card, content) => {
+            front = content.front;
+            return { ...edited, ...content };
           }),
         }),
       );

@@ -1,5 +1,12 @@
 import { useState } from "preact/hooks";
-import type { Card } from "../domain/deck";
+import {
+  cardLabel,
+  validateCardContent,
+  type Card,
+  type CardContent,
+} from "../domain/deck";
+import { CardContentFields, draftOf } from "./CardContentFields";
+import { CardFace } from "./CardFace";
 import { CardIcon, TrashIcon } from "./icons";
 
 /** One card's own page: the card as it looks in study, and its editor. */
@@ -16,20 +23,28 @@ export function CardScreen({
   /** The last save succeeded (and nothing was edited since). */
   saved: boolean;
   error: string | null;
-  onSave: (front: string, back: string) => void;
+  onSave: (content: CardContent) => void;
   onRemove: () => void;
 }) {
-  const [front, setFront] = useState(card.front);
-  const [back, setBack] = useState(card.back);
+  const [draft, setDraft] = useState(() => draftOf(card));
+  const [invalid, setInvalid] = useState<string | null>(null);
 
   function handleSubmit(event: Event) {
     event.preventDefault();
-    onSave(front.trim(), back.trim());
+    const validation = validateCardContent(draft);
+    if (!validation.ok) {
+      setInvalid(validation.error);
+      return;
+    }
+    setInvalid(null);
+    onSave(validation.content);
   }
 
   function handleRemove() {
     if (
-      window.confirm(`Remove the card "${card.front}"? This cannot be undone.`)
+      window.confirm(
+        `Remove the card "${cardLabel(card)}"? This cannot be undone.`,
+      )
     ) {
       onRemove();
     }
@@ -44,28 +59,16 @@ export function CardScreen({
         </h2>
       </header>
       <div class="practice-card">
-        <p class="card-front">{card.front}</p>
-        <p class="card-back">{card.back}</p>
+        <CardFace side="front" text={card.front} imageUrl={card.frontImageUrl} />
+        <CardFace side="back" text={card.back} imageUrl={card.backImageUrl} />
       </div>
-      <form onSubmit={handleSubmit}>
-        <label for="card-front">Front</label>
-        <input
-          id="card-front"
-          type="text"
-          value={front}
-          onInput={(e) => setFront(e.currentTarget.value)}
-          required
-          disabled={busy}
-        />
-        <label for="card-back">Back</label>
-        <input
-          id="card-back"
-          type="text"
-          value={back}
-          onInput={(e) => setBack(e.currentTarget.value)}
-          required
-          disabled={busy}
-        />
+      <form onSubmit={handleSubmit} noValidate>
+        <CardContentFields draft={draft} busy={busy} onChange={setDraft} />
+        {invalid && (
+          <p class="error" role="alert">
+            {invalid}
+          </p>
+        )}
         <div class="edit-actions">
           <button type="submit" disabled={busy}>
             Save

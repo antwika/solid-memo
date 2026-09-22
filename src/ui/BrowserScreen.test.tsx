@@ -163,6 +163,23 @@ describe("BrowserScreen", () => {
     ).toEqual(["Kanji N5", "水"]);
   });
 
+  it("shows a card's pictures beside its text, and names a picture card by its back", () => {
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    const flag = "https://flagcdn.com/af.svg";
+    const { props, container } = renderScreen({
+      cards: [{ ...card, front: "", frontImageUrl: flag, back: "Afghanistan" }],
+    });
+    const thumbnail = container.querySelector("td a img.card-thumbnail")!;
+    expect(thumbnail).toHaveAttribute("src", flag);
+    expect(screen.getByText("Afghanistan")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    expect(confirm).toHaveBeenCalledWith(
+      'Remove the card "Afghanistan"? This cannot be undone.',
+    );
+    expect(props.onRemoveCard).not.toHaveBeenCalled();
+  });
+
   it("no longer edits cards in place", () => {
     renderScreen();
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();

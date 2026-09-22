@@ -64,7 +64,10 @@ describe("CardCreatorContainer", () => {
     submitCard("水", "water");
 
     await waitFor(() => {
-      expect(useCases.addCard).toHaveBeenCalledWith(deck, "水", "water");
+      expect(useCases.addCard).toHaveBeenCalledWith(deck, {
+        front: "水",
+        back: "water",
+      });
     });
     // The deck now has a card to study; the cached queue is dropped.
     await waitFor(() => {

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
-import type { Card, Deck } from "../domain/deck";
+import type { Card, CardContent, Deck } from "../domain/deck";
 import { CardScreen } from "./CardScreen";
 import { errorMessage } from "./errorMessage";
 
@@ -24,8 +24,8 @@ export function CardContainer({
   const queryClient = useQueryClient();
 
   const updateCardMutation = useMutation({
-    mutationFn: (args: { front: string; back: string }) =>
-      useCases.updateCard(deck, card, args.front, args.back),
+    mutationFn: (content: CardContent) =>
+      useCases.updateCard(deck, card, content),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["cards", deck.cardsDocumentUrl],
@@ -59,7 +59,7 @@ export function CardContainer({
         errorMessage(updateCardMutation.error) ??
         errorMessage(removeCardMutation.error)
       }
-      onSave={(front, back) => updateCardMutation.mutate({ front, back })}
+      onSave={(content) => updateCardMutation.mutate(content)}
       onRemove={() => removeCardMutation.mutate()}
     />
   );

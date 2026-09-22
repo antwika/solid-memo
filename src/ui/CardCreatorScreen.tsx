@@ -1,5 +1,5 @@
 import { AddCardForm } from "./AddCardForm";
-import type { Deck } from "../domain/deck";
+import type { CardContent, Deck } from "../domain/deck";
 
 /** Card entry page; stays open after each add so batches are easy. */
 export function CardCreatorScreen({
@@ -15,7 +15,7 @@ export function CardCreatorScreen({
   deckHref: string;
   busy: boolean;
   error: string | null;
-  onAdd: (front: string, back: string) => void;
+  onAdd: (content: CardContent) => void;
   onBack: () => void;
 }) {
   return (

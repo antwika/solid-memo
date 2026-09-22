@@ -1,4 +1,4 @@
-import type { Card, Deck } from "../domain/deck";
+import type { Card, CardContent, Deck } from "../domain/deck";
 import type {
   Instance,
   RegistrationOptions,
@@ -99,16 +99,21 @@ export interface DeckRepository {
    */
   importDeck(instanceUrl: string, content: LibraryDeckContent): Promise<Deck>;
   listCards(deck: Deck): Promise<Card[]>;
-  addCard(deck: Deck, front: string, back: string): Promise<Card>;
-  /** Replaces the card's front and back; review state is untouched. */
-  updateCard(
-    deck: Deck,
-    card: Card,
-    front: string,
-    back: string,
-  ): Promise<Card>;
+  addCard(deck: Deck, content: CardContent): Promise<Card>;
+  /**
+   * Replaces the card's content, writing it in this app's format; review
+   * state is untouched.
+   */
+  updateCard(deck: Deck, card: Card, content: CardContent): Promise<Card>;
   /** Removes the card and its review state. */
   removeCard(deck: Deck, card: Card): Promise<void>;
+  /**
+   * Rewrite the given cards — content and format version — in ONE save of
+   * the cards document, for format migrations. Each card is edited in
+   * place, so triples this app does not know survive; a card that no
+   * longer exists is skipped.
+   */
+  saveCards(deck: Deck, cards: Card[]): Promise<void>;
 }
 
 /** Driven port: the app's read-only library of ready-made decks. */

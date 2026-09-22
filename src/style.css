@@ -713,6 +713,27 @@ details.add-cards summary {
   font-size: 0.9rem;
 }
 
+/* The format-update notice: a warning box with the decks it touches and
+   the one button that starts the update. */
+.migration {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+}
+
+.migration p {
+  margin: 0 0 0.6rem;
+}
+
+.migration ul {
+  margin: 0 0 0.75rem;
+  padding-left: 1.2rem;
+}
+
+.migration .error {
+  margin: 0.75rem 0 0;
+}
+
 .hint {
   color: var(--text-muted);
   font-size: 0.9em;
@@ -989,6 +1010,21 @@ dl.account dd {
   stroke-width: 2.5;
 }
 
+/* The same slot while the row's queue is first fetched: the loader's
+   dots, smaller, and only after a beat so a fast load never flashes. */
+.deck-list .study-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 0.6rem;
+  animation: fade-in 0.3s ease 0.15s backwards;
+}
+
+.deck-list .study-loading .loading-dots {
+  transform: scale(0.7);
+}
+
 /* Deck rows: the deck name is the main, prominent link */
 .deck-list .deck-open {
   /* Hugs the name (so the hover highlight wraps just the name, not the
@@ -1072,6 +1108,12 @@ dl.account dd {
 .provenance {
   display: block;
   margin: -0.25rem 0 0.75rem;
+}
+
+/* The deck's blurb takes its own line under the byline. */
+.deck-description {
+  display: block;
+  margin-top: 0.15rem;
 }
 
 .library-list .provenance {
@@ -1259,22 +1301,66 @@ form.card-edit {
   box-shadow: inset 0 0 0 4px var(--surface), var(--shadow-sm);
 }
 
-.card-front {
+/* A side of the card: its picture (if any) above its text (if any). */
+.card-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+}
+
+.card-face p {
   margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.card-front p {
   font-size: clamp(2rem, 9vw, 3.25rem);
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
 }
 
 .card-back {
-  width: 100%;
-  margin: 0;
   padding-top: 1.25rem;
   border-top: 1px dashed var(--border-strong);
+}
+
+.card-back p {
   font-size: clamp(1.25rem, 5vw, 1.6rem);
-  overflow-wrap: anywhere;
+}
+
+/* The note that a picture could not be shown keeps its muted size. */
+.card-face p.hint {
+  font-size: 0.9em;
+}
+
+/* A picture on a card: as wide as the card allows, never taller than the
+   card is meant to be, on a thin card-stock frame (a flag has no edges
+   of its own). */
+.card-image {
+  display: block;
+  max-width: min(100%, 24rem);
+  max-height: 14rem;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.card-back .card-image {
+  max-height: 10rem;
+}
+
+/* Beside its text in a Browser row: a small picture, aligned to the text. */
+.card-thumbnail {
+  height: 1.5rem;
+  width: auto;
+  margin-right: 0.5rem;
+  vertical-align: -0.4em;
+  border: 1px solid var(--border);
+  border-radius: 3px;
 }
 
 /* Reveal: the one thing to press */

@@ -19,7 +19,7 @@ import type {
   LibraryDeckContent,
 } from "../../../domain/library";
 import { DCTERMS, RDF, SM } from "../vocab";
-import { fragmentIdOf } from "./deckMapper";
+import { fragmentIdOf, toCardContent } from "./deckMapper";
 
 /**
  * Map an index subject to a LibraryDeck; null when the subject is not a
@@ -30,12 +30,14 @@ export function toLibraryDeck(thing: Thing): LibraryDeck | null {
   if (!getUrlAll(thing, RDF.type).includes(SM.Deck)) return null;
   const url = asUrl(thing);
   const license = getUrl(thing, DCTERMS.license);
+  const description = getStringNoLocale(thing, DCTERMS.description);
   return {
     url,
     name: getStringNoLocale(thing, DCTERMS.title) ?? url,
     cardCount: getInteger(thing, SM.cardCount) ?? 0,
     authors: getStringNoLocaleAll(thing, DCTERMS.creator),
     ...(license === null ? {} : { license }),
+    ...(description === null ? {} : { description }),
   };
 }
 
@@ -57,20 +59,22 @@ export function toLibraryDeckContent(
   if (deck === undefined) {
     throw new Error(`<${url}> is not a Solid Memo deck.`);
   }
-  const formatVersion =
-    getInteger(deck, SM.formatVersion) ?? DECK_FORMAT_VERSION;
+  // A missing version is the first format.
+  const formatVersion = getInteger(deck, SM.formatVersion) ?? 1;
   if (formatVersion > DECK_FORMAT_VERSION) {
     throw new Error(
       `<${url}> is in deck format ${formatVersion}, newer than this app supports (${DECK_FORMAT_VERSION}).`,
     );
   }
   const license = getUrl(deck, DCTERMS.license);
+  const description = getStringNoLocale(deck, DCTERMS.description);
   return {
     url,
     name: getStringNoLocale(deck, DCTERMS.title) ?? url,
     formatVersion,
     authors: getStringNoLocaleAll(deck, DCTERMS.creator),
     ...(license === null ? {} : { license }),
+    ...(description === null ? {} : { description }),
     cards: things
       .map((thing) => toLibraryCard(url, thing))
       .filter((card): card is LibraryCard => card !== null),
@@ -79,15 +83,13 @@ export function toLibraryDeckContent(
 
 function toLibraryCard(url: string, thing: Thing): LibraryCard | null {
   if (!getUrlAll(thing, RDF.type).includes(SM.Card)) return null;
-  const front = getStringNoLocale(thing, SM.front);
-  const back = getStringNoLocale(thing, SM.back);
-  if (front === null || back === null) return null;
-  const formatVersion =
-    getInteger(thing, SM.formatVersion) ?? CARD_FORMAT_VERSION;
+  const content = toCardContent(thing);
+  if (content === null) return null;
+  const formatVersion = getInteger(thing, SM.formatVersion) ?? 1;
   if (formatVersion > CARD_FORMAT_VERSION) {
     throw new Error(
       `<${asUrl(thing)}> in <${url}> is in card format ${formatVersion}, newer than this app supports (${CARD_FORMAT_VERSION}).`,
     );
   }
-  return { id: fragmentIdOf(asUrl(thing)), front, back, formatVersion };
+  return { id: fragmentIdOf(asUrl(thing)), ...content, formatVersion };
 }

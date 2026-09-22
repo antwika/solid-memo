@@ -84,6 +84,7 @@ export function LibraryScreen({
                 <DeckProvenance
                   authors={deck.authors}
                   license={deck.license}
+                  description={deck.description}
                 />
                 <span class="hint">{cardCount(deck.cardCount)}</span>
                 {isImported(deck) && (

@@ -19,7 +19,8 @@ const CC0 = "https://creativecommons.org/publicdomain/zero/1.0/";
 
 const CAPITALS = `${PREFIXES}
 <> a sm:Deck ; dcterms:title "Capitals" ; sm:formatVersion 1 ;
-   dcterms:creator "Anton Wiklund", "A friend" ; dcterms:license <${CC0}> .
+   dcterms:creator "Anton Wiklund", "A friend" ; dcterms:license <${CC0}> ;
+   dcterms:description "From Wikipedia." .
 <#se> a sm:Card ; sm:front "Sweden" ; sm:back "Stockholm" ; sm:formatVersion 1 .
 <#no> a sm:Card ; sm:front "Norway" ; sm:back "Oslo" ; sm:formatVersion 1 .
 `;
@@ -36,6 +37,7 @@ describe("summarizeDeck", () => {
       cardCount: 2,
       authors: ["Anton Wiklund", "A friend"],
       license: CC0,
+      description: "From Wikipedia.",
     });
     expect(summarizeDeck("rivers.ttl", RIVERS)).toEqual({
       file: "rivers.ttl",
@@ -56,6 +58,53 @@ describe("summarizeDeck", () => {
          <#se> a sm:Card ; sm:front "f" ; sm:back "b" .`,
       ),
     ).toThrow("<https://library.invalid/x.ttl#se> has no solid-memo:formatVersion.");
+  });
+
+  it("counts picture cards and requires pictures to be IRIs", () => {
+    const deckLine = `${PREFIXES} <> a sm:Deck ; dcterms:title "Flags" ; sm:formatVersion 1 .`;
+    expect(
+      summarizeDeck(
+        "flags.ttl",
+        `${deckLine}
+         <#af> a sm:Card ; sm:frontImage <https://flagcdn.com/af.svg> ;
+               sm:back "Afghanistan" ; sm:formatVersion 2 .`,
+      ).cardCount,
+    ).toBe(1);
+    expect(() =>
+      summarizeDeck(
+        "flags.ttl",
+        `${deckLine}
+         <#af> a sm:Card ; sm:frontImage "https://flagcdn.com/af.svg" ;
+               sm:back "Afghanistan" ; sm:formatVersion 2 .`,
+      ),
+    ).toThrow(
+      "decks/flags.ttl: <https://library.invalid/flags.ttl#af> solid-memo:frontImage must be an IRI (<https://flagcdn.com/af.svg>), not a string literal.",
+    );
+    expect(() =>
+      summarizeDeck(
+        "flags.ttl",
+        `${deckLine}
+         <#af> a sm:Card ; sm:front "?" ; sm:backImage "x" ; sm:formatVersion 2 .`,
+      ),
+    ).toThrow("solid-memo:backImage must be an IRI");
+  });
+
+  it("requires text or a picture on both sides of every card", () => {
+    const deckLine = `${PREFIXES} <> a sm:Deck ; dcterms:title "Flags" ; sm:formatVersion 1 .`;
+    expect(() =>
+      summarizeDeck(
+        "flags.ttl",
+        `${deckLine} <#af> a sm:Card ; sm:back "Afghanistan" ; sm:formatVersion 2 .`,
+      ),
+    ).toThrow(
+      "decks/flags.ttl: <https://library.invalid/flags.ttl#af> has neither solid-memo:front nor solid-memo:frontImage.",
+    );
+    expect(() =>
+      summarizeDeck(
+        "flags.ttl",
+        `${deckLine} <#af> a sm:Card ; sm:front "?" ; sm:formatVersion 2 .`,
+      ),
+    ).toThrow("has neither solid-memo:back nor solid-memo:backImage.");
   });
 
   it("rejects a file without exactly one deck", () => {
@@ -84,7 +133,7 @@ describe("buildIndex", () => {
       summarizeDeck("rivers.ttl", RIVERS),
     ]);
     expect(index).toContain(
-      `<capitals.ttl> a sm:Deck;\n    dcterms:title "Capitals";\n    sm:cardCount 2;\n    dcterms:creator "Anton Wiklund", "A friend";\n    dcterms:license <${CC0}>.`,
+      `<capitals.ttl> a sm:Deck;\n    dcterms:title "Capitals";\n    sm:cardCount 2;\n    dcterms:creator "Anton Wiklund", "A friend";\n    dcterms:license <${CC0}>;\n    dcterms:description "From Wikipedia.".`,
     );
     expect(index).toContain('<rivers.ttl> a sm:Deck;\n    dcterms:title "Rivers \\"long\\"";\n    sm:cardCount 0.');
   });

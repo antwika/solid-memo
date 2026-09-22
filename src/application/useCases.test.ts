@@ -96,6 +96,7 @@ function makeDeps() {
     addCard: vi.fn(async () => card),
     updateCard: vi.fn(async () => card),
     removeCard: vi.fn(async () => undefined),
+    saveCards: vi.fn(async () => undefined),
     importDeck: vi.fn(async () => deck),
   };
   const deckLibrary: DeckLibrary = {
@@ -356,23 +357,119 @@ describe("createUseCases", () => {
     await expect(useCases.listCards(deck)).resolves.toEqual([card]);
     expect(deps.deckRepository.listCards).toHaveBeenCalledWith(deck);
 
-    await useCases.addCard(deck, " 火 ", " fire ");
-    expect(deps.deckRepository.addCard).toHaveBeenCalledWith(
-      deck,
-      "火",
-      "fire",
-    );
+    await useCases.addCard(deck, { front: " 火 ", back: " fire " });
+    expect(deps.deckRepository.addCard).toHaveBeenCalledWith(deck, {
+      front: "火",
+      back: "fire",
+    });
 
-    await useCases.updateCard(deck, card, " 水 ", " water (mizu) ");
-    expect(deps.deckRepository.updateCard).toHaveBeenCalledWith(
-      deck,
-      card,
-      "水",
-      "water (mizu)",
-    );
+    await useCases.updateCard(deck, card, {
+      front: " 水 ",
+      back: " water (mizu) ",
+      frontImageUrl: " https://img.example/water.png ",
+      backImageUrl: "",
+    });
+    expect(deps.deckRepository.updateCard).toHaveBeenCalledWith(deck, card, {
+      front: "水",
+      back: "water (mizu)",
+      frontImageUrl: "https://img.example/water.png",
+    });
 
     await useCases.removeCard(deck, card);
     expect(deps.deckRepository.removeCard).toHaveBeenCalledWith(deck, card);
+  });
+
+  it("addCard and updateCard reject incomplete content without writing", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await expect(
+      useCases.addCard(deck, { front: "", back: "fire" }),
+    ).rejects.toThrow("The front needs text or an image.");
+    await expect(
+      useCases.updateCard(deck, card, {
+        front: "f",
+        back: "b",
+        backImageUrl: "javascript:alert(1)",
+      }),
+    ).rejects.toThrow("The back image must be an http(s) URL.");
+    expect(deps.deckRepository.addCard).not.toHaveBeenCalled();
+    expect(deps.deckRepository.updateCard).not.toHaveBeenCalled();
+  });
+
+  describe("format migration", () => {
+    const other: Deck = {
+      ...deck,
+      id: "deck-2",
+      url: `${instance.url}catalog.ttl#deck-2`,
+      cardsDocumentUrl: `${instance.url}decks/deck-2.ttl`,
+    };
+    const old = (id: string): Card => ({
+      ...card,
+      id,
+      url: `${deck.cardsDocumentUrl}#${id}`,
+      formatVersion: 1,
+    });
+    const current = (id: string): Card => ({ ...old(id), formatVersion: 2 });
+
+    it("planMigration reads every deck's cards and writes nothing", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
+      vi.mocked(deps.deckRepository.listCards).mockImplementation(async (d) =>
+        d === deck ? [old("a"), current("b"), old("c")] : [current("d")],
+      );
+      const useCases = createUseCases(deps);
+
+      await expect(useCases.planMigration(instance.url)).resolves.toEqual({
+        decks: [{ deck, cardCount: 2 }],
+        cardCount: 2,
+      });
+      expect(deps.deckRepository.listDecks).toHaveBeenCalledWith(instance.url);
+      expect(deps.deckRepository.listCards).toHaveBeenCalledTimes(2);
+      expect(deps.deckRepository.saveCards).not.toHaveBeenCalled();
+    });
+
+    it("migrateInstance rewrites the outdated cards of each deck in one write per deck", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
+      vi.mocked(deps.deckRepository.listCards).mockImplementation(async (d) =>
+        d === deck ? [old("a"), current("b"), old("c")] : [old("d")],
+      );
+      const useCases = createUseCases(deps);
+
+      await expect(useCases.migrateInstance(instance.url)).resolves.toBe(3);
+      expect(deps.deckRepository.saveCards).toHaveBeenCalledTimes(2);
+      expect(deps.deckRepository.saveCards).toHaveBeenNthCalledWith(1, deck, [
+        current("a"),
+        current("c"),
+      ]);
+      expect(deps.deckRepository.saveCards).toHaveBeenNthCalledWith(2, other, [
+        current("d"),
+      ]);
+    });
+
+    it("migrateInstance leaves decks without outdated cards untouched", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
+      const useCases = createUseCases(deps);
+
+      await expect(useCases.migrateInstance(instance.url)).resolves.toBe(0);
+      expect(deps.deckRepository.saveCards).not.toHaveBeenCalled();
+    });
+
+    it("migrateInstance stops at the first failed deck", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([old("a")]);
+      vi.mocked(deps.deckRepository.saveCards).mockRejectedValueOnce(
+        new Error("write refused"),
+      );
+      const useCases = createUseCases(deps);
+
+      await expect(useCases.migrateInstance(instance.url)).rejects.toThrow(
+        "write refused",
+      );
+      expect(deps.deckRepository.saveCards).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("listLibraryDecks delegates to the deck library", async () => {

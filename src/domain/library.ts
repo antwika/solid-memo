@@ -1,3 +1,5 @@
+import type { CardContent } from "./deck";
+
 /**
  * A ready-made deck the app offers for import, as the deck library's
  * index lists it. The library is read-only; importing copies a deck into
@@ -10,6 +12,7 @@ export interface LibraryDeck {
   cardCount: number;
   authors: string[];
   license?: string;
+  description?: string;
 }
 
 /** A library deck's full content, fetched when it is imported. */
@@ -19,13 +22,12 @@ export interface LibraryDeckContent {
   formatVersion: number;
   authors: string[];
   license?: string;
+  description?: string;
   cards: LibraryCard[];
 }
 
-export interface LibraryCard {
+export interface LibraryCard extends CardContent {
   /** Fragment id in the library document; kept as the card's id on import. */
   id: string;
-  front: string;
-  back: string;
   formatVersion: number;
 }

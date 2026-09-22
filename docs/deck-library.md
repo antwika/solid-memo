@@ -19,6 +19,7 @@ same shape as a pod's cards document plus the deck's own title:
     dcterms:title "Capitals of the world" ;
     dcterms:creator "Anton Wiklund" ;
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+    dcterms:description "Capitals as listed by …" ;
     solid-memo:formatVersion 1 .
 
 <#sweden> a solid-memo:Card ;
@@ -27,16 +28,32 @@ same shape as a pod's cards document plus the deck's own title:
     solid-memo:formatVersion 1 .
 ```
 
+A side may be a picture instead of (or as well as) text — the
+[world flags deck](../decks/world-flags.ttl) shows the flag alone on the
+front. The picture is an IRI, never a quoted string:
+
+```turtle
+<#sweden> a solid-memo:Card ;
+    solid-memo:frontImage <https://flagcdn.com/se.svg> ;
+    solid-memo:back "Sweden" ;
+    solid-memo:formatVersion 2 .
+```
+
 Rules the build enforces (a broken file fails `npm run build` rather
 than silently vanishing from the library):
 
 - exactly one `sm:Deck` subject, with a `dcterms:title` and a
   `sm:formatVersion` (currently 1);
-- cards are `sm:Card` subjects with `sm:front`, `sm:back` and their own
-  `sm:formatVersion`; anything else is ignored on import;
+- cards are `sm:Card` subjects with their own `sm:formatVersion` and, on
+  each side, text (`sm:front` / `sm:back`) or a picture (`sm:frontImage`
+  / `sm:backImage`) or both; a picture must be an IRI (`<https://…>`), a
+  string literal fails the build; anything else is ignored on import;
 - `dcterms:creator` (one literal per author) and `dcterms:license` (a
   URL) are optional but expected for published decks — the capitals deck
   is CC0, the most permissive choice, and the library screen credits both;
+  `dcterms:description` (a literal) is where a deck credits its sources —
+  the flags deck names flagpedia.net for its list and flagcdn.com for the
+  images — and is shown, URLs linked, in the library and on the deck page;
 - the file name is a plain `name.ttl` (no hidden files, no
   subdirectories); `index.ttl` is reserved for the generated index.
 
@@ -70,7 +87,8 @@ flowchart LR
       dcterms:title "Capitals of the world" ;
       sm:cardCount 243 ;
       dcterms:creator "Anton Wiklund" ;
-      dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> .
+      dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+      dcterms:description "…" .
   ```
 
   The app browses the library from this one small document and fetches a
@@ -103,8 +121,9 @@ flowchart LR
   same id as for any other card.
 - The catalog entry records where the deck came from
   (`dcterms:source <…/decks/name.ttl>`, surfaced as `Deck.sourceUrl`)
-  and carries over its authors and licence, which the deck page then
-  credits ("By Anton Wiklund · CC0 1.0"). The library screen uses the
+  and carries over its authors, licence and description, which the deck
+  page then credits ("By Anton Wiklund · CC0 1.0", the description
+  beneath). The library screen uses the
   source to mark decks the instance already holds; a second copy is
   still allowed.
 - The copy is written in this app's own format version, whatever the

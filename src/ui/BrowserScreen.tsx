@@ -1,9 +1,10 @@
 import { useState } from "preact/hooks";
-import type { Card, Deck } from "../domain/deck";
+import { cardLabel, type Card, type Deck } from "../domain/deck";
+import { CardThumbnail } from "./CardFace";
 import { BrowserIcon, TrashIcon } from "./icons";
 
-/** Cards per Browser page: about one screen of rows. */
-export const CARDS_PER_PAGE = 25;
+/** Cards per Browser page: a short list, so paging is quick to scan. */
+export const CARDS_PER_PAGE = 10;
 
 /**
  * Management view for one deck: rename/remove the deck, add cards, and
@@ -71,7 +72,7 @@ export function BrowserScreen({
   function handleRemove(card: Card) {
     if (
       window.confirm(
-        `Remove the card "${card.front}"? This cannot be undone.`,
+        `Remove the card "${cardLabel(card)}"? This cannot be undone.`,
       )
     ) {
       onRemoveCard(card);
@@ -149,12 +150,16 @@ export function BrowserScreen({
               {pageCards.map((card) => (
                 <tr key={card.url}>
                   <td class="clickable">
-                    <a href={cardHref(card)}>{card.front}</a>
+                    <a href={cardHref(card)}>
+                      <CardThumbnail imageUrl={card.frontImageUrl} />
+                      {card.front}
+                    </a>
                   </td>
                   <td class="clickable">
                     {/* Same destination as the front: the whole row is
                         clickable, but only one link is announced/tabbed. */}
                     <a href={cardHref(card)} tabIndex={-1} aria-hidden="true">
+                      <CardThumbnail imageUrl={card.backImageUrl} />
                       {card.back}
                     </a>
                   </td>

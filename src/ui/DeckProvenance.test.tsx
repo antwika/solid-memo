@@ -25,7 +25,36 @@ describe("DeckProvenance", () => {
     expect(container.textContent).toBe("CC0 1.0");
   });
 
-  it("renders nothing when neither is stated", () => {
+  it("shows the description under the byline, with its URLs as links", () => {
+    const { container } = render(
+      <DeckProvenance
+        authors={["Anton Wiklund"]}
+        description="Flags from https://flagcdn.com, listed at https://flagpedia.net/index. Enjoy!"
+      />,
+    );
+    expect(container.textContent).toBe(
+      "By Anton WiklundFlags from https://flagcdn.com, listed at https://flagpedia.net/index. Enjoy!",
+    );
+    expect(
+      screen.getAllByRole("link").map((link) => link.getAttribute("href")),
+    ).toEqual(["https://flagcdn.com", "https://flagpedia.net/index"]);
+    expect(screen.getByRole("link", { name: "https://flagcdn.com" })).toHaveAttribute(
+      "target",
+      "_blank",
+    );
+  });
+
+  it("shows a description alone, as plain text when it has no URL", () => {
+    const { container } = render(
+      <DeckProvenance authors={[]} description="Just a deck." />,
+    );
+    expect(container.querySelector(".deck-description")).toHaveTextContent(
+      "Just a deck.",
+    );
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("renders nothing when nothing is stated", () => {
     const { container } = render(<DeckProvenance authors={[]} />);
     expect(container).toBeEmptyDOMElement();
   });

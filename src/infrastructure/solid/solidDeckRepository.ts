@@ -8,12 +8,14 @@ import {
   removeThing,
   saveSolidDatasetAt,
   setThing,
+  type ThingPersisted,
 } from "@inrupt/solid-client";
 import type { DeckRepository } from "../../application/ports";
 import {
   CARD_FORMAT_VERSION,
   DECK_FORMAT_VERSION,
   type Card,
+  type CardContent,
   type Deck,
 } from "../../domain/deck";
 import { getSolidDatasetOrNull } from "./datasets";
@@ -97,13 +99,12 @@ export function createSolidDeckRepository({
         .filter((card): card is Card => card !== null);
     },
 
-    async addCard(deck, front, back): Promise<Card> {
+    async addCard(deck, content): Promise<Card> {
       const id = `card-${randomId()}`;
       const card: Card = {
         id,
         url: `${deck.cardsDocumentUrl}#${id}`,
-        front,
-        back,
+        ...content,
         createdAt: now().toISOString(),
         formatVersion: CARD_FORMAT_VERSION,
       };
@@ -115,7 +116,7 @@ export function createSolidDeckRepository({
       return card;
     },
 
-    async updateCard(deck, card, front, back): Promise<Card> {
+    async updateCard(deck, card, content): Promise<Card> {
       const dataset = await getSolidDatasetOrNull(
         deck.cardsDocumentUrl,
         fetch,
@@ -129,16 +130,34 @@ export function createSolidDeckRepository({
       if (thing === null) {
         throw new Error(`Card <${card.url}> no longer exists.`);
       }
-      // Edit the existing subject in place so unknown triples survive.
-      const updated = setThing(
-        dataset,
-        buildThing(thing)
-          .setStringNoLocale(SM.front, front)
-          .setStringNoLocale(SM.back, back)
-          .build(),
+      // An edited card is written in this app's format, whatever it was.
+      const updated: Card = {
+        id: card.id,
+        url: card.url,
+        createdAt: card.createdAt,
+        ...content,
+        formatVersion: CARD_FORMAT_VERSION,
+      };
+      await saveSolidDatasetAt(
+        deck.cardsDocumentUrl,
+        setThing(dataset, applyCard(thing, updated)),
+        { fetch },
       );
+      return updated;
+    },
+
+    async saveCards(deck, cards): Promise<void> {
+      const dataset = await getSolidDatasetOrNull(
+        deck.cardsDocumentUrl,
+        fetch,
+      );
+      // No document: nothing the cards could have come from is left.
+      if (dataset === null) return;
+      const updated = cards.reduce((current, card) => {
+        const thing = getThing(current, card.url);
+        return thing === null ? current : setThing(current, applyCard(thing, card));
+      }, dataset);
       await saveSolidDatasetAt(deck.cardsDocumentUrl, updated, { fetch });
-      return { ...card, front, back };
     },
 
     async removeCard(deck, card): Promise<void> {
@@ -171,13 +190,18 @@ export function createSolidDeckRepository({
   /**
    * A fresh deck's identity and document locations, before any write.
    * An import carries over the library deck's provenance: its authors,
-   * licence and where it came from. The format version is always this
+   * licence, description and where it came from. The format version is always this
    * app's own — the copy is written in the format this app writes.
    */
   function newDeck(
     instanceUrl: string,
     name: string,
-    source?: { url: string; authors: string[]; license?: string },
+    source?: {
+      url: string;
+      authors: string[];
+      license?: string;
+      description?: string;
+    },
   ): Deck {
     const base = ensureTrailingSlash(instanceUrl);
     const id = `deck-${randomId()}`;
@@ -191,6 +215,9 @@ export function createSolidDeckRepository({
       formatVersion: DECK_FORMAT_VERSION,
       authors: source?.authors ?? [],
       ...(source?.license === undefined ? {} : { license: source.license }),
+      ...(source?.description === undefined
+        ? {}
+        : { description: source.description }),
       ...(source === undefined ? {} : { sourceUrl: source.url }),
     };
   }
@@ -214,6 +241,9 @@ export function createSolidDeckRepository({
     if (deck.license !== undefined) {
       entry.addIri(DCTERMS.license, deck.license);
     }
+    if (deck.description !== undefined) {
+      entry.addStringNoLocale(DCTERMS.description, deck.description);
+    }
     if (deck.sourceUrl !== undefined) {
       entry.addIri(DCTERMS.source, deck.sourceUrl);
     }
@@ -222,21 +252,46 @@ export function createSolidDeckRepository({
     return deck;
   }
 
-  /** The RDF subject of a card, in the deck's cards document. */
-  function cardThing(
-    deck: Deck,
-    card: { id: string; front: string; back: string },
-  ) {
-    return buildThing(
+  /**
+   * The RDF subject of a new card, in the deck's cards document, written
+   * in this app's format.
+   */
+  function cardThing(deck: Deck, card: CardContent & { id: string }) {
+    const thing = buildThing(
       createThing({ url: `${deck.cardsDocumentUrl}#${card.id}` }),
     )
       .addIri(RDF.type, SM.Card)
-      .addStringNoLocale(SM.front, card.front)
-      .addStringNoLocale(SM.back, card.back)
       .addDatetime(DCTERMS.created, now())
-      .addInteger(SM.formatVersion, CARD_FORMAT_VERSION)
       .build();
+    return applyCard(thing, { ...card, formatVersion: CARD_FORMAT_VERSION });
   }
+}
+
+/**
+ * Write a card's content and format version onto its existing subject,
+ * replacing only the triples this app owns: empty text and a missing
+ * picture remove theirs, anything else on the subject survives. Pictures
+ * are IRIs — never string literals — so a reader finds them with getUrl.
+ */
+function applyCard(
+  thing: ThingPersisted,
+  card: CardContent & { formatVersion: number },
+): ThingPersisted {
+  const builder = buildThing(thing)
+    .removeAll(SM.front)
+    .removeAll(SM.back)
+    .removeAll(SM.frontImage)
+    .removeAll(SM.backImage)
+    .setInteger(SM.formatVersion, card.formatVersion);
+  if (card.front !== "") builder.addStringNoLocale(SM.front, card.front);
+  if (card.back !== "") builder.addStringNoLocale(SM.back, card.back);
+  if (card.frontImageUrl !== undefined) {
+    builder.addIri(SM.frontImage, card.frontImageUrl);
+  }
+  if (card.backImageUrl !== undefined) {
+    builder.addIri(SM.backImage, card.backImageUrl);
+  }
+  return builder.build();
 }
 
 function catalogUrlOf(instanceUrl: string): string {

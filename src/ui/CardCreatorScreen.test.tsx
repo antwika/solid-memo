@@ -63,9 +63,48 @@ describe("CardCreatorScreen", () => {
       target: { value: " fire " },
     });
     fireEvent.submit(container.querySelector("form")!);
-    expect(props.onAdd).toHaveBeenCalledWith("火", "fire");
+    expect(props.onAdd).toHaveBeenCalledWith({ front: "火", back: "fire" });
     expect(screen.getByLabelText("Front")).toHaveValue("");
     expect(screen.getByLabelText("Back")).toHaveValue("");
+  });
+
+  it("adds a picture-only front, and clears the picture fields too", () => {
+    const { props, container } = renderScreen();
+    fireEvent.input(screen.getByLabelText("Front picture (URL)"), {
+      target: { value: " https://flagcdn.com/af.svg " },
+    });
+    fireEvent.input(screen.getByLabelText("Back"), {
+      target: { value: "Afghanistan" },
+    });
+    fireEvent.submit(container.querySelector("form")!);
+    expect(props.onAdd).toHaveBeenCalledWith({
+      front: "",
+      back: "Afghanistan",
+      frontImageUrl: "https://flagcdn.com/af.svg",
+    });
+    expect(screen.getByLabelText("Front picture (URL)")).toHaveValue("");
+    expect(screen.getByLabelText("Back picture (URL)")).toHaveValue("");
+  });
+
+  it("refuses an incomplete card, explains, and keeps what was typed", () => {
+    const { props, container } = renderScreen();
+    fireEvent.input(screen.getByLabelText("Back"), {
+      target: { value: "fire" },
+    });
+    fireEvent.submit(container.querySelector("form")!);
+    expect(props.onAdd).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "The front needs text or an image.",
+    );
+    expect(screen.getByLabelText("Back")).toHaveValue("fire");
+
+    // The message goes once a valid card is added.
+    fireEvent.input(screen.getByLabelText("Front"), {
+      target: { value: "火" },
+    });
+    fireEvent.submit(container.querySelector("form")!);
+    expect(props.onAdd).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("navigates back", () => {

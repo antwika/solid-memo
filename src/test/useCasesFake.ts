@@ -53,6 +53,8 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       throw new Error("updateCard fake not configured");
     }),
     removeCard: vi.fn(async () => undefined),
+    planMigration: vi.fn(async () => ({ decks: [], cardCount: 0 })),
+    migrateInstance: vi.fn(async () => 0),
     getPreferences: vi.fn(async () => DEFAULT_PREFERENCES),
     savePreferences: vi.fn(async () => undefined),
     getStudyQueue: vi.fn(async () => ({

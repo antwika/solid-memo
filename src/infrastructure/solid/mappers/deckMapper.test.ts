@@ -11,6 +11,8 @@ import { DCTERMS, RDF, SM } from "../vocab";
 const CATALOG = "https://pod.example/solid-memo/a/catalog.ttl";
 const CARDS_DOC = "https://pod.example/solid-memo/a/decks/deck-1.ttl";
 const REVIEWS_DOC = "https://pod.example/solid-memo/a/reviews/deck-1.ttl";
+const FLAG = "https://flagcdn.com/h80/af.png";
+const MAP = "https://img.example/af-map.png";
 
 describe("fragmentIdOf", () => {
   it("returns the fragment of a subject URL", () => {
@@ -56,12 +58,14 @@ describe("toDeck", () => {
         .addStringNoLocale(DCTERMS.creator, "Anton Wiklund")
         .addStringNoLocale(DCTERMS.creator, "A friend")
         .addIri(DCTERMS.license, "https://creativecommons.org/publicdomain/zero/1.0/")
+        .addStringNoLocale(DCTERMS.description, "Capitals, from Wikipedia.")
         .addIri(DCTERMS.source, "https://solid-memo.com/decks/capitals.ttl"),
     );
     expect(toDeck(thing)).toMatchObject({
       formatVersion: 1,
       authors: ["Anton Wiklund", "A friend"],
       license: "https://creativecommons.org/publicdomain/zero/1.0/",
+      description: "Capitals, from Wikipedia.",
       sourceUrl: "https://solid-memo.com/decks/capitals.ttl",
     });
   });
@@ -160,11 +164,53 @@ describe("toCard", () => {
     expect(toCard(thing)!.formatVersion).toBe(2);
   });
 
+  it("reads pictures on either side, with or without text", () => {
+    const thing = cardThing((t) =>
+      t
+        .addIri(RDF.type, SM.Card)
+        .addIri(SM.frontImage, FLAG)
+        .addStringNoLocale(SM.back, "Afghanistan")
+        .addIri(SM.backImage, MAP)
+        .addInteger(SM.formatVersion, 2),
+    );
+    expect(toCard(thing)).toMatchObject({
+      front: "",
+      back: "Afghanistan",
+      frontImageUrl: FLAG,
+      backImageUrl: MAP,
+      formatVersion: 2,
+    });
+  });
+
+  it("ignores a picture given as a string literal instead of an IRI", () => {
+    expect(
+      toCard(
+        cardThing((t) =>
+          t
+            .addIri(RDF.type, SM.Card)
+            .addStringNoLocale(SM.frontImage, FLAG)
+            .addStringNoLocale(SM.back, "Afghanistan"),
+        ),
+      ),
+    ).toBeNull();
+    expect(
+      toCard(
+        cardThing((t) =>
+          t
+            .addIri(RDF.type, SM.Card)
+            .addStringNoLocale(SM.front, "f")
+            .addStringNoLocale(SM.back, "b")
+            .addStringNoLocale(SM.backImage, MAP),
+        ),
+      ),
+    ).not.toHaveProperty("backImageUrl");
+  });
+
   it("rejects subjects that are not sm:Card", () => {
     expect(toCard(cardThing((t) => t.addIri(RDF.type, SM.Deck)))).toBeNull();
   });
 
-  it("rejects cards missing front or back", () => {
+  it("rejects cards with a side that has neither text nor a picture", () => {
     expect(
       toCard(
         cardThing((t) =>
@@ -176,6 +222,16 @@ describe("toCard", () => {
       toCard(
         cardThing((t) =>
           t.addIri(RDF.type, SM.Card).addStringNoLocale(SM.back, "b"),
+        ),
+      ),
+    ).toBeNull();
+    expect(
+      toCard(
+        cardThing((t) =>
+          t
+            .addIri(RDF.type, SM.Card)
+            .addStringNoLocale(SM.front, "")
+            .addIri(SM.backImage, MAP),
         ),
       ),
     ).toBeNull();

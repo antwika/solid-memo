@@ -1,6 +1,7 @@
 import { useEffect } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
+import { cardLabel } from "../domain/deck";
 import type { Instance, RegistrationTarget } from "../domain/instance";
 import type { Session } from "../domain/session";
 import { Breadcrumbs, breadcrumbsFor } from "./Breadcrumbs";
@@ -16,6 +17,7 @@ import { InstanceCreator } from "./InstanceCreator";
 import { InstancePicker } from "./InstancePicker";
 import { LibraryContainer } from "./LibraryContainer";
 import { Loading } from "./Loading";
+import { MigrationContainer } from "./MigrationContainer";
 import { PracticeContainer } from "./PracticeContainer";
 import { PreferencesContainer } from "./PreferencesContainer";
 import { StoragePicker } from "./StoragePicker";
@@ -475,18 +477,23 @@ export function Workspace({
   return (
     <>
       {activeInstance !== null && (
-        <InstanceBar
-          instance={activeInstance}
-          onSwitch={() => navigate({ screen: "instancePicker" })}
-          onOpenPreferences={() =>
-            navigate({ screen: "preferences", instanceUrl: instanceUrl! })
-          }
-        />
+        <>
+          <InstanceBar
+            instance={activeInstance}
+            onSwitch={() => navigate({ screen: "instancePicker" })}
+            onOpenPreferences={() =>
+              navigate({ screen: "preferences", instanceUrl: instanceUrl! })
+            }
+          />
+          {/* Cards in an older format: offered an update wherever the
+              user is in the instance, never applied unasked. */}
+          <MigrationContainer useCases={useCases} instance={activeInstance} />
+        </>
       )}
       <Breadcrumbs
         crumbs={breadcrumbsFor(route, {
           deck: activeDeck?.name ?? "",
-          card: activeCard?.front ?? "",
+          card: activeCard === null ? "" : cardLabel(activeCard),
         })}
       />
       {screen}

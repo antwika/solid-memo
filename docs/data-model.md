@@ -58,9 +58,11 @@ flowchart LR
 ├── preferences.ttl #it: a sm:Preferences (created on first explicit save):
 │                        study caps + sm:developerMode (boolean, absent = off)
 ├── catalog.ttl     one subject per deck (titles live ONLY here);
-│                        sm:formatVersion, optional dcterms:creator/license/source
+│                        sm:formatVersion, optional dcterms:creator/license/
+│                        description/source
 ├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn),
-│                        each with sm:formatVersion
+│                        sm:front/back text and/or sm:frontImage/backImage
+│                        IRIs, each with sm:formatVersion
 └── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per fragment (fast churn);
                           optional sm:previous* snapshot = state before the
                           day's first review (restored by "reset the day")
@@ -75,7 +77,7 @@ never rewrites card content.
 ```mermaid
 graph LR
     C["catalog.ttl#deck-X<br/>a sm:Deck<br/>dcterms:title<br/>sm:formatVersion<br/>sm:cardsDocument<br/>sm:reviewsDocument"]
-    D["decks/deck-X.ttl#card-N<br/>a sm:Card<br/>sm:front / sm:back<br/>sm:formatVersion"]
+    D["decks/deck-X.ttl#card-N<br/>a sm:Card<br/>sm:front / sm:back<br/>sm:frontImage / sm:backImage<br/>sm:formatVersion"]
     R["reviews/deck-X.ttl#card-N<br/>a sm:ReviewState<br/>SM-2 fields"]
     C -->|sm:cardsDocument| D
     C -->|sm:reviewsDocument| R
@@ -84,15 +86,24 @@ graph LR
 
 - The **catalog** holds one subject per deck with its title and links to the
   two documents — the deck list renders from a single fetch. A deck may
-  name its authors (`dcterms:creator`, one literal each) and licence
-  (`dcterms:license`, a URL); a deck copied from the
+  name its authors (`dcterms:creator`, one literal each), licence
+  (`dcterms:license`, a URL) and a description (`dcterms:description`, a
+  literal: what it covers and where its content came from — shown on the
+  deck page with its URLs as links); a deck copied from the
   [deck library](deck-library.md) inherits those and also carries
   `dcterms:source` (the library document it came from).
+- **Card sides**: each side is text (`sm:front` / `sm:back`, a literal),
+  a picture (`sm:frontImage` / `sm:backImage`, always an IRI — a string in
+  its place is ignored) or both; a side with neither makes the subject
+  not a card. Pictures are shown only when their URL is http(s); pod data
+  is untrusted.
 - **Format versions**: every deck and card the app writes carries
-  `sm:formatVersion` (the same term `meta.ttl` uses for the instance),
-  currently 1 for both. Readers treat a missing version as 1 — data
-  written before the field existed — and pass a stored version through
-  unchanged, so a future migration can tell formats apart.
+  `sm:formatVersion` (the same term `meta.ttl` uses for the instance):
+  decks are at 1, cards at 2 (pictures). Readers treat a missing version
+  as 1 — data written before the field existed — read older versions as
+  they are, and pass a newer stored version through unchanged. Bringing
+  a pod's cards up to the current version is the user's call; see
+  [migrations.md](migrations.md).
 - **Cards** are hash-fragment subjects (`#card-<uuid>`, or the library's
   own ids such as `#sweden` for imported decks) inside one document per
   deck. Fragment ids are generated once at creation and never re-derived.

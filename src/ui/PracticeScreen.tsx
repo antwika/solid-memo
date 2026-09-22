@@ -8,6 +8,7 @@ import {
 } from "../domain/answerScale";
 import type { Card } from "../domain/deck";
 import type { ReviewQuality } from "../domain/review";
+import { CardFace } from "./CardFace";
 
 /** "practice" reviews due + new cards; "study" reviews due cards only. */
 export type PracticeMode = "practice" | "study";
@@ -94,7 +95,7 @@ export function PracticeScreen({
           <p class="hint">
             Card {position} of {total}
           </p>
-          <CardFace
+          <StudyCard
             // Keyed by position, not card id: a card repeated after a
             // lapse must start hidden again.
             key={position}
@@ -110,8 +111,11 @@ export function PracticeScreen({
   );
 }
 
-/** Keyed by the caller so the reveal state resets on every new card. */
-function CardFace({
+/**
+ * The card being studied: front up, back under a Reveal button. Keyed by
+ * the caller so the reveal state resets on every new card.
+ */
+function StudyCard({
   card,
   answerScale,
   busy,
@@ -126,10 +130,10 @@ function CardFace({
 
   return (
     <div class="practice-card">
-      <p class="card-front">{card.front}</p>
+      <CardFace side="front" text={card.front} imageUrl={card.frontImageUrl} />
       {revealed ? (
         <>
-          <p class="card-back">{card.back}</p>
+          <CardFace side="back" text={card.back} imageUrl={card.backImageUrl} />
           <div
             class={`quality-buttons${answerScale === "minimal" ? " minimal" : ""}`}
           >

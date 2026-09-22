@@ -16,6 +16,7 @@ const DOC = "https://solid-memo.com/decks/capitals.ttl";
 // Declared with @base, a deck's own subject need not be its fetch URL.
 const CANONICAL = "https://solid-memo.com/decks/capitals";
 const CC0 = "https://creativecommons.org/publicdomain/zero/1.0/";
+const FLAG = "https://flagcdn.com/af.svg";
 
 function thing(
   url: string,
@@ -35,7 +36,8 @@ describe("toLibraryDeck", () => {
             .addInteger(SM.cardCount, 243)
             .addStringNoLocale(DCTERMS.creator, "Anton Wiklund")
             .addStringNoLocale(DCTERMS.creator, "A friend")
-            .addIri(DCTERMS.license, CC0),
+            .addIri(DCTERMS.license, CC0)
+            .addStringNoLocale(DCTERMS.description, "From Wikipedia."),
         ),
       ),
     ).toEqual({
@@ -44,6 +46,7 @@ describe("toLibraryDeck", () => {
       cardCount: 243,
       authors: ["Anton Wiklund", "A friend"],
       license: CC0,
+      description: "From Wikipedia.",
     });
   });
 
@@ -78,7 +81,8 @@ describe("toLibraryDeckContent", () => {
           .addStringNoLocale(DCTERMS.title, "Capitals")
           .addInteger(SM.formatVersion, 1)
           .addStringNoLocale(DCTERMS.creator, "Anton Wiklund")
-          .addIri(DCTERMS.license, CC0),
+          .addIri(DCTERMS.license, CC0)
+          .addStringNoLocale(DCTERMS.description, "From Wikipedia."),
       ),
       thing(`${CANONICAL}#sweden`, (t) =>
         t
@@ -87,10 +91,24 @@ describe("toLibraryDeckContent", () => {
           .addStringNoLocale(SM.back, "Stockholm")
           .addInteger(SM.formatVersion, 1),
       ),
-      // Not cards: wrong type, missing back.
+      // A picture-only front (card format 2).
+      thing(`${CANONICAL}#afghanistan`, (t) =>
+        t
+          .addIri(RDF.type, SM.Card)
+          .addIri(SM.frontImage, FLAG)
+          .addStringNoLocale(SM.back, "Afghanistan")
+          .addInteger(SM.formatVersion, 2),
+      ),
+      // Not cards: wrong type, missing back, a picture that is a literal.
       thing(`${CANONICAL}#note`, (t) => t.addStringNoLocale(SM.front, "x")),
       thing(`${CANONICAL}#half`, (t) =>
         t.addIri(RDF.type, SM.Card).addStringNoLocale(SM.front, "Norway"),
+      ),
+      thing(`${CANONICAL}#literal`, (t) =>
+        t
+          .addIri(RDF.type, SM.Card)
+          .addStringNoLocale(SM.frontImage, FLAG)
+          .addStringNoLocale(SM.back, "Afghanistan"),
       ),
     );
     expect(toLibraryDeckContent(DOC, dataset)).toEqual({
@@ -99,8 +117,16 @@ describe("toLibraryDeckContent", () => {
       formatVersion: 1,
       authors: ["Anton Wiklund"],
       license: CC0,
+      description: "From Wikipedia.",
       cards: [
         { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+        {
+          id: "afghanistan",
+          front: "",
+          back: "Afghanistan",
+          frontImageUrl: FLAG,
+          formatVersion: 2,
+        },
       ],
     });
   });
@@ -149,7 +175,7 @@ describe("toLibraryDeckContent", () => {
       ),
     );
     expect(() => toLibraryDeckContent(DOC, dataset)).toThrow(
-      `<${CANONICAL}#se> in <${DOC}> is in card format 3, newer than this app supports (1).`,
+      `<${CANONICAL}#se> in <${DOC}> is in card format 3, newer than this app supports (2).`,
     );
   });
 

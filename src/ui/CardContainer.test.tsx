@@ -60,12 +60,10 @@ describe("CardContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Saved.");
-    expect(useCases.updateCard).toHaveBeenCalledWith(
-      deck,
-      card,
-      "水",
-      "water (mizu)",
-    );
+    expect(useCases.updateCard).toHaveBeenCalledWith(deck, card, {
+      front: "水",
+      back: "water (mizu)",
+    });
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["cards", deck.cardsDocumentUrl],
     });

@@ -1,45 +1,40 @@
 import { useState } from "preact/hooks";
+import { validateCardContent, type CardContent } from "../domain/deck";
+import { CardContentFields, EMPTY_DRAFT } from "./CardContentFields";
 
-/** Front/back entry form shared by the deck view and the Browser. */
+/** Card entry form: text and an optional picture for each side. */
 export function AddCardForm({
   busy,
   onAdd,
 }: {
   busy: boolean;
-  onAdd: (front: string, back: string) => void;
+  onAdd: (content: CardContent) => void;
 }) {
-  const [front, setFront] = useState("");
-  const [back, setBack] = useState("");
+  const [draft, setDraft] = useState(EMPTY_DRAFT);
+  const [invalid, setInvalid] = useState<string | null>(null);
 
   function handleSubmit(event: Event) {
     event.preventDefault();
-    onAdd(front.trim(), back.trim());
-    setFront("");
-    setBack("");
+    const validation = validateCardContent(draft);
+    if (!validation.ok) {
+      setInvalid(validation.error);
+      return;
+    }
+    setInvalid(null);
+    onAdd(validation.content);
+    setDraft(EMPTY_DRAFT);
   }
 
+  // noValidate: what a side needs (text or a picture) is more than the
+  // browser's `required` can say, so the messages come from the domain.
   return (
-    <form onSubmit={handleSubmit}>
-      <label for="card-front">Front</label>
-      <input
-        id="card-front"
-        type="text"
-        placeholder="Question or prompt"
-        value={front}
-        onInput={(e) => setFront(e.currentTarget.value)}
-        required
-        disabled={busy}
-      />
-      <label for="card-back">Back</label>
-      <input
-        id="card-back"
-        type="text"
-        placeholder="Answer"
-        value={back}
-        onInput={(e) => setBack(e.currentTarget.value)}
-        required
-        disabled={busy}
-      />
+    <form onSubmit={handleSubmit} noValidate>
+      <CardContentFields draft={draft} busy={busy} onChange={setDraft} />
+      {invalid && (
+        <p class="error" role="alert">
+          {invalid}
+        </p>
+      )}
       <button type="submit" disabled={busy}>
         Add card
       </button>

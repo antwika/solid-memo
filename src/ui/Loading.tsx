@@ -6,13 +6,20 @@
 export function Loading({ label }: { label: string }) {
   return (
     <p class="loading" role="status">
-      <span class="loading-dots" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-        <i />
-      </span>
+      <LoadingDots />
       {label}
     </p>
+  );
+}
+
+/** The bouncing dots alone, for a loading state inside a row or a slot. */
+export function LoadingDots() {
+  return (
+    <span class="loading-dots" aria-hidden="true">
+      <i />
+      <i />
+      <i />
+      <i />
+    </span>
   );
 }

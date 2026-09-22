@@ -11,6 +11,8 @@ const card: Card = {
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };
+const FLAG = "https://flagcdn.com/af.svg";
+const MAP = "https://img.example/af-map.png";
 
 function renderScreen(
   overrides: Partial<Parameters<typeof CardScreen>[0]> = {},
@@ -55,7 +57,70 @@ describe("CardScreen", () => {
       target: { value: " fire  " },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(props.onSave).toHaveBeenCalledWith("火", "fire");
+    expect(props.onSave).toHaveBeenCalledWith({ front: "火", back: "fire" });
+  });
+
+  it("shows a picture card and prefills its picture fields", () => {
+    const { container } = renderScreen({
+      card: {
+        ...card,
+        front: "",
+        frontImageUrl: FLAG,
+        back: "Afghanistan",
+        backImageUrl: MAP,
+      },
+    });
+    const front = container.querySelector(".card-front img")!;
+    expect(front).toHaveAttribute("src", FLAG);
+    expect(front).toHaveAttribute("alt", "Picture on the front of the card");
+    // With text beside it, the back's picture needs no description.
+    expect(container.querySelector(".card-back img")).toHaveAttribute("alt", "");
+    expect(container.querySelector(".card-back")).toHaveTextContent(
+      "Afghanistan",
+    );
+    expect(screen.getByLabelText("Front")).toHaveValue("");
+    expect(screen.getByLabelText("Front picture (URL)")).toHaveValue(FLAG);
+    expect(screen.getByLabelText("Back picture (URL)")).toHaveValue(MAP);
+  });
+
+  it("saves a picture, dropping an emptied one", () => {
+    const { props } = renderScreen({
+      card: { ...card, backImageUrl: MAP },
+    });
+    fireEvent.input(screen.getByLabelText("Front picture (URL)"), {
+      target: { value: FLAG },
+    });
+    fireEvent.input(screen.getByLabelText("Back picture (URL)"), {
+      target: { value: "" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(props.onSave).toHaveBeenCalledWith({
+      front: "水",
+      back: "water",
+      frontImageUrl: FLAG,
+    });
+  });
+
+  it("refuses to save an incomplete card and says why", () => {
+    const { props } = renderScreen();
+    fireEvent.input(screen.getByLabelText("Back"), { target: { value: " " } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(props.onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "The back needs text or an image.",
+    );
+  });
+
+  it("names a picture-only card by its back in the removal prompt", () => {
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    renderScreen({
+      card: { ...card, front: "", frontImageUrl: FLAG, back: "Afghanistan" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Remove card" }));
+    expect(confirm).toHaveBeenCalledWith(
+      'Remove the card "Afghanistan"? This cannot be undone.',
+    );
   });
 
   it("removes the card after confirmation", () => {
