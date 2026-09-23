@@ -980,9 +980,20 @@ dl.facts .sources {
    link (keyboard, middle-click, screen readers); an invisible layer
    stretches it over its row. The layer is positioned against the row —
    the link itself must stay unpositioned, or its ellipsis clipping would
-   clip the layer too. The row's action floats above the layer. */
+   clip the layer too. The row's action floats above the layer.
+   One line only: with wrapping, a long name would claim the first line at
+   its full width and push the counts and Study button to a second line
+   before the name was ever shrunk. Without it, the name is the only item
+   that can shrink (min-width: 0), so it ellipsizes and the action stays
+   on the right. */
 .deck-list li {
   position: relative;
+  flex-wrap: nowrap;
+}
+
+.deck-list li > button,
+.deck-list li > .hint {
+  flex-shrink: 0;
 }
 
 .deck-list .deck-open::after {
