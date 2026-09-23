@@ -30,6 +30,7 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: `${INSTANCE}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${INSTANCE}reviews/deck-1.ttl`,
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],
@@ -37,6 +38,7 @@ const deck: Deck = {
 
 const state: ReviewState = {
   cardId: "card-1",
+  direction: "front-to-back",
   easeFactor: 2.36,
   intervalDays: 6,
   repetitions: 2,
@@ -83,21 +85,35 @@ describe("getReviewState", () => {
   it("returns null when the document does not exist", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
     await expect(
-      makeRepository().getReviewState(deck, "card-1"),
+      makeRepository().getReviewState(deck, { cardId: "card-1", direction: "front-to-back" }),
     ).resolves.toBeNull();
   });
 
   it("returns null when the card has no state", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(reviewsDataset());
     await expect(
-      makeRepository().getReviewState(deck, "card-unknown"),
+      makeRepository().getReviewState(deck, { cardId: "card-unknown", direction: "front-to-back" }),
     ).resolves.toBeNull();
   });
 
   it("returns the card's state", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(reviewsDataset());
     await expect(
-      makeRepository().getReviewState(deck, "card-1"),
+      makeRepository().getReviewState(deck, { cardId: "card-1", direction: "front-to-back" }),
+    ).resolves.toEqual(state);
+  });
+
+  it("tells the card's two directions apart", async () => {
+    const reverse: ReviewState = { ...state, direction: "back-to-front", due: "2026-10-01" };
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      setThing(reviewsDataset(), toReviewStateThing(deck.reviewsDocumentUrl, reverse)),
+    );
+    const repository = makeRepository();
+    await expect(
+      repository.getReviewState(deck, { cardId: "card-1", direction: "back-to-front" }),
+    ).resolves.toEqual(reverse);
+    await expect(
+      repository.getReviewState(deck, { cardId: "card-1", direction: "front-to-back" }),
     ).resolves.toEqual(state);
   });
 });
@@ -148,7 +164,7 @@ describe("applyReviewChanges", () => {
 
     await makeRepository().applyReviewChanges(deck, {
       save: [restored],
-      removeCardIds: ["card-2"],
+      remove: [{ cardId: "card-2", direction: "front-to-back" }],
     });
 
     expect(saveSolidDatasetAt).toHaveBeenCalledOnce();
@@ -165,7 +181,7 @@ describe("applyReviewChanges", () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
     await makeRepository().applyReviewChanges(deck, {
       save: [state],
-      removeCardIds: ["card-2"],
+      remove: [{ cardId: "card-2", direction: "front-to-back" }],
     });
     expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });

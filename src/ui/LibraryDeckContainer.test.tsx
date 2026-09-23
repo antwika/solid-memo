@@ -18,6 +18,7 @@ const capitals: LibraryDeck = {
   name: "Capitals",
   cardCount: 2,
   authors: ["Anton Wiklund"],
+  direction: "front-to-back",
   sources: [],
 };
 
@@ -27,6 +28,7 @@ const importedDeck: Deck = {
   name: "Capitals",
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],

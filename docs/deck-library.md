@@ -21,7 +21,8 @@ same shape as a pod's cards document plus the deck's own title:
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
     dcterms:description "Capitals as listed by …" ;
     dcterms:source <https://en.wikipedia.org/wiki/List_of_national_capitals> ;
-    solid-memo:formatVersion 1 .
+    solid-memo:direction "bidirectional" ;
+    solid-memo:formatVersion 2 .
 
 <https://en.wikipedia.org/wiki/List_of_national_capitals>
     dcterms:title "List of national capitals" ;
@@ -49,7 +50,11 @@ Rules the build enforces (a broken file fails `npm run build` rather
 than silently vanishing from the library):
 
 - exactly one `sm:Deck` subject, with a `dcterms:title` and a
-  `sm:formatVersion` (currently 1);
+  `sm:formatVersion` (currently 2);
+- `sm:direction`, optional: `front-to-back` (the default), `back-to-front`
+  or `bidirectional`; anything else fails the build. The library's decks
+  are all bidirectional — a country ↔ capital pair is worth knowing both
+  ways — and whoever imports one can change that in the Browser;
 - cards are `sm:Card` subjects with their own `sm:formatVersion` and, on
   each side, text (`sm:front` / `sm:back`) or a picture (`sm:frontImage`
   / `sm:backImage`) or both; a picture must be an IRI (`<https://…>`), a
@@ -108,6 +113,7 @@ flowchart LR
       dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
       dcterms:description "…" ;
       dcterms:created "2026-09-22T09:49:00.236Z"^^xsd:dateTime ;
+      sm:direction "bidirectional" ;
       dcterms:source <https://en.wikipedia.org/wiki/List_of_national_capitals> .
 
   <https://en.wikipedia.org/wiki/List_of_national_capitals>
@@ -168,11 +174,14 @@ flowchart LR
   source to mark decks the instance already holds; a second copy is
   still allowed.
 - The copy is written in this app's own format version, whatever the
-  library file said. A library deck or card in a *newer* format than the
-  app writes is refused at import rather than silently stripped.
+  library file said, and keeps the library deck's direction. A library
+  deck or card in a *newer* format than the app writes is refused at
+  import rather than silently stripped.
 - Several decks can be ticked and imported at once. Imports run one at a
   time; a failure part-way leaves the earlier decks imported (the deck
   list is refreshed so they show as such) and reports the error.
 - The imported deck is an ordinary deck afterwards: renamed, edited or
   removed in its Browser like any other, with no link back to the library
-  beyond the source triple.
+  beyond the source triple. That triple is what lets the deck page notice
+  when the library re-publishes the deck in a newer format and offer to
+  catch the copy up (see [migrations.md](migrations.md)).

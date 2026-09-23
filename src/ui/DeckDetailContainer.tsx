@@ -4,6 +4,7 @@ import type { Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import { DeckDetailScreen } from "./DeckDetailScreen";
 import { errorMessage } from "./errorMessage";
+import { LibraryUpgradeContainer } from "./LibraryUpgradeContainer";
 import { Loading } from "./Loading";
 import { deckHref } from "./router";
 
@@ -13,14 +14,12 @@ export function DeckDetailContainer({
   instance,
   deck,
   onStudy,
-  onPractice,
   onBrowse,
 }: {
   useCases: UseCases;
   instance: Instance;
   deck: Deck;
   onStudy: () => void;
-  onPractice: () => void;
   onBrowse: () => void;
 }) {
   const cardsQuery = useQuery({
@@ -28,7 +27,7 @@ export function DeckDetailContainer({
     queryFn: () => useCases.listCards(deck),
   });
 
-  // Shares its cache entry with PracticeContainer. Always refetched on
+  // Shares its cache entry with StudyContainer. Always refetched on
   // mount and hidden while fetching: a queue cached before a session or
   // before adding a card must never be shown as today's state.
   const queueQuery = useQuery({
@@ -72,15 +71,22 @@ export function DeckDetailContainer({
       deck={deck}
       cardCount={cardsQuery.data.length}
       dueCount={queueQuery.data.due.length}
-      newCount={queueQuery.data.newCards.length}
+      newCount={queueQuery.data.newPrompts.length}
       studiedToday={queueQuery.data.studiedToday}
       busy={resetDayMutation.isPending}
       error={errorMessage(resetDayMutation.error)}
       onResetDay={() => resetDayMutation.mutate()}
       deckHref={deckHref(instance.url, deck.url)}
       onStudy={onStudy}
-      onPractice={onPractice}
       onBrowse={onBrowse}
+      // An imported deck may be offered the library's newer format.
+      notice={
+        <LibraryUpgradeContainer
+          useCases={useCases}
+          instance={instance}
+          deck={deck}
+        />
+      }
     />
   );
 }

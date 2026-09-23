@@ -12,6 +12,7 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],
@@ -137,6 +138,35 @@ describe("BrowserContainer", () => {
     await waitFor(() => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
     });
+  });
+
+  it("changes the study direction, refreshing the deck lists and dropping today's queue", async () => {
+    const useCases = makeUseCasesFake();
+    const { queryClient } = renderContainer(useCases);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    const remove = vi.spyOn(queryClient, "removeQueries");
+
+    fireEvent.click(await screen.findByLabelText("Both ways"));
+
+    await waitFor(() => {
+      expect(useCases.setDeckDirection).toHaveBeenCalledWith(deck, "bidirectional");
+    });
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
+    });
+    expect(remove).toHaveBeenCalledWith({ queryKey: ["studyQueue", deck.url] });
+  });
+
+  it("shows a direction error", async () => {
+    renderContainer(
+      makeUseCasesFake({
+        setDeckDirection: vi.fn(async () => {
+          throw new Error("direction refused");
+        }),
+      }),
+    );
+    fireEvent.click(await screen.findByLabelText("Back → front"));
+    expect(await screen.findByText("direction refused")).toBeInTheDocument();
   });
 
   it("shows a rename error", async () => {

@@ -40,6 +40,7 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: `${INSTANCE}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${INSTANCE}reviews/deck-1.ttl`,
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],
@@ -106,15 +107,18 @@ describe("createDeck", () => {
       name: "Kanji N5",
       cardsDocumentUrl: `${INSTANCE}decks/deck-fixed.ttl`,
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
+      direction: "front-to-back",
       createdAt: "2026-09-21T10:00:00.000Z",
-      formatVersion: 1,
+      formatVersion: 2,
       authors: [],
     });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
     const thing = getThing(saved as SolidDataset, created.url)!;
     expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Kanji N5");
-    expect(getInteger(thing, SM.formatVersion)).toBe(1);
+    expect(getInteger(thing, SM.formatVersion)).toBe(2);
+    // A new deck is studied the one way format 1 knew, stated explicitly.
+    expect(getStringNoLocale(thing, SM.direction)).toBe("front-to-back");
     // Own decks state no author or licence.
     expect(getStringNoLocaleAll(thing, DCTERMS.creator)).toEqual([]);
     expect(getUrl(thing, DCTERMS.license)).toBeNull();
@@ -141,6 +145,7 @@ describe("importDeck", () => {
     authors: ["Anton Wiklund", "A friend"],
     license: "https://creativecommons.org/publicdomain/zero/1.0/",
     description: "Capitals, from Wikipedia.",
+    direction: "bidirectional",
     cards: [
       { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
       {
@@ -164,8 +169,10 @@ describe("importDeck", () => {
       name: "Capitals",
       cardsDocumentUrl: `${INSTANCE}decks/deck-fixed.ttl`,
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
+      // The library deck's direction comes along; the format is this app's.
+      direction: "bidirectional",
       createdAt: "2026-09-21T10:00:00.000Z",
-      formatVersion: 1,
+      formatVersion: 2,
       authors: ["Anton Wiklund", "A friend"],
       license: content.license,
       description: content.description,
@@ -194,7 +201,8 @@ describe("importDeck", () => {
     const entry = getThing(calls[1][1] as SolidDataset, imported.url)!;
     expect(getStringNoLocale(entry, DCTERMS.title)).toBe("Capitals");
     expect(getUrl(entry, DCTERMS.source)).toBe(content.url);
-    expect(getInteger(entry, SM.formatVersion)).toBe(1);
+    expect(getInteger(entry, SM.formatVersion)).toBe(2);
+    expect(getStringNoLocale(entry, SM.direction)).toBe("bidirectional");
     expect(getStringNoLocaleAll(entry, DCTERMS.creator)).toEqual([
       "Anton Wiklund",
       "A friend",
@@ -222,11 +230,14 @@ describe("renameDeck", () => {
 
     const renamed = await makeRepository().renameDeck(deck, "Kanji N4");
 
-    expect(renamed).toEqual({ ...deck, name: "Kanji N4" });
+    // Like every write, in this app's format.
+    expect(renamed).toEqual({ ...deck, name: "Kanji N4", formatVersion: 2 });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
     const thing = getThing(saved as SolidDataset, deck.url)!;
     expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Kanji N4");
+    expect(getInteger(thing, SM.formatVersion)).toBe(2);
+    expect(getStringNoLocale(thing, SM.direction)).toBe("front-to-back");
     // The links to the deck's documents survive the rename.
     expect(getUrl(thing, SM.cardsDocument)).toBe(deck.cardsDocumentUrl);
   });
@@ -244,6 +255,34 @@ describe("renameDeck", () => {
       mockSolidDatasetFrom(CATALOG),
     );
     await expect(makeRepository().renameDeck(deck, "x")).rejects.toThrow(
+      "no longer exists",
+    );
+    expect(saveSolidDatasetAt).not.toHaveBeenCalled();
+  });
+});
+
+describe("saveDeck", () => {
+  it("writes the direction and format version in place, keeping the rest", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(catalogWithDeck());
+
+    const saved = await makeRepository().saveDeck({
+      ...deck,
+      direction: "bidirectional",
+    });
+
+    expect(saved).toEqual({ ...deck, direction: "bidirectional", formatVersion: 2 });
+    const [saveUrl, dataset] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    expect(saveUrl).toBe(CATALOG);
+    const thing = getThing(dataset as SolidDataset, deck.url)!;
+    expect(getStringNoLocale(thing, SM.direction)).toBe("bidirectional");
+    expect(getInteger(thing, SM.formatVersion)).toBe(2);
+    expect(getStringNoLocale(thing, DCTERMS.title)).toBe(deck.name);
+    expect(getUrl(thing, SM.reviewsDocument)).toBe(deck.reviewsDocumentUrl);
+  });
+
+  it("rejects when the deck is gone", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
+    await expect(makeRepository().saveDeck(deck)).rejects.toThrow(
       "no longer exists",
     );
     expect(saveSolidDatasetAt).not.toHaveBeenCalled();
@@ -498,13 +537,19 @@ describe("removeCard", () => {
         .addStringNoLocale(SM.back, card.back)
         .build(),
     );
-    const reviewsDoc = setThing(
+    // Review state in both directions goes with the card.
+    const reviewsDoc = [
+      `${deck.reviewsDocumentUrl}#card-1`,
+      `${deck.reviewsDocumentUrl}#card-1@back-to-front`,
+    ].reduce(
+      (dataset, url) =>
+        setThing(
+          dataset,
+          buildThing(createThing({ url }))
+            .addIri(RDF.type, SM.ReviewState)
+            .build(),
+        ),
       mockSolidDatasetFrom(deck.reviewsDocumentUrl),
-      buildThing(
-        createThing({ url: `${deck.reviewsDocumentUrl}#card-1` }),
-      )
-        .addIri(RDF.type, SM.ReviewState)
-        .build(),
     );
     vi.mocked(getSolidDatasetOrNull).mockImplementation(async (url) =>
       url === deck.cardsDocumentUrl ? cardsDoc : reviewsDoc,
@@ -523,6 +568,12 @@ describe("removeCard", () => {
       getThing(
         reviewsSave[1] as SolidDataset,
         `${deck.reviewsDocumentUrl}#card-1`,
+      ),
+    ).toBeNull();
+    expect(
+      getThing(
+        reviewsSave[1] as SolidDataset,
+        `${deck.reviewsDocumentUrl}#card-1@back-to-front`,
       ),
     ).toBeNull();
   });

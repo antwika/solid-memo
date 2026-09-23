@@ -1,6 +1,12 @@
-import type { Card } from "./deck";
+import { promptsOf, type Card, type DeckDirection, type Prompt } from "./deck";
 import type { StudyPreferences } from "./preferences";
-import type { ReviewQuality, ReviewSnapshot, ReviewState } from "./review";
+import {
+  reviewKeyOf,
+  type ReviewKey,
+  type ReviewQuality,
+  type ReviewSnapshot,
+  type ReviewState,
+} from "./review";
 
 /**
  * The study day ("YYYY-MM-DD", device-local time) an instant belongs to.
@@ -27,26 +33,34 @@ export function nextDueDate(
   return formatLocalDate(shifted);
 }
 
+/**
+ * Today's session material. A deck studied both ways makes two prompts
+ * of each card, so the counts and budgets are in prompts: a card
+ * introduced both ways today costs two of the day's new-card budget.
+ */
 export interface StudyQueue {
-  /** Cards with review state due today or earlier, oldest due first. */
-  due: Card[];
-  /** Never-reviewed cards, capped by the daily new-card budget. */
-  newCards: Card[];
-  /** Cards reviewed during the current study day (what a reset would undo). */
+  /** Prompts with review state due today or earlier, oldest due first. */
+  due: Prompt[];
+  /** Never-reviewed prompts, capped by the daily new-card budget. */
+  newPrompts: Prompt[];
+  /** Reviews made during the current study day (what a reset would undo). */
   studiedToday: number;
 }
 
 export function buildStudyQueue(args: {
   cards: Card[];
+  /** The deck's direction: which prompts its cards make. */
+  direction: DeckDirection;
   reviews: ReviewState[];
   prefs: StudyPreferences;
   now: Date;
-  /** Uniform [0, 1) source deciding which new cards are introduced. */
+  /** Uniform [0, 1) source deciding which new prompts are introduced. */
   random: () => number;
 }): StudyQueue {
-  const { cards, reviews, prefs, now, random } = args;
+  const { cards, direction, reviews, prefs, now, random } = args;
   const today = studyDayOf(now, prefs.dayBoundaryHour);
-  const reviewByCardId = new Map(reviews.map((r) => [r.cardId, r]));
+  const reviewOf = new Map(reviews.map((r) => [reviewKeyOf(r), r]));
+  const prompts = promptsOf(cards, direction);
 
   const reviewedToday = reviews.filter(
     (r) => studyDayOf(new Date(r.lastReviewedAt), prefs.dayBoundaryHour) === today,
@@ -59,26 +73,52 @@ export function buildStudyQueue(args: {
   const dueBudget = Math.max(0, prefs.maxReviewsPerDay - reviewedToday);
   const newBudget = Math.max(0, prefs.newCardsPerDay - introducedToday);
 
-  const due = cards
-    .filter((card) => {
-      const review = reviewByCardId.get(card.id);
+  const keyOf = (prompt: Prompt) =>
+    reviewKeyOf({ cardId: prompt.card.id, direction: prompt.direction });
+  const due = prompts
+    .filter((prompt) => {
+      const review = reviewOf.get(keyOf(prompt));
       return review !== undefined && review.due <= today;
     })
     .sort((a, b) => {
-      const dueA = reviewByCardId.get(a.id)!.due;
-      const dueB = reviewByCardId.get(b.id)!.due;
+      const dueA = reviewOf.get(keyOf(a))!.due;
+      const dueB = reviewOf.get(keyOf(b))!.due;
       return dueA < dueB ? -1 : dueA > dueB ? 1 : 0;
     })
     .slice(0, dueBudget);
 
-  // New cards are drawn at random, not in deck order, so a long deck is
+  // New prompts are drawn at random, not in deck order, so a long deck is
   // not always introduced front to back.
-  const newCards = shuffle(
-    cards.filter((card) => !reviewByCardId.has(card.id)),
+  const newPrompts = shuffle(
+    prompts.filter((prompt) => !reviewOf.has(keyOf(prompt))),
     random,
   ).slice(0, newBudget);
 
-  return { due, newCards, studiedToday: reviewedToday };
+  return { due, newPrompts, studiedToday: reviewedToday };
+}
+
+/**
+ * A study session's order: the new prompts spread evenly among the
+ * due ones rather than queued after them, so a deck with a backlog still
+ * introduces something new early on — and a deck just made bidirectional
+ * shows its other direction within the first few cards. Each list keeps
+ * its own order; the session opens with a due prompt when there is one.
+ */
+export function interleave<T>(due: T[], fresh: T[]): T[] {
+  const result: T[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < due.length || j < fresh.length) {
+    // Take from whichever list is proportionally behind (comparing the
+    // midpoints of the next items, so a lone new prompt lands in the
+    // middle), the first prompt being due whenever one exists.
+    const dueTurn =
+      j >= fresh.length ||
+      (i < due.length &&
+        (i === 0 || (2 * i + 1) * fresh.length <= (2 * j + 1) * due.length));
+    result.push(dueTurn ? due[i++] : fresh[j++]);
+  }
+  return result;
 }
 
 /** Fisher–Yates; returns a new array. */
@@ -139,15 +179,15 @@ export function snapshotBeforeReview(
 export interface StudyDayReset {
   /** States to write back, restored to before today's reviews. */
   restore: ReviewState[];
-  /** Cards introduced today: their state goes, making them new again. */
-  removeCardIds: string[];
+  /** Prompts introduced today: their state goes, making them new again. */
+  remove: ReviewKey[];
 }
 
 /**
- * Undo the current study day: every card reviewed today goes back to how
- * it was before. Untouched cards are not mentioned in the result.
+ * Undo the current study day: every prompt reviewed today goes back to
+ * how it was before. Untouched prompts are not mentioned in the result.
  *
- * A card reviewed today that has no snapshot (state written before
+ * A prompt reviewed today that has no snapshot (state written before
  * snapshots existed) cannot be restored; it is made due today instead, so
  * it can at least be studied again.
  */
@@ -160,11 +200,11 @@ export function resetStudyDay(
   const isToday = (instant: string) =>
     studyDayOf(new Date(instant), dayBoundaryHour) === today;
 
-  const reset: StudyDayReset = { restore: [], removeCardIds: [] };
+  const reset: StudyDayReset = { restore: [], remove: [] };
   for (const review of reviews) {
     if (!isToday(review.lastReviewedAt)) continue;
     if (isToday(review.firstReviewedAt)) {
-      reset.removeCardIds.push(review.cardId);
+      reset.remove.push({ cardId: review.cardId, direction: review.direction });
     } else if (review.previous !== undefined) {
       const { previous, ...state } = review;
       reset.restore.push({ ...state, ...previous });

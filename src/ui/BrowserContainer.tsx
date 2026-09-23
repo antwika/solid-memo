@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
-import type { Card, Deck } from "../domain/deck";
+import type { Card, Deck, DeckDirection } from "../domain/deck";
 import { BrowserScreen } from "./BrowserScreen";
 import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
@@ -42,6 +42,16 @@ export function BrowserContainer({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["decks"] }),
   });
 
+  const setDirectionMutation = useMutation({
+    mutationFn: (direction: DeckDirection) =>
+      useCases.setDeckDirection(deck, direction),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      // What is due depends on which way the deck is asked.
+      queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
+    },
+  });
+
   const removeDeckMutation = useMutation({
     mutationFn: () => useCases.removeDeck(deck),
     onSuccess: async () => {
@@ -79,15 +89,18 @@ export function BrowserContainer({
       page={page}
       busy={
         renameDeckMutation.isPending ||
+        setDirectionMutation.isPending ||
         removeDeckMutation.isPending ||
         removeCardMutation.isPending
       }
       error={
         errorMessage(renameDeckMutation.error) ??
+        errorMessage(setDirectionMutation.error) ??
         errorMessage(removeDeckMutation.error) ??
         errorMessage(removeCardMutation.error)
       }
       onRenameDeck={(name) => renameDeckMutation.mutate(name)}
+      onChangeDirection={(direction) => setDirectionMutation.mutate(direction)}
       onRemoveDeck={() => removeDeckMutation.mutate()}
       onAddCard={onAddCard}
       cardHref={cardHref}

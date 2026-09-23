@@ -1,4 +1,4 @@
-import type { CardContent } from "./deck";
+import type { CardContent, DeckDirection } from "./deck";
 
 /**
  * A ready-made deck the app offers for import, as the deck library's
@@ -13,6 +13,8 @@ export interface LibraryDeck {
   authors: string[];
   license?: string;
   description?: string;
+  /** How the deck is meant to be studied; adjustable after import. */
+  direction: DeckDirection;
   /** When the deck was made (ISO 8601), when it says. */
   createdAt?: string;
   /** Where its content came from, as the deck states. */
@@ -39,6 +41,7 @@ export interface LibraryDeckContent {
   authors: string[];
   license?: string;
   description?: string;
+  direction: DeckDirection;
   cards: LibraryCard[];
 }
 

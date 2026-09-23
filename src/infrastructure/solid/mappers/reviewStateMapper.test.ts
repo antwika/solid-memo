@@ -6,6 +6,7 @@ const REVIEWS_DOC = "https://pod.example/solid-memo/a/reviews/deck-1.ttl";
 
 const state: ReviewState = {
   cardId: "card-1",
+  direction: "front-to-back",
   easeFactor: 2.36,
   intervalDays: 6,
   repetitions: 2,
@@ -18,6 +19,17 @@ describe("review state mapping", () => {
   it("round-trips a review state through a Thing", () => {
     const thing = toReviewStateThing(REVIEWS_DOC, state);
     expect(toReviewState(thing)).toEqual(state);
+  });
+
+  it("keeps the two directions of a card under subjects of their own", () => {
+    const reverse: ReviewState = { ...state, direction: "back-to-front" };
+    const forwardThing = toReviewStateThing(REVIEWS_DOC, state);
+    const reverseThing = toReviewStateThing(REVIEWS_DOC, reverse);
+    // The front→back subject is the plain card id, as before directions
+    // existed; the other direction is marked in the fragment.
+    expect(forwardThing.url).toBe(`${REVIEWS_DOC}#card-1`);
+    expect(reverseThing.url).toBe(`${REVIEWS_DOC}#card-1@back-to-front`);
+    expect(toReviewState(reverseThing)).toEqual(reverse);
   });
 
   it("rejects subjects that are not sm:ReviewState", () => {

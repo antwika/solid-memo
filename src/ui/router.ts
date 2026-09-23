@@ -1,6 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
 import type { StorageSource } from "../domain/storage";
-import type { PracticeMode } from "./PracticeScreen";
 
 /**
  * Serializable description of a Workspace view. Unlike the resolved
@@ -34,12 +33,8 @@ export type RouteRef =
   | { screen: "browser"; instanceUrl: string; deckUrl: string; page?: number }
   | { screen: "cardCreator"; instanceUrl: string; deckUrl: string }
   | { screen: "card"; instanceUrl: string; deckUrl: string; cardUrl: string }
-  | {
-      screen: "practice";
-      instanceUrl: string;
-      deckUrl: string;
-      mode: PracticeMode;
-    }
+  /** A study session over the deck's due and new prompts. */
+  | { screen: "study"; instanceUrl: string; deckUrl: string }
   | { screen: "preferences"; instanceUrl: string };
 
 const STORAGE_SOURCES: StorageSource[] = ["profile", "linkHeader", "manual"];
@@ -100,11 +95,10 @@ export function routeToHash(ref: RouteRef): string {
         deck: ref.deckUrl,
         card: ref.cardUrl,
       })}`;
-    case "practice":
-      return `#/practice${params({
+    case "study":
+      return `#/study${params({
         instance: ref.instanceUrl,
         deck: ref.deckUrl,
-        mode: ref.mode,
       })}`;
     case "preferences":
       return `#/preferences${params({ instance: ref.instanceUrl })}`;
@@ -205,12 +199,10 @@ export function parseHash(hash: string): RouteRef | null {
         ? null
         : { screen: "card", instanceUrl, deckUrl, cardUrl };
     }
-    case "/practice": {
-      const mode = query.get("mode");
-      if (instanceUrl === null || deckUrl === null) return null;
-      if (mode !== "study" && mode !== "practice") return null;
-      return { screen: "practice", instanceUrl, deckUrl, mode };
-    }
+    case "/study":
+      return instanceUrl === null || deckUrl === null
+        ? null
+        : { screen: "study", instanceUrl, deckUrl };
     case "/preferences":
       return instanceUrl === null
         ? null

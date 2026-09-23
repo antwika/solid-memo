@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildStudyQueue,
+  interleave,
   nextDueDate,
   repeatsInSession,
   requeueCard,
@@ -9,7 +10,7 @@ import {
   studyDayOf,
 } from "./scheduling";
 import type { ReviewQuality } from "./review";
-import type { Card } from "./deck";
+import type { Card, StudyDirection } from "./deck";
 import { DEFAULT_PREFERENCES, type StudyPreferences } from "./preferences";
 import type { ReviewState } from "./review";
 
@@ -29,9 +30,11 @@ function review(
   due: string,
   reviewedAt: Date,
   firstReviewedAt: Date = reviewedAt,
+  direction: StudyDirection = "front-to-back",
 ): ReviewState {
   return {
     cardId,
+    direction,
     easeFactor: 2.5,
     intervalDays: 1,
     repetitions: 1,
@@ -88,9 +91,9 @@ describe("buildStudyQueue", () => {
       review("future", "2026-09-22", yesterday),
     ];
 
-    const queue = buildStudyQueue({ cards, reviews, prefs, now, random: keepOrder });
-    expect(queue.due.map((c) => c.id)).toEqual(["a", "b"]);
-    expect(queue.newCards.map((c) => c.id)).toEqual(["new1", "new2"]);
+    const queue = buildStudyQueue({ cards, direction: "front-to-back", reviews, prefs, now, random: keepOrder });
+    expect(queue.due.map((p) => p.card.id)).toEqual(["a", "b"]);
+    expect(queue.newPrompts.map((p) => p.card.id)).toEqual(["new1", "new2"]);
   });
 
   it("draws new cards at random rather than in deck order", () => {
@@ -99,12 +102,13 @@ describe("buildStudyQueue", () => {
     // Fisher–Yates shuffle: every step swaps the current card to the front.
     const queue = buildStudyQueue({
       cards,
+      direction: "front-to-back",
       reviews: [],
       prefs: { ...prefs, newCardsPerDay: 2 },
       now,
       random: () => 0,
     });
-    expect(queue.newCards.map((c) => c.id)).toEqual(["n2", "n3"]);
+    expect(queue.newPrompts.map((p) => p.card.id)).toEqual(["n2", "n3"]);
   });
 
   it("uses the random source only for new cards, never for due order", () => {
@@ -113,8 +117,8 @@ describe("buildStudyQueue", () => {
       review("a", "2026-09-19", yesterday),
       review("b", "2026-09-20", yesterday),
     ];
-    const queue = buildStudyQueue({ cards, reviews, prefs, now, random: () => 0 });
-    expect(queue.due.map((c) => c.id)).toEqual(["a", "b"]);
+    const queue = buildStudyQueue({ cards, direction: "front-to-back", reviews, prefs, now, random: () => 0 });
+    expect(queue.due.map((p) => p.card.id)).toEqual(["a", "b"]);
   });
 
   it("keeps a stable order for cards due on the same day", () => {
@@ -124,8 +128,8 @@ describe("buildStudyQueue", () => {
       review("y", "2026-09-21", yesterday),
     ];
 
-    const queue = buildStudyQueue({ cards, reviews, prefs, now, random: keepOrder });
-    expect(queue.due.map((c) => c.id)).toEqual(["x", "y"]);
+    const queue = buildStudyQueue({ cards, direction: "front-to-back", reviews, prefs, now, random: keepOrder });
+    expect(queue.due.map((p) => p.card.id)).toEqual(["x", "y"]);
   });
 
   it("reduces the review budget by cards already reviewed today", () => {
@@ -139,12 +143,13 @@ describe("buildStudyQueue", () => {
 
     const queue = buildStudyQueue({
       cards,
+      direction: "front-to-back",
       reviews,
       prefs: { ...prefs, maxReviewsPerDay: 2 },
       now,
       random: keepOrder,
     });
-    expect(queue.due.map((c) => c.id)).toEqual(["due1"]);
+    expect(queue.due.map((p) => p.card.id)).toEqual(["due1"]);
   });
 
   it("clamps the review budget at zero when the cap is already exceeded", () => {
@@ -157,6 +162,7 @@ describe("buildStudyQueue", () => {
 
     const queue = buildStudyQueue({
       cards,
+      direction: "front-to-back",
       reviews,
       prefs: { ...prefs, maxReviewsPerDay: 1 },
       now,
@@ -174,12 +180,64 @@ describe("buildStudyQueue", () => {
 
     const queue = buildStudyQueue({
       cards,
+      direction: "front-to-back",
       reviews,
       prefs: { ...prefs, newCardsPerDay: 2 },
       now,
       random: keepOrder,
     });
-    expect(queue.newCards.map((c) => c.id)).toEqual(["new1"]);
+    expect(queue.newPrompts.map((p) => p.card.id)).toEqual(["new1"]);
+  });
+});
+
+describe("buildStudyQueue directions", () => {
+  it("makes two prompts of every card in a bidirectional deck, each scheduled on its own", () => {
+    const cards = [card("a"), card("b")];
+    const reviews = [
+      // "a" is known front→back (due next week) but due back→front.
+      review("a", "2026-09-28", yesterday),
+      review("a", "2026-09-21", yesterday, yesterday, "back-to-front"),
+    ];
+    const queue = buildStudyQueue({
+      cards,
+      direction: "bidirectional",
+      reviews,
+      prefs,
+      now,
+      random: keepOrder,
+    });
+    expect(queue.due).toEqual([{ card: card("a"), direction: "back-to-front" }]);
+    expect(queue.newPrompts).toEqual([
+      { card: card("b"), direction: "front-to-back" },
+      { card: card("b"), direction: "back-to-front" },
+    ]);
+  });
+
+  it("asks a back→front deck the other way round, ignoring front→back state", () => {
+    const queue = buildStudyQueue({
+      cards: [card("a")],
+      direction: "back-to-front",
+      reviews: [review("a", "2026-09-20", yesterday)],
+      prefs,
+      now,
+      random: keepOrder,
+    });
+    expect(queue.due).toEqual([]);
+    expect(queue.newPrompts).toEqual([
+      { card: card("a"), direction: "back-to-front" },
+    ]);
+  });
+
+  it("counts both directions against the day's budgets", () => {
+    const queue = buildStudyQueue({
+      cards: [card("a"), card("b")],
+      direction: "bidirectional",
+      reviews: [],
+      prefs: { ...prefs, newCardsPerDay: 3 },
+      now,
+      random: keepOrder,
+    });
+    expect(queue.newPrompts).toHaveLength(3);
   });
 });
 
@@ -187,6 +245,7 @@ describe("buildStudyQueue studiedToday", () => {
   it("counts the cards reviewed during the current study day", () => {
     const queue = buildStudyQueue({
       cards: [card("a"), card("b"), card("c")],
+      direction: "front-to-back",
       reviews: [
         review("a", "2026-09-22", now),
         review("b", "2026-09-22", now, yesterday),
@@ -247,13 +306,13 @@ describe("resetStudyDay", () => {
   it("leaves cards that were not reviewed today alone", () => {
     expect(
       resetStudyDay([review("a", "2026-09-25", yesterday)], now, 4),
-    ).toEqual({ restore: [], removeCardIds: [] });
+    ).toEqual({ restore: [], remove: [] });
   });
 
   it("makes a card introduced today new again", () => {
     expect(resetStudyDay([review("a", "2026-09-22", now)], now, 4)).toEqual({
       restore: [],
-      removeCardIds: ["a"],
+      remove: [{ cardId: "a", direction: "front-to-back" }],
     });
   });
 
@@ -265,11 +324,12 @@ describe("resetStudyDay", () => {
       repetitions: 3,
       previous: morning,
     };
-    const { restore, removeCardIds } = resetStudyDay([reviewed], now, 4);
-    expect(removeCardIds).toEqual([]);
+    const { restore, remove } = resetStudyDay([reviewed], now, 4);
+    expect(remove).toEqual([]);
     expect(restore).toEqual([
       {
         cardId: "a",
+        direction: "front-to-back",
         ...morning,
         firstReviewedAt: yesterday.toISOString(),
       },
@@ -293,12 +353,13 @@ describe("resetStudyDay", () => {
     const { restore } = resetStudyDay([reviewed], now, 4);
     const queue = buildStudyQueue({
       cards: [card("a")],
+      direction: "front-to-back",
       reviews: restore,
       prefs: { ...prefs, maxReviewsPerDay: 1 },
       now,
       random: keepOrder,
     });
-    expect(queue.due.map((c) => c.id)).toEqual(["a"]);
+    expect(queue.due.map((p) => p.card.id)).toEqual(["a"]);
     expect(queue.studiedToday).toBe(0);
   });
 
@@ -306,7 +367,29 @@ describe("resetStudyDay", () => {
     const lateNight = new Date(2026, 8, 21, 3, 0);
     expect(
       resetStudyDay([review("a", "2026-09-22", lateNight)], now, 4),
-    ).toEqual({ restore: [], removeCardIds: [] });
+    ).toEqual({ restore: [], remove: [] });
+  });
+});
+
+describe("interleave", () => {
+  it("spreads the new prompts evenly among the due ones, due first", () => {
+    expect(interleave(["a", "b", "c"], ["x", "y"])).toEqual(["a", "x", "b", "y", "c"]);
+    expect(interleave(["a", "b", "c", "d"], ["x"])).toEqual(["a", "b", "x", "c", "d"]);
+    // Two due among four new: the second due sits three quarters in.
+    expect(interleave(["a", "b"], ["x", "y", "z", "w"])).toEqual(["a", "x", "y", "z", "b", "w"]);
+    expect(interleave(["a"], ["x", "y", "z"])).toEqual(["a", "x", "y", "z"]);
+  });
+
+  it("keeps each list's own order", () => {
+    const result = interleave(["a", "b", "c"], ["x", "y", "z"]);
+    expect(result.filter((p) => "abc".includes(p))).toEqual(["a", "b", "c"]);
+    expect(result.filter((p) => "xyz".includes(p))).toEqual(["x", "y", "z"]);
+  });
+
+  it("copes with either list being empty", () => {
+    expect(interleave([], ["x", "y"])).toEqual(["x", "y"]);
+    expect(interleave(["a", "b"], [])).toEqual(["a", "b"]);
+    expect(interleave([], [])).toEqual([]);
   });
 });
 

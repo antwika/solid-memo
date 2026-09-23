@@ -18,12 +18,17 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],
 };
-const outdated: MigrationPlan = { decks: [{ deck, cardCount: 3 }], cardCount: 3 };
-const current: MigrationPlan = { decks: [], cardCount: 0 };
+const outdated: MigrationPlan = {
+  decks: [{ deck, deckOutdated: true, cardCount: 3 }],
+  deckCount: 1,
+  cardCount: 3,
+};
+const current: MigrationPlan = { decks: [], deckCount: 0, cardCount: 0 };
 
 function renderContainer(useCases: UseCases) {
   const queryClient = new QueryClient({
@@ -72,23 +77,24 @@ describe("MigrationContainer", () => {
     expect(failing.container).toBeEmptyDOMElement();
   });
 
-  it("offers the update, runs it on request, refreshes cards and reports the count", async () => {
+  it("offers the update, runs it on request, refreshes decks and cards and reports what changed", async () => {
     let plan = outdated;
     const useCases = makeUseCasesFake({
       planMigration: vi.fn(async () => plan),
       migrateInstance: vi.fn(async () => {
         plan = current;
-        return 3;
+        return { deckCount: 1, cardCount: 3 };
       }),
     });
     const { invalidate } = renderContainer(useCases);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Update 3 cards" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Update 1 deck" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Updated 3 cards to the current card format.",
+      "Updated 1 deck entry and 3 cards to the current format.",
     );
     expect(useCases.migrateInstance).toHaveBeenCalledWith(instance.url);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["cards"] });
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["migration", instance.url],
@@ -105,10 +111,10 @@ describe("MigrationContainer", () => {
     });
     const { invalidate } = renderContainer(useCases);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Update 3 cards" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Update 1 deck" }));
 
     expect(await screen.findByText("write refused")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Update 3 cards" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Update 1 deck" })).toBeEnabled();
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["migration", instance.url],
     });

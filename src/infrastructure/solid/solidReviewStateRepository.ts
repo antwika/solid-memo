@@ -10,6 +10,7 @@ import type { ReviewStateRepository } from "../../application/ports";
 import type { ReviewState } from "../../domain/review";
 import { getSolidDatasetOrNull } from "./datasets";
 import {
+  reviewSubjectUrl,
   toReviewState,
   toReviewStateThing,
 } from "./mappers/reviewStateMapper";
@@ -33,13 +34,16 @@ export function createSolidReviewStateRepository({
         .filter((state): state is ReviewState => state !== null);
     },
 
-    async getReviewState(deck, cardId): Promise<ReviewState | null> {
+    async getReviewState(deck, key): Promise<ReviewState | null> {
       const dataset = await getSolidDatasetOrNull(
         deck.reviewsDocumentUrl,
         fetch,
       );
       if (dataset === null) return null;
-      const thing = getThing(dataset, `${deck.reviewsDocumentUrl}#${cardId}`);
+      const thing = getThing(
+        dataset,
+        reviewSubjectUrl(deck.reviewsDocumentUrl, key),
+      );
       if (thing === null) return null;
       return toReviewState(thing);
     },
@@ -55,7 +59,7 @@ export function createSolidReviewStateRepository({
       await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
     },
 
-    async applyReviewChanges(deck, { save, removeCardIds }): Promise<void> {
+    async applyReviewChanges(deck, { save, remove }): Promise<void> {
       const dataset = await getSolidDatasetOrNull(
         deck.reviewsDocumentUrl,
         fetch,
@@ -69,10 +73,10 @@ export function createSolidReviewStateRepository({
           toReviewStateThing(deck.reviewsDocumentUrl, state),
         );
       }
-      for (const cardId of removeCardIds) {
+      for (const key of remove) {
         updated = removeThing(
           updated,
-          `${deck.reviewsDocumentUrl}#${cardId}`,
+          reviewSubjectUrl(deck.reviewsDocumentUrl, key),
         );
       }
       await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });

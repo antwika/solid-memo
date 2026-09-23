@@ -13,13 +13,11 @@ export function DeckListContainer({
   useCases,
   instance,
   onStudyDeck,
-  onPracticeDeck,
   onCreateDeck,
 }: {
   useCases: UseCases;
   instance: Instance;
   onStudyDeck: (deck: Deck) => void;
-  onPracticeDeck: (deck: Deck) => void;
   onCreateDeck: () => void;
 }) {
   const decksQuery = useQuery({
@@ -46,7 +44,6 @@ export function DeckListContainer({
           instance={instance}
           deck={deck}
           onStudy={() => onStudyDeck(deck)}
-          onPractice={() => onPracticeDeck(deck)}
         />
       )}
       onCreateDeck={onCreateDeck}

@@ -58,14 +58,16 @@ flowchart LR
 ├── preferences.ttl #it: a sm:Preferences (created on first explicit save):
 │                        study caps + sm:developerMode (boolean, absent = off)
 ├── catalog.ttl     one subject per deck (titles live ONLY here);
-│                        sm:formatVersion, optional dcterms:creator/license/
-│                        description/source
+│                        sm:formatVersion, sm:direction, optional
+│                        dcterms:creator/license/description/source
 ├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn),
 │                        sm:front/back text and/or sm:frontImage/backImage
 │                        IRIs, each with sm:formatVersion
-└── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per fragment (fast churn);
-                          optional sm:previous* snapshot = state before the
-                          day's first review (restored by "reset the day")
+└── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per card and
+                          direction (fast churn) — #<cardId> front→back,
+                          #<cardId>@back-to-front the other way; optional
+                          sm:previous* snapshot = state before the day's
+                          first review (restored by "reset the day")
 ```
 
 ## Decks and cards
@@ -76,12 +78,12 @@ never rewrites card content.
 
 ```mermaid
 graph LR
-    C["catalog.ttl#deck-X<br/>a sm:Deck<br/>dcterms:title<br/>sm:formatVersion<br/>sm:cardsDocument<br/>sm:reviewsDocument"]
+    C["catalog.ttl#deck-X<br/>a sm:Deck<br/>dcterms:title<br/>sm:formatVersion<br/>sm:direction<br/>sm:cardsDocument<br/>sm:reviewsDocument"]
     D["decks/deck-X.ttl#card-N<br/>a sm:Card<br/>sm:front / sm:back<br/>sm:frontImage / sm:backImage<br/>sm:formatVersion"]
-    R["reviews/deck-X.ttl#card-N<br/>a sm:ReviewState<br/>SM-2 fields"]
+    R["reviews/deck-X.ttl#card-N<br/>reviews/deck-X.ttl#card-N@back-to-front<br/>a sm:ReviewState<br/>SM-2 fields"]
     C -->|sm:cardsDocument| D
     C -->|sm:reviewsDocument| R
-    D -. same fragment id .- R
+    D -. same fragment id, per direction .- R
 ```
 
 - The **catalog** holds one subject per deck with its title and links to the
@@ -97,19 +99,26 @@ graph LR
   its place is ignored) or both; a side with neither makes the subject
   not a card. Pictures are shown only when their URL is http(s); pod data
   is untrusted.
+- **Direction**: a deck's `sm:direction` says how it is studied —
+  `front-to-back`, `back-to-front` or `bidirectional` (every card asked
+  both ways). Absent means front→back, the only way there was before the
+  field existed. Changed in the Browser; a library deck brings its own.
 - **Format versions**: every deck and card the app writes carries
   `sm:formatVersion` (the same term `meta.ttl` uses for the instance):
-  decks are at 1, cards at 2 (pictures). Readers treat a missing version
-  as 1 — data written before the field existed — read older versions as
-  they are, and pass a newer stored version through unchanged. Bringing
-  a pod's cards up to the current version is the user's call; see
-  [migrations.md](migrations.md).
+  decks are at 2 (direction), cards at 2 (pictures). Readers treat a
+  missing version as 1 — data written before the field existed — read
+  older versions as they are, and pass a newer stored version through
+  unchanged. Bringing a pod's decks and cards up to the current version
+  is the user's call; see [migrations.md](migrations.md).
 - **Cards** are hash-fragment subjects (`#card-<uuid>`, or the library's
   own ids such as `#sweden` for imported decks) inside one document per
   deck. Fragment ids are generated once at creation and never re-derived.
-- **Review state** lives in a separate document per deck, joined to cards by
-  the same fragment id. Card edits and review updates never touch each
-  other's documents.
+- **Review state** lives in a separate document per deck, joined to cards
+  by the same fragment id — one subject per card *and direction*:
+  `#<cardId>` for front→back (every state written before directions
+  existed, which is what they all were) and `#<cardId>@back-to-front` for
+  the other way. Card edits and review updates never touch each other's
+  documents; removing a card removes both of its states.
 - Cards/reviews documents are created lazily on first write; deck removal
   deletes both documents and the catalog subject; card removal also removes
   the card's review state.

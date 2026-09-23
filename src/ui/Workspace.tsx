@@ -20,7 +20,7 @@ import { LibraryContainer } from "./LibraryContainer";
 import { LibraryDeckContainer } from "./LibraryDeckContainer";
 import { Loading } from "./Loading";
 import { MigrationContainer } from "./MigrationContainer";
-import { PracticeContainer } from "./PracticeContainer";
+import { StudyContainer } from "./StudyContainer";
 import { PreferencesContainer } from "./PreferencesContainer";
 import { StoragePicker } from "./StoragePicker";
 import {
@@ -355,18 +355,9 @@ export function Workspace({
             instance={activeInstance!}
             onStudyDeck={(deck) =>
               navigate({
-                screen: "practice",
+                screen: "study",
                 instanceUrl: instanceUrl!,
                 deckUrl: deck.url,
-                mode: "study",
-              })
-            }
-            onPracticeDeck={(deck) =>
-              navigate({
-                screen: "practice",
-                instanceUrl: instanceUrl!,
-                deckUrl: deck.url,
-                mode: "practice",
               })
             }
             onCreateDeck={() =>
@@ -431,18 +422,9 @@ export function Workspace({
             deck={activeDeck!}
             onStudy={() =>
               navigate({
-                screen: "practice",
+                screen: "study",
                 instanceUrl: instanceUrl!,
                 deckUrl: deckUrl!,
-                mode: "study",
-              })
-            }
-            onPractice={() =>
-              navigate({
-                screen: "practice",
-                instanceUrl: instanceUrl!,
-                deckUrl: deckUrl!,
-                mode: "practice",
               })
             }
             onBrowse={() =>
@@ -517,13 +499,12 @@ export function Workspace({
           />
         );
       }
-      case "practice":
+      case "study":
         return (
-          <PracticeContainer
+          <StudyContainer
             useCases={useCases}
             instance={activeInstance!}
             deck={activeDeck!}
-            mode={route.mode}
             onExit={() =>
               navigate({
                 screen: "deckDetail",

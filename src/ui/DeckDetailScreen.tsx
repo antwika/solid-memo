@@ -1,3 +1,4 @@
+import type { ComponentChildren } from "preact";
 import type { Deck } from "../domain/deck";
 import { DeckProvenance } from "./DeckProvenance";
 import { DeckIcon } from "./icons";
@@ -13,15 +14,15 @@ export function DeckDetailScreen({
   error,
   deckHref,
   onStudy,
-  onPractice,
   onBrowse,
   onResetDay,
+  notice,
 }: {
   deck: Deck;
   cardCount: number;
-  /** Cards due today (what a Study session would cover). */
+  /** Prompts due today. */
   dueCount: number;
-  /** New cards still within today's budget (added by Practice). */
+  /** New prompts still within today's budget. */
   newCount: number;
   /** Cards reviewed today; the reset option appears once there are any. */
   studiedToday: number;
@@ -30,19 +31,18 @@ export function DeckDetailScreen({
   error: string | null;
   /** URL of this deck's page; its name links here wherever it is shown. */
   deckHref: string;
-  /** Session over due cards only. */
+  /** Today's session: due prompts and new ones, interleaved. */
   onStudy: () => void;
-  /** Session over due + new cards. */
-  onPractice: () => void;
   /** Open the Browser view, where the deck and its cards are edited. */
   onBrowse: () => void;
   /** Undo today's reviews of this deck. */
   onResetDay: () => void;
+  /** Anything to say about the deck before its study state, e.g. an offer. */
+  notice?: ComponentChildren;
 }) {
-  // Only offer sessions that have something in them, so nobody has to
+  // Only offer a session that has something in it, so nobody has to
   // start one to learn there is nothing to study.
-  const canStudy = dueCount > 0;
-  const canPractice = dueCount + newCount > 0;
+  const canStudy = dueCount + newCount > 0;
   const studied = formatCardCount(studiedToday);
 
   function handleResetDay() {
@@ -71,7 +71,8 @@ export function DeckDetailScreen({
         license={deck.license}
         description={deck.description}
       />
-      {!canPractice && (
+      {notice}
+      {!canStudy && (
         <p>
           {cardCount === 0
             ? "This deck has no cards yet. Add some in the Browser."
@@ -80,31 +81,18 @@ export function DeckDetailScreen({
       )}
       {canStudy && (
         <p class="hint">
-          {formatCardCount(dueCount)} due today
+          {dueCount > 0
+            ? `${formatCardCount(dueCount)} due today`
+            : "No cards are due today"}
           {newCount > 0
-            ? `, and ${newCount} new to introduce with Practice.`
+            ? `${dueCount > 0 ? ", and" : ";"} ${newCount} new to introduce.`
             : "."}
-        </p>
-      )}
-      {canPractice && !canStudy && (
-        <p class="hint">
-          No cards are due today. Practice introduces new cards (
-          {newCount} left today).
         </p>
       )}
       <div class="session-actions">
         {canStudy && (
           <button class="primary" onClick={onStudy} disabled={busy}>
             Study
-          </button>
-        )}
-        {canPractice && (
-          <button
-            class={canStudy ? undefined : "primary"}
-            onClick={onPractice}
-            disabled={busy}
-          >
-            Practice
           </button>
         )}
       </div>

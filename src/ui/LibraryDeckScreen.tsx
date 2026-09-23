@@ -1,6 +1,7 @@
 import { licenseLabel } from "../domain/license";
 import type { LibraryDeck, LibrarySource } from "../domain/library";
 import { AuthorNames } from "./AuthorName";
+import { DIRECTION_LABELS } from "./direction";
 import { ExternalLink } from "./ExternalLink";
 import { LibraryIcon } from "./icons";
 import { linkify } from "./linkify";
@@ -58,6 +59,12 @@ export function LibraryDeckScreen({
       <dl class="facts">
         <dt>Size</dt>
         <dd>{cardCount(deck.cardCount)}</dd>
+        <dt>Studied</dt>
+        <dd>
+          {DIRECTION_LABELS[deck.direction]}
+          {deck.direction === "bidirectional" &&
+            " — every card is asked both ways; change it after importing"}
+        </dd>
         {deck.authors.length > 0 && (
           <>
             <dt>{deck.authors.length === 1 ? "Author" : "Authors"}</dt>

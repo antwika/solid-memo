@@ -42,6 +42,7 @@ describe("toDeck", () => {
       name: "Kanji N5",
       cardsDocumentUrl: CARDS_DOC,
       reviewsDocumentUrl: REVIEWS_DOC,
+      direction: "front-to-back",
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],

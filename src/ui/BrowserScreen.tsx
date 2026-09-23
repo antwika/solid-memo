@@ -1,6 +1,13 @@
 import { useState } from "preact/hooks";
-import { cardLabel, type Card, type Deck } from "../domain/deck";
+import {
+  cardLabel,
+  DECK_DIRECTIONS,
+  type Card,
+  type Deck,
+  type DeckDirection,
+} from "../domain/deck";
 import { CardThumbnail } from "./CardFace";
+import { DIRECTION_LABELS } from "./direction";
 import { BrowserIcon, TrashIcon } from "./icons";
 import { Pager, paginate } from "./Pager";
 
@@ -8,10 +15,10 @@ import { Pager, paginate } from "./Pager";
 export const CARDS_PER_PAGE = 10;
 
 /**
- * Management view for one deck: rename/remove the deck, add cards, and
- * open any card's own page (where it is edited) by clicking it. Long
- * decks are paged; the page is route state, so it survives a round trip
- * to a card's page.
+ * Management view for one deck: rename/remove the deck, choose which
+ * way it is studied, add cards, and open any card's own page (where it
+ * is edited) by clicking it. Long decks are paged; the page is route
+ * state, so it survives a round trip to a card's page.
  */
 export function BrowserScreen({
   deck,
@@ -21,6 +28,7 @@ export function BrowserScreen({
   busy,
   error,
   onRenameDeck,
+  onChangeDirection,
   onRemoveDeck,
   onAddCard,
   cardHref,
@@ -36,6 +44,8 @@ export function BrowserScreen({
   busy: boolean;
   error: string | null;
   onRenameDeck: (name: string) => void;
+  /** Study the deck front→back, back→front or both ways. */
+  onChangeDirection: (direction: DeckDirection) => void;
   onRemoveDeck: () => void;
   /** Navigate to the card creator view. */
   onAddCard: () => void;
@@ -129,6 +139,27 @@ export function BrowserScreen({
           </div>
         </form>
       )}
+      <fieldset>
+        <legend>Study direction</legend>
+        {DECK_DIRECTIONS.map((direction) => (
+          <label key={direction} class="radio-option">
+            <input
+              type="radio"
+              name="deck-direction"
+              value={direction}
+              checked={deck.direction === direction}
+              onChange={() => onChangeDirection(direction)}
+              disabled={busy}
+            />
+            {DIRECTION_LABELS[direction]}
+          </label>
+        ))}
+        <span class="hint">
+          {deck.direction === "bidirectional"
+            ? "Every card is asked both ways, each way scheduled on its own."
+            : "Change it any time; what you have learnt each way is kept."}
+        </span>
+      </fieldset>
       {cards.length === 0 ? (
         <p>No cards in this deck yet.</p>
       ) : (

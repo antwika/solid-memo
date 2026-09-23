@@ -358,6 +358,7 @@ describe("Workspace", () => {
       name: "Kana",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -403,6 +404,7 @@ describe("Workspace", () => {
       name: "Capitals",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -422,6 +424,7 @@ describe("Workspace", () => {
             name: "Capitals",
             cardCount: 3,
             authors: [],
+            direction: "front-to-back" as const,
             sources: [],
           },
         ]),
@@ -458,6 +461,7 @@ describe("Workspace", () => {
       name: "Capitals",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -478,6 +482,7 @@ describe("Workspace", () => {
             cardCount: 3,
             authors: ["Anton Wiklund"],
             description: "Every capital.",
+            direction: "front-to-back" as const,
             sources: [],
           },
         ]),
@@ -532,7 +537,7 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listLibraryDecks: vi.fn(async () => [
-          { url: libraryUrl, name: "Capitals", cardCount: 11, authors: [], sources: [] },
+          { url: libraryUrl, name: "Capitals", cardCount: 11, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => cards),
       }),
@@ -625,6 +630,7 @@ describe("Workspace", () => {
       name: "Kanji N5",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -656,6 +662,7 @@ describe("Workspace", () => {
       name: "Kanji N5",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -692,6 +699,7 @@ describe("Workspace", () => {
       name: "Capitals",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -741,6 +749,7 @@ describe("Workspace", () => {
       name: "Kanji N5",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -771,6 +780,7 @@ describe("Workspace", () => {
       name: "Kanji N5",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -807,6 +817,7 @@ describe("Workspace", () => {
       name: "Kanji N5",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -832,13 +843,14 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
-  it("starts and ends a practice session from the deck detail", async () => {
+  it("starts and ends a study session from the deck detail", async () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
       name: "Kanji N5",
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
@@ -851,62 +863,18 @@ describe("Workspace", () => {
         getStudyQueue: vi.fn(async () => ({
           due: [
             {
-              id: "card-1",
-              url: `${deck.cardsDocumentUrl}#card-1`,
-              front: "水",
-              back: "water",
-              createdAt: "2026-09-21T10:00:00.000Z",
-              formatVersion: 1,
-            } satisfies Card,
+              card: {
+                id: "card-1",
+                url: `${deck.cardsDocumentUrl}#card-1`,
+                front: "水",
+                back: "water",
+                createdAt: "2026-09-21T10:00:00.000Z",
+                formatVersion: 1,
+              } satisfies Card,
+              direction: "front-to-back" as const,
+            },
           ],
-          newCards: [],
-          studiedToday: 0,
-        })),
-      }),
-    );
-
-    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Practice" }));
-    expect(
-      await screen.findByRole("heading", { name: "Practice: Kanji N5" }),
-    ).toBeInTheDocument();
-
-    fireEvent.click(
-      await screen.findByRole("button", { name: "End session" }),
-    );
-    expect(
-      await screen.findByRole("heading", { name: "Kanji N5" }),
-    ).toBeInTheDocument();
-  });
-
-  it("starts a due-only study session from the deck detail", async () => {
-    const deck: Deck = {
-      id: "deck-1",
-      url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kanji N5",
-      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
-      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
-      createdAt: "2026-09-21T10:00:00.000Z",
-      formatVersion: 1,
-      authors: [],
-    };
-    renderWorkspace(
-      makeUseCases({
-        listInstances: vi.fn(async () => [instanceA]),
-        listDecks: vi.fn(async () => [deck]),
-        // A due card, so the deck detail offers both sessions.
-        getStudyQueue: vi.fn(async () => ({
-          due: [
-            {
-              id: "card-1",
-              url: `${deck.cardsDocumentUrl}#card-1`,
-              front: "水",
-              back: "water",
-              createdAt: "2026-09-21T10:00:00.000Z",
-              formatVersion: 1,
-            } satisfies Card,
-          ],
-          newCards: [],
+          newPrompts: [],
           studiedToday: 0,
         })),
       }),
@@ -916,6 +884,13 @@ describe("Workspace", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Study" }));
     expect(
       await screen.findByRole("heading", { name: "Study: Kanji N5" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "End session" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Kanji N5" }),
     ).toBeInTheDocument();
   });
 
@@ -928,36 +903,14 @@ describe("Workspace", () => {
     formatVersion: 1,
   };
 
-  it("starts a practice session from the deck list when only new cards remain", async () => {
+  it("starts a study session from the deck list when only new cards remain", async () => {
     renderWorkspace(
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listDecks: vi.fn(async () => [deck]),
         getStudyQueue: vi.fn(async () => ({
           due: [],
-          newCards: [dueCard],
-          studiedToday: 0,
-        })),
-      }),
-    );
-
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Practice Kanji N5" }),
-    );
-    expect(
-      await screen.findByRole("heading", { name: "Practice: Kanji N5" }),
-    ).toBeInTheDocument();
-    expect(window.location.hash).toContain("mode=practice");
-  });
-
-  it("starts a study session straight from the deck list", async () => {
-    renderWorkspace(
-      makeUseCases({
-        listInstances: vi.fn(async () => [instanceA]),
-        listDecks: vi.fn(async () => [deck]),
-        getStudyQueue: vi.fn(async () => ({
-          due: [dueCard],
-          newCards: [],
+          newPrompts: [{ card: dueCard, direction: "front-to-back" as const }],
           studiedToday: 0,
         })),
       }),
@@ -969,7 +922,29 @@ describe("Workspace", () => {
     expect(
       await screen.findByRole("heading", { name: "Study: Kanji N5" }),
     ).toBeInTheDocument();
-    expect(window.location.hash).toContain("mode=study");
+    expect(window.location.hash).toContain("#/study");
+  });
+
+  it("starts a study session straight from the deck list", async () => {
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+        getStudyQueue: vi.fn(async () => ({
+          due: [{ card: dueCard, direction: "front-to-back" as const }],
+          newPrompts: [],
+          studiedToday: 0,
+        })),
+      }),
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Study Kanji N5" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Study: Kanji N5" }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toContain("#/study");
   });
 
   const deck: Deck = {
@@ -978,6 +953,7 @@ describe("Workspace", () => {
     name: "Kanji N5",
     cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
     reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+    direction: "front-to-back" as const,
     createdAt: "2026-09-21T10:00:00.000Z",
     formatVersion: 1,
     authors: [],

@@ -9,6 +9,7 @@ const capitals: LibraryDeck = {
   name: "Capitals",
   cardCount: 2,
   authors: [],
+  direction: "front-to-back",
   sources: [],
 };
 

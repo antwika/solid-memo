@@ -36,8 +36,9 @@ const IUPAC = "https://iupac.org/what-we-do/periodic-table-of-elements/";
 // Dated, and compiled from two sources: one described, one bare.
 const ELEMENTS = `${PREFIXES}
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-<> a sm:Deck ; dcterms:title "Elements" ; sm:formatVersion 1 ;
+<> a sm:Deck ; dcterms:title "Elements" ; sm:formatVersion 2 ;
    dcterms:created "2026-09-22T15:49:38.000Z"^^xsd:dateTime ;
+   sm:direction "bidirectional" ;
    dcterms:source <${WIKIPEDIA}>, <${IUPAC}> ;
    dcterms:license <${CC0}> .
 <${WIKIPEDIA}> dcterms:title "List of chemical elements" ;
@@ -72,6 +73,7 @@ describe("summarizeDeck", () => {
       authors: [],
       license: CC0,
       createdAt: "2026-09-22T15:49:38.000Z",
+      direction: "bidirectional",
       sources: [
         {
           url: WIKIPEDIA,
@@ -144,6 +146,17 @@ describe("summarizeDeck", () => {
     ).toThrow("has neither solid-memo:back nor solid-memo:backImage.");
   });
 
+  it("rejects a direction the app does not know", () => {
+    expect(() =>
+      summarizeDeck(
+        "x.ttl",
+        `${PREFIXES} <> a sm:Deck ; dcterms:title "A" ; sm:formatVersion 2 ; sm:direction "sideways" .`,
+      ),
+    ).toThrow(
+      'decks/x.ttl: solid-memo:direction must be one of front-to-back, back-to-front, bidirectional, not "sideways".',
+    );
+  });
+
   it("rejects a file without exactly one deck", () => {
     expect(() => summarizeDeck("x.ttl", PREFIXES)).toThrow(
       "decks/x.ttl: expected exactly one sm:Deck subject, found 0.",
@@ -178,7 +191,7 @@ describe("buildIndex", () => {
   it("carries the creation date and the sources, each described as its own subject", () => {
     const index = buildIndex([summarizeDeck("elements.ttl", ELEMENTS)]);
     expect(index).toContain(
-      `<elements.ttl> a sm:Deck;\n    dcterms:title "Elements";\n    sm:cardCount 0;\n    dcterms:license <${CC0}>;\n    dcterms:created "2026-09-22T15:49:38.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>;\n    dcterms:source <${WIKIPEDIA}>, <${IUPAC}>.`,
+      `<elements.ttl> a sm:Deck;\n    dcterms:title "Elements";\n    sm:cardCount 0;\n    dcterms:license <${CC0}>;\n    dcterms:created "2026-09-22T15:49:38.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>;\n    sm:direction "bidirectional";\n    dcterms:source <${WIKIPEDIA}>, <${IUPAC}>.`,
     );
     expect(index).toContain(
       `<${WIKIPEDIA}> dcterms:title "List of chemical elements";\n    dcterms:creator "Wikipedia contributors";\n    dcterms:license <${BY_SA}>.`,

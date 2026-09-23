@@ -13,7 +13,8 @@
     dcterms:source <https://en.wikipedia.org/wiki/List_of_national_capitals> ,
                    <https://www.wikidata.org/wiki/Property:P36> ;
     dcterms:created "2026-09-22T09:49:00.236Z"^^xsd:dateTime ;
-    solid-memo:formatVersion 1 .
+    solid-memo:direction "bidirectional" ;
+    solid-memo:formatVersion 2 .
 
 <https://en.wikipedia.org/wiki/List_of_national_capitals>
     dcterms:title "List of national capitals" ;

@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DeckListContainer } from "./DeckListContainer";
 import type { UseCases } from "../application/useCases";
-import type { Card, Deck } from "../domain/deck";
+import type { Card, Deck, Prompt } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { StudyQueue } from "../domain/scheduling";
 import { makeUseCasesFake } from "../test/useCasesFake";
@@ -20,6 +20,7 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],
@@ -33,6 +34,7 @@ const card: Card = {
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };
+const prompt: Prompt = { card, direction: "front-to-back" };
 
 function renderContainer(
   useCases: UseCases,
@@ -43,7 +45,6 @@ function renderContainer(
   });
   seed(queryClient);
   const onStudyDeck = vi.fn();
-  const onPracticeDeck = vi.fn();
   const onCreateDeck = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
@@ -51,12 +52,11 @@ function renderContainer(
         useCases={useCases}
         instance={instance}
         onStudyDeck={onStudyDeck}
-        onPracticeDeck={onPracticeDeck}
         onCreateDeck={onCreateDeck}
       />
     </QueryClientProvider>,
   );
-  return { onStudyDeck, onPracticeDeck, onCreateDeck };
+  return { onStudyDeck, onCreateDeck };
 }
 
 describe("DeckListContainer", () => {
@@ -111,8 +111,8 @@ describe("DeckListContainer", () => {
     const useCases = makeUseCasesFake({
       listDecks: vi.fn(async () => [deck]),
       getStudyQueue: vi.fn(async () => ({
-        due: [card],
-        newCards: [],
+        due: [prompt],
+        newPrompts: [],
         studiedToday: 0,
       })),
     });
@@ -137,8 +137,8 @@ describe("DeckListContainer", () => {
     });
     renderContainer(useCases, (queryClient) =>
       queryClient.setQueryData(["studyQueue", deck.url], {
-        due: [card, card],
-        newCards: [],
+        due: [prompt, prompt],
+        newPrompts: [],
         studiedToday: 0,
       }),
     );
@@ -174,29 +174,29 @@ describe("DeckListContainer", () => {
     await waitFor(() => {
       expect(useCases.getStudyQueue).toHaveBeenCalledOnce();
     });
-    resolveQueue({ due: [], newCards: [], studiedToday: 0 });
+    resolveQueue({ due: [], newPrompts: [], studiedToday: 0 });
     expect(
       await screen.findByRole("img", { name: "Nothing to study today" }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("status", { name: "Checking what is due" })).toBeNull();
   });
 
-  it("suggests Practice, not Study, when only new cards remain", async () => {
+  it("suggests Study when only new cards remain", async () => {
     const useCases = makeUseCasesFake({
       listDecks: vi.fn(async () => [deck]),
       getStudyQueue: vi.fn(async () => ({
         due: [],
-        newCards: [card],
+        newPrompts: [prompt],
         studiedToday: 0,
       })),
     });
-    const { onPracticeDeck } = renderContainer(useCases);
+    const { onStudyDeck } = renderContainer(useCases);
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Practice Kanji N5" }),
+      await screen.findByRole("button", { name: "Study Kanji N5" }),
     );
-    expect(onPracticeDeck).toHaveBeenCalledWith(deck);
-    expect(screen.queryByRole("button", { name: /^Study/ })).toBeNull();
+    expect(onStudyDeck).toHaveBeenCalledWith(deck);
+    expect(screen.getByText("1 new")).toBeInTheDocument();
   });
 
   it("does not suggest studying a deck with nothing left today", async () => {

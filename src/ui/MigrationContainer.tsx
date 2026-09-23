@@ -2,8 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
 import type { Instance } from "../domain/instance";
 import { errorMessage } from "./errorMessage";
-import { MigrationNotice } from "./MigrationNotice";
-import { cardCount as formatCardCount } from "./studyCounts";
+import { describeMigrated, MigrationNotice } from "./MigrationNotice";
 
 /**
  * Checks an instance for cards in an older format and, when there are
@@ -30,8 +29,10 @@ export function MigrationContainer({
   const migrateMutation = useMutation({
     mutationFn: () => useCases.migrateInstance(instance.url),
     onSuccess: async () => {
-      // Every cards document may have changed; the plan is recomputed so
-      // the notice goes away (or names what a failure part-way left).
+      // Every catalog entry and cards document may have changed; the plan
+      // is recomputed so the notice goes away (or names what a failure
+      // part-way left).
+      await queryClient.invalidateQueries({ queryKey: ["decks"] });
       await queryClient.invalidateQueries({ queryKey: ["cards"] });
       await queryClient.invalidateQueries({
         queryKey: ["migration", instance.url],
@@ -43,10 +44,10 @@ export function MigrationContainer({
 
   const plan = planQuery.data;
   if (plan === undefined) return null;
-  if (plan.cardCount === 0) {
+  if (plan.decks.length === 0) {
     return migrateMutation.isSuccess ? (
       <p class="hint" role="status">
-        Updated {formatCardCount(migrateMutation.data)} to the current card
+        Updated {describeMigrated(migrateMutation.data)} to the current
         format.
       </p>
     ) : null;

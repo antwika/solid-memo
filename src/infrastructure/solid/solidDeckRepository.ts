@@ -14,12 +14,15 @@ import type { DeckRepository } from "../../application/ports";
 import {
   CARD_FORMAT_VERSION,
   DECK_FORMAT_VERSION,
+  DEFAULT_DECK_DIRECTION,
   type Card,
   type CardContent,
   type Deck,
+  type DeckDirection,
 } from "../../domain/deck";
 import { getSolidDatasetOrNull } from "./datasets";
 import { toCard, toDeck } from "./mappers/deckMapper";
+import { reviewSubjectUrl } from "./mappers/reviewStateMapper";
 import { ensureTrailingSlash } from "./urls";
 import { DCTERMS, RDF, SM } from "./vocab";
 
@@ -61,21 +64,11 @@ export function createSolidDeckRepository({
       return registerDeck(deck);
     },
 
-    async renameDeck(deck, name): Promise<Deck> {
-      const catalogUrl = documentUrlOf(deck.url);
-      const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
-      const thing = dataset === null ? null : getThing(dataset, deck.url);
-      if (dataset === null || thing === null) {
-        throw new Error(`The deck <${deck.name}> no longer exists.`);
-      }
-      // Edit the existing subject in place so unknown triples survive.
-      const updated = setThing(
-        dataset,
-        buildThing(thing).setStringNoLocale(DCTERMS.title, name).build(),
-      );
-      await saveSolidDatasetAt(catalogUrl, updated, { fetch });
-      return { ...deck, name };
+    renameDeck(deck, name): Promise<Deck> {
+      return saveDeck({ ...deck, name });
     },
+
+    saveDeck,
 
     async removeDeck(deck): Promise<void> {
       await deleteDocumentIfPresent(deck.cardsDocumentUrl, fetch);
@@ -172,26 +165,59 @@ export function createSolidDeckRepository({
           { fetch },
         );
       }
-      // The review state joins on the same fragment id; remove it too.
+      // The review state joins on the same fragment id; remove it too, in
+      // both directions.
       const reviews = await getSolidDatasetOrNull(
         deck.reviewsDocumentUrl,
         fetch,
       );
       if (reviews !== null) {
-        await saveSolidDatasetAt(
-          deck.reviewsDocumentUrl,
-          removeThing(reviews, `${deck.reviewsDocumentUrl}#${card.id}`),
-          { fetch },
-        );
+        let updated = reviews;
+        for (const direction of ["front-to-back", "back-to-front"] as const) {
+          updated = removeThing(
+            updated,
+            reviewSubjectUrl(deck.reviewsDocumentUrl, {
+              cardId: card.id,
+              direction,
+            }),
+          );
+        }
+        await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
       }
     },
   };
 
   /**
+   * Rewrite a deck's catalog entry in place — name, direction and, as
+   * with every write, this app's format version — so unknown triples
+   * survive. Returns the deck as written.
+   */
+  async function saveDeck(deck: Deck): Promise<Deck> {
+    const catalogUrl = documentUrlOf(deck.url);
+    const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
+    const thing = dataset === null ? null : getThing(dataset, deck.url);
+    if (dataset === null || thing === null) {
+      throw new Error(`The deck <${deck.name}> no longer exists.`);
+    }
+    const written: Deck = { ...deck, formatVersion: DECK_FORMAT_VERSION };
+    const updated = setThing(
+      dataset,
+      buildThing(thing)
+        .setStringNoLocale(DCTERMS.title, written.name)
+        .setStringNoLocale(SM.direction, written.direction)
+        .setInteger(SM.formatVersion, written.formatVersion)
+        .build(),
+    );
+    await saveSolidDatasetAt(catalogUrl, updated, { fetch });
+    return written;
+  }
+
+  /**
    * A fresh deck's identity and document locations, before any write.
-   * An import carries over the library deck's provenance: its authors,
-   * licence, description and where it came from. The format version is always this
-   * app's own — the copy is written in the format this app writes.
+   * An import carries over the library deck's provenance — its authors,
+   * licence, description and where it came from — and the direction it
+   * is meant to be studied in. The format version is always this app's
+   * own: the copy is written in the format this app writes.
    */
   function newDeck(
     instanceUrl: string,
@@ -201,6 +227,7 @@ export function createSolidDeckRepository({
       authors: string[];
       license?: string;
       description?: string;
+      direction: DeckDirection;
     },
   ): Deck {
     const base = ensureTrailingSlash(instanceUrl);
@@ -213,6 +240,7 @@ export function createSolidDeckRepository({
       reviewsDocumentUrl: `${base}reviews/${id}.ttl`,
       createdAt: now().toISOString(),
       formatVersion: DECK_FORMAT_VERSION,
+      direction: source?.direction ?? DEFAULT_DECK_DIRECTION,
       authors: source?.authors ?? [],
       ...(source?.license === undefined ? {} : { license: source.license }),
       ...(source?.description === undefined
@@ -233,6 +261,7 @@ export function createSolidDeckRepository({
       .addStringNoLocale(DCTERMS.title, deck.name)
       .addDatetime(DCTERMS.created, now())
       .addInteger(SM.formatVersion, deck.formatVersion)
+      .addStringNoLocale(SM.direction, deck.direction)
       .addIri(SM.cardsDocument, deck.cardsDocumentUrl)
       .addIri(SM.reviewsDocument, deck.reviewsDocumentUrl);
     for (const author of deck.authors) {

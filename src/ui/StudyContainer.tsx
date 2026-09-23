@@ -1,36 +1,38 @@
 import { useEffect, useState } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
-import type { Card, Deck } from "../domain/deck";
+import type { Deck, Prompt } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import { DEFAULT_PREFERENCES } from "../domain/preferences";
 import type { ReviewQuality } from "../domain/review";
-import { repeatsInSession, requeueCard } from "../domain/scheduling";
+import {
+  interleave,
+  repeatsInSession,
+  requeueCard,
+} from "../domain/scheduling";
 import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
-import { PracticeScreen, type PracticeMode } from "./PracticeScreen";
+import { StudyScreen } from "./StudyScreen";
 import { deckHref } from "./router";
 
 /**
  * Owns one study session. The queue is fetched once when the session
  * starts and then walked in order; answering a card badly puts it back
  * into the remainder (never as the very next card unless it is the only
- * one left). The deck's cached queue is dropped when the session ends,
- * however it is left. "study" mode limits the session to due cards;
- * "practice" also introduces new cards.
+ * one left). The session covers today's due prompts and the new ones
+ * within the daily budget, the new spread among the due. The deck's
+ * cached queue is dropped when the session ends, however it is left.
  */
-export function PracticeContainer({
+export function StudyContainer({
   useCases,
   instance,
   deck,
-  mode,
   onExit,
   random = Math.random,
 }: {
   useCases: UseCases;
   instance: Instance;
   deck: Deck;
-  mode: PracticeMode;
   onExit: () => void;
   /** Uniform [0, 1) source deciding where a failed card comes back. */
   random?: () => number;
@@ -54,47 +56,44 @@ export function PracticeContainer({
   const answerScale =
     preferencesQuery.data?.answerScale ?? DEFAULT_PREFERENCES.answerScale;
 
-  // The session's own order of cards, seeded from the queue once it is
+  // The session's own order of prompts, seeded from the queue once it is
   // known. Kept apart from the query so a refetch never reshuffles a
-  // session in progress, and so failed cards can be slotted back in.
+  // session in progress, and so failed prompts can be slotted back in.
   const [session, setSession] = useState<{
-    cards: Card[];
+    prompts: Prompt[];
     position: number;
   } | null>(null);
   useEffect(() => {
     if (session !== null || queueQuery.data === undefined) return;
-    const { due, newCards } = queueQuery.data;
-    setSession({
-      cards: mode === "study" ? [...due] : [...due, ...newCards],
-      position: 0,
-    });
-  }, [session, queueQuery.data, mode]);
+    const { due, newPrompts } = queueQuery.data;
+    setSession({ prompts: interleave(due, newPrompts), position: 0 });
+  }, [session, queueQuery.data]);
 
   const answerMutation = useMutation({
-    mutationFn: (args: { card: Card; quality: ReviewQuality }) =>
+    mutationFn: (args: { prompt: Prompt; quality: ReviewQuality }) =>
       useCases.recordReview(
         instance.url,
         deck,
-        args.card,
+        args.prompt,
         args.quality,
         new Date(),
       ),
-    onSuccess: (state, { card, quality }) => {
+    onSuccess: (state, { prompt, quality }) => {
       // No refetch mid-session: keep the reviews cache warm for other
       // screens, and simply advance the session.
       queryClient.setQueryData(
-        ["reviews", deck.reviewsDocumentUrl, state.cardId],
+        ["reviews", deck.reviewsDocumentUrl, state.cardId, state.direction],
         state,
       );
       setSession((current) => {
         const next = current!.position + 1;
         if (!repeatsInSession(quality)) {
-          return { cards: current!.cards, position: next };
+          return { prompts: current!.prompts, position: next };
         }
-        const done = current!.cards.slice(0, next);
-        const remaining = current!.cards.slice(next);
+        const done = current!.prompts.slice(0, next);
+        const remaining = current!.prompts.slice(next);
         return {
-          cards: [...done, ...requeueCard(remaining, card, random)],
+          prompts: [...done, ...requeueCard(remaining, prompt, random)],
           position: next,
         };
       });
@@ -125,20 +124,21 @@ export function PracticeContainer({
     return <Loading label="Preparing your study session…" />;
   }
 
-  const { cards, position } = session;
-  const card = position < cards.length ? cards[position] : null;
+  const { prompts, position } = session;
+  const prompt = position < prompts.length ? prompts[position] : null;
   return (
-    <PracticeScreen
-      mode={mode}
+    <StudyScreen
       deckName={deck.name}
       deckHref={deckHref(instance.url, deck.url)}
-      card={card}
+      prompt={prompt}
       position={position + 1}
-      total={cards.length}
+      total={prompts.length}
       answerScale={answerScale}
       busy={answerMutation.isPending}
       error={errorMessage(answerMutation.error)}
-      onAnswer={(quality) => answerMutation.mutate({ card: card!, quality })}
+      onAnswer={(quality) =>
+        answerMutation.mutate({ prompt: prompt!, quality })
+      }
       onExit={() => void handleExit()}
     />
   );

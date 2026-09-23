@@ -11,9 +11,87 @@ import { isHttpUrl } from "./webId";
  * `sm:back` are no longer required. A format-1 reader would drop an
  * image-only card as malformed, which is why the version moved (see
  * docs/migrations.md).
+ *
+ * Deck format 2 adds a study direction (`sm:direction`): a deck may be
+ * studied front→back (the only way format 1 knew), back→front, or both
+ * ways, each direction with review state of its own. A format-1 reader
+ * would study a bidirectional deck one way and mistake the other way's
+ * review state for stray subjects, which is why the version moved.
  */
-export const DECK_FORMAT_VERSION = 1;
+export const DECK_FORMAT_VERSION = 2;
 export const CARD_FORMAT_VERSION = 2;
+
+/** Which side of a card a session asks: the other side is the answer. */
+export type StudyDirection = "front-to-back" | "back-to-front";
+
+/**
+ * How a deck is studied. "bidirectional" makes two prompts of every card,
+ * one per direction, scheduled separately: knowing a word one way says
+ * nothing about knowing it the other way.
+ */
+export type DeckDirection = StudyDirection | "bidirectional";
+
+export const DECK_DIRECTIONS: readonly DeckDirection[] = [
+  "front-to-back",
+  "back-to-front",
+  "bidirectional",
+];
+
+/** A deck that states no direction is studied front→back, as format 1 did. */
+export const DEFAULT_DECK_DIRECTION: DeckDirection = "front-to-back";
+
+export function isDeckDirection(value: string): value is DeckDirection {
+  return (DECK_DIRECTIONS as readonly string[]).includes(value);
+}
+
+/** The directions a deck is studied in, front→back first. */
+export function studyDirections(direction: DeckDirection): StudyDirection[] {
+  return direction === "bidirectional"
+    ? ["front-to-back", "back-to-front"]
+    : [direction];
+}
+
+/** One thing a session asks: a card, seen from one side. */
+export interface Prompt {
+  card: Card;
+  direction: StudyDirection;
+}
+
+/** Every prompt a deck makes of its cards, card by card. */
+export function promptsOf(cards: Card[], direction: DeckDirection): Prompt[] {
+  const directions = studyDirections(direction);
+  return cards.flatMap((card) =>
+    directions.map((direction) => ({ card, direction })),
+  );
+}
+
+/** One side of a card as shown: its text and picture, and which side it is. */
+export interface CardSide {
+  side: "front" | "back";
+  text: string;
+  imageUrl?: string;
+}
+
+/** What a prompt asks and what it answers with. */
+export function promptSides(prompt: Prompt): {
+  question: CardSide;
+  answer: CardSide;
+} {
+  const { card } = prompt;
+  const front: CardSide = {
+    side: "front",
+    text: card.front,
+    ...(card.frontImageUrl === undefined ? {} : { imageUrl: card.frontImageUrl }),
+  };
+  const back: CardSide = {
+    side: "back",
+    text: card.back,
+    ...(card.backImageUrl === undefined ? {} : { imageUrl: card.backImageUrl }),
+  };
+  return prompt.direction === "front-to-back"
+    ? { question: front, answer: back }
+    : { question: back, answer: front };
+}
 
 export interface Deck {
   /** Fragment id inside the catalog document (e.g. "deck-<uuid>"). */
@@ -26,6 +104,8 @@ export interface Deck {
   /** ISO dateTime. */
   createdAt: string;
   formatVersion: number;
+  /** How the deck is studied; a deck that states none is front→back. */
+  direction: DeckDirection;
   /** Who made the deck (names), when stated. Empty for most own decks. */
   authors: string[];
   /** URL of the licence the deck's content is offered under, when stated. */

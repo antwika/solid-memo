@@ -1,4 +1,9 @@
-import { CARD_FORMAT_VERSION, type Card, type Deck } from "./deck";
+import {
+  CARD_FORMAT_VERSION,
+  DECK_FORMAT_VERSION,
+  type Card,
+  type Deck,
+} from "./deck";
 
 /**
  * Format migrations: bringing data written by an older Solid Memo up to
@@ -21,10 +26,30 @@ export function upgradeCard(card: Card): Card {
   return isOutdated(card) ? { ...card, formatVersion: CARD_FORMAT_VERSION } : card;
 }
 
+/** True when the deck's catalog entry is in an older format than this app writes. */
+export function isDeckOutdated(deck: Deck): boolean {
+  return deck.formatVersion < DECK_FORMAT_VERSION;
+}
+
+/**
+ * The deck as this app writes it. Format 1 → 2 adds the study direction;
+ * a deck read without one is already front→back, the only direction
+ * format 1 knew, so only the version moves — the write then states the
+ * direction explicitly. A deck already at (or beyond) the current format
+ * is returned as is.
+ */
+export function upgradeDeck(deck: Deck): Deck {
+  return isDeckOutdated(deck)
+    ? { ...deck, formatVersion: DECK_FORMAT_VERSION }
+    : deck;
+}
+
 /** What a migration would touch, for the user to approve first. */
 export interface MigrationPlan {
-  /** Decks holding outdated cards, with how many each. */
-  decks: { deck: Deck; cardCount: number }[];
+  /** Decks with an outdated entry or outdated cards, with how many of each. */
+  decks: { deck: Deck; deckOutdated: boolean; cardCount: number }[];
+  /** Outdated deck entries across the instance. */
+  deckCount: number;
   /** Outdated cards across the instance. */
   cardCount: number;
 }
@@ -36,11 +61,19 @@ export function planMigration(
   const decks = entries
     .map(({ deck, cards }) => ({
       deck,
+      deckOutdated: isDeckOutdated(deck),
       cardCount: cards.filter(isOutdated).length,
     }))
-    .filter(({ cardCount }) => cardCount > 0);
+    .filter(({ deckOutdated, cardCount }) => deckOutdated || cardCount > 0);
   return {
     decks,
+    deckCount: decks.filter(({ deckOutdated }) => deckOutdated).length,
     cardCount: decks.reduce((sum, { cardCount }) => sum + cardCount, 0),
   };
+}
+
+/** What a migration did: how many deck entries and cards it rewrote. */
+export interface MigrationResult {
+  deckCount: number;
+  cardCount: number;
 }

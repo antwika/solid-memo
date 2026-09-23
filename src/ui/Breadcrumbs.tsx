@@ -90,12 +90,8 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
       return [decks, deck, browser, { label: "New card", route }];
     case "card":
       return [decks, deck, browser, { label: names.card, route }];
-    case "practice":
-      return [
-        decks,
-        deck,
-        { label: route.mode === "study" ? "Study" : "Practice", route },
-      ];
+    case "study":
+      return [decks, deck, { label: "Study", route }];
   }
 }
 

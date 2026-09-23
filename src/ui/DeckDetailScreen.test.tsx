@@ -9,6 +9,7 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],
@@ -27,7 +28,6 @@ function renderScreen(
     busy: false,
     error: null,
     onStudy: vi.fn(),
-    onPractice: vi.fn(),
     onBrowse: vi.fn(),
     onResetDay: vi.fn(),
     ...overrides,
@@ -47,6 +47,11 @@ describe("DeckDetailScreen", () => {
     });
     expect(screen.getByText(/By Anton Wiklund/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "CC0 1.0" })).toBeInTheDocument();
+  });
+
+  it("shows a notice, when given one, under the provenance", () => {
+    renderScreen({ notice: <p role="note">Newer version available</p> });
+    expect(screen.getByRole("note")).toHaveTextContent("Newer version available");
   });
 
   it("says nothing about provenance for a home-made deck", () => {
@@ -83,14 +88,12 @@ describe("DeckDetailScreen", () => {
     expect(screen.getByText(/1 card in this deck/)).toBeInTheDocument();
   });
 
-  it("presents Study as the primary action", () => {
+  it("presents Study as the primary, and only, session action", () => {
     renderScreen();
     expect(screen.getByRole("button", { name: "Study" })).toHaveClass(
       "primary",
     );
-    expect(screen.getByRole("button", { name: "Practice" })).not.toHaveClass(
-      "primary",
-    );
+    expect(screen.queryByRole("button", { name: "Practice" })).toBeNull();
   });
 
   it("says so, without offering a session, when everything is studied", () => {
@@ -103,9 +106,6 @@ describe("DeckDetailScreen", () => {
     expect(
       screen.queryByRole("button", { name: "Study" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Practice" }),
-    ).not.toBeInTheDocument();
   });
 
   it("does not claim an empty deck has been studied", () => {
@@ -116,18 +116,13 @@ describe("DeckDetailScreen", () => {
     expect(screen.queryByText(/All cards have been studied/)).toBeNull();
   });
 
-  it("offers only Practice, as the primary action, when nothing is due but new cards remain", () => {
+  it("offers Study when nothing is due but new cards remain", () => {
     renderScreen({ dueCount: 0, newCount: 2 });
-    expect(
-      screen.queryByRole("button", { name: "Study" }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Practice" })).toHaveClass(
+    expect(screen.getByRole("button", { name: "Study" })).toHaveClass(
       "primary",
     );
     expect(
-      screen.getByText(
-        "No cards are due today. Practice introduces new cards (2 left today).",
-      ),
+      screen.getByText("No cards are due today; 2 new to introduce."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/All cards have been studied/)).toBeNull();
   });
@@ -135,7 +130,7 @@ describe("DeckDetailScreen", () => {
   it("says how many cards are due and new while cards are due", () => {
     renderScreen({ dueCount: 2, newCount: 1 });
     expect(
-      screen.getByText("2 cards due today, and 1 new to introduce with Practice."),
+      screen.getByText("2 cards due today, and 1 new to introduce."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/All cards have been studied/)).toBeNull();
     expect(screen.queryByText(/No cards are due today/)).toBeNull();
@@ -195,15 +190,8 @@ describe("DeckDetailScreen", () => {
       renderScreen({ studiedToday: 3, busy: true, error: "reset refused" });
       expect(screen.getByRole("button", { name: "Resetting…" })).toBeDisabled();
       expect(screen.getByRole("button", { name: "Study" })).toBeDisabled();
-      expect(screen.getByRole("button", { name: "Practice" })).toBeDisabled();
       expect(screen.getByText("reset refused")).toBeInTheDocument();
     });
-  });
-
-  it("starts a practice session", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Practice" }));
-    expect(props.onPractice).toHaveBeenCalledOnce();
   });
 
   it("starts a study session", () => {

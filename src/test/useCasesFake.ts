@@ -40,12 +40,19 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       throw new Error("createDeck fake not configured");
     }),
     renameDeck: vi.fn(async (deck, name) => ({ ...deck, name })),
+    setDeckDirection: vi.fn(async (deck, direction) => ({ ...deck, direction })),
     removeDeck: vi.fn(async () => undefined),
     listLibraryDecks: vi.fn(async () => []),
     importLibraryDeck: vi.fn(async () => {
       throw new Error("importLibraryDeck fake not configured");
     }),
     listLibraryCards: vi.fn(async () => []),
+    planLibraryUpgrade: vi.fn(async () => null),
+    applyLibraryUpgrade: vi.fn(async (deck, plan) => ({
+      ...deck,
+      direction: plan.direction,
+      formatVersion: plan.toVersion,
+    })),
     listCards: vi.fn(async () => []),
     addCard: vi.fn(async () => {
       throw new Error("addCard fake not configured");
@@ -54,18 +61,23 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       throw new Error("updateCard fake not configured");
     }),
     removeCard: vi.fn(async () => undefined),
-    planMigration: vi.fn(async () => ({ decks: [], cardCount: 0 })),
-    migrateInstance: vi.fn(async () => 0),
+    planMigration: vi.fn(async () => ({
+      decks: [],
+      deckCount: 0,
+      cardCount: 0,
+    })),
+    migrateInstance: vi.fn(async () => ({ deckCount: 0, cardCount: 0 })),
     getPreferences: vi.fn(async () => DEFAULT_PREFERENCES),
     savePreferences: vi.fn(async () => undefined),
     getStudyQueue: vi.fn(async () => ({
       due: [],
-      newCards: [],
+      newPrompts: [],
       studiedToday: 0,
     })),
     resetStudyDay: vi.fn(async () => 0),
     recordReview: vi.fn(async () => ({
       cardId: "card-1",
+      direction: "front-to-back" as const,
       easeFactor: 2.6,
       intervalDays: 1,
       repetitions: 1,

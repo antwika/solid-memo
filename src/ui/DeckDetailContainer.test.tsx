@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DeckDetailContainer } from "./DeckDetailContainer";
 import type { UseCases } from "../application/useCases";
-import type { Card, Deck } from "../domain/deck";
+import type { Card, Deck, Prompt } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { StudyQueue } from "../domain/scheduling";
 import { makeUseCasesFake } from "../test/useCasesFake";
@@ -14,6 +14,7 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],
@@ -32,13 +33,13 @@ const card: Card = {
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };
+const prompt: Prompt = { card, direction: "front-to-back" };
 
 function renderContainer(useCases: UseCases) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   const onStudy = vi.fn();
-  const onPractice = vi.fn();
   const onBrowse = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
@@ -47,12 +48,11 @@ function renderContainer(useCases: UseCases) {
         instance={instance}
         deck={deck}
         onStudy={onStudy}
-        onPractice={onPractice}
         onBrowse={onBrowse}
       />
     </QueryClientProvider>,
   );
-  return { onStudy, onPractice, onBrowse };
+  return { onStudy, onBrowse };
 }
 
 describe("DeckDetailContainer", () => {
@@ -80,7 +80,7 @@ describe("DeckDetailContainer", () => {
   it("says all cards are studied when today's queue is empty", async () => {
     const useCases = makeUseCasesFake({
       listCards: vi.fn(async () => [card]),
-      getStudyQueue: vi.fn(async () => ({ due: [], newCards: [], studiedToday: 0 })),
+      getStudyQueue: vi.fn(async () => ({ due: [], newPrompts: [], studiedToday: 0 })),
     });
     renderContainer(useCases);
     expect(
@@ -102,8 +102,8 @@ describe("DeckDetailContainer", () => {
       listCards: vi.fn(async () => [card]),
       getStudyQueue: vi.fn(async () =>
         reset
-          ? { due: [card], newCards: [], studiedToday: 0 }
-          : { due: [], newCards: [], studiedToday: 1 },
+          ? { due: [prompt], newPrompts: [], studiedToday: 0 }
+          : { due: [], newPrompts: [], studiedToday: 1 },
       ),
       resetStudyDay: vi.fn(async () => {
         reset = true;
@@ -140,7 +140,7 @@ describe("DeckDetailContainer", () => {
         listCards: vi.fn(async () => [card]),
         getStudyQueue: vi.fn(async () => ({
           due: [],
-          newCards: [],
+          newPrompts: [],
           studiedToday: 2,
         })),
         resetStudyDay: vi.fn(async () => {
@@ -178,17 +178,15 @@ describe("DeckDetailContainer", () => {
   });
 
   it("forwards the navigation callbacks", async () => {
-    const { onStudy, onPractice, onBrowse } =
+    const { onStudy, onBrowse } =
       renderContainer(
         makeUseCasesFake({
           listCards: vi.fn(async () => [card]),
-          getStudyQueue: vi.fn(async () => ({ due: [card], newCards: [], studiedToday: 0 })),
+          getStudyQueue: vi.fn(async () => ({ due: [prompt], newPrompts: [], studiedToday: 0 })),
         }),
       );
     fireEvent.click(await screen.findByRole("button", { name: "Study" }));
     expect(onStudy).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("button", { name: "Practice" }));
-    expect(onPractice).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("button", { name: "Browser" }));
     expect(onBrowse).toHaveBeenCalledOnce();
   });

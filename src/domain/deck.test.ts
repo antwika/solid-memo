@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { cardLabel, validateCardContent, type Card } from "./deck";
+import {
+  cardLabel,
+  isDeckDirection,
+  promptSides,
+  promptsOf,
+  studyDirections,
+  validateCardContent,
+  type Card,
+} from "./deck";
 
 const FLAG = "https://flagcdn.com/h80/af.png";
 
@@ -72,6 +80,59 @@ describe("validateCardContent", () => {
         backImageUrl: "javascript:alert(1)",
       }),
     ).toEqual({ ok: false, error: "The back image must be an http(s) URL." });
+  });
+});
+
+describe("deck directions", () => {
+  const sweden: Card = {
+    id: "sweden",
+    url: "https://pod.example/decks/d.ttl#sweden",
+    front: "Sweden",
+    back: "Stockholm",
+    backImageUrl: FLAG,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    formatVersion: 2,
+  };
+  const norway: Card = { ...sweden, id: "norway", front: "Norway", back: "Oslo" };
+
+  it("recognises the three directions and nothing else", () => {
+    expect(isDeckDirection("front-to-back")).toBe(true);
+    expect(isDeckDirection("back-to-front")).toBe(true);
+    expect(isDeckDirection("bidirectional")).toBe(true);
+    expect(isDeckDirection("sideways")).toBe(false);
+  });
+
+  it("studies a one-way deck one way and a bidirectional deck both ways", () => {
+    expect(studyDirections("front-to-back")).toEqual(["front-to-back"]);
+    expect(studyDirections("back-to-front")).toEqual(["back-to-front"]);
+    expect(studyDirections("bidirectional")).toEqual([
+      "front-to-back",
+      "back-to-front",
+    ]);
+  });
+
+  it("makes the deck's prompts card by card", () => {
+    expect(promptsOf([sweden, norway], "back-to-front")).toEqual([
+      { card: sweden, direction: "back-to-front" },
+      { card: norway, direction: "back-to-front" },
+    ]);
+    expect(promptsOf([sweden, norway], "bidirectional")).toEqual([
+      { card: sweden, direction: "front-to-back" },
+      { card: sweden, direction: "back-to-front" },
+      { card: norway, direction: "front-to-back" },
+      { card: norway, direction: "back-to-front" },
+    ]);
+  });
+
+  it("asks the front and answers with the back, or the reverse", () => {
+    expect(promptSides({ card: sweden, direction: "front-to-back" })).toEqual({
+      question: { side: "front", text: "Sweden" },
+      answer: { side: "back", text: "Stockholm", imageUrl: FLAG },
+    });
+    expect(promptSides({ card: sweden, direction: "back-to-front" })).toEqual({
+      question: { side: "back", text: "Stockholm", imageUrl: FLAG },
+      answer: { side: "front", text: "Sweden" },
+    });
   });
 });
 

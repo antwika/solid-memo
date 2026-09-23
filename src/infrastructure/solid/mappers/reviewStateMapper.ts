@@ -9,9 +9,41 @@ import {
   getUrlAll,
   type Thing,
 } from "@inrupt/solid-client";
-import type { ReviewSnapshot, ReviewState } from "../../../domain/review";
+import type {
+  ReviewKey,
+  ReviewSnapshot,
+  ReviewState,
+} from "../../../domain/review";
 import { RDF, SM } from "../vocab";
 import { fragmentIdOf } from "./deckMapper";
+
+/**
+ * A review state's subject is named after its card: `#<cardId>` for the
+ * front→back direction — every state written before directions existed,
+ * which is what they were — and `#<cardId>@back-to-front` for the other.
+ * The join with the card stays on the fragment id.
+ */
+const BACK_TO_FRONT_SUFFIX = "@back-to-front";
+
+/** The subject URL of a card's review state in one direction. */
+export function reviewSubjectUrl(
+  reviewsDocumentUrl: string,
+  key: ReviewKey,
+): string {
+  const suffix = key.direction === "back-to-front" ? BACK_TO_FRONT_SUFFIX : "";
+  return `${reviewsDocumentUrl}#${key.cardId}${suffix}`;
+}
+
+/** The card and direction a review subject's URL names. */
+function toReviewKey(subjectUrl: string): ReviewKey {
+  const fragment = fragmentIdOf(subjectUrl);
+  return fragment.endsWith(BACK_TO_FRONT_SUFFIX)
+    ? {
+        cardId: fragment.slice(0, -BACK_TO_FRONT_SUFFIX.length),
+        direction: "back-to-front",
+      }
+    : { cardId: fragment, direction: "front-to-back" };
+}
 
 /**
  * Map a reviews-document subject to a ReviewState; null when the subject
@@ -41,7 +73,7 @@ export function toReviewState(thing: Thing): ReviewState | null {
   }
   const previous = toSnapshot(thing);
   return {
-    cardId: fragmentIdOf(asUrl(thing)),
+    ...toReviewKey(asUrl(thing)),
     easeFactor,
     intervalDays,
     repetitions,
@@ -86,7 +118,7 @@ export function toReviewStateThing(
   state: ReviewState,
 ): Thing {
   const thing = buildThing(
-    createThing({ url: `${reviewsDocumentUrl}#${state.cardId}` }),
+    createThing({ url: reviewSubjectUrl(reviewsDocumentUrl, state) }),
   )
     .addIri(RDF.type, SM.ReviewState)
     .addDecimal(SM.easeFactor, state.easeFactor)

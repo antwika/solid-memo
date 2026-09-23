@@ -19,8 +19,8 @@ export function DeckListScreen({
   /** URL of a deck's page; wherever the UI names a deck, it links there. */
   deckHref: (deck: Deck) => string;
   /**
-   * What the row suggests doing with the deck today (Study, Practice, or
-   * nothing). Supplied by the container: it depends on each deck's queue.
+   * What the row offers for the deck today (Study, or nothing). Supplied
+   * by the container: it depends on each deck's queue.
    */
   renderStudyAction: (deck: Deck) => ComponentChildren;
   /** Navigate to the deck creator view. */

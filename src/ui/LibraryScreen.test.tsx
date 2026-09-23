@@ -10,6 +10,7 @@ const capitals: LibraryDeck = {
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
   description: "Every country and its capital, from Wikipedia.",
+  direction: "front-to-back",
   sources: [],
 };
 const rivers: LibraryDeck = {
@@ -17,6 +18,7 @@ const rivers: LibraryDeck = {
   name: "Rivers",
   cardCount: 1,
   authors: [],
+  direction: "front-to-back",
   sources: [],
 };
 

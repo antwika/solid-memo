@@ -4,6 +4,8 @@ import {
   type Card,
   type CardContent,
   type Deck,
+  type DeckDirection,
+  type Prompt,
 } from "../domain/deck";
 import type {
   Instance,
@@ -12,10 +14,18 @@ import type {
 } from "../domain/instance";
 import type { LibraryCard, LibraryDeck } from "../domain/library";
 import {
+  applyLibraryUpgrade,
+  planLibraryUpgrade,
+  type LibraryUpgradePlan,
+} from "../domain/libraryUpgrade";
+import {
   isOutdated,
+  isDeckOutdated,
   planMigration,
   upgradeCard,
+  upgradeDeck,
   type MigrationPlan,
+  type MigrationResult,
 } from "../domain/migration";
 import {
   DEFAULT_PREFERENCES,
@@ -82,6 +92,11 @@ export interface UseCases {
   listDecks(instanceUrl: string): Promise<Deck[]>;
   createDeck(instanceUrl: string, name: string): Promise<Deck>;
   renameDeck(deck: Deck, name: string): Promise<Deck>;
+  /**
+   * Change how the deck is studied. Review state is kept: a card's
+   * front→back state waits, unused, while the deck is studied back→front.
+   */
+  setDeckDirection(deck: Deck, direction: DeckDirection): Promise<Deck>;
   removeDeck(deck: Deck): Promise<void>;
   /** The ready-made decks the app offers for import. */
   listLibraryDecks(): Promise<LibraryDeck[]>;
@@ -89,6 +104,15 @@ export interface UseCases {
   importLibraryDeck(instanceUrl: string, deck: LibraryDeck): Promise<Deck>;
   /** A library deck's cards, to look through before importing it. */
   listLibraryCards(deck: LibraryDeck): Promise<LibraryCard[]>;
+  /**
+   * Whether the library now publishes an imported deck in a newer format
+   * this app can bring the copy up to, and what that would change. Null
+   * for a deck not from the library, or when there is nothing (safe) to
+   * offer. Reads the library document; writes nothing.
+   */
+  planLibraryUpgrade(deck: Deck): Promise<LibraryUpgradePlan | null>;
+  /** Apply a planned upgrade: one write of the deck's catalog entry. */
+  applyLibraryUpgrade(deck: Deck, plan: LibraryUpgradePlan): Promise<Deck>;
   listCards(deck: Deck): Promise<Card[]>;
   /**
    * Rejects, without any pod write, unless each side has text or an
@@ -105,12 +129,12 @@ export interface UseCases {
    */
   planMigration(instanceUrl: string): Promise<MigrationPlan>;
   /**
-   * Rewrite every outdated card in the instance in the current format,
-   * one write per deck (cards are re-read first, so an edit made since
-   * the plan is never overwritten). Resolves to the number of cards
-   * migrated. Only ever run after the user has agreed to the plan.
+   * Rewrite every outdated deck entry and card in the instance in the
+   * current format, one write per document (cards are re-read first, so
+   * an edit made since the plan is never overwritten). Resolves to what
+   * was migrated. Only ever run after the user has agreed to the plan.
    */
-  migrateInstance(instanceUrl: string): Promise<number>;
+  migrateInstance(instanceUrl: string): Promise<MigrationResult>;
   /** Stored preferences overlaid on the defaults. */
   getPreferences(instanceUrl: string): Promise<StudyPreferences>;
   savePreferences(
@@ -124,13 +148,13 @@ export interface UseCases {
     now: Date,
   ): Promise<StudyQueue>;
   /**
-   * Apply one SM-2 review: load the card's state (or start fresh),
+   * Apply one SM-2 review: load the prompt's state (or start fresh),
    * transition it, persist it, and return the new state.
    */
   recordReview(
     instanceUrl: string,
     deck: Deck,
-    card: Card,
+    prompt: Prompt,
     quality: ReviewQuality,
     now: Date,
   ): Promise<ReviewState>;
@@ -269,6 +293,9 @@ export function createUseCases({
     renameDeck(deck, name) {
       return deckRepository.renameDeck(deck, name.trim());
     },
+    setDeckDirection(deck, direction) {
+      return deckRepository.saveDeck({ ...deck, direction });
+    },
     removeDeck(deck) {
       return deckRepository.removeDeck(deck);
     },
@@ -281,6 +308,14 @@ export function createUseCases({
     },
     async listLibraryCards(deck) {
       return (await deckLibrary.fetchLibraryDeck(deck.url)).cards;
+    },
+    async planLibraryUpgrade(deck) {
+      if (deck.sourceUrl === undefined) return null;
+      const source = await deckLibrary.fetchLibraryDeck(deck.sourceUrl);
+      return planLibraryUpgrade(deck, source);
+    },
+    applyLibraryUpgrade(deck, plan) {
+      return deckRepository.saveDeck(applyLibraryUpgrade(deck, plan));
     },
     listCards(deck) {
       return deckRepository.listCards(deck);
@@ -305,16 +340,20 @@ export function createUseCases({
       return planMigration(entries);
     },
     async migrateInstance(instanceUrl) {
-      let migrated = 0;
+      const migrated: MigrationResult = { deckCount: 0, cardCount: 0 };
       // Deck by deck: a failure part-way leaves whole decks either done or
       // untouched, and the plan shown afterwards says which remain.
       for (const deck of await deckRepository.listDecks(instanceUrl)) {
+        if (isDeckOutdated(deck)) {
+          await deckRepository.saveDeck(upgradeDeck(deck));
+          migrated.deckCount += 1;
+        }
         const outdated = (await deckRepository.listCards(deck)).filter(
           isOutdated,
         );
         if (outdated.length === 0) continue;
         await deckRepository.saveCards(deck, outdated.map(upgradeCard));
-        migrated += outdated.length;
+        migrated.cardCount += outdated.length;
       }
       return migrated;
     },
@@ -328,12 +367,20 @@ export function createUseCases({
         reviewStateRepository.listReviewStates(deck),
         getPreferences(instanceUrl),
       ]);
-      return buildStudyQueue({ cards, reviews, prefs, now, random });
+      return buildStudyQueue({
+        cards,
+        direction: deck.direction,
+        reviews,
+        prefs,
+        now,
+        random,
+      });
     },
-    async recordReview(instanceUrl, deck, card, quality, now) {
+    async recordReview(instanceUrl, deck, prompt, quality, now) {
+      const key = { cardId: prompt.card.id, direction: prompt.direction };
       const [prefs, current] = await Promise.all([
         getPreferences(instanceUrl),
-        reviewStateRepository.getReviewState(deck, card.id),
+        reviewStateRepository.getReviewState(deck, key),
       ]);
       const next = applySm2(current ?? INITIAL_SM2_STATE, quality);
       // What a reset of today would restore.
@@ -343,7 +390,7 @@ export function createUseCases({
         prefs.dayBoundaryHour,
       );
       const state: ReviewState = {
-        cardId: card.id,
+        ...key,
         ...next,
         due: nextDueDate(now, next.intervalDays, prefs.dayBoundaryHour),
         firstReviewedAt: current?.firstReviewedAt ?? now.toISOString(),
@@ -359,11 +406,11 @@ export function createUseCases({
         reviewStateRepository.listReviewStates(deck),
       ]);
       const reset = resetStudyDay(reviews, now, prefs.dayBoundaryHour);
-      const count = reset.restore.length + reset.removeCardIds.length;
+      const count = reset.restore.length + reset.remove.length;
       if (count > 0) {
         await reviewStateRepository.applyReviewChanges(deck, {
           save: reset.restore,
-          removeCardIds: reset.removeCardIds,
+          remove: reset.remove,
         });
       }
       return count;

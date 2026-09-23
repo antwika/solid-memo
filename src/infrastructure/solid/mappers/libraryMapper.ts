@@ -22,7 +22,7 @@ import type {
   LibrarySource,
 } from "../../../domain/library";
 import { DCTERMS, RDF, SM } from "../vocab";
-import { fragmentIdOf, toCardContent } from "./deckMapper";
+import { fragmentIdOf, toCardContent, toDeckDirection } from "./deckMapper";
 
 /**
  * Map an index subject to a LibraryDeck; null when the subject is not a
@@ -47,6 +47,7 @@ export function toLibraryDeck(
     authors: getStringNoLocaleAll(thing, DCTERMS.creator),
     ...(license === null ? {} : { license }),
     ...(description === null ? {} : { description }),
+    direction: toDeckDirection(getStringNoLocale(thing, SM.direction)),
     ...(createdAt === undefined ? {} : { createdAt }),
     sources: getUrlAll(thing, DCTERMS.source).map((sourceUrl) =>
       toLibrarySource(sourceUrl, getThing(index, sourceUrl)),
@@ -101,6 +102,7 @@ export function toLibraryDeckContent(
     authors: getStringNoLocaleAll(deck, DCTERMS.creator),
     ...(license === null ? {} : { license }),
     ...(description === null ? {} : { description }),
+    direction: toDeckDirection(getStringNoLocale(deck, SM.direction)),
     cards: things
       .map((thing) => toLibraryCard(url, thing))
       .filter((card): card is LibraryCard => card !== null),

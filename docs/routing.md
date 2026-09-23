@@ -38,7 +38,7 @@ full URLs, carried URL-encoded in hash query parameters.
 | `#/browse?instance=…&deck=…[&page=n]` | Browser — the one place a deck and its cards are edited. Cards are paged; `page` (1-based) is omitted for the first page. Paging *replaces* the history entry, so Back leaves the Browser rather than walking every page, while opening a card *pushes*, so Back from a card returns to the same page. |
 | `#/new-card?instance=…&deck=…` | card creator (opened from, and returning to, the Browser) |
 | `#/card?instance=…&deck=…&card=…` | one card's own page: the card, its editor, remove (opened by clicking a Browser row; an unknown card falls back to the Browser) |
-| `#/practice?instance=…&deck=…&mode=…` | practice session |
+| `#/study?instance=…&deck=…` | study session: the deck's due and new prompts for today, interleaved |
 | `#/preferences?instance=…` | preferences |
 
 ## Resolution and fallbacks

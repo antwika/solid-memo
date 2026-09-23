@@ -8,12 +8,29 @@ import {
   getUrlAll,
   type Thing,
 } from "@inrupt/solid-client";
-import type { Card, CardContent, Deck } from "../../../domain/deck";
+import {
+  DEFAULT_DECK_DIRECTION,
+  isDeckDirection,
+  type Card,
+  type CardContent,
+  type Deck,
+  type DeckDirection,
+} from "../../../domain/deck";
 import { DCTERMS, RDF, SM } from "../vocab";
 
 /** Fragment id of a subject URL, e.g. "deck-1" for ".../catalog.ttl#deck-1". */
 export function fragmentIdOf(subjectUrl: string): string {
   return subjectUrl.slice(subjectUrl.indexOf("#") + 1);
+}
+
+/**
+ * A stored `sm:direction`; absent (format 1) or unknown means front→back,
+ * the only direction there was before the field existed.
+ */
+export function toDeckDirection(value: string | null): DeckDirection {
+  return value !== null && isDeckDirection(value)
+    ? value
+    : DEFAULT_DECK_DIRECTION;
 }
 
 /**
@@ -39,6 +56,7 @@ export function toDeck(thing: Thing): Deck | null {
     createdAt: getDatetime(thing, DCTERMS.created)?.toISOString() ?? "",
     // Data written before the field existed is the first format.
     formatVersion: getInteger(thing, SM.formatVersion) ?? 1,
+    direction: toDeckDirection(getStringNoLocale(thing, SM.direction)),
     authors: getStringNoLocaleAll(thing, DCTERMS.creator),
     ...(license === null ? {} : { license }),
     ...(description === null ? {} : { description }),

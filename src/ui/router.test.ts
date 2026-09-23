@@ -66,10 +66,9 @@ const roundTrips: RouteRef[] = [
     cardUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl#card-1",
   },
   {
-    screen: "practice",
+    screen: "study",
     instanceUrl: "https://pod.example/solid-memo/a/",
     deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
-    mode: "study",
   },
   { screen: "preferences", instanceUrl: "https://pod.example/solid-memo/a/" },
 ];
@@ -140,6 +139,9 @@ describe("routeToHash / parseHash", () => {
     "#/practice?instance=a&deck=b",
     "#/practice?instance=a&deck=b&mode=cram",
     "#/practice?mode=study",
+    "#/study",
+    "#/study?instance=a",
+    "#/study?deck=b",
     "#/preferences",
   ])("rejects invalid hash %j", (hash) => {
     expect(parseHash(hash)).toBeNull();

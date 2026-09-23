@@ -58,6 +58,7 @@ describe("toLibraryDeck", () => {
       license: CC0,
       description: "From Wikipedia.",
       createdAt: "2026-09-22T09:49:00.236Z",
+      direction: "front-to-back",
       sources: [],
     });
   });
@@ -96,6 +97,17 @@ describe("toLibraryDeck", () => {
     ]);
   });
 
+  it("reads the deck's direction, treating an unknown one as front→back", () => {
+    const both = thing(DOC, (t) =>
+      t.addIri(RDF.type, SM.Deck).addStringNoLocale(SM.direction, "bidirectional"),
+    );
+    expect(toLibraryDeck(both, index(both))?.direction).toBe("bidirectional");
+    const odd = thing(DOC, (t) =>
+      t.addIri(RDF.type, SM.Deck).addStringNoLocale(SM.direction, "sideways"),
+    );
+    expect(toLibraryDeck(odd, index(odd))?.direction).toBe("front-to-back");
+  });
+
   it("falls back to the URL, zero cards, no authors and no licence", () => {
     const deck = thing(DOC, (t) => t.addIri(RDF.type, SM.Deck));
     expect(toLibraryDeck(deck, index(deck))).toEqual({
@@ -103,6 +115,7 @@ describe("toLibraryDeck", () => {
       name: DOC,
       cardCount: 0,
       authors: [],
+      direction: "front-to-back",
       sources: [],
     });
   });
@@ -129,10 +142,11 @@ describe("toLibraryDeckContent", () => {
         t
           .addIri(RDF.type, SM.Deck)
           .addStringNoLocale(DCTERMS.title, "Capitals")
-          .addInteger(SM.formatVersion, 1)
+          .addInteger(SM.formatVersion, 2)
           .addStringNoLocale(DCTERMS.creator, "Anton Wiklund")
           .addIri(DCTERMS.license, CC0)
-          .addStringNoLocale(DCTERMS.description, "From Wikipedia."),
+          .addStringNoLocale(DCTERMS.description, "From Wikipedia.")
+          .addStringNoLocale(SM.direction, "bidirectional"),
       ),
       thing(`${CANONICAL}#sweden`, (t) =>
         t
@@ -164,10 +178,11 @@ describe("toLibraryDeckContent", () => {
     expect(toLibraryDeckContent(DOC, dataset)).toEqual({
       url: DOC,
       name: "Capitals",
-      formatVersion: 1,
+      formatVersion: 2,
       authors: ["Anton Wiklund"],
       license: CC0,
       description: "From Wikipedia.",
+      direction: "bidirectional",
       cards: [
         { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
         {
@@ -192,12 +207,14 @@ describe("toLibraryDeckContent", () => {
       ),
     );
     const content = toLibraryDeckContent(DOC, dataset);
-    // An untitled deck is named after its URL; no authors, no licence.
+    // An untitled deck is named after its URL; no authors, no licence, and
+    // studied the one way format 1 knew.
     expect(content).toEqual({
       url: DOC,
       name: DOC,
       formatVersion: 1,
       authors: [],
+      direction: "front-to-back",
       cards: [{ id: "se", front: "Sweden", back: "Stockholm", formatVersion: 1 }],
     });
   });
@@ -205,11 +222,11 @@ describe("toLibraryDeckContent", () => {
   it("refuses a deck in a newer format than it writes", () => {
     const dataset = deckDocument(
       thing(CANONICAL, (t) =>
-        t.addIri(RDF.type, SM.Deck).addInteger(SM.formatVersion, 2),
+        t.addIri(RDF.type, SM.Deck).addInteger(SM.formatVersion, 3),
       ),
     );
     expect(() => toLibraryDeckContent(DOC, dataset)).toThrow(
-      `<${DOC}> is in deck format 2, newer than this app supports (1).`,
+      `<${DOC}> is in deck format 3, newer than this app supports (2).`,
     );
   });
 

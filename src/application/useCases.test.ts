@@ -10,7 +10,7 @@ import type {
   WebIdDocumentRepository,
 } from "./ports";
 import { createUseCases } from "./useCases";
-import type { Card, Deck } from "../domain/deck";
+import { DECK_FORMAT_VERSION, type Card, type Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "../domain/library";
 import type { Session } from "../domain/session";
@@ -33,8 +33,9 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
-  formatVersion: 1,
+  formatVersion: DECK_FORMAT_VERSION,
   authors: [],
 };
 const card: Card = {
@@ -51,6 +52,7 @@ const libraryDeck: LibraryDeck = {
   cardCount: 1,
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
+  direction: "front-to-back",
   sources: [],
 };
 const libraryContent: LibraryDeckContent = {
@@ -59,6 +61,7 @@ const libraryContent: LibraryDeckContent = {
   formatVersion: 1,
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
+  direction: "front-to-back",
   cards: [{ id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 }],
 };
 
@@ -92,6 +95,7 @@ function makeDeps() {
     listDecks: vi.fn(async () => [deck]),
     createDeck: vi.fn(async () => deck),
     renameDeck: vi.fn(async () => deck),
+    saveDeck: vi.fn(async (saved) => saved),
     removeDeck: vi.fn(async () => undefined),
     listCards: vi.fn(async () => [card]),
     addCard: vi.fn(async () => card),
@@ -352,6 +356,14 @@ describe("createUseCases", () => {
       "Kanji N4",
     );
 
+    await expect(
+      useCases.setDeckDirection(deck, "bidirectional"),
+    ).resolves.toEqual({ ...deck, direction: "bidirectional" });
+    expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({
+      ...deck,
+      direction: "bidirectional",
+    });
+
     await useCases.removeDeck(deck);
     expect(deps.deckRepository.removeDeck).toHaveBeenCalledWith(deck);
 
@@ -421,12 +433,37 @@ describe("createUseCases", () => {
       const useCases = createUseCases(deps);
 
       await expect(useCases.planMigration(instance.url)).resolves.toEqual({
-        decks: [{ deck, cardCount: 2 }],
+        decks: [{ deck, deckOutdated: false, cardCount: 2 }],
+        deckCount: 0,
         cardCount: 2,
       });
       expect(deps.deckRepository.listDecks).toHaveBeenCalledWith(instance.url);
       expect(deps.deckRepository.listCards).toHaveBeenCalledTimes(2);
       expect(deps.deckRepository.saveCards).not.toHaveBeenCalled();
+      expect(deps.deckRepository.saveDeck).not.toHaveBeenCalled();
+    });
+
+    it("migrateInstance rewrites an outdated deck entry, then its cards", async () => {
+      const deps = makeDeps();
+      const oldEntry: Deck = { ...other, formatVersion: 1 };
+      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, oldEntry]);
+      vi.mocked(deps.deckRepository.listCards).mockImplementation(async (d) =>
+        d === oldEntry ? [old("d")] : [current("b")],
+      );
+      const useCases = createUseCases(deps);
+
+      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
+        deckCount: 1,
+        cardCount: 1,
+      });
+      expect(deps.deckRepository.saveDeck).toHaveBeenCalledExactlyOnceWith({
+        ...oldEntry,
+        formatVersion: DECK_FORMAT_VERSION,
+      });
+      expect(deps.deckRepository.saveCards).toHaveBeenCalledExactlyOnceWith(
+        oldEntry,
+        [current("d")],
+      );
     });
 
     it("migrateInstance rewrites the outdated cards of each deck in one write per deck", async () => {
@@ -437,7 +474,11 @@ describe("createUseCases", () => {
       );
       const useCases = createUseCases(deps);
 
-      await expect(useCases.migrateInstance(instance.url)).resolves.toBe(3);
+      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
+        deckCount: 0,
+        cardCount: 3,
+      });
+      expect(deps.deckRepository.saveDeck).not.toHaveBeenCalled();
       expect(deps.deckRepository.saveCards).toHaveBeenCalledTimes(2);
       expect(deps.deckRepository.saveCards).toHaveBeenNthCalledWith(1, deck, [
         current("a"),
@@ -453,7 +494,10 @@ describe("createUseCases", () => {
       vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
       const useCases = createUseCases(deps);
 
-      await expect(useCases.migrateInstance(instance.url)).resolves.toBe(0);
+      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
+        deckCount: 0,
+        cardCount: 0,
+      });
       expect(deps.deckRepository.saveCards).not.toHaveBeenCalled();
     });
 
@@ -489,6 +533,48 @@ describe("createUseCases", () => {
       libraryDeck.url,
     );
     expect(deps.deckRepository.importDeck).not.toHaveBeenCalled();
+  });
+
+  it("planLibraryUpgrade reads the library document of an imported deck and writes nothing", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.deckLibrary.fetchLibraryDeck).mockResolvedValue({
+      ...libraryContent,
+      formatVersion: 2,
+      direction: "bidirectional",
+    });
+    const useCases = createUseCases(deps);
+    const copy: Deck = { ...deck, formatVersion: 1, sourceUrl: libraryDeck.url };
+
+    await expect(useCases.planLibraryUpgrade(copy)).resolves.toEqual({
+      fromVersion: 1,
+      toVersion: 2,
+      direction: "bidirectional",
+    });
+    expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(libraryDeck.url);
+    expect(deps.deckRepository.saveDeck).not.toHaveBeenCalled();
+  });
+
+  it("planLibraryUpgrade offers nothing for a home-made deck, without reading the library", async () => {
+    const deps = makeDeps();
+    await expect(createUseCases(deps).planLibraryUpgrade(deck)).resolves.toBeNull();
+    expect(deps.deckLibrary.fetchLibraryDeck).not.toHaveBeenCalled();
+  });
+
+  it("applyLibraryUpgrade writes the deck as the plan says", async () => {
+    const deps = makeDeps();
+    const copy: Deck = { ...deck, formatVersion: 1, sourceUrl: libraryDeck.url };
+    await expect(
+      createUseCases(deps).applyLibraryUpgrade(copy, {
+        fromVersion: 1,
+        toVersion: 2,
+        direction: "bidirectional",
+      }),
+    ).resolves.toEqual({ ...copy, direction: "bidirectional", formatVersion: 2 });
+    expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({
+      ...copy,
+      direction: "bidirectional",
+      formatVersion: 2,
+    });
   });
 
   it("importLibraryDeck fetches the deck's content and imports it", async () => {
@@ -604,7 +690,7 @@ describe("createUseCases", () => {
       new Date(2026, 8, 21, 12, 0),
     );
     // random() = 0 reverses a Fisher–Yates shuffle.
-    expect(queue.newCards.map((c) => c.id)).toEqual(["n2", "n3", "n1"]);
+    expect(queue.newPrompts.map((p) => p.card.id)).toEqual(["n2", "n3", "n1"]);
   });
 
   it("getStudyQueue composes cards, review states and preferences", async () => {
@@ -618,6 +704,7 @@ describe("createUseCases", () => {
     vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
       {
         cardId: "card-due",
+        direction: "front-to-back",
         easeFactor: 2.5,
         intervalDays: 1,
         repetitions: 1,
@@ -633,8 +720,8 @@ describe("createUseCases", () => {
       deck,
       new Date(2026, 8, 21, 12, 0),
     );
-    expect(queue.due.map((c) => c.id)).toEqual(["card-due"]);
-    expect(queue.newCards.map((c) => c.id)).toEqual(["card-new"]);
+    expect(queue.due.map((p) => p.card.id)).toEqual(["card-due"]);
+    expect(queue.newPrompts.map((p) => p.card.id)).toEqual(["card-new"]);
   });
 
   it("recordReview starts fresh for a never-reviewed card", async () => {
@@ -645,13 +732,14 @@ describe("createUseCases", () => {
     const state = await useCases.recordReview(
       instance.url,
       deck,
-      card,
+      { card, direction: "front-to-back" },
       5,
       now,
     );
 
     expect(state).toEqual({
       cardId: card.id,
+      direction: "front-to-back",
       easeFactor: 2.6,
       intervalDays: 1,
       repetitions: 1,
@@ -669,6 +757,7 @@ describe("createUseCases", () => {
     const deps = makeDeps();
     vi.mocked(deps.reviewStateRepository.getReviewState).mockResolvedValue({
       cardId: card.id,
+      direction: "front-to-back",
       easeFactor: 2.5,
       intervalDays: 6,
       repetitions: 2,
@@ -682,7 +771,7 @@ describe("createUseCases", () => {
     const state = await useCases.recordReview(
       instance.url,
       deck,
-      card,
+      { card, direction: "front-to-back" },
       4,
       now,
     );
@@ -711,7 +800,7 @@ describe("createUseCases", () => {
     const state = await useCases.recordReview(
       instance.url,
       deck,
-      card,
+      { card, direction: "front-to-back" },
       4,
       new Date(2026, 8, 21, 12, 0),
     );
@@ -734,6 +823,7 @@ describe("createUseCases", () => {
       vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
         {
           cardId: "reviewed",
+          direction: "front-to-back",
           easeFactor: 2.6,
           intervalDays: 15,
           repetitions: 3,
@@ -744,6 +834,7 @@ describe("createUseCases", () => {
         },
         {
           cardId: "introduced",
+          direction: "front-to-back",
           easeFactor: 2.5,
           intervalDays: 1,
           repetitions: 1,
@@ -753,6 +844,7 @@ describe("createUseCases", () => {
         },
         {
           cardId: "untouched",
+          direction: "front-to-back",
           easeFactor: 2.5,
           intervalDays: 6,
           repetitions: 2,
@@ -770,8 +862,8 @@ describe("createUseCases", () => {
       expect(
         deps.reviewStateRepository.applyReviewChanges,
       ).toHaveBeenCalledExactlyOnceWith(deck, {
-        save: [{ cardId: "reviewed", firstReviewedAt: earlier, ...morning }],
-        removeCardIds: ["introduced"],
+        save: [{ cardId: "reviewed", direction: "front-to-back", firstReviewedAt: earlier, ...morning }],
+        remove: [{ cardId: "introduced", direction: "front-to-back" }],
       });
     });
 
@@ -794,6 +886,7 @@ describe("createUseCases", () => {
       vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
         {
           cardId: "night-owl",
+          direction: "front-to-back",
           easeFactor: 2.5,
           intervalDays: 1,
           repetitions: 1,
@@ -824,6 +917,7 @@ describe("createUseCases", () => {
     const deps = makeDeps();
     vi.mocked(deps.reviewStateRepository.getReviewState).mockResolvedValue({
       cardId: card.id,
+      direction: "front-to-back",
       easeFactor: 2.2,
       intervalDays: 30,
       repetitions: 5,
@@ -836,7 +930,7 @@ describe("createUseCases", () => {
     const state = await useCases.recordReview(
       instance.url,
       deck,
-      card,
+      { card, direction: "front-to-back" },
       0,
       new Date(2026, 8, 21, 12, 0),
     );

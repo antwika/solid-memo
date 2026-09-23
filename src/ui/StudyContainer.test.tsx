@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PracticeContainer } from "./PracticeContainer";
+import { StudyContainer } from "./StudyContainer";
 import type { UseCases } from "../application/useCases";
-import type { Card, Deck } from "../domain/deck";
+import type { Deck, Prompt } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import { DEFAULT_PREFERENCES } from "../domain/preferences";
 import type { StudyQueue } from "../domain/scheduling";
@@ -20,25 +20,29 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],
 };
 
-function makeCard(id: string, front: string): Card {
+/** A front→back prompt of a card with the given front. */
+function makePrompt(id: string, front: string): Prompt {
   return {
-    id,
-    url: `${deck.cardsDocumentUrl}#${id}`,
-    front,
-    back: `${front}-back`,
-    createdAt: "2026-09-21T10:00:00.000Z",
-    formatVersion: 1,
+    card: {
+      id,
+      url: `${deck.cardsDocumentUrl}#${id}`,
+      front,
+      back: `${front}-back`,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+    },
+    direction: "front-to-back",
   };
 }
 
 function renderContainer(
   useCases: UseCases,
-  mode: "practice" | "study" = "practice",
   random: () => number = () => 0,
 ) {
   const queryClient = new QueryClient({
@@ -47,11 +51,10 @@ function renderContainer(
   const onExit = vi.fn();
   const view = render(
     <QueryClientProvider client={queryClient}>
-      <PracticeContainer
+      <StudyContainer
         useCases={useCases}
         instance={instance}
         deck={deck}
-        mode={mode}
         onExit={onExit}
         random={random}
       />
@@ -68,13 +71,13 @@ async function answer(grade: string) {
   fireEvent.click(screen.getByRole("button", { name: grade }));
 }
 
-describe("PracticeContainer", () => {
+describe("StudyContainer", () => {
   it("shows a preparing state, then the first due card", async () => {
     renderContainer(
       makeUseCasesFake({
         getStudyQueue: vi.fn(async () => ({
-          due: [makeCard("card-a", "front-a")],
-          newCards: [makeCard("card-b", "front-b")],
+          due: [makePrompt("card-a", "front-a")],
+          newPrompts: [makePrompt("card-b", "front-b")],
           studiedToday: 0,
         })),
       }),
@@ -84,6 +87,62 @@ describe("PracticeContainer", () => {
     ).toBeInTheDocument();
     expect(await screen.findByText("front-a")).toBeInTheDocument();
     expect(screen.getByText("Card 1 of 2")).toBeInTheDocument();
+  });
+
+  it("asks a back→front prompt from the back, and records it as such", async () => {
+    const reverse: Prompt = {
+      ...makePrompt("card-a", "front-a"),
+      direction: "back-to-front",
+    };
+    const useCases = makeUseCasesFake({
+      getStudyQueue: vi.fn(async () => ({
+        due: [reverse],
+        newPrompts: [],
+        studiedToday: 0,
+      })),
+    });
+    renderContainer(useCases);
+
+    expect(await screen.findByText("front-a-back")).toBeInTheDocument();
+    expect(screen.queryByText("front-a")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    expect(screen.getByText("front-a")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "4 — Good" }));
+    await waitFor(() =>
+      expect(useCases.recordReview).toHaveBeenCalledWith(
+        instance.url,
+        deck,
+        reverse,
+        4,
+        expect.any(Date),
+      ),
+    );
+  });
+
+  it("spreads new prompts among the due ones", async () => {
+    renderContainer(
+      makeUseCasesFake({
+        getStudyQueue: vi.fn(async () => ({
+          due: [
+            makePrompt("card-a", "due-a"),
+            makePrompt("card-b", "due-b"),
+            makePrompt("card-c", "due-c"),
+          ],
+          newPrompts: [makePrompt("card-x", "new-x"), makePrompt("card-y", "new-y")],
+          studiedToday: 0,
+        })),
+      }),
+    );
+
+    const seen: string[] = [];
+    for (const expected of ["due-a", "new-x", "due-b", "new-y", "due-c"]) {
+      seen.push((await screen.findByText(expected)).textContent!);
+      await answer("5 — Easy");
+    }
+    expect(seen).toEqual(["due-a", "new-x", "due-b", "new-y", "due-c"]);
+    expect(
+      await screen.findByText("Session finished — all cards reviewed."),
+    ).toBeInTheDocument();
   });
 
   it("shows an error when the queue cannot be built", async () => {
@@ -100,8 +159,8 @@ describe("PracticeContainer", () => {
   it("advances through the queue as answers are recorded", async () => {
     const useCases = makeUseCasesFake({
       getStudyQueue: vi.fn(async () => ({
-        due: [makeCard("card-a", "front-a")],
-        newCards: [makeCard("card-b", "front-b")],
+        due: [makePrompt("card-a", "front-a")],
+        newPrompts: [makePrompt("card-b", "front-b")],
         studiedToday: 0,
       })),
     });
@@ -114,7 +173,7 @@ describe("PracticeContainer", () => {
     expect(useCases.recordReview).toHaveBeenCalledWith(
       instance.url,
       deck,
-      expect.objectContaining({ id: "card-a" }),
+      expect.objectContaining({ card: expect.objectContaining({ id: "card-a" }) }),
       5,
       expect.any(Date),
     );
@@ -134,8 +193,8 @@ describe("PracticeContainer", () => {
   it("stays on the card and shows the error when recording fails", async () => {
     const useCases = makeUseCasesFake({
       getStudyQueue: vi.fn(async () => ({
-        due: [makeCard("card-a", "front-a")],
-        newCards: [],
+        due: [makePrompt("card-a", "front-a")],
+        newPrompts: [],
         studiedToday: 0,
       })),
       recordReview: vi.fn(async () => {
@@ -151,30 +210,11 @@ describe("PracticeContainer", () => {
     expect(screen.getByText("front-a")).toBeInTheDocument();
   });
 
-  it("limits a study session to due cards", async () => {
-    renderContainer(
-      makeUseCasesFake({
-        getStudyQueue: vi.fn(async () => ({
-          due: [makeCard("card-a", "front-a")],
-          newCards: [makeCard("card-b", "front-b")],
-          studiedToday: 0,
-        })),
-      }),
-      "study",
-    );
-
-    expect(await screen.findByText("front-a")).toBeInTheDocument();
-    expect(screen.getByText("Card 1 of 1")).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Study: Kanji N5" }),
-    ).toBeInTheDocument();
-  });
-
   it("shows the empty state when nothing is due", async () => {
     renderContainer(
       makeUseCasesFake({
         getStudyQueue: vi.fn(
-          async (): Promise<StudyQueue> => ({ due: [], newCards: [], studiedToday: 0 }),
+          async (): Promise<StudyQueue> => ({ due: [], newPrompts: [], studiedToday: 0 }),
         ),
       }),
     );
@@ -187,16 +227,16 @@ describe("PracticeContainer", () => {
     const useCases = makeUseCasesFake({
       getStudyQueue: vi.fn(async () => ({
         due: [
-          makeCard("card-a", "front-a"),
-          makeCard("card-b", "front-b"),
-          makeCard("card-c", "front-c"),
+          makePrompt("card-a", "front-a"),
+          makePrompt("card-b", "front-b"),
+          makePrompt("card-c", "front-c"),
         ],
-        newCards: [],
+        newPrompts: [],
         studiedToday: 0,
       })),
     });
     // random() = 0 requeues at the earliest allowed slot: after one card.
-    renderContainer(useCases, "practice", () => 0);
+    renderContainer(useCases, () => 0);
 
     expect(await screen.findByText("front-a")).toBeInTheDocument();
     expect(screen.getByText("Card 1 of 3")).toBeInTheDocument();
@@ -222,8 +262,8 @@ describe("PracticeContainer", () => {
   it("repeats the only remaining card immediately until it passes", async () => {
     const useCases = makeUseCasesFake({
       getStudyQueue: vi.fn(async () => ({
-        due: [makeCard("card-a", "front-a")],
-        newCards: [],
+        due: [makePrompt("card-a", "front-a")],
+        newPrompts: [],
         studiedToday: 0,
       })),
     });
@@ -245,8 +285,8 @@ describe("PracticeContainer", () => {
   it("does not repeat a card graded 2 or better", async () => {
     const useCases = makeUseCasesFake({
       getStudyQueue: vi.fn(async () => ({
-        due: [makeCard("card-a", "front-a")],
-        newCards: [],
+        due: [makePrompt("card-a", "front-a")],
+        newPrompts: [],
         studiedToday: 0,
       })),
     });
@@ -261,8 +301,8 @@ describe("PracticeContainer", () => {
   it("shows the answer buttons the preferences ask for", async () => {
     const useCases = makeUseCasesFake({
       getStudyQueue: vi.fn(async () => ({
-        due: [makeCard("card-a", "front-a"), makeCard("card-b", "front-b")],
-        newCards: [],
+        due: [makePrompt("card-a", "front-a"), makePrompt("card-b", "front-b")],
+        newPrompts: [],
         studiedToday: 0,
       })),
       getPreferences: vi.fn(async () => ({
@@ -281,7 +321,7 @@ describe("PracticeContainer", () => {
     expect(useCases.recordReview).toHaveBeenCalledWith(
       instance.url,
       deck,
-      expect.objectContaining({ id: "card-a" }),
+      expect.objectContaining({ card: expect.objectContaining({ id: "card-a" }) }),
       1,
       expect.any(Date),
     );
@@ -295,8 +335,8 @@ describe("PracticeContainer", () => {
         throw new Error("no prefs");
       }),
       getStudyQueue: vi.fn(async () => ({
-        due: [makeCard("card-a", "front-a")],
-        newCards: [],
+        due: [makePrompt("card-a", "front-a")],
+        newPrompts: [],
         studiedToday: 0,
       })),
     });
@@ -321,8 +361,8 @@ describe("PracticeContainer", () => {
   it("drops the deck's cached queue when the session is left", async () => {
     const useCases = makeUseCasesFake({
       getStudyQueue: vi.fn(async () => ({
-        due: [makeCard("card-a", "front-a")],
-        newCards: [],
+        due: [makePrompt("card-a", "front-a")],
+        newPrompts: [],
         studiedToday: 0,
       })),
     });

@@ -6,7 +6,7 @@ import type {
 } from "../domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "../domain/library";
 import type { StudyPreferences } from "../domain/preferences";
-import type { ReviewState } from "../domain/review";
+import type { ReviewKey, ReviewState } from "../domain/review";
 import type { EstablishedSession } from "../domain/session";
 import type { Storage } from "../domain/storage";
 import type { WebIdDocument } from "../domain/webIdDocument";
@@ -90,6 +90,12 @@ export interface DeckRepository {
   createDeck(instanceUrl: string, name: string): Promise<Deck>;
   /** Replaces the deck's name; cards and review state are untouched. */
   renameDeck(deck: Deck, name: string): Promise<Deck>;
+  /**
+   * Rewrite the deck's catalog entry — name, direction and format
+   * version — in place, so triples this app does not know survive.
+   * Cards and review state are untouched.
+   */
+  saveDeck(deck: Deck): Promise<Deck>;
   /** Removes the deck's catalog entry, cards document and reviews document. */
   removeDeck(deck: Deck): Promise<void>;
   /**
@@ -127,8 +133,8 @@ export interface DeckLibrary {
 /** Driven port: SM-2 review state, stored separately from card content. */
 export interface ReviewStateRepository {
   listReviewStates(deck: Deck): Promise<ReviewState[]>;
-  /** null when the card has never been reviewed. */
-  getReviewState(deck: Deck, cardId: string): Promise<ReviewState | null>;
+  /** null when the card has never been reviewed in that direction. */
+  getReviewState(deck: Deck, key: ReviewKey): Promise<ReviewState | null>;
   saveReviewState(deck: Deck, state: ReviewState): Promise<void>;
   /**
    * Write several states and drop others in ONE save of the reviews
@@ -136,7 +142,7 @@ export interface ReviewStateRepository {
    */
   applyReviewChanges(
     deck: Deck,
-    changes: { save: ReviewState[]; removeCardIds: string[] },
+    changes: { save: ReviewState[]; remove: ReviewKey[] },
   ): Promise<void>;
 }
 

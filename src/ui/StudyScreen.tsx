@@ -6,12 +6,9 @@ import {
   type AnswerScale,
   type MinimalAnswer,
 } from "../domain/answerScale";
-import type { Card } from "../domain/deck";
+import { promptSides, type Prompt } from "../domain/deck";
 import type { ReviewQuality } from "../domain/review";
 import { CardFace } from "./CardFace";
-
-/** "practice" reviews due + new cards; "study" reviews due cards only. */
-export type PracticeMode = "practice" | "study";
 
 const QUALITY_LABELS: Record<ReviewQuality, string> = {
   0: "0 — Blackout",
@@ -44,11 +41,10 @@ function answerButtons(
       }));
 }
 
-export function PracticeScreen({
-  mode,
+export function StudyScreen({
   deckName,
   deckHref,
-  card,
+  prompt,
   position,
   total,
   answerScale,
@@ -57,15 +53,14 @@ export function PracticeScreen({
   onAnswer,
   onExit,
 }: {
-  mode: PracticeMode;
   deckName: string;
   /** URL of the deck's page; its name links there. */
   deckHref: string;
   /** null when the session is finished. */
-  card: Card | null;
-  /** 1-based position of the current card. */
+  prompt: Prompt | null;
+  /** 1-based position of the current prompt. */
   position: number;
-  /** Cards in the session, including repeats of failed cards. */
+  /** Prompts in the session, including repeats of failed ones. */
   total: number;
   answerScale: AnswerScale;
   busy: boolean;
@@ -77,14 +72,14 @@ export function PracticeScreen({
     <section>
       <header>
         <h2>
-          {mode === "study" ? "Study" : "Practice"}:{" "}
+          Study:{" "}
           <a href={deckHref}>{deckName}</a>
         </h2>
         <button onClick={onExit} disabled={busy}>
           End session
         </button>
       </header>
-      {card === null ? (
+      {prompt === null ? (
         <p>
           {total === 0
             ? "Nothing to study today — come back tomorrow!"
@@ -99,7 +94,7 @@ export function PracticeScreen({
             // Keyed by position, not card id: a card repeated after a
             // lapse must start hidden again.
             key={position}
-            card={card}
+            prompt={prompt}
             answerScale={answerScale}
             busy={busy}
             onAnswer={onAnswer}
@@ -112,28 +107,30 @@ export function PracticeScreen({
 }
 
 /**
- * The card being studied: front up, back under a Reveal button. Keyed by
- * the caller so the reveal state resets on every new card.
+ * The card being studied: the side asked up, the other side under a
+ * Reveal button. Keyed by the caller so the reveal state resets on every
+ * new prompt.
  */
 function StudyCard({
-  card,
+  prompt,
   answerScale,
   busy,
   onAnswer,
 }: {
-  card: Card;
+  prompt: Prompt;
   answerScale: AnswerScale;
   busy: boolean;
   onAnswer: (quality: ReviewQuality) => void;
 }) {
   const [revealed, setRevealed] = useState(false);
+  const { question, answer } = promptSides(prompt);
 
   return (
     <div class="practice-card">
-      <CardFace side="front" text={card.front} imageUrl={card.frontImageUrl} />
+      <CardFace {...question} />
       {revealed ? (
         <>
-          <CardFace side="back" text={card.back} imageUrl={card.backImageUrl} />
+          <CardFace {...answer} />
           <div
             class={`quality-buttons${answerScale === "minimal" ? " minimal" : ""}`}
           >

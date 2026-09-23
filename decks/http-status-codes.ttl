@@ -13,7 +13,8 @@
     dcterms:source <https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status> ,
                    <https://www.iana.org/assignments/http-status-codes> ;
     dcterms:created "2026-09-22T16:29:47.000Z"^^xsd:dateTime ;
-    solid-memo:formatVersion 1 .
+    solid-memo:direction "bidirectional" ;
+    solid-memo:formatVersion 2 .
 
 <https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status>
     dcterms:title "HTTP response status codes" ;

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
-import { PracticeScreen } from "./PracticeScreen";
-import type { Card } from "../domain/deck";
+import { StudyScreen } from "./StudyScreen";
+import type { Card, Prompt } from "../domain/deck";
 
 const card: Card = {
   id: "card-1",
@@ -13,13 +13,12 @@ const card: Card = {
 };
 
 function renderScreen(
-  overrides: Partial<Parameters<typeof PracticeScreen>[0]> = {},
+  overrides: Partial<Parameters<typeof StudyScreen>[0]> = {},
 ) {
   const props = {
-    mode: "practice" as const,
     deckName: "Kanji N5",
     deckHref: "#/deck?deck=d",
-    card: card as Card | null,
+    prompt: { card, direction: "front-to-back" } as Prompt | null,
     position: 1,
     total: 3,
     answerScale: "sm2" as const,
@@ -29,11 +28,11 @@ function renderScreen(
     onExit: vi.fn(),
     ...overrides,
   };
-  const view = render(<PracticeScreen {...props} />);
+  const view = render(<StudyScreen {...props} />);
   return { ...view, props };
 }
 
-describe("PracticeScreen", () => {
+describe("StudyScreen", () => {
   it("links the deck's name to the deck's page", () => {
     renderScreen();
     expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute(
@@ -45,7 +44,7 @@ describe("PracticeScreen", () => {
   it("shows the front and hides the back until revealed", () => {
     renderScreen();
     expect(
-      screen.getByRole("heading", { name: "Practice: Kanji N5" }),
+      screen.getByRole("heading", { name: "Study: Kanji N5" }),
     ).toBeInTheDocument();
     expect(screen.getByText("水")).toBeInTheDocument();
     expect(screen.queryByText("water")).toBeNull();
@@ -54,11 +53,14 @@ describe("PracticeScreen", () => {
 
   it("shows a picture card: the flag on the front, the name once revealed", () => {
     const { container } = renderScreen({
-      card: {
-        ...card,
-        front: "",
-        frontImageUrl: "https://flagcdn.com/af.svg",
-        back: "Afghanistan",
+      prompt: {
+        card: {
+          ...card,
+          front: "",
+          frontImageUrl: "https://flagcdn.com/af.svg",
+          back: "Afghanistan",
+        },
+        direction: "front-to-back",
       },
     });
     expect(container.querySelector(".card-front img")).toHaveAttribute(
@@ -70,11 +72,14 @@ describe("PracticeScreen", () => {
     expect(screen.getByText("Afghanistan")).toBeInTheDocument();
   });
 
-  it("titles a due-only session as Study", () => {
-    renderScreen({ mode: "study" });
-    expect(
-      screen.getByRole("heading", { name: "Study: Kanji N5" }),
-    ).toBeInTheDocument();
+  it("asks a back→front prompt from the back and answers with the front", () => {
+    const { container } = renderScreen({
+      prompt: { card, direction: "back-to-front" },
+    });
+    expect(container.querySelector(".card-back")).toHaveTextContent("water");
+    expect(screen.queryByText("水")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    expect(container.querySelector(".card-front")).toHaveTextContent("水");
   });
 
   it("reveals the back and offers quality grades", () => {
@@ -116,20 +121,20 @@ describe("PracticeScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
     expect(screen.getByText("water")).toBeInTheDocument();
 
-    rerender(<PracticeScreen {...props} position={2} total={2} />);
+    rerender(<StudyScreen {...props} position={2} total={2} />);
     expect(screen.queryByText("water")).toBeNull();
     expect(screen.getByRole("button", { name: "Reveal" })).toBeInTheDocument();
   });
 
   it("shows the finished state after the last card", () => {
-    renderScreen({ card: null, position: 4, total: 3 });
+    renderScreen({ prompt: null, position: 4, total: 3 });
     expect(
       screen.getByText("Session finished — all cards reviewed."),
     ).toBeInTheDocument();
   });
 
   it("shows the empty state when nothing is due", () => {
-    renderScreen({ card: null, position: 1, total: 0 });
+    renderScreen({ prompt: null, position: 1, total: 0 });
     expect(
       screen.getByText("Nothing to study today — come back tomorrow!"),
     ).toBeInTheDocument();

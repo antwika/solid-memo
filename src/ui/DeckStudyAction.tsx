@@ -8,28 +8,25 @@ import { LoadingDots } from "./Loading";
 import { studyCountsSummary } from "./studyCounts";
 
 /**
- * What a deck-list row suggests doing with its deck today, with how much
- * is left ("12 due · 5 new"). Nothing is suggested unless there is
- * something to do: no "Study" without due cards, and a green tick when
- * the deck is done for the day. While the queue is first being fetched
- * the slot shows a loader, so an empty slot never reads as "done".
+ * What a deck-list row offers for its deck today, with how much is left
+ * ("12 due · 5 new"). Nothing is offered unless there is something to
+ * do: a green tick when the deck is done for the day. While the queue is
+ * first being fetched the slot shows a loader, so an empty slot never
+ * reads as "done".
  */
 export function DeckStudyAction({
   deckName,
   queue,
   loading,
   onStudy,
-  onPractice,
 }: {
   deckName: string;
   /** Today's queue; undefined while it is unknown (loading or unreadable). */
   queue: StudyQueue | undefined;
   /** The queue is being fetched and nothing is known yet. */
   loading: boolean;
-  /** Start a due-only session. */
+  /** Start today's session over the deck. */
   onStudy: () => void;
-  /** Start a session that introduces new cards. */
-  onPractice: () => void;
 }) {
   if (queue === undefined) {
     return loading ? (
@@ -40,7 +37,7 @@ export function DeckStudyAction({
   }
   const summary = studyCountsSummary({
     dueCount: queue.due.length,
-    newCount: queue.newCards.length,
+    newCount: queue.newPrompts.length,
   });
   if (summary === null) {
     // A green tick says "done" at a glance; the label carries the words.
@@ -55,19 +52,15 @@ export function DeckStudyAction({
       </span>
     );
   }
-  const action =
-    queue.due.length > 0
-      ? { label: "Study", onClick: onStudy }
-      : { label: "Practice", onClick: onPractice };
   return (
     <>
       <span class="hint study-counts">{summary}</span>
       <button
         class="primary"
-        aria-label={`${action.label} ${deckName}`}
-        onClick={action.onClick}
+        aria-label={`Study ${deckName}`}
+        onClick={onStudy}
       >
-        {action.label}
+        Study
       </button>
     </>
   );
@@ -79,13 +72,11 @@ export function DeckStudyActionContainer({
   instance,
   deck,
   onStudy,
-  onPractice,
 }: {
   useCases: UseCases;
   instance: Instance;
   deck: Deck;
   onStudy: () => void;
-  onPractice: () => void;
 }) {
   // Shares the cache entry of the deck page and the study session. The
   // cached queue is shown at once — every local write that changes a
@@ -107,7 +98,6 @@ export function DeckStudyActionContainer({
       queue={queueQuery.data}
       loading={queueQuery.isPending}
       onStudy={onStudy}
-      onPractice={onPractice}
     />
   );
 }

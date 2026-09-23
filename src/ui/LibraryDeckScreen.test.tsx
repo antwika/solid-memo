@@ -17,6 +17,7 @@ const capitals: LibraryDeck = {
   license: CC0,
   description: `Every country and its capital. Compiled from ${WIKIPEDIA}.`,
   createdAt: "2026-09-22T21:00:10.236Z",
+  direction: "bidirectional",
   sources: [
     {
       url: WIKIPEDIA,
@@ -73,6 +74,15 @@ describe("LibraryDeckScreen", () => {
     expect(within(fact("Licence")).getByRole("link", { name: "CC0 1.0" }))
       .toHaveAttribute("href", CC0);
     expect(fact("Created")).toHaveTextContent("September 22, 2026");
+  });
+
+  it("says which way the deck is studied", () => {
+    renderScreen();
+    expect(fact("Studied")).toHaveTextContent(
+      "Both ways — every card is asked both ways; change it after importing",
+    );
+    renderScreen({ deck: { ...capitals, direction: "back-to-front" } });
+    expect(screen.getAllByText("Back → front")).toHaveLength(1);
   });
 
   it("lists each source, linked, with its own authors and licence", () => {
@@ -134,13 +144,15 @@ describe("LibraryDeckScreen", () => {
         name: "Rivers",
         cardCount: 1,
         authors: [],
+        direction: "front-to-back",
         sources: [],
       },
     });
     expect(container.querySelector(".deck-description")).toBeNull();
-    // Only the size, which every deck has.
-    expect(container.querySelectorAll("dt")).toHaveLength(1);
+    // Only the size and direction, which every deck has.
+    expect(container.querySelectorAll("dt")).toHaveLength(2);
     expect(fact("Size")).toHaveTextContent("1 card");
+    expect(fact("Studied")).toHaveTextContent("Front → back");
   });
 
   it("opens the card list on request", () => {

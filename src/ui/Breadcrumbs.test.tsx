@@ -119,15 +119,12 @@ describe("breadcrumbsFor", () => {
     ]);
   });
 
-  it.each([
-    ["study", "Study"],
-    ["practice", "Practice"],
-  ] as const)("names a %s session after its mode", (mode, label) => {
-    const practice: RouteRef = { screen: "practice", instanceUrl, deckUrl, mode };
-    expect(breadcrumbsFor(practice, { deck: "Kanji N5", card: "", libraryDeck: "" })).toEqual([
+  it("ends a study session's trail with Study, under the deck", () => {
+    const study: RouteRef = { screen: "study", instanceUrl, deckUrl };
+    expect(breadcrumbsFor(study, { deck: "Kanji N5", card: "", libraryDeck: "" })).toEqual([
       { label: "Decks", route: home },
       { label: "Kanji N5", route: deckDetail },
-      { label, route: practice },
+      { label: "Study", route: study },
     ]);
   });
 });

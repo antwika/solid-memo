@@ -24,6 +24,9 @@ const DCTERMS_DESCRIPTION = "http://purl.org/dc/terms/description";
 const DCTERMS_CREATED = "http://purl.org/dc/terms/created";
 const DCTERMS_SOURCE = "http://purl.org/dc/terms/source";
 const SM_FORMAT_VERSION = `${SM}formatVersion`;
+const SM_DIRECTION = `${SM}direction`;
+/** The study directions the app knows (domain/deck.ts). */
+const DECK_DIRECTIONS = ["front-to-back", "back-to-front", "bidirectional"];
 const XSD_INTEGER = "http://www.w3.org/2001/XMLSchema#integer";
 const XSD_DATETIME = "http://www.w3.org/2001/XMLSchema#dateTime";
 const TURTLE = "text/turtle; charset=utf-8";
@@ -43,6 +46,8 @@ export interface DeckSummary {
   description?: string;
   /** When the deck was made (xsd:dateTime), when stated. */
   createdAt?: string;
+  /** How the deck is meant to be studied, when stated (else front-to-back). */
+  direction?: string;
   /** The resources the deck says it was compiled from, in document order. */
   sources: DeckSource[];
 }
@@ -121,6 +126,12 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
   const license = of(deck, DCTERMS_LICENSE).find(isIri);
   const description = of(deck, DCTERMS_DESCRIPTION).find(isLiteral);
   const createdAt = of(deck, DCTERMS_CREATED).find(isLiteral);
+  const direction = of(deck, SM_DIRECTION).find(isLiteral);
+  if (direction !== undefined && !DECK_DIRECTIONS.includes(direction.value)) {
+    throw new Error(
+      `decks/${file}: solid-memo:direction must be one of ${DECK_DIRECTIONS.join(", ")}, not "${direction.value}".`,
+    );
+  }
   // A source is described by its own triples, if the file has any: an
   // undescribed source is still listed, by URL alone.
   const sources = of(deck, DCTERMS_SOURCE)
@@ -147,6 +158,7 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
     ...(license === undefined ? {} : { license: license.value }),
     ...(description === undefined ? {} : { description: description.value }),
     ...(createdAt === undefined ? {} : { createdAt: createdAt.value }),
+    ...(direction === undefined ? {} : { direction: direction.value }),
     sources,
   };
 }
@@ -188,6 +200,9 @@ export function buildIndex(summaries: DeckSummary[]): string {
         namedNode(DCTERMS_CREATED),
         literal(deck.createdAt, namedNode(XSD_DATETIME)),
       );
+    }
+    if (deck.direction !== undefined) {
+      writer.addQuad(subject, namedNode(SM_DIRECTION), literal(deck.direction));
     }
     for (const source of deck.sources) {
       writer.addQuad(subject, namedNode(DCTERMS_SOURCE), namedNode(source.url));

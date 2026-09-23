@@ -9,6 +9,7 @@ const deck: Deck = {
   name: "Kanji N5",
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
+  direction: "front-to-back",
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
   authors: [],
@@ -34,6 +35,7 @@ function renderScreen(
     busy: false,
     error: null,
     onRenameDeck: vi.fn(),
+    onChangeDirection: vi.fn(),
     onRemoveDeck: vi.fn(),
     onAddCard: vi.fn(),
     cardHref: (c: Card) => `#/card?card=${c.id}`,
@@ -67,6 +69,33 @@ describe("BrowserScreen deck editing", () => {
     expect(props.onRenameDeck).not.toHaveBeenCalled();
     expect(
       screen.getByRole("button", { name: "Rename deck" }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers the three study directions, showing the deck's own", () => {
+    const { props } = renderScreen();
+    expect(
+      screen.getByRole("group", { name: "Study direction" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("radio").map((radio) => radio.getAttribute("value")),
+    ).toEqual(["front-to-back", "back-to-front", "bidirectional"]);
+    expect(screen.getByRole("radio", { name: "Front → back" })).toBeChecked();
+    expect(
+      screen.getByText("Change it any time; what you have learnt each way is kept."),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText("Both ways"));
+    expect(props.onChangeDirection).toHaveBeenCalledWith("bidirectional");
+  });
+
+  it("explains a bidirectional deck, and locks the choice while busy", () => {
+    renderScreen({ deck: { ...deck, direction: "bidirectional" }, busy: true });
+    const both = screen.getByRole("radio", { name: "Both ways" });
+    expect(both).toBeChecked();
+    expect(both).toBeDisabled();
+    expect(
+      screen.getByText("Every card is asked both ways, each way scheduled on its own."),
     ).toBeInTheDocument();
   });
 

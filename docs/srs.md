@@ -4,9 +4,19 @@ How Solid Memo schedules cards. Implemented entirely in the domain layer
 ([sm2.ts](../src/domain/sm2.ts), [scheduling.ts](../src/domain/scheduling.ts))
 as pure functions.
 
+## Prompts and directions
+
+A session asks *prompts*: a card seen from one side (`Prompt` in
+[deck.ts](../src/domain/deck.ts)). A deck's direction decides which
+prompts its cards make — front→back, back→front, or both (a
+*bidirectional* deck, two prompts per card). Each prompt is scheduled on
+its own: knowing "Sweden → Stockholm" says nothing about knowing
+"Stockholm → Sweden". Everything below — review state, budgets, the
+queue, the session — is per prompt.
+
 ## Review state
 
-Each card carries one `ReviewState`:
+Each prompt (card + direction) carries one `ReviewState`:
 
 | Field | Meaning |
 |---|---|
@@ -17,7 +27,9 @@ Each card carries one `ReviewState`:
 | `firstReviewedAt` | Introduction timestamp (counts against the new-card budget) |
 | `lastReviewedAt` | Latest review timestamp (counts against the review budget) |
 
-A card with no `ReviewState` is *new*.
+A prompt with no `ReviewState` is *new*. Changing a deck's direction
+keeps every state: a card's front→back state waits, unused, while the
+deck is studied back→front.
 
 ## The SM-2 transition
 
@@ -42,7 +54,7 @@ Decisions fixed in code (and tests):
 - Lapses (`q < 3`) keep the ease factor; only repetitions and interval reset.
   The card returns the next study day (interval 1).
 - A grade of 0 or 1 additionally sends the card round again **within the
-  session** (`repeatsInSession`); see *Practice sessions*. Each pass is a
+  session** (`repeatsInSession`); see *Study sessions*. Each pass is a
   full SM-2 review, so the state stored after the repeat is the one that
   counts.
 
@@ -70,30 +82,37 @@ instant back by `dayBoundaryHour` (default 4) before taking the local date —
 reviewing at 03:00 still counts as yesterday. Timezone caveat: study days are
 device-local; travelling shifts due times by a few hours (accepted for v1).
 
-`buildStudyQueue` produces the day's session from cards + review states +
-preferences (`now` is always passed in, never read from a clock — that keeps
-it deterministic and testable):
+`buildStudyQueue` produces the day's session from cards + the deck's
+direction + review states + preferences (`now` is always passed in, never
+read from a clock — that keeps it deterministic and testable):
 
-- **due**: cards whose `due <= today`, oldest due first, capped at
+- **due**: prompts whose `due <= today`, oldest due first, capped at
   `maxReviewsPerDay` minus reviews already done today.
-- **new**: cards without review state, **drawn at random** (Fisher–Yates
+- **new**: prompts without review state, **drawn at random** (Fisher–Yates
   over an injected `random` source, so tests stay deterministic), capped at
-  `newCardsPerDay` minus cards introduced today. A long deck is therefore
-  not introduced front to back.
+  `newCardsPerDay` minus prompts introduced today. A long deck is
+  therefore not introduced front to back, and a bidirectional deck's two
+  prompts of one card need not arrive together — or even the same day.
+
+The budgets count prompts, so a bidirectional deck spends two of the
+day's new-card budget on a card introduced both ways.
 
 Both budgets clamp at zero. The queue is a snapshot taken at session start;
 the session then owns its own order (below) and a refetch never reshuffles
 it.
 
-## Practice sessions
+## Study sessions
 
-A deck offers two session modes ([PracticeContainer](../src/ui/PracticeContainer.tsx)):
+A deck offers one session, **Study** ([StudyContainer](../src/ui/StudyContainer.tsx)):
+today's due prompts plus new ones up to the daily new-card budget, the
+new ones spread evenly among the due (`interleave`) rather than queued
+after them, so a deck with a backlog still introduces something new
+early on. The session opens with a due prompt when there is one. (There
+used to be a separate due-only mode; one button with everything for the
+day proved simpler.)
 
-- **Study** — due cards only. The daily review pass; introduces nothing new.
-- **Practice** — due cards first, then new cards up to the daily new-card
-  budget.
-
-A session walks its queue one card at a time: front → reveal → grade.
+A session walks its queue one prompt at a time: the side asked → reveal
+the other side → grade. A back→front prompt shows the card's back first.
 A card graded 0 or 1 is put back into the *remainder* of the session at a
 random position (`requeueCard`) — never as the very next card, unless it is
 the only card left, in which case it simply repeats until it passes. The
@@ -118,8 +137,7 @@ deck-list row read the deck's queue for today:
 
 | Today's queue | Deck page | Deck-list row |
 |---|---|---|
-| cards due | **Study** (primary) + Practice | **Study** |
-| nothing due, new cards within budget | **Practice** only | **Practice** |
+| prompts due and/or new within budget | **Study**, with "N due today, and M new to introduce" | **Study** with "N due · M new" |
 | nothing | "All cards have been studied" | "Nothing to study today" |
 | unknown (loading / unreadable) | loading or error | no suggestion |
 

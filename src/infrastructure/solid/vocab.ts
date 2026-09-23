@@ -9,6 +9,11 @@ export const SM = {
   formatVersion: `${SM_NS}formatVersion`,
   cardsDocument: `${SM_NS}cardsDocument`,
   reviewsDocument: `${SM_NS}reviewsDocument`,
+  /**
+   * Deck format 2: how the deck is studied — "front-to-back",
+   * "back-to-front" or "bidirectional". Absent means front-to-back.
+   */
+  direction: `${SM_NS}direction`,
   front: `${SM_NS}front`,
   back: `${SM_NS}back`,
   /** Card format 2: a picture on a side, always an IRI, never a literal. */
