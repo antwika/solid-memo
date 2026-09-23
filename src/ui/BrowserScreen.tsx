@@ -2,6 +2,7 @@ import { useState } from "preact/hooks";
 import { cardLabel, type Card, type Deck } from "../domain/deck";
 import { CardThumbnail } from "./CardFace";
 import { BrowserIcon, TrashIcon } from "./icons";
+import { Pager, paginate } from "./Pager";
 
 /** Cards per Browser page: a short list, so paging is quick to scan. */
 export const CARDS_PER_PAGE = 10;
@@ -46,12 +47,12 @@ export function BrowserScreen({
   /** The deck-name draft while renaming; null otherwise. */
   const [deckName, setDeckName] = useState<string | null>(null);
 
-  // Clamp rather than redirect: after removing the last card of the last
-  // page, the previous page simply shows without a route change.
-  const pageCount = Math.max(1, Math.ceil(cards.length / CARDS_PER_PAGE));
-  const currentPage = Math.min(Math.max(1, page), pageCount);
-  const firstIndex = (currentPage - 1) * CARDS_PER_PAGE;
-  const pageCards = cards.slice(firstIndex, firstIndex + CARDS_PER_PAGE);
+  const {
+    pageCount,
+    currentPage,
+    firstIndex,
+    items: pageCards,
+  } = paginate(cards, page, CARDS_PER_PAGE);
 
   function handleRenameSubmit(event: Event, name: string) {
     event.preventDefault();
@@ -179,23 +180,11 @@ export function BrowserScreen({
             </tbody>
           </table>
           {pageCount > 1 && (
-            <nav class="pager" aria-label="Card pages">
-              <button
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </button>
-              <span aria-current="page">
-                Page {currentPage} of {pageCount}
-              </span>
-              <button
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage === pageCount}
-              >
-                Next
-              </button>
-            </nav>
+            <Pager
+              page={currentPage}
+              pageCount={pageCount}
+              onPageChange={onPageChange}
+            />
           )}
         </>
       )}

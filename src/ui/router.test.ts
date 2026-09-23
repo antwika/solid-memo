@@ -3,6 +3,7 @@ import { act, renderHook } from "@testing-library/preact";
 import {
   deckHref,
   decksHref,
+  libraryDeckHref,
   libraryHref,
   parseHash,
   routeToHash,
@@ -21,6 +22,22 @@ const roundTrips: RouteRef[] = [
   { screen: "home", instanceUrl: "https://pod.example/solid-memo/a/" },
   { screen: "deckCreator", instanceUrl: "https://pod.example/solid-memo/a/" },
   { screen: "library", instanceUrl: "https://pod.example/solid-memo/a/" },
+  {
+    screen: "libraryDeck",
+    instanceUrl: "https://pod.example/solid-memo/a/",
+    libraryDeckUrl: "https://solid-memo.com/decks/capitals.ttl",
+  },
+  {
+    screen: "libraryBrowser",
+    instanceUrl: "https://pod.example/solid-memo/a/",
+    libraryDeckUrl: "https://solid-memo.com/decks/capitals.ttl",
+  },
+  {
+    screen: "libraryBrowser",
+    instanceUrl: "https://pod.example/solid-memo/a/",
+    libraryDeckUrl: "https://solid-memo.com/decks/capitals.ttl",
+    page: 2,
+  },
   {
     screen: "deckDetail",
     instanceUrl: "https://pod.example/solid-memo/a/",
@@ -106,6 +123,12 @@ describe("routeToHash / parseHash", () => {
     "#/decks",
     "#/new-deck",
     "#/library",
+    "#/library-deck",
+    "#/library-deck?instance=https%3A%2F%2Fpod.example%2F",
+    "#/library-deck?deck=https%3A%2F%2Fsolid-memo.com%2Fdecks%2Fcapitals.ttl",
+    "#/library-browse",
+    "#/library-browse?instance=https%3A%2F%2Fpod.example%2F",
+    "#/library-browse?deck=https%3A%2F%2Fsolid-memo.com%2Fdecks%2Fcapitals.ttl&page=2",
     "#/deck",
     "#/deck?instance=https%3A%2F%2Fpod.example%2F",
     "#/browse?deck=https%3A%2F%2Fpod.example%2Fd%23deck-1",
@@ -120,6 +143,19 @@ describe("routeToHash / parseHash", () => {
     "#/preferences",
   ])("rejects invalid hash %j", (hash) => {
     expect(parseHash(hash)).toBeNull();
+  });
+});
+
+describe("libraryDeckHref", () => {
+  it("is the hash URL of a library deck's page in the instance", () => {
+    expect(
+      libraryDeckHref(
+        "https://pod.example/a/",
+        "https://solid-memo.com/decks/capitals.ttl",
+      ),
+    ).toBe(
+      "#/library-deck?instance=https%3A%2F%2Fpod.example%2Fa%2F&deck=https%3A%2F%2Fsolid-memo.com%2Fdecks%2Fcapitals.ttl",
+    );
   });
 });
 

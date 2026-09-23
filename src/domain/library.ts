@@ -13,6 +13,22 @@ export interface LibraryDeck {
   authors: string[];
   license?: string;
   description?: string;
+  /** When the deck was made (ISO 8601), when it says. */
+  createdAt?: string;
+  /** Where its content came from, as the deck states. */
+  sources: LibrarySource[];
+}
+
+/**
+ * A resource a library deck was compiled from, with what the deck says
+ * about it. The authors and licence are the source's own, not the
+ * deck's: a CC0 deck may well be compiled from a CC BY-SA page.
+ */
+export interface LibrarySource {
+  url: string;
+  title?: string;
+  authors: string[];
+  license?: string;
 }
 
 /** A library deck's full content, fetched when it is imported. */

@@ -12,6 +12,8 @@ export interface CrumbNames {
   deck: string;
   /** Front of the route's card; read for the card page. */
   card: string;
+  /** Name of the route's library deck; read for a library deck's page. */
+  libraryDeck: string;
 }
 
 /**
@@ -41,8 +43,23 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
   if (route.screen === "deckCreator") {
     return [decks, { label: "New deck", route }];
   }
-  if (route.screen === "library") {
-    return [decks, { label: "Deck library", route }];
+  const library: Crumb = {
+    label: "Deck library",
+    route: { screen: "library", instanceUrl: route.instanceUrl },
+  };
+  if (route.screen === "library") return [decks, library];
+  if (route.screen === "libraryDeck" || route.screen === "libraryBrowser") {
+    const libraryDeck: Crumb = {
+      label: names.libraryDeck,
+      route: {
+        screen: "libraryDeck",
+        instanceUrl: route.instanceUrl,
+        libraryDeckUrl: route.libraryDeckUrl,
+      },
+    };
+    return route.screen === "libraryDeck"
+      ? [decks, library, libraryDeck]
+      : [decks, library, libraryDeck, { label: "Cards", route }];
   }
   if (route.screen === "preferences") {
     return [decks, { label: "Preferences", route }];

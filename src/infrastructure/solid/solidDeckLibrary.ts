@@ -27,7 +27,7 @@ export function createSolidDeckLibrary({
     async listLibraryDecks(): Promise<LibraryDeck[]> {
       const index = await getSolidDataset(indexUrl, { fetch });
       return getThingAll(index)
-        .map(toLibraryDeck)
+        .map((thing) => toLibraryDeck(thing, index))
         .filter((deck): deck is LibraryDeck => deck !== null);
     },
 

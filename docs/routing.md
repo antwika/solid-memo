@@ -32,6 +32,8 @@ full URLs, carried URL-encoded in hash query parameters.
 | `#/decks?instance=…` | deck list (home) |
 | `#/new-deck?instance=…` | deck creator |
 | `#/library?instance=…` | [deck library](deck-library.md): ready-made decks to import into the instance |
+| `#/library-deck?instance=…&deck=…` | one library deck's page — its description, authors, licence, creation date and sources, with an import button for that deck alone (an unknown deck falls back to the library) |
+| `#/library-browse?instance=…&deck=…[&page=n]` | a library deck's cards, read-only, paged like the Browser (paging *replaces* the history entry) |
 | `#/deck?instance=…&deck=…` | deck detail |
 | `#/browse?instance=…&deck=…[&page=n]` | Browser — the one place a deck and its cards are edited. Cards are paged; `page` (1-based) is omitted for the first page. Paging *replaces* the history entry, so Back leaves the Browser rather than walking every page, while opening a card *pushes*, so Back from a card returns to the same page. |
 | `#/new-card?instance=…&deck=…` | card creator (opened from, and returning to, the Browser) |
@@ -54,14 +56,17 @@ flowchart LR
 ```
 
 - The deck lookup shares the `["decks", instanceUrl]` query cache with
-  the deck list, so in-app navigation resolves without a refetch.
+  the deck list, so in-app navigation resolves without a refetch. A
+  library deck is resolved the same way from the `["library"]` cache the
+  library screen reads.
 - The header logotype links to `#/` — deliberately not a route — so it
   lands on the default route: the deck list, or a picker when the
   instance is ambiguous.
 - Invalid or unknown routes never strand the user: an unparsable hash
   falls back to the default route (home / instance picker / storage
   picker, by instance count), an unknown instance falls back to the
-  instance picker, an unknown deck to that instance's deck list. All
+  instance picker, an unknown deck to that instance's deck list, an
+  unknown library deck to the library. All
   fallbacks use `history.replaceState`, so they are not Back stops;
   in-app navigation uses `pushState`, so Back walks the screens.
 

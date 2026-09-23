@@ -808,7 +808,9 @@ a.hint:hover {
   margin-top: 0;
 }
 
-dl.account {
+/* Labelled facts in a panel: the connected account, a library deck. */
+dl.account,
+dl.facts {
   margin: 0 0 0.75rem;
   padding: 0.25rem 1rem;
   border: 1px solid var(--border);
@@ -816,7 +818,8 @@ dl.account {
   background: var(--surface-sunken);
 }
 
-dl.account dt {
+dl.account dt,
+dl.facts dt {
   margin-top: 0.65rem;
   font-size: 0.75rem;
   font-weight: 700;
@@ -825,9 +828,17 @@ dl.account dt {
   color: var(--text-muted);
 }
 
-dl.account dd {
+dl.account dd,
+dl.facts dd {
   margin: 0.1rem 0 0.65rem;
   word-break: break-all;
+}
+
+/* A deck's sources, one per line, inside its facts. */
+dl.facts .sources {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 /* Persistent instance context bar */
@@ -1050,8 +1061,12 @@ dl.account dd {
   gap: 0.6rem;
 }
 
-/* Library rows: a tile per ready-made deck, ticked to import. The whole
-   label (checkbox + name) is the click target; the counts sit right. */
+/* Library rows: a tile per ready-made deck, ticked to import. Like a
+   deck row, the whole tile opens the deck: the name is the one real link
+   and an invisible layer stretches it over the row (the link itself stays
+   unpositioned so its ellipsis clipping cannot clip the layer); the
+   checkbox floats above the layer so it can still be ticked. The counts
+   sit right. */
 .library-list {
   list-style: none;
   padding: 0;
@@ -1062,6 +1077,7 @@ dl.account dd {
 }
 
 .library-list li {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1078,23 +1094,30 @@ dl.account dd {
   background: var(--surface-hover);
 }
 
-.library-list label {
-  display: flex;
-  align-items: center;
-  flex: 1 1 auto;
-  min-width: 0;
+.library-list input[type="checkbox"] {
+  position: relative;
+  z-index: 1;
   margin: 0;
-  padding: 0.25rem 0;
-  font-size: 1.02rem;
-  font-weight: 650;
-  color: var(--text);
-  cursor: pointer;
 }
 
 .library-list .library-deck-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.25rem 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.library-list .library-deck-name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 
 .library-list .hint {
@@ -1102,31 +1125,21 @@ dl.account dd {
   font-variant-numeric: tabular-nums;
 }
 
-/* "By … · CC0 1.0" under a deck's name: a block on the deck page, and in
-   a library row its own line below the title, aligned with it (past the
-   checkbox) rather than with the tile's edge. */
+/* "By … · CC0 1.0" under a deck's name on the deck page. */
 .provenance {
   display: block;
   margin: -0.25rem 0 0.75rem;
 }
 
-/* The deck's blurb takes its own line under the byline. */
+/* The deck's blurb: its own line under the byline on the deck page, a
+   paragraph of its own on a library deck's page. */
 .deck-description {
   display: block;
   margin-top: 0.15rem;
 }
 
-.library-list .provenance {
-  order: 1;
-  flex-basis: 100%;
-  margin: -0.2rem 0 0.1rem;
-  /* Checkbox width + its right margin, so the text sits under the title. */
-  padding-left: 1.6rem;
-  white-space: normal;
-}
-
 .library-imported {
-  /* Wraps after the provenance line when the row is too narrow. */
+  /* Wraps to its own line when the row is too narrow. */
   order: 2;
   padding: 0.1rem 0.5rem;
   border: 1px solid var(--border-strong);

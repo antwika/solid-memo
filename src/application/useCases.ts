@@ -10,7 +10,7 @@ import type {
   RegistrationOptions,
   RegistrationTarget,
 } from "../domain/instance";
-import type { LibraryDeck } from "../domain/library";
+import type { LibraryCard, LibraryDeck } from "../domain/library";
 import {
   isOutdated,
   planMigration,
@@ -87,6 +87,8 @@ export interface UseCases {
   listLibraryDecks(): Promise<LibraryDeck[]>;
   /** Copy a library deck, cards included, into an instance as a new deck. */
   importLibraryDeck(instanceUrl: string, deck: LibraryDeck): Promise<Deck>;
+  /** A library deck's cards, to look through before importing it. */
+  listLibraryCards(deck: LibraryDeck): Promise<LibraryCard[]>;
   listCards(deck: Deck): Promise<Card[]>;
   /**
    * Rejects, without any pod write, unless each side has text or an
@@ -276,6 +278,9 @@ export function createUseCases({
     async importLibraryDeck(instanceUrl, deck) {
       const content = await deckLibrary.fetchLibraryDeck(deck.url);
       return deckRepository.importDeck(instanceUrl, content);
+    },
+    async listLibraryCards(deck) {
+      return (await deckLibrary.fetchLibraryDeck(deck.url)).cards;
     },
     listCards(deck) {
       return deckRepository.listCards(deck);

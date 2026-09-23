@@ -1,6 +1,5 @@
 import { useState } from "preact/hooks";
 import type { LibraryDeck } from "../domain/library";
-import { DeckProvenance } from "./DeckProvenance";
 import { LibraryIcon } from "./icons";
 import { cardCount } from "./studyCounts";
 
@@ -12,11 +11,15 @@ function importLabel(count: number): string {
 
 /**
  * The deck library: ready-made decks to copy into the current instance.
- * Any number can be ticked and imported in one go.
+ * Any number can be ticked and imported in one go. A row says only the
+ * deck's name and size; clicking it (anywhere but the checkbox) opens
+ * the deck's own page, where it is described in full and can be
+ * imported on its own.
  */
 export function LibraryScreen({
   decks,
   libraryHref,
+  deckHref,
   isImported,
   busy,
   error,
@@ -25,6 +28,8 @@ export function LibraryScreen({
   decks: LibraryDeck[];
   /** URL of this screen; wherever the UI says "Deck library", it links here. */
   libraryHref: string;
+  /** URL of a library deck's page; its name links there. */
+  deckHref: (deck: LibraryDeck) => string;
   /** Whether the instance already holds a copy of the deck. */
   isImported: (deck: LibraryDeck) => boolean;
   /** An import is in progress. */
@@ -62,8 +67,8 @@ export function LibraryScreen({
         </span>
       </header>
       <p>
-        Ready-made decks. Tick the ones you want and import them into this
-        instance as your own copies to study and edit.
+        Ready-made decks. Open one to read about it, or tick several and
+        import them into this instance as your own copies.
       </p>
       {decks.length === 0 ? (
         <p>The library has no decks yet.</p>
@@ -72,20 +77,18 @@ export function LibraryScreen({
           <ul class="library-list">
             {decks.map((deck) => (
               <li key={deck.url}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={selectedUrls.includes(deck.url)}
-                    disabled={busy}
-                    onChange={(e) => toggle(deck, e.currentTarget.checked)}
-                  />
-                  <span class="library-deck-name">{deck.name}</span>
-                </label>
-                <DeckProvenance
-                  authors={deck.authors}
-                  license={deck.license}
-                  description={deck.description}
+                {/* Named after the deck, as a label would; the name itself
+                    is the row's link, stretched over the row by CSS. */}
+                <input
+                  type="checkbox"
+                  aria-label={deck.name}
+                  checked={selectedUrls.includes(deck.url)}
+                  disabled={busy}
+                  onChange={(e) => toggle(deck, e.currentTarget.checked)}
                 />
+                <a class="library-deck-name" href={deckHref(deck)}>
+                  {deck.name}
+                </a>
                 <span class="hint">{cardCount(deck.cardCount)}</span>
                 {isImported(deck) && (
                   <span class="hint library-imported">Already imported</span>

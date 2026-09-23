@@ -5,7 +5,7 @@ import type { LibraryDeck } from "../domain/library";
 import { errorMessage } from "./errorMessage";
 import { LibraryScreen } from "./LibraryScreen";
 import { Loading } from "./Loading";
-import { libraryHref } from "./router";
+import { libraryDeckHref, libraryHref } from "./router";
 
 /**
  * Owns the library listing and the import mutation for one instance;
@@ -69,6 +69,7 @@ export function LibraryContainer({
     <LibraryScreen
       decks={libraryQuery.data}
       libraryHref={libraryHref(instance.url)}
+      deckHref={(deck) => libraryDeckHref(instance.url, deck.url)}
       isImported={(deck) => importedUrls.has(deck.url)}
       busy={importMutation.isPending}
       error={errorMessage(importMutation.error)}

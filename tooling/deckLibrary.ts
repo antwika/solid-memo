@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { DataFactory, Parser, Writer } from "n3";
+import { DataFactory, Parser, Writer, type Quad_Object } from "n3";
 import type { Plugin } from "vite";
 
 /**
@@ -8,8 +8,8 @@ import type { Plugin } from "vite";
  * root, published next to the app under `decks/` together with a
  * generated `decks/index.ttl` that lists them (title and card count).
  * A static host cannot list a directory, so the index is what the app
- * reads to browse the library; the deck documents are fetched only on
- * import.
+ * reads to browse the library; a deck document is fetched only to list
+ * its cards or to import it.
  *
  * Adding a deck is dropping a Turtle file into `decks/`: the dev server
  * serves it straight away and the build copies it into `dist/decks/`.
@@ -21,8 +21,11 @@ const DCTERMS_TITLE = "http://purl.org/dc/terms/title";
 const DCTERMS_CREATOR = "http://purl.org/dc/terms/creator";
 const DCTERMS_LICENSE = "http://purl.org/dc/terms/license";
 const DCTERMS_DESCRIPTION = "http://purl.org/dc/terms/description";
+const DCTERMS_CREATED = "http://purl.org/dc/terms/created";
+const DCTERMS_SOURCE = "http://purl.org/dc/terms/source";
 const SM_FORMAT_VERSION = `${SM}formatVersion`;
 const XSD_INTEGER = "http://www.w3.org/2001/XMLSchema#integer";
+const XSD_DATETIME = "http://www.w3.org/2001/XMLSchema#dateTime";
 const TURTLE = "text/turtle; charset=utf-8";
 const INDEX_FILE = "index.ttl";
 
@@ -38,6 +41,20 @@ export interface DeckSummary {
   license?: string;
   /** The deck's blurb (what it covers, where it came from), when stated. */
   description?: string;
+  /** When the deck was made (xsd:dateTime), when stated. */
+  createdAt?: string;
+  /** The resources the deck says it was compiled from, in document order. */
+  sources: DeckSource[];
+}
+
+/** A `dcterms:source` of a deck, with what the file says about it. */
+export interface DeckSource {
+  url: string;
+  title?: string;
+  /** The source's own authors — not the deck's. */
+  authors: string[];
+  /** The source's own licence URL, when stated. */
+  license?: string;
 }
 
 /**
@@ -99,21 +116,38 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
       }
     }
   }
-  const license = of(deck, DCTERMS_LICENSE).find(
-    (object) => object.termType === "NamedNode",
-  );
-  const description = of(deck, DCTERMS_DESCRIPTION).find(
-    (object) => object.termType === "Literal",
-  );
+  const isLiteral = (object: Quad_Object) => object.termType === "Literal";
+  const isIri = (object: Quad_Object) => object.termType === "NamedNode";
+  const license = of(deck, DCTERMS_LICENSE).find(isIri);
+  const description = of(deck, DCTERMS_DESCRIPTION).find(isLiteral);
+  const createdAt = of(deck, DCTERMS_CREATED).find(isLiteral);
+  // A source is described by its own triples, if the file has any: an
+  // undescribed source is still listed, by URL alone.
+  const sources = of(deck, DCTERMS_SOURCE)
+    .filter(isIri)
+    .map(({ value: url }): DeckSource => {
+      const title = of(url, DCTERMS_TITLE).find(isLiteral);
+      const sourceLicense = of(url, DCTERMS_LICENSE).find(isIri);
+      return {
+        url,
+        ...(title === undefined ? {} : { title: title.value }),
+        authors: of(url, DCTERMS_CREATOR)
+          .filter(isLiteral)
+          .map((object) => object.value),
+        ...(sourceLicense === undefined ? {} : { license: sourceLicense.value }),
+      };
+    });
   return {
     file,
     title: title.value,
     cardCount: cards.length,
     authors: of(deck, DCTERMS_CREATOR)
-      .filter((object) => object.termType === "Literal")
+      .filter(isLiteral)
       .map((object) => object.value),
     ...(license === undefined ? {} : { license: license.value }),
     ...(description === undefined ? {} : { description: description.value }),
+    ...(createdAt === undefined ? {} : { createdAt: createdAt.value }),
+    sources,
   };
 }
 
@@ -147,6 +181,34 @@ export function buildIndex(summaries: DeckSummary[]): string {
         namedNode(DCTERMS_DESCRIPTION),
         literal(deck.description),
       );
+    }
+    if (deck.createdAt !== undefined) {
+      writer.addQuad(
+        subject,
+        namedNode(DCTERMS_CREATED),
+        literal(deck.createdAt, namedNode(XSD_DATETIME)),
+      );
+    }
+    for (const source of deck.sources) {
+      writer.addQuad(subject, namedNode(DCTERMS_SOURCE), namedNode(source.url));
+    }
+    // What the deck says about each source, as its own subject: the
+    // source's authors and licence must not read as the deck's.
+    for (const source of deck.sources) {
+      const sourceNode = namedNode(source.url);
+      if (source.title !== undefined) {
+        writer.addQuad(sourceNode, namedNode(DCTERMS_TITLE), literal(source.title));
+      }
+      for (const author of source.authors) {
+        writer.addQuad(sourceNode, namedNode(DCTERMS_CREATOR), literal(author));
+      }
+      if (source.license !== undefined) {
+        writer.addQuad(
+          sourceNode,
+          namedNode(DCTERMS_LICENSE),
+          namedNode(source.license),
+        );
+      }
     }
   }
   let output = "";

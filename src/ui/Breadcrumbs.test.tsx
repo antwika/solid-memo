@@ -10,7 +10,7 @@ const home: RouteRef = { screen: "home", instanceUrl };
 const deckDetail: RouteRef = { screen: "deckDetail", instanceUrl, deckUrl };
 const browser: RouteRef = { screen: "browser", instanceUrl, deckUrl };
 const instancePicker: RouteRef = { screen: "instancePicker" };
-const NO_NAMES = { deck: "", card: "" };
+const NO_NAMES = { deck: "", card: "", libraryDeck: "" };
 
 describe("breadcrumbsFor", () => {
   it("gives top-level screens a single crumb, so the trail is always there", () => {
@@ -55,15 +55,39 @@ describe("breadcrumbsFor", () => {
     ]);
   });
 
+  it("puts a library deck's page under the library, named after the deck", () => {
+    const libraryDeck: RouteRef = {
+      screen: "libraryDeck",
+      instanceUrl,
+      libraryDeckUrl: "https://solid-memo.com/decks/capitals.ttl",
+    };
+    expect(
+      breadcrumbsFor(libraryDeck, { ...NO_NAMES, libraryDeck: "Capitals" }),
+    ).toEqual([
+      { label: "Decks", route: home },
+      { label: "Deck library", route: { screen: "library", instanceUrl } },
+      { label: "Capitals", route: libraryDeck },
+    ]);
+    const cards: RouteRef = { ...libraryDeck, screen: "libraryBrowser", page: 2 };
+    expect(
+      breadcrumbsFor(cards, { ...NO_NAMES, libraryDeck: "Capitals" }),
+    ).toEqual([
+      { label: "Decks", route: home },
+      { label: "Deck library", route: { screen: "library", instanceUrl } },
+      { label: "Capitals", route: libraryDeck },
+      { label: "Cards", route: cards },
+    ]);
+  });
+
   it("ends the deck view's trail with a link to the deck itself", () => {
-    expect(breadcrumbsFor(deckDetail, { deck: "Kanji N5", card: "" })).toEqual([
+    expect(breadcrumbsFor(deckDetail, { deck: "Kanji N5", card: "", libraryDeck: "" })).toEqual([
       { label: "Decks", route: home },
       { label: "Kanji N5", route: deckDetail },
     ]);
   });
 
   it("links the deck from the Browser", () => {
-    expect(breadcrumbsFor(browser, { deck: "Kanji N5", card: "" })).toEqual([
+    expect(breadcrumbsFor(browser, { deck: "Kanji N5", card: "", libraryDeck: "" })).toEqual([
       { label: "Decks", route: home },
       { label: "Kanji N5", route: deckDetail },
       { label: "Browser", route: browser },
@@ -72,7 +96,7 @@ describe("breadcrumbsFor", () => {
 
   it("links every level above the card creator", () => {
     const cardCreator: RouteRef = { screen: "cardCreator", instanceUrl, deckUrl };
-    expect(breadcrumbsFor(cardCreator, { deck: "Kanji N5", card: "" })).toEqual([
+    expect(breadcrumbsFor(cardCreator, { deck: "Kanji N5", card: "", libraryDeck: "" })).toEqual([
       { label: "Decks", route: home },
       { label: "Kanji N5", route: deckDetail },
       { label: "Browser", route: browser },
@@ -87,7 +111,7 @@ describe("breadcrumbsFor", () => {
       deckUrl,
       cardUrl: `${instanceUrl}decks/deck-1.ttl#card-1`,
     };
-    expect(breadcrumbsFor(cardRoute, { deck: "Kanji N5", card: "水" })).toEqual([
+    expect(breadcrumbsFor(cardRoute, { deck: "Kanji N5", card: "水", libraryDeck: "" })).toEqual([
       { label: "Decks", route: home },
       { label: "Kanji N5", route: deckDetail },
       { label: "Browser", route: browser },
@@ -100,7 +124,7 @@ describe("breadcrumbsFor", () => {
     ["practice", "Practice"],
   ] as const)("names a %s session after its mode", (mode, label) => {
     const practice: RouteRef = { screen: "practice", instanceUrl, deckUrl, mode };
-    expect(breadcrumbsFor(practice, { deck: "Kanji N5", card: "" })).toEqual([
+    expect(breadcrumbsFor(practice, { deck: "Kanji N5", card: "", libraryDeck: "" })).toEqual([
       { label: "Decks", route: home },
       { label: "Kanji N5", route: deckDetail },
       { label, route: practice },
@@ -110,7 +134,7 @@ describe("breadcrumbsFor", () => {
 
 describe("Breadcrumbs", () => {
   it("makes every crumb a link, the current page included", () => {
-    render(<Breadcrumbs crumbs={breadcrumbsFor(deckDetail, { deck: "Verbs", card: "" })} />);
+    render(<Breadcrumbs crumbs={breadcrumbsFor(deckDetail, { deck: "Verbs", card: "", libraryDeck: "" })} />);
     const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
 
     const decks = within(nav).getByRole("link", { name: "Decks" });
@@ -123,7 +147,7 @@ describe("Breadcrumbs", () => {
   });
 
   it("links ancestors by URL and marks the current page", () => {
-    render(<Breadcrumbs crumbs={breadcrumbsFor(browser, { deck: "Kanji N5", card: "" })} />);
+    render(<Breadcrumbs crumbs={breadcrumbsFor(browser, { deck: "Kanji N5", card: "", libraryDeck: "" })} />);
 
     const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
     expect(within(nav).getByRole("link", { name: "Decks" })).toHaveAttribute(
@@ -140,7 +164,7 @@ describe("Breadcrumbs", () => {
   });
 
   it("copes with a deck named like another crumb", () => {
-    render(<Breadcrumbs crumbs={breadcrumbsFor(browser, { deck: "Decks", card: "" })} />);
+    render(<Breadcrumbs crumbs={breadcrumbsFor(browser, { deck: "Decks", card: "", libraryDeck: "" })} />);
     expect(screen.getAllByRole("link", { name: "Decks" })).toHaveLength(2);
   });
 });

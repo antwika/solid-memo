@@ -25,41 +25,91 @@ function thing(
   return build(buildThing(createThing({ url }))).build();
 }
 
+const BY_SA = "https://creativecommons.org/licenses/by-sa/4.0/";
+const WIKIPEDIA = "https://en.wikipedia.org/wiki/List_of_national_capitals";
+const WIKIDATA = "https://www.wikidata.org/wiki/Property:P36";
+
 describe("toLibraryDeck", () => {
+  /** An index holding the given subjects. */
+  function index(...things: ReturnType<typeof thing>[]): SolidDataset {
+    return things.reduce(
+      (dataset, t) => setThing(dataset, t),
+      mockSolidDatasetFrom(INDEX) as SolidDataset,
+    );
+  }
+
   it("maps an index entry", () => {
-    expect(
-      toLibraryDeck(
-        thing(DOC, (t) =>
-          t
-            .addIri(RDF.type, SM.Deck)
-            .addStringNoLocale(DCTERMS.title, "Capitals")
-            .addInteger(SM.cardCount, 243)
-            .addStringNoLocale(DCTERMS.creator, "Anton Wiklund")
-            .addStringNoLocale(DCTERMS.creator, "A friend")
-            .addIri(DCTERMS.license, CC0)
-            .addStringNoLocale(DCTERMS.description, "From Wikipedia."),
-        ),
-      ),
-    ).toEqual({
+    const deck = thing(DOC, (t) =>
+      t
+        .addIri(RDF.type, SM.Deck)
+        .addStringNoLocale(DCTERMS.title, "Capitals")
+        .addInteger(SM.cardCount, 243)
+        .addStringNoLocale(DCTERMS.creator, "Anton Wiklund")
+        .addStringNoLocale(DCTERMS.creator, "A friend")
+        .addIri(DCTERMS.license, CC0)
+        .addStringNoLocale(DCTERMS.description, "From Wikipedia.")
+        .addDatetime(DCTERMS.created, new Date("2026-09-22T09:49:00.236Z")),
+    );
+    expect(toLibraryDeck(deck, index(deck))).toEqual({
       url: DOC,
       name: "Capitals",
       cardCount: 243,
       authors: ["Anton Wiklund", "A friend"],
       license: CC0,
       description: "From Wikipedia.",
+      createdAt: "2026-09-22T09:49:00.236Z",
+      sources: [],
     });
   });
 
-  it("falls back to the URL, zero cards, no authors and no licence", () => {
+  it("reads each source with what the index says about it, if anything", () => {
+    const IUPAC = "https://iupac.org/what-we-do/periodic-table-of-elements/";
+    const deck = thing(DOC, (t) =>
+      t
+        .addIri(RDF.type, SM.Deck)
+        .addIri(DCTERMS.source, WIKIPEDIA)
+        .addIri(DCTERMS.source, IUPAC)
+        .addIri(DCTERMS.source, WIKIDATA),
+    );
+    const wikipedia = thing(WIKIPEDIA, (t) =>
+      t
+        .addStringNoLocale(DCTERMS.title, "List of national capitals")
+        .addStringNoLocale(DCTERMS.creator, "Wikipedia contributors")
+        .addIri(DCTERMS.license, BY_SA),
+    );
+    // Described by its author alone: no title, no licence stated.
+    const iupac = thing(IUPAC, (t) =>
+      t.addStringNoLocale(DCTERMS.creator, "IUPAC"),
+    );
     expect(
-      toLibraryDeck(thing(DOC, (t) => t.addIri(RDF.type, SM.Deck))),
-    ).toEqual({ url: DOC, name: DOC, cardCount: 0, authors: [] });
+      toLibraryDeck(deck, index(deck, wikipedia, iupac))?.sources,
+    ).toEqual([
+      {
+        url: WIKIPEDIA,
+        title: "List of national capitals",
+        authors: ["Wikipedia contributors"],
+        license: BY_SA,
+      },
+      { url: IUPAC, authors: ["IUPAC"] },
+      // Listed but not described: the URL is all there is.
+      { url: WIKIDATA, authors: [] },
+    ]);
+  });
+
+  it("falls back to the URL, zero cards, no authors and no licence", () => {
+    const deck = thing(DOC, (t) => t.addIri(RDF.type, SM.Deck));
+    expect(toLibraryDeck(deck, index(deck))).toEqual({
+      url: DOC,
+      name: DOC,
+      cardCount: 0,
+      authors: [],
+      sources: [],
+    });
   });
 
   it("ignores subjects that are not decks", () => {
-    expect(
-      toLibraryDeck(thing(`${INDEX}#x`, (t) => t.addIri(RDF.type, SM.Card))),
-    ).toBeNull();
+    const card = thing(`${INDEX}#x`, (t) => t.addIri(RDF.type, SM.Card));
+    expect(toLibraryDeck(card, index(card))).toBeNull();
   });
 });
 

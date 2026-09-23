@@ -1,5 +1,7 @@
 import { licenseLabel } from "../domain/license";
+import { AuthorNames } from "./AuthorName";
 import { ExternalLink } from "./ExternalLink";
+import { linkify } from "./linkify";
 
 /**
  * "By Anton Wiklund · CC0 1.0", and under it the deck's description when
@@ -21,7 +23,11 @@ export function DeckProvenance({
   if (!hasByline && description === undefined) return null;
   return (
     <span class="hint provenance">
-      {authors.length > 0 && <span>By {authors.join(", ")}</span>}
+      {authors.length > 0 && (
+        <span>
+          By <AuthorNames authors={authors} />
+        </span>
+      )}
       {authors.length > 0 && license !== undefined && " · "}
       {license !== undefined && (
         <ExternalLink url={license}>{licenseLabel(license)}</ExternalLink>
@@ -31,16 +37,4 @@ export function DeckProvenance({
       )}
     </span>
   );
-}
-
-/** A URL in running text, minus any punctuation that closes the sentence. */
-const URL_IN_TEXT = /(https?:\/\/[^\s]*[^\s.,;:!?)])/;
-
-/** The text with its web addresses as links, so a source can be visited. */
-function linkify(text: string) {
-  return text
-    .split(URL_IN_TEXT)
-    .map((part, i) =>
-      i % 2 === 1 ? <ExternalLink key={i} url={part} /> : part,
-    );
 }

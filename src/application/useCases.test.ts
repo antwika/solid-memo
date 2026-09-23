@@ -51,6 +51,7 @@ const libraryDeck: LibraryDeck = {
   cardCount: 1,
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
+  sources: [],
 };
 const libraryContent: LibraryDeckContent = {
   url: libraryDeck.url,
@@ -477,6 +478,17 @@ describe("createUseCases", () => {
     await expect(createUseCases(deps).listLibraryDecks()).resolves.toEqual([
       libraryDeck,
     ]);
+  });
+
+  it("listLibraryCards fetches the deck and returns its cards", async () => {
+    const deps = makeDeps();
+    await expect(
+      createUseCases(deps).listLibraryCards(libraryDeck),
+    ).resolves.toEqual(libraryContent.cards);
+    expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(
+      libraryDeck.url,
+    );
+    expect(deps.deckRepository.importDeck).not.toHaveBeenCalled();
   });
 
   it("importLibraryDeck fetches the deck's content and imports it", async () => {

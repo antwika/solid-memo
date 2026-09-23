@@ -29,6 +29,21 @@ const RIVERS = `${PREFIXES}
 <> a sm:Deck ; dcterms:title "Rivers \\"long\\"" ; sm:formatVersion 1 .
 `;
 
+const BY_SA = "https://creativecommons.org/licenses/by-sa/4.0/";
+const WIKIPEDIA = "https://en.wikipedia.org/wiki/List_of_chemical_elements";
+const IUPAC = "https://iupac.org/what-we-do/periodic-table-of-elements/";
+
+// Dated, and compiled from two sources: one described, one bare.
+const ELEMENTS = `${PREFIXES}
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+<> a sm:Deck ; dcterms:title "Elements" ; sm:formatVersion 1 ;
+   dcterms:created "2026-09-22T15:49:38.000Z"^^xsd:dateTime ;
+   dcterms:source <${WIKIPEDIA}>, <${IUPAC}> ;
+   dcterms:license <${CC0}> .
+<${WIKIPEDIA}> dcterms:title "List of chemical elements" ;
+   dcterms:creator "Wikipedia contributors" ; dcterms:license <${BY_SA}> .
+`;
+
 describe("summarizeDeck", () => {
   it("reads the title and counts the cards", () => {
     expect(summarizeDeck("capitals.ttl", CAPITALS)).toEqual({
@@ -38,12 +53,34 @@ describe("summarizeDeck", () => {
       authors: ["Anton Wiklund", "A friend"],
       license: CC0,
       description: "From Wikipedia.",
+      sources: [],
     });
     expect(summarizeDeck("rivers.ttl", RIVERS)).toEqual({
       file: "rivers.ttl",
       title: 'Rivers "long"',
       cardCount: 0,
       authors: [],
+      sources: [],
+    });
+  });
+
+  it("keeps the creation date and describes each source from its own triples", () => {
+    expect(summarizeDeck("elements.ttl", ELEMENTS)).toEqual({
+      file: "elements.ttl",
+      title: "Elements",
+      cardCount: 0,
+      authors: [],
+      license: CC0,
+      createdAt: "2026-09-22T15:49:38.000Z",
+      sources: [
+        {
+          url: WIKIPEDIA,
+          title: "List of chemical elements",
+          authors: ["Wikipedia contributors"],
+          license: BY_SA,
+        },
+        { url: IUPAC, authors: [] },
+      ],
     });
   });
 
@@ -136,6 +173,18 @@ describe("buildIndex", () => {
       `<capitals.ttl> a sm:Deck;\n    dcterms:title "Capitals";\n    sm:cardCount 2;\n    dcterms:creator "Anton Wiklund", "A friend";\n    dcterms:license <${CC0}>;\n    dcterms:description "From Wikipedia.".`,
     );
     expect(index).toContain('<rivers.ttl> a sm:Deck;\n    dcterms:title "Rivers \\"long\\"";\n    sm:cardCount 0.');
+  });
+
+  it("carries the creation date and the sources, each described as its own subject", () => {
+    const index = buildIndex([summarizeDeck("elements.ttl", ELEMENTS)]);
+    expect(index).toContain(
+      `<elements.ttl> a sm:Deck;\n    dcterms:title "Elements";\n    sm:cardCount 0;\n    dcterms:license <${CC0}>;\n    dcterms:created "2026-09-22T15:49:38.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>;\n    dcterms:source <${WIKIPEDIA}>, <${IUPAC}>.`,
+    );
+    expect(index).toContain(
+      `<${WIKIPEDIA}> dcterms:title "List of chemical elements";\n    dcterms:creator "Wikipedia contributors";\n    dcterms:license <${BY_SA}>.`,
+    );
+    // The bare source has nothing to say for itself.
+    expect(index).not.toContain(`<${IUPAC}> `);
   });
 });
 

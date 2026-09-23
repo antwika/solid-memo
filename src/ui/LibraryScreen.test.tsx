@@ -9,12 +9,15 @@ const capitals: LibraryDeck = {
   cardCount: 243,
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
+  description: "Every country and its capital, from Wikipedia.",
+  sources: [],
 };
 const rivers: LibraryDeck = {
   url: "https://solid-memo.com/decks/rivers.ttl",
   name: "Rivers",
   cardCount: 1,
   authors: [],
+  sources: [],
 };
 
 function renderScreen(
@@ -23,6 +26,7 @@ function renderScreen(
   const props = {
     decks: [capitals, rivers],
     libraryHref: "#/library?instance=a",
+    deckHref: (deck: LibraryDeck) => `#/library-deck?deck=${deck.url}`,
     isImported: () => false,
     busy: false,
     error: null,
@@ -56,13 +60,19 @@ describe("LibraryScreen", () => {
     expect(screen.getByText("1 card")).toBeInTheDocument();
   });
 
-  it("credits each deck's author and licence", () => {
+  it("links each deck's name to its own page and says nothing more about it", () => {
     renderScreen();
-    expect(screen.getByText(/By Anton Wiklund/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "CC0 1.0" })).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "Capitals of the world" }),
+    ).toHaveAttribute("href", `#/library-deck?deck=${capitals.url}`);
+    expect(screen.getByRole("link", { name: "Rivers" })).toHaveAttribute(
       "href",
-      "https://creativecommons.org/publicdomain/zero/1.0/",
+      `#/library-deck?deck=${rivers.url}`,
     );
+    // The blurb, authors and licence are for the deck's page.
+    expect(screen.queryByText(/Anton Wiklund/)).toBeNull();
+    expect(screen.queryByText(/from Wikipedia/)).toBeNull();
+    expect(screen.queryByRole("link", { name: "CC0 1.0" })).toBeNull();
   });
 
   it("uses the singular for one deck", () => {

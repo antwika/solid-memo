@@ -16,6 +16,14 @@ describe("DeckProvenance", () => {
     );
   });
 
+  it("links an author named with an address", () => {
+    render(<DeckProvenance authors={["Anton Wiklund <anton@example.com>"]} />);
+    expect(screen.getByRole("link", { name: "Anton Wiklund" })).toHaveAttribute(
+      "href",
+      "mailto:anton@example.com",
+    );
+  });
+
   it("shows authors alone or the licence alone", () => {
     const { container, rerender } = render(
       <DeckProvenance authors={["Anton Wiklund"]} />,

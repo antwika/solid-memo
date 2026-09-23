@@ -422,6 +422,7 @@ describe("Workspace", () => {
             name: "Capitals",
             cardCount: 3,
             authors: [],
+            sources: [],
           },
         ]),
         importLibraryDeck: vi.fn(async () => deck),
@@ -447,6 +448,174 @@ describe("Workspace", () => {
     expect(
       await screen.findByRole("link", { name: "Capitals" }),
     ).toBeInTheDocument();
+  });
+
+  it("opens a library deck's page from the library and imports it there", async () => {
+    const libraryUrl = "https://solid-memo.com/decks/capitals.ttl";
+    const deck: Deck = {
+      id: "deck-1",
+      url: `${instanceA.url}catalog.ttl#deck-1`,
+      name: "Capitals",
+      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
+      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
+      sourceUrl: libraryUrl,
+    };
+    const listDecks = vi
+      .fn<() => Promise<Deck[]>>()
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([deck]);
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks,
+        listLibraryDecks: vi.fn(async () => [
+          {
+            url: libraryUrl,
+            name: "Capitals",
+            cardCount: 3,
+            authors: ["Anton Wiklund"],
+            description: "Every capital.",
+            sources: [],
+          },
+        ]),
+        importLibraryDeck: vi.fn(async () => deck),
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole("link", { name: "Deck library" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Capitals" }));
+    expect(
+      await screen.findByRole("heading", { name: "Capitals" }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe(
+      routeToHash({
+        screen: "libraryDeck",
+        instanceUrl: instanceA.url,
+        libraryDeckUrl: libraryUrl,
+      }),
+    );
+    expect(screen.getByText("Every capital.")).toBeInTheDocument();
+    // The trail leads back through the library.
+    const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
+    expect(
+      within(nav).getByRole("link", { name: "Deck library" }),
+    ).toHaveAttribute(
+      "href",
+      routeToHash({ screen: "library", instanceUrl: instanceA.url }),
+    );
+    expect(within(nav).getByRole("link", { name: "Capitals" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Import this deck" }));
+    expect(
+      await screen.findByRole("heading", { name: "Decks" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "Capitals" }),
+    ).toBeInTheDocument();
+  });
+
+  it("browses a library deck's cards from its page and pages through them", async () => {
+    const libraryUrl = "https://solid-memo.com/decks/capitals.ttl";
+    const cards = Array.from({ length: CARDS_PER_PAGE + 1 }, (_, i) => ({
+      id: `card-${i + 1}`,
+      front: `Front ${i + 1}`,
+      back: `Back ${i + 1}`,
+      formatVersion: 1,
+    }));
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listLibraryDecks: vi.fn(async () => [
+          { url: libraryUrl, name: "Capitals", cardCount: 11, authors: [], sources: [] },
+        ]),
+        listLibraryCards: vi.fn(async () => cards),
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole("link", { name: "Deck library" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Capitals" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Browse cards" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Cards: Capitals" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Front 1")).toBeInTheDocument();
+    const browse = {
+      screen: "libraryBrowser",
+      instanceUrl: instanceA.url,
+      libraryDeckUrl: libraryUrl,
+    } as const;
+    expect(window.location.hash).toBe(routeToHash(browse));
+
+    // Paging replaces the URL, so Back still leaves the card list.
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Front 11")).toBeInTheDocument();
+    expect(window.location.hash).toBe(routeToHash({ ...browse, page: 2 }));
+
+    // The trail leads back to the deck's page.
+    const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
+    expect(within(nav).getByRole("link", { name: "Cards" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    fireEvent.click(within(nav).getByRole("link", { name: "Capitals" }));
+    expect(
+      await screen.findByRole("button", { name: "Import this deck" }),
+    ).toBeInTheDocument();
+  });
+
+  it("falls back to the library from a deep link to a deck it does not have", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      routeToHash({
+        screen: "libraryDeck",
+        instanceUrl: instanceA.url,
+        libraryDeckUrl: "https://solid-memo.com/decks/nope.ttl",
+      }),
+    );
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listLibraryDecks: vi.fn(async () => []),
+      }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Deck library" }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe(
+      routeToHash({ screen: "library", instanceUrl: instanceA.url }),
+    );
+  });
+
+  it("shows the error when the library cannot be read for a deck's page", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      routeToHash({
+        screen: "libraryDeck",
+        instanceUrl: instanceA.url,
+        libraryDeckUrl: "https://solid-memo.com/decks/capitals.ttl",
+      }),
+    );
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listLibraryDecks: vi.fn(async () => {
+          throw new Error("library offline");
+        }),
+      }),
+    );
+
+    expect(screen.getByText("Loading your Solid Memo instances…")).toBeInTheDocument();
+    expect(await screen.findByText("library offline")).toHaveClass("error");
   });
 
   it("opens a deck from home and navigates back", async () => {

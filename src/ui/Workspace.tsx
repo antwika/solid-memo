@@ -15,13 +15,20 @@ import { errorMessage } from "./errorMessage";
 import { InstanceBar } from "./InstanceBar";
 import { InstanceCreator } from "./InstanceCreator";
 import { InstancePicker } from "./InstancePicker";
+import { LibraryBrowserContainer } from "./LibraryBrowserContainer";
 import { LibraryContainer } from "./LibraryContainer";
+import { LibraryDeckContainer } from "./LibraryDeckContainer";
 import { Loading } from "./Loading";
 import { MigrationContainer } from "./MigrationContainer";
 import { PracticeContainer } from "./PracticeContainer";
 import { PreferencesContainer } from "./PreferencesContainer";
 import { StoragePicker } from "./StoragePicker";
-import { deckHref, routeToHash, useHashRoute } from "./router";
+import {
+  deckHref,
+  libraryDeckHref,
+  routeToHash,
+  useHashRoute,
+} from "./router";
 import { WebIdDocumentContainer } from "./WebIdDocumentContainer";
 
 export function Workspace({
@@ -126,6 +133,32 @@ export function Workspace({
       });
     }
   }, [needsCard, cardsQuery.data, cardUrl, instanceUrl, deckUrl]);
+
+  // A library deck's page (and its card list) names its deck by URL;
+  // resolve it from the library index (the cache entry the library
+  // screen reads).
+  const libraryDeckUrl =
+    route?.screen === "libraryDeck" || route?.screen === "libraryBrowser"
+      ? route.libraryDeckUrl
+      : null;
+  const needsLibraryDeck = libraryDeckUrl !== null && activeInstance !== null;
+  const libraryQuery = useQuery({
+    queryKey: ["library"],
+    queryFn: () => useCases.listLibraryDecks(),
+    enabled: needsLibraryDeck,
+  });
+  const activeLibraryDeck = needsLibraryDeck
+    ? (libraryQuery.data?.find((d) => d.url === libraryDeckUrl) ?? null)
+    : null;
+
+  // A deep link naming a deck the library does not have falls back to
+  // the library.
+  useEffect(() => {
+    if (!needsLibraryDeck || libraryQuery.data === undefined) return;
+    if (!libraryQuery.data.some((d) => d.url === libraryDeckUrl)) {
+      replace({ screen: "library", instanceUrl: instanceUrl! });
+    }
+  }, [needsLibraryDeck, libraryQuery.data, libraryDeckUrl, instanceUrl]);
 
   // Developer settings are a per-instance preference. Shares the cache
   // entry PreferencesContainer invalidates on save, so toggling takes
@@ -244,6 +277,16 @@ export function Workspace({
       return <Loading label="Loading card…" />;
     }
   }
+  if (needsLibraryDeck) {
+    if (libraryQuery.error) {
+      return <p class="error">{errorMessage(libraryQuery.error)}</p>;
+    }
+    // Still loading, or unknown: the redirect effect is about to replace
+    // the route.
+    if (activeLibraryDeck === null) {
+      return <Loading label="Loading the deck library…" />;
+    }
+  }
 
   const screen = (() => {
     switch (route.screen) {
@@ -349,6 +392,35 @@ export function Workspace({
             onDone={() =>
               navigate({ screen: "home", instanceUrl: instanceUrl! })
             }
+          />
+        );
+      case "libraryDeck":
+        return (
+          <LibraryDeckContainer
+            useCases={useCases}
+            instance={activeInstance!}
+            deck={activeLibraryDeck!}
+            onBrowse={() =>
+              navigate({
+                screen: "libraryBrowser",
+                instanceUrl: instanceUrl!,
+                libraryDeckUrl: libraryDeckUrl!,
+              })
+            }
+            onDone={() =>
+              navigate({ screen: "home", instanceUrl: instanceUrl! })
+            }
+          />
+        );
+      case "libraryBrowser":
+        return (
+          <LibraryBrowserContainer
+            useCases={useCases}
+            deck={activeLibraryDeck!}
+            deckHref={libraryDeckHref(instanceUrl!, libraryDeckUrl!)}
+            page={route.page ?? 1}
+            // Replace: paging through a deck is one Back stop, not many.
+            onPageChange={(page) => replace({ ...route, page })}
           />
         );
       case "deckDetail":
@@ -494,6 +566,7 @@ export function Workspace({
         crumbs={breadcrumbsFor(route, {
           deck: activeDeck?.name ?? "",
           card: activeCard === null ? "" : cardLabel(activeCard),
+          libraryDeck: activeLibraryDeck?.name ?? "",
         })}
       />
       {screen}

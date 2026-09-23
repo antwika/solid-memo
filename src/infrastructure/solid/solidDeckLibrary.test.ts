@@ -45,7 +45,7 @@ describe("listLibraryDecks", () => {
     vi.mocked(getSolidDataset).mockResolvedValue(index);
 
     await expect(makeLibrary().listLibraryDecks()).resolves.toEqual([
-      { url: DOC, name: "Capitals", cardCount: 2, authors: [] },
+      { url: DOC, name: "Capitals", cardCount: 2, authors: [], sources: [] },
     ]);
     expect(getSolidDataset).toHaveBeenCalledWith(INDEX, { fetch });
   });

@@ -45,6 +45,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     importLibraryDeck: vi.fn(async () => {
       throw new Error("importLibraryDeck fake not configured");
     }),
+    listLibraryCards: vi.fn(async () => []),
     listCards: vi.fn(async () => []),
     addCard: vi.fn(async () => {
       throw new Error("addCard fake not configured");

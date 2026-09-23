@@ -18,6 +18,17 @@ export type RouteRef =
   | { screen: "home"; instanceUrl: string }
   | { screen: "deckCreator"; instanceUrl: string }
   | { screen: "library"; instanceUrl: string }
+  /** One library deck's page. Named `libraryDeckUrl`, not `deckUrl`: the
+      deck is in the library, not the instance, so it must not be
+      resolved (and redirected) like a pod deck. */
+  | { screen: "libraryDeck"; instanceUrl: string; libraryDeckUrl: string }
+  /** A library deck's cards, read-only; paged like the Browser. */
+  | {
+      screen: "libraryBrowser";
+      instanceUrl: string;
+      libraryDeckUrl: string;
+      page?: number;
+    }
   | { screen: "deckDetail"; instanceUrl: string; deckUrl: string }
   /** `page` is 1-based; absent means the first page. */
   | { screen: "browser"; instanceUrl: string; deckUrl: string; page?: number }
@@ -54,6 +65,19 @@ export function routeToHash(ref: RouteRef): string {
       return `#/new-deck${params({ instance: ref.instanceUrl })}`;
     case "library":
       return `#/library${params({ instance: ref.instanceUrl })}`;
+    case "libraryDeck":
+      return `#/library-deck${params({
+        instance: ref.instanceUrl,
+        deck: ref.libraryDeckUrl,
+      })}`;
+    case "libraryBrowser":
+      return `#/library-browse${params({
+        instance: ref.instanceUrl,
+        deck: ref.libraryDeckUrl,
+        ...(ref.page !== undefined && ref.page > 1
+          ? { page: String(ref.page) }
+          : {}),
+      })}`;
     case "deckDetail":
       return `#/deck${params({ instance: ref.instanceUrl, deck: ref.deckUrl })}`;
     case "browser":
@@ -101,6 +125,17 @@ export function libraryHref(instanceUrl: string): string {
 }
 
 /**
+ * Hash URL of a library deck's page: what its name links to in the
+ * library list, where it is read about and imported on its own.
+ */
+export function libraryDeckHref(
+  instanceUrl: string,
+  libraryDeckUrl: string,
+): string {
+  return routeToHash({ screen: "libraryDeck", instanceUrl, libraryDeckUrl });
+}
+
+/**
  * Hash URL of a deck's page: what a deck's name links to wherever the UI
  * shows it — deck list, headings, breadcrumb.
  */
@@ -135,6 +170,20 @@ export function parseHash(hash: string): RouteRef | null {
         : { screen: "deckCreator", instanceUrl };
     case "/library":
       return instanceUrl === null ? null : { screen: "library", instanceUrl };
+    case "/library-deck":
+      return instanceUrl === null || deckUrl === null
+        ? null
+        : { screen: "libraryDeck", instanceUrl, libraryDeckUrl: deckUrl };
+    case "/library-browse": {
+      if (instanceUrl === null || deckUrl === null) return null;
+      const page = parsePage(query.get("page"));
+      const ref = {
+        screen: "libraryBrowser",
+        instanceUrl,
+        libraryDeckUrl: deckUrl,
+      } as const;
+      return page === null ? ref : { ...ref, page };
+    }
     case "/deck":
       return instanceUrl === null || deckUrl === null
         ? null

@@ -19,12 +19,14 @@ const capitals: LibraryDeck = {
   cardCount: 2,
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
+  sources: [],
 };
 const rivers: LibraryDeck = {
   url: "https://solid-memo.com/decks/rivers.ttl",
   name: "Rivers",
   cardCount: 1,
   authors: [],
+  sources: [],
 };
 
 const importedDeck: Deck = {
@@ -70,6 +72,10 @@ describe("LibraryContainer", () => {
     expect(screen.getByRole("link", { name: "Deck library" })).toHaveAttribute(
       "href",
       `#/library?instance=${encodeURIComponent(instance.url)}`,
+    );
+    expect(screen.getByRole("link", { name: "Capitals" })).toHaveAttribute(
+      "href",
+      `#/library-deck?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.url)}`,
     );
   });
 

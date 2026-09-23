@@ -57,7 +57,10 @@ export const PIM = {
 export const DCTERMS = {
   title: "http://purl.org/dc/terms/title",
   created: "http://purl.org/dc/terms/created",
-  /** On an imported deck: the library document it was copied from. */
+  /**
+   * On an imported deck: the library document it was copied from. In the
+   * library index: the resources a deck was compiled from.
+   */
   source: "http://purl.org/dc/terms/source",
   /** A deck's author (one triple per name). */
   creator: "http://purl.org/dc/terms/creator",
