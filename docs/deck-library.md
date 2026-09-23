@@ -20,7 +20,13 @@ same shape as a pod's cards document plus the deck's own title:
     dcterms:creator "Anton Wiklund" ;
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
     dcterms:description "Capitals as listed by …" ;
+    dcterms:source <https://en.wikipedia.org/wiki/List_of_national_capitals> ;
     solid-memo:formatVersion 1 .
+
+<https://en.wikipedia.org/wiki/List_of_national_capitals>
+    dcterms:title "List of national capitals" ;
+    dcterms:creator "Wikipedia contributors" ;
+    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
 
 <#sweden> a solid-memo:Card ;
     solid-memo:front "Sweden" ;
@@ -54,6 +60,14 @@ than silently vanishing from the library):
   `dcterms:description` (a literal) is where a deck credits its sources —
   the flags deck names flagpedia.net for its list and flagcdn.com for the
   images — and is shown, URLs linked, in the library and on the deck page;
+- the same sources may also be stated as data: `dcterms:source` (one IRI
+  per source) on the deck, and the source's own `dcterms:title`,
+  `dcterms:creator` and `dcterms:license` on that IRI as a subject. The
+  source's authors and licence belong there, never on the deck, whose
+  `dcterms:creator` is whoever compiled it. Untyped subjects like these
+  pass the build and are ignored on import — only the library file carries
+  them; the pod's catalog entry uses `dcterms:source` for the library
+  document itself (see [In the app](#in-the-app));
 - the file name is a plain `name.ttl` (no hidden files, no
   subdirectories); `index.ttl` is reserved for the generated index.
 

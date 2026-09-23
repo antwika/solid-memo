@@ -10,8 +10,20 @@
     dcterms:creator "Anton Wiklund <antonwiklund91@gmail.com>" ;
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
     dcterms:description "Every country and its capital city. Compiled from Wikipedia's List of national capitals (https://en.wikipedia.org/wiki/List_of_national_capitals) and Wikidata's capital property, CC0 (https://www.wikidata.org/wiki/Property:P36)." ;
+    dcterms:source <https://en.wikipedia.org/wiki/List_of_national_capitals> ,
+                   <https://www.wikidata.org/wiki/Property:P36> ;
     dcterms:created "2026-09-22T09:49:00.236Z"^^xsd:dateTime ;
     solid-memo:formatVersion 1 .
+
+<https://en.wikipedia.org/wiki/List_of_national_capitals>
+    dcterms:title "List of national capitals" ;
+    dcterms:creator "Wikipedia contributors" ;
+    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
+
+<https://www.wikidata.org/wiki/Property:P36>
+    dcterms:title "Wikidata property P36 (capital)" ;
+    dcterms:creator "Wikidata contributors" ;
+    dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> .
 
 <#croatia>
     a solid-memo:Card ;

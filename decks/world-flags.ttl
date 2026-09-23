@@ -10,8 +10,19 @@
     dcterms:creator "Anton Wiklund <antonwiklund91@gmail.com>" ;
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
     dcterms:description "The list of countries and territories follows https://flagpedia.net/index; the flag images are the public-domain SVGs served by https://flagcdn.com (Flagpedia's CDN), each in its official aspect ratio." ;
+    dcterms:source <https://flagpedia.net/index> ,
+                   <https://flagcdn.com> ;
     dcterms:created "2026-09-22T21:00:10.236Z"^^xsd:dateTime ;
     solid-memo:formatVersion 1 .
+
+<https://flagpedia.net/index>
+    dcterms:title "Flagpedia: flags of all countries" ;
+    dcterms:creator "Flagpedia.net" .
+
+<https://flagcdn.com>
+    dcterms:title "Flag CDN" ;
+    dcterms:creator "Flagpedia.net" ;
+    dcterms:license <https://creativecommons.org/publicdomain/mark/1.0/> .
 
 <#afghanistan>
     a solid-memo:Card ;

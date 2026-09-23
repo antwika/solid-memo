@@ -10,8 +10,19 @@
     dcterms:creator "Anton Wiklund <antonwiklund91@gmail.com>" ;
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
     dcterms:description "Every HTTP status code and its reason phrase. The list follows MDN's HTTP response status codes reference (https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status); the codes and names themselves are defined by the IETF and recorded in the IANA HTTP Status Code Registry (https://www.iana.org/assignments/http-status-codes)." ;
+    dcterms:source <https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status> ,
+                   <https://www.iana.org/assignments/http-status-codes> ;
     dcterms:created "2026-09-22T16:29:47.000Z"^^xsd:dateTime ;
     solid-memo:formatVersion 1 .
+
+<https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status>
+    dcterms:title "HTTP response status codes" ;
+    dcterms:creator "Mozilla Contributors" ;
+    dcterms:license <https://creativecommons.org/licenses/by-sa/2.5/> .
+
+<https://www.iana.org/assignments/http-status-codes>
+    dcterms:title "Hypertext Transfer Protocol (HTTP) Status Code Registry" ;
+    dcterms:creator "Internet Assigned Numbers Authority" .
 
 <#100-continue>
     a solid-memo:Card ;
