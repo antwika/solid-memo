@@ -1360,20 +1360,22 @@ form.card-edit {
   overflow-wrap: anywhere;
 }
 
-.card-front p {
+/* The side asked is large; the answer, revealed under a rule, smaller —
+   whichever side each happens to be. */
+.card-question p {
   font-size: clamp(2rem, 9vw, 3.25rem);
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.01em;
 }
 
-.card-back {
+.card-answer {
   padding-top: 1.25rem;
   border-top: 1px dashed var(--border-strong);
 }
 
-.card-back p {
-  font-size: clamp(1.25rem, 5vw, 1.6rem);
+.card-answer p {
+  font-size: clamp(1.4rem, 5.5vw, 1.8rem);
 }
 
 /* The note that a picture could not be shown keeps its muted size. */

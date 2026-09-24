@@ -127,10 +127,10 @@ function StudyCard({
 
   return (
     <div class="practice-card">
-      <CardFace {...question} />
+      <CardFace {...question} role="question" />
       {revealed ? (
         <>
-          <CardFace {...answer} />
+          <CardFace {...answer} role="answer" />
           <div
             class={`quality-buttons${answerScale === "minimal" ? " minimal" : ""}`}
           >

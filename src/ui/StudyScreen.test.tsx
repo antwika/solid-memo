@@ -76,10 +76,15 @@ describe("StudyScreen", () => {
     const { container } = renderScreen({
       prompt: { card, direction: "back-to-front" },
     });
-    expect(container.querySelector(".card-back")).toHaveTextContent("water");
+    const back = container.querySelector(".card-back")!;
+    expect(back).toHaveTextContent("water");
+    // Sized as the question, whichever side it is.
+    expect(back).toHaveClass("card-question");
     expect(screen.queryByText("水")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
-    expect(container.querySelector(".card-front")).toHaveTextContent("水");
+    const front = container.querySelector(".card-front")!;
+    expect(front).toHaveTextContent("水");
+    expect(front).toHaveClass("card-answer");
   });
 
   it("reveals the back and offers quality grades", () => {
