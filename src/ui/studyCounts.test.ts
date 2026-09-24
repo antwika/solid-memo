@@ -3,9 +3,10 @@ import { cardCount, studyCountsSummary } from "./studyCounts";
 
 describe("studyCountsSummary", () => {
   it.each([
-    [{ dueCount: 12, newCount: 5 }, "12 due · 5 new"],
-    [{ dueCount: 12, newCount: 0 }, "12 due"],
-    [{ dueCount: 0, newCount: 5 }, "5 new"],
+    [{ dueCount: 12, newCount: 5 }, "17 to review"],
+    [{ dueCount: 12, newCount: 0 }, "12 to review"],
+    [{ dueCount: 0, newCount: 5 }, "5 to review"],
+    [{ dueCount: 1, newCount: 0 }, "1 to review"],
     [{ dueCount: 0, newCount: 0 }, null],
   ])("summarises %j as %j", (counts, expected) => {
     expect(studyCountsSummary(counts)).toBe(expected);
