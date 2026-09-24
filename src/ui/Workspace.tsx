@@ -505,12 +505,10 @@ export function Workspace({
             useCases={useCases}
             instance={activeInstance!}
             deck={activeDeck!}
+            // Back to the deck list, not the deck: the next thing to do
+            // is usually another deck.
             onExit={() =>
-              navigate({
-                screen: "deckDetail",
-                instanceUrl: instanceUrl!,
-                deckUrl: deckUrl!,
-              })
+              navigate({ screen: "home", instanceUrl: instanceUrl! })
             }
           />
         );
