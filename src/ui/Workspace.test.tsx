@@ -843,7 +843,7 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
-  it("starts and ends a study session from the deck detail", async () => {
+  it("starts a study session from the deck detail and ends it on the deck list", async () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
@@ -890,7 +890,7 @@ describe("Workspace", () => {
       await screen.findByRole("button", { name: "End session" }),
     );
     expect(
-      await screen.findByRole("heading", { name: "Kanji N5" }),
+      await screen.findByRole("heading", { name: "Decks" }),
     ).toBeInTheDocument();
   });
 
