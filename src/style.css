@@ -1062,7 +1062,10 @@ dl.facts .sources {
   padding: 0.5rem 0.4rem;
   font-weight: 650;
   font-size: 1.02rem;
-  color: var(--link);
+  /* Text ink: the row is already a tile, so the name (and its icon,
+     which takes its colour) needs no link colour of its own; the
+     underline says it can be clicked. */
+  color: inherit;
   text-decoration: underline;
 }
 
@@ -1132,7 +1135,8 @@ dl.facts .sources {
   white-space: nowrap;
   font-size: 1.02rem;
   font-weight: 650;
-  color: var(--link);
+  /* Text ink, like a deck row's name. */
+  color: inherit;
   text-decoration: underline;
 }
 
