@@ -1017,7 +1017,7 @@ dl.facts .sources {
   z-index: 1;
 }
 
-/* "12 due · 5 new" beside the row's action. */
+/* "12 to review" beside the row's action. */
 .deck-list .study-counts {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;

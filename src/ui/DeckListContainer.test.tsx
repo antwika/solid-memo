@@ -146,7 +146,7 @@ describe("DeckListContainer", () => {
     expect(
       await screen.findByRole("button", { name: "Study Kanji N5" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("2 due")).toBeInTheDocument();
+    expect(screen.getByText("2 to review")).toBeInTheDocument();
     // …and the background refresh was still asked for, without a loader
     // replacing what is cached.
     await waitFor(() => {
@@ -196,7 +196,7 @@ describe("DeckListContainer", () => {
       await screen.findByRole("button", { name: "Study Kanji N5" }),
     );
     expect(onStudyDeck).toHaveBeenCalledWith(deck);
-    expect(screen.getByText("1 new")).toBeInTheDocument();
+    expect(screen.getByText("1 to review")).toBeInTheDocument();
   });
 
   it("does not suggest studying a deck with nothing left today", async () => {

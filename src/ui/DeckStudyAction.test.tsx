@@ -28,7 +28,7 @@ function renderAction(queue: StudyQueue | undefined, loading = false) {
 }
 
 describe("DeckStudyAction", () => {
-  it("offers Study with the counts when cards are due and new", () => {
+  it("offers Study with due and new counted together", () => {
     const { onStudy } = renderAction({
       due: [prompt],
       newPrompts: [prompt],
@@ -36,7 +36,7 @@ describe("DeckStudyAction", () => {
     });
     const study = screen.getByRole("button", { name: "Study Kanji N5" });
     expect(study).toHaveClass("primary");
-    expect(screen.getByText("1 due · 1 new")).toBeInTheDocument();
+    expect(screen.getByText("2 to review")).toBeInTheDocument();
     fireEvent.click(study);
     expect(onStudy).toHaveBeenCalledOnce();
   });
@@ -47,14 +47,14 @@ describe("DeckStudyAction", () => {
       newPrompts: [prompt],
       studiedToday: 3,
     });
-    expect(screen.getByText("1 new")).toBeInTheDocument();
+    expect(screen.getByText("1 to review")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Study Kanji N5" }));
     expect(onStudy).toHaveBeenCalledOnce();
   });
 
   it("shows how many cards are due when none are new", () => {
     renderAction({ due: [prompt, prompt, prompt], newPrompts: [], studiedToday: 0 });
-    expect(screen.getByText("3 due")).toBeInTheDocument();
+    expect(screen.getByText("3 to review")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Study Kanji N5" })).toBeInTheDocument();
   });
 
@@ -67,7 +67,7 @@ describe("DeckStudyAction", () => {
       "aria-hidden",
       "true",
     );
-    expect(screen.queryByText(/due|new|Nothing/)).toBeNull();
+    expect(screen.queryByText(/review|Nothing/)).toBeNull();
   });
 
   it("shows a loader in the slot while the queue is first fetched", () => {

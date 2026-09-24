@@ -9,7 +9,7 @@ import { studyCountsSummary } from "./studyCounts";
 
 /**
  * What a deck-list row offers for its deck today, with how much is left
- * ("12 due · 5 new"). Nothing is offered unless there is something to
+ * ("12 to review"). Nothing is offered unless there is something to
  * do: a green tick when the deck is done for the day. While the queue is
  * first being fetched the slot shows a loader, so an empty slot never
  * reads as "done".
