@@ -25,6 +25,10 @@
   --border-strong: #cfcbbb;
 
   --primary: #2c6b3d;
+  /* Filled buttons: their ground, its hover, and their text. Kept apart
+     from --primary so the dark theme can brighten its accents (focus
+     ring, ticks) while the fill stays deep enough under light text. */
+  --primary-fill: #2c6b3d;
   --primary-hover: #235430;
   --primary-soft: #e6f1e8;
   --on-primary: #ffffff;
@@ -103,9 +107,12 @@
     --border-strong: #3a4859;
 
     --primary: #4fae6a;
-    --primary-hover: #62c07d;
+    /* Deeper than --primary: white text on the accent green would fall
+       short of 3:1; on these it clears 4.5:1. */
+    --primary-fill: #2a7340;
+    --primary-hover: #33864b;
     --primary-soft: #1b3324;
-    --on-primary: #0b1a10;
+    --on-primary: #ffffff;
     --link: #74cc8e;
     --link-hover-bg: #3a414b;
     --link-hover-border: #7d8692;
@@ -607,8 +614,8 @@ button:disabled {
 button[type="submit"],
 button.primary,
 a.button.primary {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--primary-fill);
+  border-color: var(--primary-fill);
   color: var(--on-primary);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
@@ -1406,8 +1413,8 @@ form.card-edit {
   min-height: 3rem;
   padding: 0.7rem 2.5rem;
   font-size: 1.05rem;
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--primary-fill);
+  border-color: var(--primary-fill);
   color: var(--on-primary);
 }
 
