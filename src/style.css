@@ -831,7 +831,9 @@ dl.facts dt {
 dl.account dd,
 dl.facts dd {
   margin: 0.1rem 0 0.65rem;
-  word-break: break-all;
+  /* Only a token wider than the line (a URL) breaks mid-word; prose
+     wraps at spaces. */
+  overflow-wrap: anywhere;
 }
 
 /* A deck's sources, one per line, inside its facts. */
@@ -1077,7 +1079,12 @@ dl.facts .sources {
    and an invisible layer stretches it over the row (the link itself stays
    unpositioned so its ellipsis clipping cannot clip the layer); the
    checkbox floats above the layer so it can still be ticked. The counts
-   sit right. */
+   sit right.
+   One line only, for the same reason as a deck row: with wrapping, a long
+   name would claim the first line at its full width and push the counts
+   to a second line before the name was ever shrunk. Without it, the name
+   is the only item that can shrink, so it ellipsizes and the counts stay
+   on the right. */
 .library-list {
   list-style: none;
   padding: 0;
@@ -1090,7 +1097,7 @@ dl.facts .sources {
 .library-list li {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.35rem 0.75rem;
   padding: 0.5rem 0.75rem;
@@ -1103,6 +1110,11 @@ dl.facts .sources {
 .library-list li:hover {
   border-color: var(--border-strong);
   background: var(--surface-hover);
+}
+
+.library-list input[type="checkbox"],
+.library-list .hint {
+  flex-shrink: 0;
 }
 
 .library-list input[type="checkbox"] {
@@ -1150,8 +1162,6 @@ dl.facts .sources {
 }
 
 .library-imported {
-  /* Wraps to its own line when the row is too narrow. */
-  order: 2;
   padding: 0.1rem 0.5rem;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
