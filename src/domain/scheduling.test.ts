@@ -41,6 +41,7 @@ function review(
     due,
     firstReviewedAt: firstReviewedAt.toISOString(),
     lastReviewedAt: reviewedAt.toISOString(),
+    formatVersion: 2,
   };
 }
 
@@ -324,6 +325,7 @@ describe("resetStudyDay", () => {
         direction: "front-to-back",
         ...morning,
         firstReviewedAt: yesterday.toISOString(),
+        formatVersion: 2,
       },
     ]);
     expect(restore[0]).not.toHaveProperty("previous");

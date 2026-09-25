@@ -40,6 +40,7 @@ full URLs, carried URL-encoded in hash query parameters.
 | `#/card?instance=…&deck=…&card=…` | one card's own page: the card, its editor, remove (opened by clicking a Browser row; an unknown card falls back to the Browser) |
 | `#/study?instance=…&deck=…` | study session: the deck's due and new prompts for today, interleaved |
 | `#/preferences?instance=…` | preferences |
+| `#/validate?instance=…` | developer tool: the instance's documents checked against the shapes ([validation.md](validation.md)); shows how to turn developer mode on when it is off |
 
 ## Resolution and fallbacks
 

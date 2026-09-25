@@ -45,6 +45,7 @@ const state: ReviewState = {
   due: "2026-09-27",
   firstReviewedAt: "2026-09-15T08:00:00.000Z",
   lastReviewedAt: "2026-09-21T08:12:00.000Z",
+  formatVersion: 2,
 };
 
 function reviewsDataset() {

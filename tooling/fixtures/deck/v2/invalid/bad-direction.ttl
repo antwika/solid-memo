@@ -1,0 +1,11 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix dcterms:    <http://purl.org/dc/terms/> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<#deck-1>
+    a solid-memo:Deck ;
+    dcterms:title "Capitals" ;
+    solid-memo:formatVersion 2 ;
+    solid-memo:direction "sideways" ;
+    solid-memo:cardsDocument <https://pod.example/d.ttl> ;
+    solid-memo:reviewsDocument <https://pod.example/r.ttl> .

@@ -162,6 +162,12 @@ describe("toLibraryDeckContent", () => {
       thing(`${CANONICAL}#half`, (t) =>
         t.addIri(RDF.type, SM.Card).addStringNoLocale(SM.front, "Norway"),
       ),
+      thing(`${CANONICAL}#half-2`, (t) =>
+        t
+          .addIri(RDF.type, SM.Card)
+          .addStringNoLocale(SM.front, "Norway")
+          .addInteger(SM.formatVersion, 2),
+      ),
       thing(`${CANONICAL}#literal`, (t) =>
         t
           .addIri(RDF.type, SM.Card)
@@ -192,7 +198,9 @@ describe("toLibraryDeckContent", () => {
 
   it("treats a deck and cards without a version as the first format", () => {
     const dataset = deckDocument(
-      thing(CANONICAL, (t) => t.addIri(RDF.type, SM.Deck)),
+      thing(CANONICAL, (t) =>
+        t.addIri(RDF.type, SM.Deck).addStringNoLocale(DCTERMS.title, "Capitals"),
+      ),
       thing(`${CANONICAL}#se`, (t) =>
         t
           .addIri(RDF.type, SM.Card)
@@ -203,7 +211,7 @@ describe("toLibraryDeckContent", () => {
     const content = toLibraryDeckContent(DOC, dataset);
     expect(content).toEqual({
       url: DOC,
-      name: DOC,
+      name: "Capitals",
       formatVersion: 1,
       authors: [],
       direction: "front-to-back",
@@ -224,7 +232,9 @@ describe("toLibraryDeckContent", () => {
 
   it("refuses a card in a newer format than it writes", () => {
     const dataset = deckDocument(
-      thing(CANONICAL, (t) => t.addIri(RDF.type, SM.Deck)),
+      thing(CANONICAL, (t) =>
+        t.addIri(RDF.type, SM.Deck).addStringNoLocale(DCTERMS.title, "Capitals"),
+      ),
       thing(`${CANONICAL}#se`, (t) =>
         t
           .addIri(RDF.type, SM.Card)
@@ -238,9 +248,15 @@ describe("toLibraryDeckContent", () => {
     );
   });
 
-  it("rejects a document without a deck", () => {
+  it("rejects a document without a deck, or with a deck that does not fit its shape", () => {
     expect(() => toLibraryDeckContent(DOC, deckDocument())).toThrow(
       `<${DOC}> is not a Solid Memo deck.`,
     );
+    expect(() =>
+      toLibraryDeckContent(
+        DOC,
+        deckDocument(thing(CANONICAL, (t) => t.addIri(RDF.type, SM.Deck))),
+      ),
+    ).toThrow(`<${DOC}> is not a Solid Memo deck.`);
   });
 });

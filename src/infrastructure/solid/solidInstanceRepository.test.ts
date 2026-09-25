@@ -193,10 +193,9 @@ describe("attachInstance", () => {
   function metaDataset(withTitle: boolean) {
     let thing = buildThing(
       createThing({ url: `${CONTAINER}meta.ttl#it` }),
-    ).addIri(
-      "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-      SM.Instance,
-    );
+    )
+      .addIri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type", SM.Instance)
+      .addDatetime(DCTERMS.created, new Date("2026-09-21T10:00:00.000Z"));
     if (withTitle) {
       thing = thing.addStringNoLocale(DCTERMS.title, "Attached");
     }
@@ -390,5 +389,54 @@ describe("deleteInstance", () => {
 
     expect(deleteContainer).not.toHaveBeenCalled();
     expect(removeInstanceRegistrations).not.toHaveBeenCalled();
+  });
+});
+
+describe("readMeta and saveMeta", () => {
+  const META = `${CONTAINER}meta.ttl`;
+  const meta = { name: "Main", createdAt: "2026-09-21T10:00:00.000Z", formatVersion: 1 };
+
+  function metaDataset() {
+    return setThing(
+      mockSolidDatasetFrom(META),
+      buildThing(createThing({ url: `${META}#it` }))
+        .addIri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type", SM.Instance)
+        .addStringNoLocale(DCTERMS.title, "Main")
+        .addDatetime(DCTERMS.created, new Date(meta.createdAt))
+        .addStringNoLocale("https://other.example/#note", "kept")
+        .build(),
+    );
+  }
+
+  it("reads the meta document, null when it is missing or has no subject", async () => {
+    vi.mocked(getSolidDataset).mockResolvedValue(metaDataset());
+    await expect(makeRepository().readMeta(CONTAINER)).resolves.toEqual(meta);
+    vi.mocked(getSolidDataset).mockRejectedValue({ statusCode: 404 });
+    await expect(makeRepository().readMeta(CONTAINER)).resolves.toBeNull();
+    vi.mocked(getSolidDataset).mockResolvedValue(mockSolidDatasetFrom(META));
+    await expect(makeRepository().readMeta(CONTAINER)).resolves.toBeNull();
+  });
+
+  it("rewrites the subject in place, keeping foreign triples", async () => {
+    vi.mocked(getSolidDataset).mockResolvedValue(metaDataset());
+    await makeRepository().saveMeta(CONTAINER, { ...meta, name: "Renamed" });
+    const [url, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    expect(url).toBe(META);
+    const thing = getThing(saved as SolidDataset, `${META}#it`)!;
+    expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Renamed");
+    expect(getStringNoLocale(thing, "https://other.example/#note")).toBe("kept");
+    expect(getInteger(thing, SM.formatVersion)).toBe(1);
+  });
+
+  it("refuses to save when the meta document or its subject is missing", async () => {
+    vi.mocked(getSolidDataset).mockRejectedValue({ statusCode: 404 });
+    await expect(makeRepository().saveMeta(CONTAINER, meta)).rejects.toThrow(
+      `<${CONTAINER}> has no meta document to update.`,
+    );
+    vi.mocked(getSolidDataset).mockResolvedValue(mockSolidDatasetFrom(META));
+    await expect(makeRepository().saveMeta(CONTAINER, meta)).rejects.toThrow(
+      "has no meta document to update.",
+    );
+    expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });
 });

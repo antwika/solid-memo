@@ -21,5 +21,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run generate:check
+      - run: npm run format:turtle:check
       - run: npm test
       - run: npm run build

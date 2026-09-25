@@ -1,7 +1,11 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { DataFactory, Parser, Writer, type Quad_Object } from "n3";
+import { DataFactory, Writer, type Quad_Object } from "n3";
 import type { Plugin } from "vite";
+import type { ShapeEngine } from "../src/infrastructure/shacl/engine";
+import { RDF_TYPE, objectsOf, parseTurtle } from "./rdf.ts";
+import { loadEngine, validateTurtleDocument } from "./shacl.ts";
+import { SM_NS } from "./vocab.ts";
 
 /**
  * The deck library: ready-made decks in `decks/*.ttl` at the repository
@@ -13,20 +17,19 @@ import type { Plugin } from "vite";
  *
  * Adding a deck is dropping a Turtle file into `decks/`: the dev server
  * serves it straight away and the build copies it into `dist/decks/`.
+ * Every file is validated against the shapes (shapes/deck/v<N>.ttl as a
+ * library document, shapes/card/v<N>.ttl) first; a broken file fails the
+ * build with the violations rather than vanishing from the library.
  */
 
-const SM = "https://solid-memo.com/vocab/v1#";
-const RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+const SM = SM_NS;
 const DCTERMS_TITLE = "http://purl.org/dc/terms/title";
 const DCTERMS_CREATOR = "http://purl.org/dc/terms/creator";
 const DCTERMS_LICENSE = "http://purl.org/dc/terms/license";
 const DCTERMS_DESCRIPTION = "http://purl.org/dc/terms/description";
 const DCTERMS_CREATED = "http://purl.org/dc/terms/created";
 const DCTERMS_SOURCE = "http://purl.org/dc/terms/source";
-const SM_FORMAT_VERSION = `${SM}formatVersion`;
 const SM_DIRECTION = `${SM}direction`;
-/** The study directions the app knows (domain/deck.ts). */
-const DECK_DIRECTIONS = ["front-to-back", "back-to-front", "bidirectional"];
 const XSD_INTEGER = "http://www.w3.org/2001/XMLSchema#integer";
 const XSD_DATETIME = "http://www.w3.org/2001/XMLSchema#dateTime";
 const TURTLE = "text/turtle; charset=utf-8";
@@ -62,10 +65,35 @@ export interface DeckSource {
   license?: string;
 }
 
-export function summarizeDeck(file: string, turtle: string): DeckSummary {
-  const quads = new Parser({ baseIRI: `https://library.invalid/${file}` }).parse(
-    turtle,
+/** The base every library file is read against, for messages. */
+export function libraryFileUrl(file: string): string {
+  return `https://library.invalid/${file}`;
+}
+
+/**
+ * Check a deck file against the shapes. What the shapes cannot say — a
+ * file holds exactly one deck — summarizeDeck checks.
+ */
+export async function validateDeckFile(
+  file: string,
+  turtle: string,
+  engine: ShapeEngine,
+): Promise<void> {
+  await validateTurtleDocument(
+    `decks/${file}`,
+    parseTurtle(turtle, libraryFileUrl(file)),
+    engine,
+    "library",
   );
+}
+
+/**
+ * What the index says about a deck file. Assumes the file passed
+ * validateDeckFile; only the rules the shapes cannot express are checked
+ * here.
+ */
+export function summarizeDeck(file: string, turtle: string): DeckSummary {
+  const quads = parseTurtle(turtle, libraryFileUrl(file));
   const typed = (type: string) =>
     quads
       .filter((q) => q.predicate.value === RDF_TYPE && q.object.value === type)
@@ -77,49 +105,18 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
     );
   }
   const deck = decks[0];
-  const of = (subject: string, predicate: string) =>
-    quads
-      .filter((q) => q.subject.value === subject && q.predicate.value === predicate)
-      .map((q) => q.object);
+  const of = (subject: string, predicate: string) => objectsOf(quads, subject, predicate);
   const title = of(deck, DCTERMS_TITLE)[0];
   if (title === undefined) {
     throw new Error(`decks/${file}: the deck has no dcterms:title.`);
   }
   const cards = [...new Set(typed(`${SM}Card`))];
-  for (const subject of [deck, ...cards]) {
-    if (of(subject, SM_FORMAT_VERSION).length === 0) {
-      throw new Error(
-        `decks/${file}: <${subject}> has no solid-memo:formatVersion.`,
-      );
-    }
-  }
-  for (const card of cards) {
-    for (const side of ["front", "back"] as const) {
-      const pictures = of(card, `${SM}${side}Image`);
-      const literal = pictures.find((object) => object.termType === "Literal");
-      if (literal !== undefined) {
-        throw new Error(
-          `decks/${file}: <${card}> solid-memo:${side}Image must be an IRI (<${literal.value}>), not a string literal.`,
-        );
-      }
-      if (pictures.length === 0 && of(card, `${SM}${side}`).length === 0) {
-        throw new Error(
-          `decks/${file}: <${card}> has neither solid-memo:${side} nor solid-memo:${side}Image.`,
-        );
-      }
-    }
-  }
   const isLiteral = (object: Quad_Object) => object.termType === "Literal";
   const isIri = (object: Quad_Object) => object.termType === "NamedNode";
   const license = of(deck, DCTERMS_LICENSE).find(isIri);
   const description = of(deck, DCTERMS_DESCRIPTION).find(isLiteral);
   const createdAt = of(deck, DCTERMS_CREATED).find(isLiteral);
   const direction = of(deck, SM_DIRECTION).find(isLiteral);
-  if (direction !== undefined && !DECK_DIRECTIONS.includes(direction.value)) {
-    throw new Error(
-      `decks/${file}: solid-memo:direction must be one of ${DECK_DIRECTIONS.join(", ")}, not "${direction.value}".`,
-    );
-  }
   const sources = of(deck, DCTERMS_SOURCE)
     .filter(isIri)
     .map(({ value: url }): DeckSource => {
@@ -235,10 +232,15 @@ function isDeckFile(name: string): boolean {
   return name !== INDEX_FILE && /^[A-Za-z0-9][A-Za-z0-9._-]*\.ttl$/.test(name);
 }
 
+/** Every deck file, validated, with the index built from them. */
 export async function readDeckLibrary(
   dir: string,
+  engine: ShapeEngine,
 ): Promise<{ files: { file: string; turtle: string }[]; index: string }> {
   const files = await readDeckFiles(dir);
+  for (const { file, turtle } of files) {
+    await validateDeckFile(file, turtle, engine);
+  }
   const index = buildIndex(
     files.map(({ file, turtle }) => summarizeDeck(file, turtle)),
   );
@@ -248,7 +250,10 @@ export async function readDeckLibrary(
 export function deckLibraryPlugin({
   dir = "decks",
   publicPath = "decks",
-}: { dir?: string; publicPath?: string } = {}): Plugin {
+  root = ".",
+}: { dir?: string; publicPath?: string; root?: string } = {}): Plugin {
+  let engine: Promise<ShapeEngine> | undefined;
+  const shapes = () => (engine ??= loadEngine(root));
   return {
     name: "solid-memo:deck-library",
 
@@ -261,7 +266,7 @@ export function deckLibraryPlugin({
         try {
           let body: string | undefined;
           if (name === INDEX_FILE) {
-            body = (await readDeckLibrary(dir)).index;
+            body = (await readDeckLibrary(dir, await shapes())).index;
           } else if (isDeckFile(name)) {
             body = (await readDeckFiles(dir)).find((f) => f.file === name)
               ?.turtle;
@@ -276,7 +281,7 @@ export function deckLibraryPlugin({
     },
 
     async generateBundle() {
-      const { files, index } = await readDeckLibrary(dir);
+      const { files, index } = await readDeckLibrary(dir, await shapes());
       for (const { file, turtle } of files) {
         this.emitFile({
           type: "asset",

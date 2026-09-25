@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createUseCases } from "./application/useCases";
 import { authFetch } from "./infrastructure/solid/authFetch";
 import { createSolidSessionGateway } from "./infrastructure/solid/solidSessionGateway";
+import { createShaclShapeValidator } from "./infrastructure/shacl/shaclShapeValidator";
 import { createSolidDeckLibrary } from "./infrastructure/solid/solidDeckLibrary";
 import { createSolidDeckRepository } from "./infrastructure/solid/solidDeckRepository";
 import { createSolidInstanceRepository } from "./infrastructure/solid/solidInstanceRepository";
@@ -38,6 +39,11 @@ const useCases = createUseCases({
   }),
   reviewStateRepository: createSolidReviewStateRepository({
     fetch: authFetch,
+  }),
+  shapeValidator: createShaclShapeValidator({
+    fetch: authFetch,
+    shapesFetch: (input, init) => globalThis.fetch(input, init),
+    shapesBaseUrl: new URL("shapes/", document.baseURI).href,
   }),
 });
 

@@ -35,7 +35,9 @@ export type RouteRef =
   | { screen: "card"; instanceUrl: string; deckUrl: string; cardUrl: string }
   /** A study session over the deck's due and new prompts. */
   | { screen: "study"; instanceUrl: string; deckUrl: string }
-  | { screen: "preferences"; instanceUrl: string };
+  | { screen: "preferences"; instanceUrl: string }
+  /** Developer tool: the instance's documents checked against the shapes. */
+  | { screen: "validation"; instanceUrl: string };
 
 const STORAGE_SOURCES: StorageSource[] = ["profile", "linkHeader", "manual"];
 
@@ -101,7 +103,14 @@ export function routeToHash(ref: RouteRef): string {
       })}`;
     case "preferences":
       return `#/preferences${params({ instance: ref.instanceUrl })}`;
+    case "validation":
+      return `#/validate${params({ instance: ref.instanceUrl })}`;
   }
+}
+
+/** Hash URL of the developer tool that checks an instance against the shapes. */
+export function validationHref(instanceUrl: string): string {
+  return routeToHash({ screen: "validation", instanceUrl });
 }
 
 /**
@@ -206,6 +215,8 @@ export function parseHash(hash: string): RouteRef | null {
       return instanceUrl === null
         ? null
         : { screen: "preferences", instanceUrl };
+    case "/validate":
+      return instanceUrl === null ? null : { screen: "validation", instanceUrl };
     default:
       return null;
   }

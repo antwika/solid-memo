@@ -1,14 +1,16 @@
 import type { Card, CardContent, Deck } from "../domain/deck";
 import type {
   Instance,
+  InstanceMeta,
   RegistrationOptions,
   RegistrationTarget,
 } from "../domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "../domain/library";
-import type { StudyPreferences } from "../domain/preferences";
+import type { StoredPreferences, StudyPreferences } from "../domain/preferences";
 import type { ReviewKey, ReviewState } from "../domain/review";
 import type { EstablishedSession } from "../domain/session";
 import type { Storage } from "../domain/storage";
+import type { DocumentReport } from "../domain/validation";
 import type { WebIdDocument } from "../domain/webIdDocument";
 
 /**
@@ -82,6 +84,14 @@ export interface InstanceRepository {
    * container.
    */
   deleteInstance(args: { webId: string; instance: Instance }): Promise<void>;
+  /** What the instance's meta document says; null when there is none. */
+  readMeta(instanceUrl: string): Promise<InstanceMeta | null>;
+  /**
+   * Rewrite the meta document's subject in place, in this app's format.
+   * Fails when the document is missing: a meta document is created with
+   * its instance, never on its own.
+   */
+  saveMeta(instanceUrl: string, meta: InstanceMeta): Promise<void>;
 }
 
 /** Driven port: decks and their cards inside one instance. */
@@ -148,12 +158,24 @@ export interface ReviewStateRepository {
 
 /** Driven port: per-instance study preferences. */
 export interface PreferencesRepository {
-  /** null when the instance has no preferences document yet. */
-  getPreferences(instanceUrl: string): Promise<StudyPreferences | null>;
+  /**
+   * The stored preferences with their format version; null when the
+   * instance has no preferences document yet.
+   */
+  getPreferences(instanceUrl: string): Promise<StoredPreferences | null>;
   savePreferences(
     instanceUrl: string,
     preferences: StudyPreferences,
   ): Promise<void>;
+}
+
+/**
+ * Driven port: one pod document checked against Solid Memo's shapes
+ * (docs/validation.md). A document that does not exist is reported as
+ * missing, not failed; any other failure to read it throws.
+ */
+export interface ShapeValidator {
+  validateDocument(url: string): Promise<DocumentReport>;
 }
 
 /** Driven port: discovery of storage roots in the user's pod(s). */

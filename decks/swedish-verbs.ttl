@@ -16,8 +16,8 @@
                    <https://spraakbanken.gu.se/resurser/saldom> ,
                    <https://folkets-lexikon.csc.kth.se/folkets/> ;
     prov:wasDerivedFrom <https://sprakbanken.se/resurser/flex> ,
-                   <https://spraakbanken.gu.se/resurser/saldom> ,
-                   <https://folkets-lexikon.csc.kth.se/folkets/> ;
+                        <https://spraakbanken.gu.se/resurser/saldom> ,
+                        <https://folkets-lexikon.csc.kth.se/folkets/> ;
     prov:wasGeneratedBy <#generation> ;
     dcterms:created "2026-09-23T21:20:07.000Z"^^xsd:dateTime ;
     solid-memo:direction "front-to-back" ;
@@ -28,8 +28,8 @@
     a prov:Activity ;
     prov:endedAtTime "2026-09-23T21:20:07.000Z"^^xsd:dateTime ;
     prov:used <https://sprakbanken.se/resurser/flex> ,
-                   <https://spraakbanken.gu.se/resurser/saldom> ,
-                   <https://folkets-lexikon.csc.kth.se/folkets/> ;
+              <https://spraakbanken.gu.se/resurser/saldom> ,
+              <https://folkets-lexikon.csc.kth.se/folkets/> ;
     prov:wasAssociatedWith <https://github.com/antwika/solid-memo/blob/57e8e028d6287265ae78a12ade7b75f8aed3b80b/scripts/generate_decks_for_swedish_learning.py> ;
     rdfs:comment "python3 scripts/generate_decks_for_swedish_learning.py --pos nouns -o decks/swedish-nouns.ttl --pos verbs -o decks/swedish-verbs.ttl --pos adjectives -o decks/swedish-adjectives.ttl --creator 'Anton Wiklund <antonwiklund91@gmail.com>'" .
 

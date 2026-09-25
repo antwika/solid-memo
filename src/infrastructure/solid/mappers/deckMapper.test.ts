@@ -53,6 +53,7 @@ describe("toDeck", () => {
     const thing = deckThing((t) =>
       t
         .addIri(RDF.type, SM.Deck)
+        .addStringNoLocale(DCTERMS.title, "Capitals")
         .addIri(SM.cardsDocument, CARDS_DOC)
         .addIri(SM.reviewsDocument, REVIEWS_DOC)
         .addInteger(SM.formatVersion, 1)
@@ -71,27 +72,55 @@ describe("toDeck", () => {
     });
   });
 
-  it("reads a newer format version as stored", () => {
+  it("reads a newer format version with the latest shape it knows, keeping the stored version", () => {
     const thing = deckThing((t) =>
       t
         .addIri(RDF.type, SM.Deck)
+        .addStringNoLocale(DCTERMS.title, "Future")
+        .addStringNoLocale(SM.direction, "back-to-front")
         .addIri(SM.cardsDocument, CARDS_DOC)
         .addIri(SM.reviewsDocument, REVIEWS_DOC)
         .addInteger(SM.formatVersion, 7),
     );
-    expect(toDeck(thing)?.formatVersion).toBe(7);
+    expect(toDeck(thing)).toMatchObject({ formatVersion: 7, direction: "back-to-front" });
   });
 
-  it("falls back to the fragment id when the title is missing", () => {
+  it("reads a format-2 deck's direction, and a missing created date as empty", () => {
     const thing = deckThing((t) =>
       t
         .addIri(RDF.type, SM.Deck)
+        .addStringNoLocale(DCTERMS.title, "Both ways")
+        .addStringNoLocale(SM.direction, "bidirectional")
         .addIri(SM.cardsDocument, CARDS_DOC)
-        .addIri(SM.reviewsDocument, REVIEWS_DOC),
+        .addIri(SM.reviewsDocument, REVIEWS_DOC)
+        .addInteger(SM.formatVersion, 2),
     );
-    const deck = toDeck(thing)!;
-    expect(deck.name).toBe("deck-1");
-    expect(deck.createdAt).toBe("");
+    expect(toDeck(thing)).toMatchObject({ direction: "bidirectional", createdAt: "", formatVersion: 2 });
+  });
+
+  it("rejects a deck without a title, and a format-2 deck without a direction", () => {
+    expect(
+      toDeck(
+        deckThing((t) =>
+          t
+            .addIri(RDF.type, SM.Deck)
+            .addIri(SM.cardsDocument, CARDS_DOC)
+            .addIri(SM.reviewsDocument, REVIEWS_DOC),
+        ),
+      ),
+    ).toBeNull();
+    expect(
+      toDeck(
+        deckThing((t) =>
+          t
+            .addIri(RDF.type, SM.Deck)
+            .addStringNoLocale(DCTERMS.title, "No direction")
+            .addIri(SM.cardsDocument, CARDS_DOC)
+            .addIri(SM.reviewsDocument, REVIEWS_DOC)
+            .addInteger(SM.formatVersion, 2),
+        ),
+      ),
+    ).toBeNull();
   });
 
   it("rejects subjects that are not sm:Deck", () => {
@@ -102,14 +131,20 @@ describe("toDeck", () => {
     expect(
       toDeck(
         deckThing((t) =>
-          t.addIri(RDF.type, SM.Deck).addIri(SM.cardsDocument, CARDS_DOC),
+          t
+            .addIri(RDF.type, SM.Deck)
+            .addStringNoLocale(DCTERMS.title, "A")
+            .addIri(SM.cardsDocument, CARDS_DOC),
         ),
       ),
     ).toBeNull();
     expect(
       toDeck(
         deckThing((t) =>
-          t.addIri(RDF.type, SM.Deck).addIri(SM.reviewsDocument, REVIEWS_DOC),
+          t
+            .addIri(RDF.type, SM.Deck)
+            .addStringNoLocale(DCTERMS.title, "A")
+            .addIri(SM.reviewsDocument, REVIEWS_DOC),
         ),
       ),
     ).toBeNull();

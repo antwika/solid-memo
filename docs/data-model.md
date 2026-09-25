@@ -5,12 +5,25 @@ Implemented in `src/infrastructure/solid/` (vocabulary in
 [vocab.ts](../src/infrastructure/solid/vocab.ts), discovery in
 [typeIndex.ts](../src/infrastructure/solid/typeIndex.ts)).
 
-## Vocabulary
+## Vocabulary and shapes
 
 Solid Memo mints its own terms under `https://solid-memo.com/vocab/v1#`
 (prefix `sm:` below) — no existing RDF vocabulary covers spaced repetition.
-The namespace is versioned; readers ignore unknown triples and writers never
-delete triples they don't understand.
+The terms are defined in [`vocab/v1.ttl`](../vocab/v1.ttl) ([vocab.md](vocab.md));
+what a valid subject of each class looks like, version by version, is a
+SHACL shape under [`shapes/`](../shapes/) ([shapes.md](shapes.md)). Both
+are published with the site, and the app's constants, record types and
+descriptors are generated from them. Readers ignore unknown triples and
+writers never delete triples they don't understand.
+
+```mermaid
+flowchart LR
+    thing["Inrupt Thing"] -->|readVersioned| record["shape record<br/>e.g. CardV1"]
+    record -->|migrate| latest["latest record<br/>CardV2"]
+    latest -->|cardFromRecord| model["domain model<br/>Card"]
+    model -->|cardToRecord| latest
+    latest -->|recordThing| thing
+```
 
 ## Discovery chain
 
@@ -56,7 +69,8 @@ flowchart LR
 ├── meta.ttl        #it: a sm:Instance; dcterms:title; dcterms:created;
 │                        sm:formatVersion 1
 ├── preferences.ttl #it: a sm:Preferences (created on first explicit save):
-│                        study caps + sm:developerMode (boolean, absent = off)
+│                        study caps, sm:answerScale, sm:developerMode,
+│                        sm:formatVersion 2
 ├── catalog.ttl     one subject per deck (titles live ONLY here);
 │                        sm:formatVersion, sm:direction, optional
 │                        dcterms:creator/license/description/source
@@ -67,7 +81,8 @@ flowchart LR
                           direction (fast churn) — #<cardId> front→back,
                           #<cardId>@back-to-front the other way; optional
                           sm:previous* snapshot = state before the day's
-                          first review (restored by "reset the day")
+                          first review (restored by "reset the day");
+                          sm:formatVersion 2
 ```
 
 ## Decks and cards
@@ -103,13 +118,15 @@ graph LR
   `front-to-back`, `back-to-front` or `bidirectional` (every card asked
   both ways). Absent means front→back, the only way there was before the
   field existed. Changed in the Browser; a library deck brings its own.
-- **Format versions**: every deck and card the app writes carries
-  `sm:formatVersion` (the same term `meta.ttl` uses for the instance):
-  decks are at 2 (direction), cards at 2 (pictures). Readers treat a
+- **Format versions**: every subject the app writes carries
+  `sm:formatVersion`, saying which version of its class's
+  [shape](shapes.md) it conforms to: instance 1, decks 2 (direction),
+  cards 2 (pictures), review states 2, preferences 2. Readers treat a
   missing version as 1 — data written before the field existed — read
   older versions as they are, and pass a newer stored version through
-  unchanged. Bringing a pod's decks and cards up to the current version
-  is the user's call; see [migrations.md](migrations.md).
+  unchanged. Bringing a pod up to the current versions is the user's
+  call; see [migrations.md](migrations.md). A developer can check an
+  instance against the shapes in the browser ([validation.md](validation.md)).
 - **Cards** are hash-fragment subjects (`#card-<uuid>`, or the library's
   own ids such as `#sweden` for imported decks) inside one document per
   deck. Fragment ids are generated once at creation and never re-derived.

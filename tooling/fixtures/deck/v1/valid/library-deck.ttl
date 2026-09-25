@@ -1,0 +1,14 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix dcterms:    <http://purl.org/dc/terms/> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<>
+    a solid-memo:Deck ;
+    dcterms:title "Capitals" ;
+    solid-memo:formatVersion 1 ;
+    dcterms:creator "Anton Wiklund" ;
+    dcterms:source <https://en.wikipedia.org/wiki/List_of_national_capitals> ,
+                   <https://iupac.org/> .
+
+<https://en.wikipedia.org/wiki/List_of_national_capitals>
+    dcterms:title "List of national capitals" .

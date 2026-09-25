@@ -11,7 +11,7 @@ layers are wired together.
 | UI | `src/ui/` | Preact components and async-state management. Calls use cases only. |
 | Application | `src/application/` | Use cases (what the app does) and ports (what the app needs). |
 | Domain | `src/domain/` | Pure types and pure functions. The app's vocabulary. |
-| Infrastructure | `src/infrastructure/` | Implementations of the ports against real technology (Solid pods). |
+| Infrastructure | `src/infrastructure/` | Implementations of the ports against real technology: `solid/` for pods (Inrupt), `shacl/` for shape validation (rdf-validate-shacl) and the generated shape descriptors. |
 | Composition root | `src/main.tsx` | Instantiates infrastructure, injects it into use cases, renders the UI. |
 
 ## Dependency rule
@@ -39,7 +39,9 @@ graph TD
   interfaces (one per external capability) implemented by factories in
   `src/infrastructure/solid/`.
 - Domain types ([src/domain/](../src/domain/)) — free of any library type,
-  so every layer above can be tested without infrastructure.
+  so every layer above can be tested without infrastructure. The record
+  types under `src/domain/shapes/` are generated from the SHACL
+  [shapes](shapes.md); the migration chain beside them is hand-written.
 
 ## Why
 

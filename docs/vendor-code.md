@@ -11,6 +11,8 @@ replacing one would cost.
 | TanStack | `@tanstack/react-query` (via `preact/compat`) | `src/ui/`, `src/main.tsx` | Async-state caching and invalidation |
 | Preact | `preact` | `src/ui/`, `src/main.tsx` | Rendering |
 | Fontsource | `@fontsource-variable/fredoka`, `@fontsource/bangers` (both SIL OFL-1.1) | `src/style.css` (`@import`) | Typefaces — Fredoka for text, Bangers (comic lettering) for `h1`/`h2` — self-hosted: bundled into `dist/`, no third-party font requests |
+| Zazuko | `rdf-validate-shacl` (MIT; with `@rdfjs/*`, `clownface`) | `src/infrastructure/shacl/engine.ts` (a lazily loaded chunk) and `tooling/` | SHACL validation of pod and library documents against `shapes/` |
+| RDF/JS community | `n3` (dev) | `tooling/` | Build-time Turtle parsing for the generators, the library index and validation |
 
 ## Vendor-independent code
 
@@ -28,7 +30,11 @@ never cross upward past a mapper.
 - **Inrupt clients** → touch `src/infrastructure/solid/` only. Ports and
   everything above them are unchanged. A different RDF library (rdflib, LDO)
   or a plain HTTP backend means rewriting the port implementations and
-  mappers, nothing else.
+  the generic reader/writer (`records.ts`), nothing else: the record ↔
+  model mappers are in the domain and the shape descriptors are data.
+- **rdf-validate-shacl** → `src/infrastructure/shacl/engine.ts` and
+  `tooling/shacl.ts`: the `ShapeEngine` interface (one node against one
+  shape, results as plain objects) is all the rest depends on.
 - **TanStack Query** → touch `src/ui/` hooks usage and the provider in
   `main.tsx`. Use cases are plain async functions and would not change.
 - **Preact** → `src/ui/` and `main.tsx`. Domain/application are

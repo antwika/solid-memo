@@ -1,4 +1,12 @@
 import type { AnswerScale } from "./answerScale";
+import { LATEST_VERSION } from "./shapes/generated";
+
+/**
+ * Format version written on every preferences document this app saves.
+ * Format 2 states every field; format 1 is whatever the unversioned era
+ * wrote, each missing field meaning its default.
+ */
+export const PREFERENCES_FORMAT_VERSION: number = LATEST_VERSION.preferences;
 
 export interface StudyPreferences {
   /** Maximum unseen cards introduced per study day. */
@@ -17,6 +25,12 @@ export interface StudyPreferences {
    * document) that ordinary study has no use for.
    */
   developerMode: boolean;
+}
+
+/** Preferences as a pod holds them, with the format they are stored in. */
+export interface StoredPreferences {
+  preferences: StudyPreferences;
+  formatVersion: number;
 }
 
 export const DEFAULT_PREFERENCES: StudyPreferences = {

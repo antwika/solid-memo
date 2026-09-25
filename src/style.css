@@ -1631,3 +1631,20 @@ p[role="status"]:not(.loading) {
     transform: none;
   }
 }
+/* Developer tools: the link to the validation view, below the screen. */
+.developer-tools {
+  margin: 2rem 0 1rem;
+}
+
+.validation table {
+  border-collapse: collapse;
+  margin: 0.5rem 0 1rem;
+}
+
+.validation th,
+.validation td {
+  border: 1px solid var(--border, #ccc);
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}

@@ -19,19 +19,29 @@ import {
   type LibraryUpgradePlan,
 } from "../domain/libraryUpgrade";
 import {
-  isOutdated,
   isDeckOutdated,
+  isInstanceOutdated,
+  isOutdated,
+  isPreferencesOutdated,
+  isReviewStateOutdated,
   planMigration,
   upgradeCard,
   upgradeDeck,
+  upgradeReviewState,
   type MigrationPlan,
   type MigrationResult,
 } from "../domain/migration";
+import { instanceDocumentUrls } from "../domain/instanceLayout";
+import { summarize, type ValidationReport } from "../domain/validation";
 import {
   DEFAULT_PREFERENCES,
   type StudyPreferences,
 } from "../domain/preferences";
-import type { ReviewQuality, ReviewState } from "../domain/review";
+import {
+  REVIEW_STATE_FORMAT_VERSION,
+  type ReviewQuality,
+  type ReviewState,
+} from "../domain/review";
 import {
   buildStudyQueue,
   nextDueDate,
@@ -53,6 +63,7 @@ import type {
   SessionGateway,
   StorageGateway,
   WebIdDocumentRepository,
+  ShapeValidator,
 } from "./ports";
 
 export interface UseCases {
@@ -70,6 +81,11 @@ export interface UseCases {
    */
   discoverAccount(session: Session): Promise<SolidAccount>;
   viewWebIdDocument(session: Session): Promise<WebIdDocument>;
+  /**
+   * Developer tool: every document of the instance checked against
+   * Solid Memo's shapes (docs/validation.md). Reads only.
+   */
+  validateInstance(instanceUrl: string): Promise<ValidationReport>;
   listStorages(session: Session): Promise<Storage[]>;
   addManualStorage(url: string): Promise<Storage>;
   listInstances(session: Session): Promise<Instance[]>;
@@ -177,6 +193,7 @@ export interface Dependencies {
   deckLibrary: DeckLibrary;
   preferencesRepository: PreferencesRepository;
   reviewStateRepository: ReviewStateRepository;
+  shapeValidator: ShapeValidator;
 }
 
 export function createUseCases({
@@ -189,6 +206,7 @@ export function createUseCases({
   deckLibrary,
   preferencesRepository,
   reviewStateRepository,
+  shapeValidator,
 }: Dependencies): UseCases {
   /** Normalized card content, or a throw naming what is missing. */
   function validContent(content: CardContent): CardContent {
@@ -206,7 +224,7 @@ export function createUseCases({
     if (inFlight !== undefined) return inFlight;
     const read = preferencesRepository
       .getPreferences(instanceUrl)
-      .then((stored) => stored ?? DEFAULT_PREFERENCES)
+      .then((stored) => stored?.preferences ?? DEFAULT_PREFERENCES)
       .finally(() => preferenceReads.delete(instanceUrl));
     preferenceReads.set(instanceUrl, read);
     return read;
@@ -243,6 +261,15 @@ export function createUseCases({
           .catch(() => undefined),
       ]);
       return { webId: session.webId, podUrl: storages[0]?.url, oidcIssuer };
+    },
+    async validateInstance(instanceUrl) {
+      const decks = await deckRepository.listDecks(instanceUrl);
+      const documents = await Promise.all(
+        instanceDocumentUrls(instanceUrl, decks).map((url) =>
+          shapeValidator.validateDocument(url),
+        ),
+      );
+      return summarize(instanceUrl, documents);
     },
     viewWebIdDocument(session) {
       return webIdDocumentRepository.fetchWebIdDocument(session.webId);
@@ -326,28 +353,60 @@ export function createUseCases({
       return deckRepository.removeCard(deck, card);
     },
     async planMigration(instanceUrl) {
-      const decks = await deckRepository.listDecks(instanceUrl);
+      const [instance, preferences, decks] = await Promise.all([
+        instanceRepository.readMeta(instanceUrl),
+        preferencesRepository.getPreferences(instanceUrl),
+        deckRepository.listDecks(instanceUrl),
+      ]);
       const entries = await Promise.all(
-        decks.map(async (deck) => ({
-          deck,
-          cards: await deckRepository.listCards(deck),
-        })),
+        decks.map(async (deck) => {
+          const [cards, reviews] = await Promise.all([
+            deckRepository.listCards(deck),
+            reviewStateRepository.listReviewStates(deck),
+          ]);
+          return { deck, cards, reviews };
+        }),
       );
-      return planMigration(entries);
+      return planMigration({ instance, preferences, entries });
     },
     async migrateInstance(instanceUrl) {
-      const migrated: MigrationResult = { deckCount: 0, cardCount: 0 };
+      const migrated: MigrationResult = {
+        deckCount: 0,
+        cardCount: 0,
+        reviewCount: 0,
+        preferencesMigrated: false,
+        instanceMigrated: false,
+      };
+      const meta = await instanceRepository.readMeta(instanceUrl);
+      if (meta !== null && isInstanceOutdated(meta)) {
+        await instanceRepository.saveMeta(instanceUrl, meta);
+        migrated.instanceMigrated = true;
+      }
+      const stored = await preferencesRepository.getPreferences(instanceUrl);
+      if (stored !== null && isPreferencesOutdated(stored)) {
+        await preferencesRepository.savePreferences(instanceUrl, stored.preferences);
+        migrated.preferencesMigrated = true;
+      }
       for (const deck of await deckRepository.listDecks(instanceUrl)) {
         if (isDeckOutdated(deck)) {
           await deckRepository.saveDeck(upgradeDeck(deck));
           migrated.deckCount += 1;
         }
-        const outdated = (await deckRepository.listCards(deck)).filter(
-          isOutdated,
+        const cards = (await deckRepository.listCards(deck)).filter(isOutdated);
+        if (cards.length > 0) {
+          await deckRepository.saveCards(deck, cards.map(upgradeCard));
+          migrated.cardCount += cards.length;
+        }
+        const reviews = (await reviewStateRepository.listReviewStates(deck)).filter(
+          isReviewStateOutdated,
         );
-        if (outdated.length === 0) continue;
-        await deckRepository.saveCards(deck, outdated.map(upgradeCard));
-        migrated.cardCount += outdated.length;
+        if (reviews.length > 0) {
+          await reviewStateRepository.applyReviewChanges(deck, {
+            save: reviews.map(upgradeReviewState),
+            remove: [],
+          });
+          migrated.reviewCount += reviews.length;
+        }
       }
       return migrated;
     },
@@ -388,6 +447,7 @@ export function createUseCases({
         due: nextDueDate(now, next.intervalDays, prefs.dayBoundaryHour),
         firstReviewedAt: current?.firstReviewedAt ?? now.toISOString(),
         lastReviewedAt: now.toISOString(),
+        formatVersion: REVIEW_STATE_FORMAT_VERSION,
         ...(previous === undefined ? {} : { previous }),
       };
       await reviewStateRepository.saveReviewState(deck, state);

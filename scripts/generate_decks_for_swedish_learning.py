@@ -445,7 +445,10 @@ SOURCES = (
 def write_deck(path: Path, *, title: str, description: str, creator: str | None,
                cards: list[tuple[str, str]], created: str, script_url: str, command: str) -> None:
     deck_slug = slug(path.stem)
-    sources = " ,\n                   ".join(SOURCES)
+    def objects(predicate: str) -> str:
+        """The sources as a Turtle object list, continuation lines aligned under the first."""
+        return (" ,\n" + " " * (5 + len(predicate))).join(SOURCES)
+
     out: list[str] = [
         f"@base <https://solid-memo.com/decks/{deck_slug}> .",
         "",
@@ -464,8 +467,8 @@ def write_deck(path: Path, *, title: str, description: str, creator: str | None,
     out += [
         "    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;",
         f"    dcterms:description {ttl_str(description)} ;",
-        f"    dcterms:source {sources} ;",
-        f"    prov:wasDerivedFrom {sources} ;",
+        f"    dcterms:source {objects('dcterms:source')} ;",
+        f"    prov:wasDerivedFrom {objects('prov:wasDerivedFrom')} ;",
         "    prov:wasGeneratedBy <#generation> ;",
         f'    dcterms:created "{created}"^^xsd:dateTime ;',
         '    solid-memo:direction "front-to-back" ;',
@@ -475,7 +478,7 @@ def write_deck(path: Path, *, title: str, description: str, creator: str | None,
         "<#generation>",
         "    a prov:Activity ;",
         f'    prov:endedAtTime "{created}"^^xsd:dateTime ;',
-        f"    prov:used {sources} ;",
+        f"    prov:used {objects('prov:used')} ;",
         f"    prov:wasAssociatedWith <{script_url}> ;",
         f"    rdfs:comment {ttl_str(command)} .",
         "",

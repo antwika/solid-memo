@@ -68,11 +68,14 @@ describe("getPreferences", () => {
       ),
     );
     await expect(makeRepository().getPreferences(INSTANCE)).resolves.toEqual({
-      newCardsPerDay: 5,
-      maxReviewsPerDay: 42,
-      dayBoundaryHour: 3,
-      answerScale: "minimal",
-      developerMode: true,
+      preferences: {
+        newCardsPerDay: 5,
+        maxReviewsPerDay: 42,
+        dayBoundaryHour: 3,
+        answerScale: "minimal",
+        developerMode: true,
+      },
+      formatVersion: 1,
     });
   });
 });
@@ -99,14 +102,16 @@ describe("savePreferences", () => {
     expect(getInteger(thing, SM.dayBoundaryHour)).toBe(3);
     expect(getStringNoLocale(thing, SM.answerScale)).toBe("minimal");
     expect(getBoolean(thing, SM.developerMode)).toBe(true);
+    expect(getInteger(thing, SM.formatVersion)).toBe(2);
   });
 
-  it("replaces the subject in an existing document", async () => {
+  it("rewrites the subject in place in an existing document, keeping foreign triples", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
       setThing(
         mockSolidDatasetFrom(DOCUMENT),
         buildThing(createThing({ url: `${DOCUMENT}#it` }))
           .addInteger(SM.newCardsPerDay, 99)
+          .addStringNoLocale("https://other.example/#note", "kept")
           .build(),
       ),
     );
@@ -116,5 +121,7 @@ describe("savePreferences", () => {
     const [, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     const thing = getThing(saved as SolidDataset, `${DOCUMENT}#it`)!;
     expect(getInteger(thing, SM.newCardsPerDay)).toBe(5);
+    expect(getStringNoLocale(thing, "https://other.example/#note")).toBe("kept");
+    expect(getInteger(thing, SM.formatVersion)).toBe(2);
   });
 });

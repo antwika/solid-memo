@@ -8,11 +8,14 @@ import type {
   SessionGateway,
   StorageGateway,
   WebIdDocumentRepository,
+  ShapeValidator,
 } from "./ports";
 import { createUseCases } from "./useCases";
 import { DECK_FORMAT_VERSION, type Card, type Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "../domain/library";
+import { DEFAULT_PREFERENCES } from "../domain/preferences";
+import type { ReviewState } from "../domain/review";
 import type { Session } from "../domain/session";
 import type { Storage } from "../domain/storage";
 import type { WebIdDocument } from "../domain/webIdDocument";
@@ -90,6 +93,8 @@ function makeDeps() {
     createInstance: vi.fn(async () => instance),
     attachInstance: vi.fn(async () => instance),
     deleteInstance: vi.fn(async () => undefined),
+    readMeta: vi.fn(async () => null),
+    saveMeta: vi.fn(async () => undefined),
   };
   const deckRepository: DeckRepository = {
     listDecks: vi.fn(async () => [deck]),
@@ -118,6 +123,13 @@ function makeDeps() {
     saveReviewState: vi.fn(async () => undefined),
     applyReviewChanges: vi.fn(async () => undefined),
   };
+  const shapeValidator: ShapeValidator = {
+    validateDocument: vi.fn(async (url) => ({
+      url,
+      status: "checked" as const,
+      subjects: [],
+    })),
+  };
   return {
     sessionGateway,
     webIdDocumentRepository,
@@ -127,6 +139,7 @@ function makeDeps() {
     deckLibrary,
     preferencesRepository,
     reviewStateRepository,
+    shapeValidator,
   };
 }
 
@@ -424,23 +437,106 @@ describe("createUseCases", () => {
     });
     const current = (id: string): Card => ({ ...old(id), formatVersion: 2 });
 
-    it("planMigration reads every deck's cards and writes nothing", async () => {
+    const oldReview = (cardId: string): ReviewState => ({
+      cardId,
+      direction: "front-to-back",
+      easeFactor: 2.5,
+      intervalDays: 1,
+      repetitions: 1,
+      due: "2026-09-22",
+      firstReviewedAt: "2026-09-21T10:00:00.000Z",
+      lastReviewedAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+    });
+    const nothingMigrated = {
+      deckCount: 0,
+      cardCount: 0,
+      reviewCount: 0,
+      preferencesMigrated: false,
+      instanceMigrated: false,
+    };
+
+    it("planMigration reads every document and writes nothing", async () => {
       const deps = makeDeps();
+      vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue({
+        name: "Main",
+        createdAt: "2026-09-21T10:00:00.000Z",
+        formatVersion: 1,
+      });
+      vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
+        preferences: DEFAULT_PREFERENCES,
+        formatVersion: 1,
+      });
       vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
       vi.mocked(deps.deckRepository.listCards).mockImplementation(async (d) =>
         d === deck ? [old("a"), current("b"), old("c")] : [current("d")],
       );
+      vi.mocked(deps.reviewStateRepository.listReviewStates).mockImplementation(
+        async (d) => (d === other ? [oldReview("d")] : []),
+      );
       const useCases = createUseCases(deps);
 
       await expect(useCases.planMigration(instance.url)).resolves.toEqual({
-        decks: [{ deck, deckOutdated: false, cardCount: 2 }],
+        decks: [
+          { deck, deckOutdated: false, cardCount: 2, reviewCount: 0 },
+          { deck: other, deckOutdated: false, cardCount: 0, reviewCount: 1 },
+        ],
         deckCount: 0,
         cardCount: 2,
+        reviewCount: 1,
+        preferencesOutdated: true,
+        instanceOutdated: false,
       });
       expect(deps.deckRepository.listDecks).toHaveBeenCalledWith(instance.url);
       expect(deps.deckRepository.listCards).toHaveBeenCalledTimes(2);
+      expect(deps.reviewStateRepository.listReviewStates).toHaveBeenCalledTimes(2);
       expect(deps.deckRepository.saveCards).not.toHaveBeenCalled();
       expect(deps.deckRepository.saveDeck).not.toHaveBeenCalled();
+      expect(deps.reviewStateRepository.applyReviewChanges).not.toHaveBeenCalled();
+      expect(deps.preferencesRepository.savePreferences).not.toHaveBeenCalled();
+      expect(deps.instanceRepository.saveMeta).not.toHaveBeenCalled();
+    });
+
+    it("migrateInstance rewrites the instance record and the preferences first, in place", async () => {
+      const deps = makeDeps();
+      const meta = { name: "Main", createdAt: "2026-09-21T10:00:00.000Z", formatVersion: 0 };
+      vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue(meta);
+      vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
+        preferences: { ...DEFAULT_PREFERENCES, newCardsPerDay: 7 },
+        formatVersion: 1,
+      });
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
+      const useCases = createUseCases(deps);
+
+      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
+        ...nothingMigrated,
+        preferencesMigrated: true,
+        instanceMigrated: true,
+      });
+      expect(deps.instanceRepository.saveMeta).toHaveBeenCalledExactlyOnceWith(instance.url, meta);
+      expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledExactlyOnceWith(
+        instance.url,
+        { ...DEFAULT_PREFERENCES, newCardsPerDay: 7 },
+      );
+    });
+
+    it("migrateInstance restamps outdated review states in one write per deck", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
+      vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
+        oldReview("a"),
+        { ...oldReview("b"), formatVersion: 2 },
+      ]);
+      const useCases = createUseCases(deps);
+
+      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
+        ...nothingMigrated,
+        reviewCount: 1,
+      });
+      expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledExactlyOnceWith(
+        deck,
+        { save: [{ ...oldReview("a"), formatVersion: 2 }], remove: [] },
+      );
     });
 
     it("migrateInstance rewrites an outdated deck entry, then its cards", async () => {
@@ -453,6 +549,7 @@ describe("createUseCases", () => {
       const useCases = createUseCases(deps);
 
       await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
+        ...nothingMigrated,
         deckCount: 1,
         cardCount: 1,
       });
@@ -475,7 +572,7 @@ describe("createUseCases", () => {
       const useCases = createUseCases(deps);
 
       await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
-        deckCount: 0,
+        ...nothingMigrated,
         cardCount: 3,
       });
       expect(deps.deckRepository.saveDeck).not.toHaveBeenCalled();
@@ -494,10 +591,9 @@ describe("createUseCases", () => {
       vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
       const useCases = createUseCases(deps);
 
-      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
-        deckCount: 0,
-        cardCount: 0,
-      });
+      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual(
+        nothingMigrated,
+      );
       expect(deps.deckRepository.saveCards).not.toHaveBeenCalled();
     });
 
@@ -515,6 +611,36 @@ describe("createUseCases", () => {
       );
       expect(deps.deckRepository.saveCards).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("validateInstance checks every document of the instance", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.shapeValidator.validateDocument).mockImplementation(async (url) =>
+      url.endsWith("catalog.ttl")
+        ? {
+            url,
+            status: "checked",
+            subjects: [
+              {
+                url: `${url}#deck-1`,
+                status: "checked",
+                shape: "deck",
+                version: 2,
+                violations: [{ message: "no title", severity: "violation", constraint: "MinCount" }],
+              },
+            ],
+          }
+        : { url, status: "missing", subjects: [] },
+    );
+    const report = await createUseCases(deps).validateInstance(instance.url);
+    expect(report).toMatchObject({ instanceUrl: instance.url, violationCount: 1, conforms: false });
+    expect(report.documents.map((d) => d.url)).toEqual([
+      `${instance.url}meta.ttl`,
+      `${instance.url}preferences.ttl`,
+      `${instance.url}catalog.ttl`,
+      deck.cardsDocumentUrl,
+      deck.reviewsDocumentUrl,
+    ]);
   });
 
   it("listLibraryDecks delegates to the deck library", async () => {
@@ -645,9 +771,10 @@ describe("createUseCases", () => {
       answerScale: "minimal" as const,
       developerMode: true,
     };
-    vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue(
-      stored,
-    );
+    vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
+      preferences: stored,
+      formatVersion: 2,
+    });
     const useCases = createUseCases(deps);
     await expect(useCases.getPreferences(instance.url)).resolves.toEqual(
       stored,
@@ -708,6 +835,7 @@ describe("createUseCases", () => {
         due: "2026-09-20",
         firstReviewedAt: "2026-09-19T10:00:00.000Z",
         lastReviewedAt: "2026-09-19T10:00:00.000Z",
+        formatVersion: 2,
       },
     ]);
     const useCases = createUseCases(deps);
@@ -743,6 +871,7 @@ describe("createUseCases", () => {
       due: "2026-09-22",
       firstReviewedAt: now.toISOString(),
       lastReviewedAt: now.toISOString(),
+      formatVersion: 2,
     });
     expect(deps.reviewStateRepository.saveReviewState).toHaveBeenCalledWith(
       deck,
@@ -761,6 +890,7 @@ describe("createUseCases", () => {
       due: "2026-09-21",
       firstReviewedAt: "2026-09-10T10:00:00.000Z",
       lastReviewedAt: "2026-09-15T10:00:00.000Z",
+      formatVersion: 2,
     });
     const useCases = createUseCases(deps);
     const now = new Date(2026, 8, 21, 12, 0);
@@ -824,6 +954,7 @@ describe("createUseCases", () => {
           due: "2026-10-06",
           firstReviewedAt: earlier,
           lastReviewedAt: now.toISOString(),
+          formatVersion: 2,
           previous: morning,
         },
         {
@@ -835,6 +966,7 @@ describe("createUseCases", () => {
           due: "2026-09-22",
           firstReviewedAt: now.toISOString(),
           lastReviewedAt: now.toISOString(),
+          formatVersion: 2,
         },
         {
           cardId: "untouched",
@@ -845,6 +977,7 @@ describe("createUseCases", () => {
           due: "2026-09-30",
           firstReviewedAt: earlier,
           lastReviewedAt: earlier,
+          formatVersion: 2,
         },
       ]);
       const useCases = createUseCases(deps);
@@ -856,7 +989,7 @@ describe("createUseCases", () => {
       expect(
         deps.reviewStateRepository.applyReviewChanges,
       ).toHaveBeenCalledExactlyOnceWith(deck, {
-        save: [{ cardId: "reviewed", direction: "front-to-back", firstReviewedAt: earlier, ...morning }],
+        save: [{ cardId: "reviewed", direction: "front-to-back", firstReviewedAt: earlier, formatVersion: 2, ...morning }],
         remove: [{ cardId: "introduced", direction: "front-to-back" }],
       });
     });
@@ -885,6 +1018,7 @@ describe("createUseCases", () => {
           due: "2026-09-22",
           firstReviewedAt: lateNight,
           lastReviewedAt: lateNight,
+          formatVersion: 2,
         },
       ]);
       const useCases = createUseCases(deps);
@@ -893,11 +1027,14 @@ describe("createUseCases", () => {
       ).resolves.toBe(0);
 
       vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
-        newCardsPerDay: 20,
-        maxReviewsPerDay: 200,
-        dayBoundaryHour: 0,
-        answerScale: "sm2",
-        developerMode: false,
+        preferences: {
+          newCardsPerDay: 20,
+          maxReviewsPerDay: 200,
+          dayBoundaryHour: 0,
+          answerScale: "sm2",
+          developerMode: false,
+        },
+        formatVersion: 2,
       });
       await expect(
         useCases.resetStudyDay(instance.url, deck, now),
@@ -916,6 +1053,7 @@ describe("createUseCases", () => {
       due: "2026-09-21",
       firstReviewedAt: "2026-08-01T10:00:00.000Z",
       lastReviewedAt: "2026-09-15T10:00:00.000Z",
+      formatVersion: 2,
     });
     const useCases = createUseCases(deps);
 

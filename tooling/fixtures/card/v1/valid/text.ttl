@@ -1,0 +1,15 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix dcterms:    <http://purl.org/dc/terms/> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<#se>
+    a solid-memo:Card ;
+    solid-memo:front "Sweden" ;
+    solid-memo:back "Stockholm" .
+
+<#no>
+    a solid-memo:Card ;
+    solid-memo:front "Norway" ;
+    solid-memo:back "Oslo" ;
+    solid-memo:formatVersion 1 ;
+    dcterms:created "2026-09-21T10:00:00Z"^^xsd:dateTime .

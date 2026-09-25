@@ -16,6 +16,12 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       oidcIssuer: "https://issuer.example",
     })),
     viewWebIdDocument: vi.fn(async () => ({ url: "", subjects: [] })),
+    validateInstance: vi.fn(async (instanceUrl) => ({
+      instanceUrl,
+      documents: [],
+      violationCount: 0,
+      conforms: true,
+    })),
     listStorages: vi.fn(async () => []),
     addManualStorage: vi.fn(async () => ({
       url: "https://pod.example/",
@@ -65,8 +71,17 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       decks: [],
       deckCount: 0,
       cardCount: 0,
+      reviewCount: 0,
+      preferencesOutdated: false,
+      instanceOutdated: false,
     })),
-    migrateInstance: vi.fn(async () => ({ deckCount: 0, cardCount: 0 })),
+    migrateInstance: vi.fn(async () => ({
+      deckCount: 0,
+      cardCount: 0,
+      reviewCount: 0,
+      preferencesMigrated: false,
+      instanceMigrated: false,
+    })),
     getPreferences: vi.fn(async () => DEFAULT_PREFERENCES),
     savePreferences: vi.fn(async () => undefined),
     getStudyQueue: vi.fn(async () => ({
@@ -84,6 +99,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       due: "2026-09-22",
       firstReviewedAt: "2026-09-21T10:00:00.000Z",
       lastReviewedAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 2,
     })),
     ...overrides,
   };

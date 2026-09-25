@@ -1,3 +1,4 @@
+import { LATEST_VERSION } from "./shapes/generated";
 import { isHttpUrl } from "./webId";
 
 /**
@@ -18,8 +19,8 @@ import { isHttpUrl } from "./webId";
  * would study a bidirectional deck one way and mistake the other way's
  * review state for stray subjects, which is why the version moved.
  */
-export const DECK_FORMAT_VERSION = 2;
-export const CARD_FORMAT_VERSION = 2;
+export const DECK_FORMAT_VERSION: number = LATEST_VERSION.deck;
+export const CARD_FORMAT_VERSION: number = LATEST_VERSION.card;
 
 /** Which side of a card a session asks: the other side is the answer. */
 export type StudyDirection = "front-to-back" | "back-to-front";
