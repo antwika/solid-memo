@@ -295,10 +295,10 @@ export function renderDescriptors(models: readonly ShapeModel[]): string {
   const groups = byShape(models);
   const lines = [
     GENERATED_HEADER("shapes/<class>/v<N>.ttl"),
-    `import type { ShapeDescriptor } from "./shapeDescriptor";`,
+    `import type { ShapeDescriptor } from "./shapeDescriptor.ts";`,
     "import type {",
     ...models.map((m) => `  ${m.name},`),
-    `} from "../../domain/shapes/generated";`,
+    `} from "../../domain/shapes/generated.ts";`,
     "",
   ];
   for (const model of models) {

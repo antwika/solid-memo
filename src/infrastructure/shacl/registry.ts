@@ -1,6 +1,6 @@
-import type { ShapeName } from "../../domain/shapes/generated";
-import type { ShapeContext, ShapeDescriptor } from "./shapeDescriptor";
-import { ALL_SHAPES } from "./shapes.generated";
+import type { ShapeName } from "../../domain/shapes/generated.ts";
+import type { ShapeContext, ShapeDescriptor } from "./shapeDescriptor.ts";
+import { ALL_SHAPES } from "./shapes.generated.ts";
 
 /**
  * Which shape a subject is checked against: chosen by its rdf:type, its

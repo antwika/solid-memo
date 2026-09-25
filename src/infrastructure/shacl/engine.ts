@@ -1,6 +1,6 @@
 import type { DatasetCore } from "@rdfjs/types";
 import SHACLValidator from "rdf-validate-shacl";
-import type { Violation } from "../../domain/validation";
+import type { Violation } from "../../domain/validation.ts";
 
 /**
  * The SHACL engine behind every validation Solid Memo does: one subject

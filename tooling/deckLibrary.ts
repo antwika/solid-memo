@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { DataFactory, Writer, type Quad_Object } from "n3";
 import type { Plugin } from "vite";
-import type { ShapeEngine } from "../src/infrastructure/shacl/engine";
+import type { ShapeEngine } from "../src/infrastructure/shacl/engine.ts";
 import { RDF_TYPE, objectsOf, parseTurtle } from "./rdf.ts";
 import { loadEngine, validateTurtleDocument } from "./shacl.ts";
 import { SM_NS } from "./vocab.ts";
