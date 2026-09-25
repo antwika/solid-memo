@@ -27,7 +27,6 @@ export function toPreferences(thing: Thing): StudyPreferences {
     dayBoundaryHour:
       getInteger(thing, SM.dayBoundaryHour) ??
       DEFAULT_PREFERENCES.dayBoundaryHour,
-    // An unknown scale (from a newer version, say) falls back too.
     answerScale: isAnswerScale(answerScale)
       ? answerScale
       : DEFAULT_PREFERENCES.answerScale,

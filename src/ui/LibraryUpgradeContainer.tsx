@@ -36,8 +36,6 @@ export function LibraryUpgradeContainer({
     mutationFn: (plan: LibraryUpgradePlan) =>
       useCases.applyLibraryUpgrade(deck, plan),
     onSuccess: async () => {
-      // The deck's direction (and format) changed: every view of the deck
-      // and of what is due today, and the format-migration plan, follow.
       queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
       await queryClient.invalidateQueries({

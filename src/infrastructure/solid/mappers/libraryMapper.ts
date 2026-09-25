@@ -86,7 +86,6 @@ export function toLibraryDeckContent(
   if (deck === undefined) {
     throw new Error(`<${url}> is not a Solid Memo deck.`);
   }
-  // A missing version is the first format.
   const formatVersion = getInteger(deck, SM.formatVersion) ?? 1;
   if (formatVersion > DECK_FORMAT_VERSION) {
     throw new Error(

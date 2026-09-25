@@ -32,13 +32,13 @@ function answerButtons(
 ): { label: string; quality: ReviewQuality }[] {
   return scale === "minimal"
     ? MINIMAL_ANSWERS.map((answer) => ({
-        label: MINIMAL_LABELS[answer],
-        quality: MINIMAL_ANSWER_QUALITY[answer],
-      }))
+      label: MINIMAL_LABELS[answer],
+      quality: MINIMAL_ANSWER_QUALITY[answer],
+    }))
     : SM2_QUALITIES.map((quality) => ({
-        label: QUALITY_LABELS[quality],
-        quality,
-      }));
+      label: QUALITY_LABELS[quality],
+      quality,
+    }));
 }
 
 export function StudyScreen({
@@ -91,8 +91,6 @@ export function StudyScreen({
             Card {position} of {total}
           </p>
           <StudyCard
-            // Keyed by position, not card id: a card repeated after a
-            // lapse must start hidden again.
             key={position}
             prompt={prompt}
             answerScale={answerScale}

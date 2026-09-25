@@ -45,7 +45,6 @@ describe("CardCreatorScreen", () => {
     expect(
       screen.getByRole("heading", { name: "New card" }),
     ).toBeInTheDocument();
-    // The deck's name is a link, so match the sentence across elements.
     expect(
       screen.getByText(
         (_text, element) =>
@@ -99,7 +98,6 @@ describe("CardCreatorScreen", () => {
     );
     expect(screen.getByLabelText("Back")).toHaveValue("fire");
 
-    // The message goes once a valid card is added.
     fireEvent.input(screen.getByLabelText("Front"), {
       target: { value: "火" },
     });

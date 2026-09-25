@@ -23,11 +23,11 @@ export type RouteRef =
   | { screen: "libraryDeck"; instanceUrl: string; libraryDeckUrl: string }
   /** A library deck's cards, read-only; paged like the Browser. */
   | {
-      screen: "libraryBrowser";
-      instanceUrl: string;
-      libraryDeckUrl: string;
-      page?: number;
-    }
+    screen: "libraryBrowser";
+    instanceUrl: string;
+    libraryDeckUrl: string;
+    page?: number;
+  }
   | { screen: "deckDetail"; instanceUrl: string; deckUrl: string }
   /** `page` is 1-based; absent means the first page. */
   | { screen: "browser"; instanceUrl: string; deckUrl: string; page?: number }
@@ -79,7 +79,6 @@ export function routeToHash(ref: RouteRef): string {
       return `#/browse${params({
         instance: ref.instanceUrl,
         deck: ref.deckUrl,
-        // The first page is the default, so it stays out of the URL.
         ...(ref.page !== undefined && ref.page > 1
           ? { page: String(ref.page) }
           : {}),

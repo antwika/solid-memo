@@ -33,7 +33,6 @@ const BY_SA = "https://creativecommons.org/licenses/by-sa/4.0/";
 const WIKIPEDIA = "https://en.wikipedia.org/wiki/List_of_chemical_elements";
 const IUPAC = "https://iupac.org/what-we-do/periodic-table-of-elements/";
 
-// Dated, and compiled from two sources: one described, one bare.
 const ELEMENTS = `${PREFIXES}
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 <> a sm:Deck ; dcterms:title "Elements" ; sm:formatVersion 2 ;
@@ -196,7 +195,6 @@ describe("buildIndex", () => {
     expect(index).toContain(
       `<${WIKIPEDIA}> dcterms:title "List of chemical elements";\n    dcterms:creator "Wikipedia contributors";\n    dcterms:license <${BY_SA}>.`,
     );
-    // The bare source has nothing to say for itself.
     expect(index).not.toContain(`<${IUPAC}> `);
   });
 });
@@ -205,7 +203,6 @@ async function libraryDir(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), "solid-memo-decks-"));
   await writeFile(join(dir, "rivers.ttl"), RIVERS);
   await writeFile(join(dir, "capitals.ttl"), CAPITALS);
-  // Ignored: not deck files.
   await writeFile(join(dir, "index.ttl"), "stale");
   await writeFile(join(dir, ".hidden.ttl"), "hidden");
   await writeFile(join(dir, "notes.md"), "notes");

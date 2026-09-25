@@ -96,7 +96,6 @@ describe("planMigration", () => {
       planMigration([
         { deck, cards: [card("a", 1), card("b", 2), card("c", 1)] },
         { deck: other, cards: [card("d", 1)] },
-        // An old entry with current cards still needs the entry rewritten.
         { deck: oldEntry, cards: [card("e", 2)] },
         { deck: upToDate, cards: [card("f", 2)] },
       ]),

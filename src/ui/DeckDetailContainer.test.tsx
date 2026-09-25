@@ -68,7 +68,7 @@ describe("DeckDetailContainer", () => {
     renderContainer(
       makeUseCasesFake({
         listCards: vi.fn(async () => [card]),
-        getStudyQueue: vi.fn(() => new Promise<StudyQueue>(() => {})),
+        getStudyQueue: vi.fn(() => new Promise<StudyQueue>(() => { })),
       }),
     );
     await waitFor(() => {
@@ -119,7 +119,6 @@ describe("DeckDetailContainer", () => {
       screen.getByRole("button", { name: "Reset today's study" }),
     );
 
-    // The card is due again, and there is nothing left to reset.
     expect(
       await screen.findByRole("button", { name: "Study" }),
     ).toBeEnabled();

@@ -47,8 +47,6 @@ export function StudyContainer({
     refetchOnMount: "always",
   });
 
-  // Which grading buttons to show. Shares the cache entry the preferences
-  // screen invalidates; a failed read just uses the defaults.
   const preferencesQuery = useQuery({
     queryKey: ["preferences", instance.url],
     queryFn: () => useCases.getPreferences(instance.url),
@@ -56,9 +54,6 @@ export function StudyContainer({
   const answerScale =
     preferencesQuery.data?.answerScale ?? DEFAULT_PREFERENCES.answerScale;
 
-  // The session's own order of prompts, seeded from the queue once it is
-  // known. Kept apart from the query so a refetch never reshuffles a
-  // session in progress, and so failed prompts can be slotted back in.
   const [session, setSession] = useState<{
     prompts: Prompt[];
     position: number;
@@ -79,8 +74,6 @@ export function StudyContainer({
         new Date(),
       ),
     onSuccess: (state, { prompt, quality }) => {
-      // No refetch mid-session: keep the reviews cache warm for other
-      // screens, and simply advance the session.
       queryClient.setQueryData(
         ["reviews", deck.reviewsDocumentUrl, state.cardId, state.direction],
         state,
@@ -100,9 +93,6 @@ export function StudyContainer({
     },
   });
 
-  // Whatever the way out (End session, the deck link, browser back), the
-  // queue the session started from is no longer today's: drop it rather
-  // than mark it stale, so no screen shows it while refetching.
   useEffect(
     () => () => {
       queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });

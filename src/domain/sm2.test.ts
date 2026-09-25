@@ -27,7 +27,6 @@ describe("applySm2", () => {
         { easeFactor: 2.5, intervalDays: 6, repetitions: 2 },
         3,
       );
-      // EF' = 2.5 - 0.14 = 2.36; round(6 × 2.36) = 14 (not round(6 × 2.5) = 15)
       expect(next.easeFactor).toBeCloseTo(2.36);
       expect(next.intervalDays).toBe(14);
       expect(next.repetitions).toBe(3);

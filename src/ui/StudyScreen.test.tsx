@@ -78,7 +78,6 @@ describe("StudyScreen", () => {
     });
     const back = container.querySelector(".card-back")!;
     expect(back).toHaveTextContent("water");
-    // Sized as the question, whichever side it is.
     expect(back).toHaveClass("card-question");
     expect(screen.queryByText("水")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Reveal" }));

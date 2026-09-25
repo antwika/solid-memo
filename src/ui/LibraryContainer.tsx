@@ -28,7 +28,6 @@ export function LibraryContainer({
     queryFn: () => useCases.listLibraryDecks(),
   });
 
-  // Shares the deck list's cache entry: marks decks already imported.
   const decksQuery = useQuery({
     queryKey: ["decks", instance.url],
     queryFn: () => useCases.listDecks(instance.url),
@@ -40,8 +39,6 @@ export function LibraryContainer({
   );
 
   const importMutation = useMutation({
-    // One at a time: each import is two pod writes, and a failure
-    // part-way leaves the earlier decks imported and the rest untouched.
     mutationFn: async (decks: LibraryDeck[]) => {
       for (const deck of decks) {
         await useCases.importLibraryDeck(instance.url, deck);
@@ -53,7 +50,6 @@ export function LibraryContainer({
       });
       onDone();
     },
-    // The decks imported before the failure are real; show them as such.
     onError: () =>
       queryClient.invalidateQueries({ queryKey: ["decks", instance.url] }),
   });

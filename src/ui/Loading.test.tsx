@@ -6,7 +6,6 @@ describe("Loading", () => {
   it("announces what is loading", () => {
     render(<Loading label="Loading decks…" />);
     expect(screen.getByRole("status")).toHaveTextContent("Loading decks…");
-    // Plain text queries still find it, dots or not.
     expect(screen.getByText("Loading decks…")).toBeInTheDocument();
   });
 

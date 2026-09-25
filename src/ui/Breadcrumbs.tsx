@@ -95,17 +95,11 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
   }
 }
 
-/**
- * Breadcrumb trail. Every crumb is a plain hash link — the current page
- * too, marked aria-current (the W3C breadcrumb pattern) — so the router
- * picks them up like any other URL change and Back/Forward keep working.
- */
 export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
   return (
     <nav class="breadcrumbs" aria-label="Breadcrumb">
       <ol>
         {crumbs.map((crumb, index) => (
-          // By position: a deck may share its name with another crumb.
           <li key={index}>
             <a
               href={routeToHash(crumb.route)}

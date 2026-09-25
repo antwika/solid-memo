@@ -46,10 +46,8 @@ function review(
 
 const prefs: StudyPreferences = DEFAULT_PREFERENCES;
 
-/** A "random" source that leaves the shuffle in deck order. */
 const keepOrder = () => 0.999999;
 
-// Local-time instants around the study-day boundary.
 const yesterday = new Date(2026, 8, 20, 12, 0);
 const now = new Date(2026, 8, 21, 12, 0);
 
@@ -77,7 +75,6 @@ describe("nextDueDate", () => {
   });
 
   it("bases the due day on the study day, not the calendar day", () => {
-    // 02:00 with boundary 4 belongs to Sep 20, so +1 day is Sep 21.
     expect(nextDueDate(new Date(2026, 8, 21, 2, 0), 1, 4)).toBe("2026-09-21");
   });
 });
@@ -98,8 +95,6 @@ describe("buildStudyQueue", () => {
 
   it("draws new cards at random rather than in deck order", () => {
     const cards = [card("n1"), card("n2"), card("n3"), card("n4")];
-    // A source that always picks index 0 reverses the order in a
-    // Fisher–Yates shuffle: every step swaps the current card to the front.
     const queue = buildStudyQueue({
       cards,
       direction: "front-to-back",
@@ -137,7 +132,6 @@ describe("buildStudyQueue", () => {
     const reviews = [
       review("due1", "2026-09-20", yesterday),
       review("due2", "2026-09-21", yesterday),
-      // Reviewed earlier today; due moved to the future.
       review("done", "2026-09-25", new Date(2026, 8, 21, 9, 0), yesterday),
     ];
 
@@ -174,7 +168,6 @@ describe("buildStudyQueue", () => {
   it("reduces the new-card budget by cards introduced today", () => {
     const cards = [card("new1"), card("new2"), card("introduced")];
     const reviews = [
-      // First-ever review happened today.
       review("introduced", "2026-09-22", new Date(2026, 8, 21, 9, 0)),
     ];
 
@@ -194,7 +187,6 @@ describe("buildStudyQueue directions", () => {
   it("makes two prompts of every card in a bidirectional deck, each scheduled on its own", () => {
     const cards = [card("a"), card("b")];
     const reviews = [
-      // "a" is known front→back (due next week) but due back→front.
       review("a", "2026-09-28", yesterday),
       review("a", "2026-09-21", yesterday, yesterday, "back-to-front"),
     ];
@@ -334,7 +326,6 @@ describe("resetStudyDay", () => {
         firstReviewedAt: yesterday.toISOString(),
       },
     ]);
-    // The snapshot is spent: nothing left to restore twice.
     expect(restore[0]).not.toHaveProperty("previous");
   });
 
@@ -375,7 +366,6 @@ describe("interleave", () => {
   it("spreads the new prompts evenly among the due ones, due first", () => {
     expect(interleave(["a", "b", "c"], ["x", "y"])).toEqual(["a", "x", "b", "y", "c"]);
     expect(interleave(["a", "b", "c", "d"], ["x"])).toEqual(["a", "b", "x", "c", "d"]);
-    // Two due among four new: the second due sits three quarters in.
     expect(interleave(["a", "b"], ["x", "y", "z", "w"])).toEqual(["a", "x", "y", "z", "b", "w"]);
     expect(interleave(["a"], ["x", "y", "z"])).toEqual(["a", "x", "y", "z"]);
   });

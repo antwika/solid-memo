@@ -114,7 +114,6 @@ async function readSubjectSafely(
     const dataset = await getSolidDataset(documentUrl, { fetch });
     return getThing(dataset, webId);
   } catch {
-    // Unreadable document: treat as if it linked nothing.
     return null;
   }
 }
@@ -205,7 +204,7 @@ async function linkTypeIndexFromProfile(
 
   throw new Error(
     `Could not link the ${kind} type index <${indexUrl}> from any profile document:\n` +
-      failures.map((failure) => `- ${failure}`).join("\n"),
+    failures.map((failure) => `- ${failure}`).join("\n"),
   );
 }
 
@@ -243,7 +242,6 @@ export async function readInstanceRegistrations(
     const types = getUrlAll(thing, RDF.type);
     if (!types.includes(SOLID.TypeRegistration)) continue;
     if (!getUrlAll(thing, SOLID.forClass).includes(SM.Instance)) continue;
-    // Accept both spellings seen in the wild.
     const containerUrl =
       getUrl(thing, SOLID.instanceContainer) ?? getUrl(thing, SOLID.instance);
     if (containerUrl === null) continue;

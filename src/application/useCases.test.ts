@@ -608,7 +608,6 @@ describe("createUseCases", () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
 
-    // Every deck-list row asks at once: one request.
     await Promise.all([
       useCases.getPreferences(instance.url),
       useCases.getPreferences(instance.url),
@@ -616,7 +615,6 @@ describe("createUseCases", () => {
     ]);
     expect(deps.preferencesRepository.getPreferences).toHaveBeenCalledOnce();
 
-    // A later read goes to the pod again, so a save is seen immediately.
     await useCases.getPreferences(instance.url);
     expect(deps.preferencesRepository.getPreferences).toHaveBeenCalledTimes(2);
   });
@@ -689,7 +687,6 @@ describe("createUseCases", () => {
       deck,
       new Date(2026, 8, 21, 12, 0),
     );
-    // random() = 0 reverses a Fisher–Yates shuffle.
     expect(queue.newPrompts.map((p) => p.card.id)).toEqual(["n2", "n3", "n1"]);
   });
 
@@ -776,15 +773,12 @@ describe("createUseCases", () => {
       now,
     );
 
-    // EF unchanged at quality 4; interval = round(6 × 2.5) = 15.
     expect(state.easeFactor).toBeCloseTo(2.5);
     expect(state.repetitions).toBe(3);
     expect(state.intervalDays).toBe(15);
     expect(state.due).toBe("2026-10-06");
     expect(state.firstReviewedAt).toBe("2026-09-10T10:00:00.000Z");
     expect(state.lastReviewedAt).toBe(now.toISOString());
-    // The state from before today's first review rides along, so the day
-    // can be reset.
     expect(state.previous).toEqual({
       easeFactor: 2.5,
       intervalDays: 6,
@@ -880,8 +874,6 @@ describe("createUseCases", () => {
 
     it("uses the instance's day boundary", async () => {
       const deps = makeDeps();
-      // 03:00 belongs to the previous study day with the default boundary
-      // of 4, but to today with a boundary of 0.
       const lateNight = new Date(2026, 8, 21, 3, 0).toISOString();
       vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
         {

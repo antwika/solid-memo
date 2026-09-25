@@ -70,11 +70,9 @@ describe("CardCreatorContainer", () => {
         back: "water",
       });
     });
-    // The deck now has a card to study; the cached queue is dropped.
     await waitFor(() => {
       expect(queryClient.getQueryData(queueKey)).toBeUndefined();
     });
-    // Still on the creator, ready for the next card.
     expect(onBack).not.toHaveBeenCalled();
     expect(
       screen.getByRole("heading", { name: "New card" }),

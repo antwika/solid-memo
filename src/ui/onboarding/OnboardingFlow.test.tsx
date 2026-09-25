@@ -58,7 +58,6 @@ describe("OnboardingFlow", () => {
         oidcIssuer: "https://other.example",
         signUpUrl: "https://other.example/new",
       },
-      // Login-only: suggested as an identity provider, not for sign-up.
       { id: "c", name: "Login Only", oidcIssuer: "https://login.example" },
     ];
     renderFlow({ providers });
@@ -87,7 +86,6 @@ describe("OnboardingFlow", () => {
     expect(
       screen.getByRole("heading", { name: "Or pick your provider" }),
     ).toBeInTheDocument();
-    // Every suggested provider, including the login-only ones.
     for (const provider of POD_PROVIDERS) {
       expect(
         screen.getByRole("button", { name: provider.name }),

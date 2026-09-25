@@ -99,7 +99,6 @@ describe("LibraryContainer", () => {
         listLibraryDecks: vi.fn(async () => [capitals, rivers]),
         listDecks: vi.fn(async () => [
           importedDeck,
-          // A hand-made deck has no source and marks nothing.
           { ...importedDeck, id: "deck-2", sourceUrl: undefined },
         ]),
       }),
@@ -115,7 +114,6 @@ describe("LibraryContainer", () => {
       importLibraryDeck,
     });
     const { onDone, queryClient } = renderContainer(useCases);
-    // The deck list's cache entry is refreshed once the decks are in.
     queryClient.setQueryData(["decks", instance.url], []);
 
     fireEvent.click(await screen.findByRole("checkbox", { name: "Capitals" }));
@@ -158,7 +156,6 @@ describe("LibraryContainer", () => {
 
     expect(await screen.findByText("pod refused")).toHaveClass("error");
     expect(onDone).not.toHaveBeenCalled();
-    // Capitals went in before Rivers failed: the refreshed deck list says so.
     expect(await screen.findByText("Already imported")).toBeInTheDocument();
   });
 });

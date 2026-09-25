@@ -85,7 +85,6 @@ export function createSolidInstanceRepository({
           fetch,
         );
       } catch (error) {
-        // Fail loudly, but do not leave an unregistered orphan behind.
         await bestEffortCleanup(metaUrl, url, fetch);
         throw error;
       }
@@ -167,7 +166,6 @@ async function readRegistrationsSafely(
   try {
     return await readInstanceRegistrations(indexUrl, fetch);
   } catch {
-    // A dangling or unreadable index link must not break the listing.
     return [];
   }
 }
@@ -221,6 +219,5 @@ async function bestEffortCleanup(
     await deleteSolidDataset(metaUrl, { fetch });
     await deleteContainer(containerUrl, { fetch });
   } catch {
-    // Cleanup is best-effort; the original error is what matters.
   }
 }

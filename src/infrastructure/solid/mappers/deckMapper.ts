@@ -54,7 +54,6 @@ export function toDeck(thing: Thing): Deck | null {
     cardsDocumentUrl,
     reviewsDocumentUrl,
     createdAt: getDatetime(thing, DCTERMS.created)?.toISOString() ?? "",
-    // Data written before the field existed is the first format.
     formatVersion: getInteger(thing, SM.formatVersion) ?? 1,
     direction: toDeckDirection(getStringNoLocale(thing, SM.direction)),
     authors: getStringNoLocaleAll(thing, DCTERMS.creator),
@@ -78,7 +77,6 @@ export function toCard(thing: Thing): Card | null {
     url,
     ...content,
     createdAt: getDatetime(thing, DCTERMS.created)?.toISOString() ?? "",
-    // Data written before the field existed is the first format.
     formatVersion: getInteger(thing, SM.formatVersion) ?? 1,
   };
 }

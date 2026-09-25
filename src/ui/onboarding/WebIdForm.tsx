@@ -33,8 +33,6 @@ export function WebIdForm({
   }
 
   return (
-    // noValidate: validation messages come from validateWebId so they are
-    // the same on every browser.
     <form onSubmit={handleSubmit} noValidate>
       <label for="webid">WebID</label>
       <input

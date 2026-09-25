@@ -13,8 +13,6 @@ import { createSolidWebIdDocumentRepository } from "./infrastructure/solid/solid
 import { App } from "./ui/App";
 import "./style.css";
 
-// Composition root: the only place infrastructure is wired to the
-// application layer.
 const useCases = createUseCases({
   sessionGateway: createSolidSessionGateway("Solid Memo"),
   webIdDocumentRepository: createSolidWebIdDocumentRepository({
@@ -32,9 +30,6 @@ const useCases = createUseCases({
     randomId: () => crypto.randomUUID(),
   }),
   deckLibrary: createSolidDeckLibrary({
-    // Public static files next to the app, so no authenticated fetch. The
-    // index is resolved relative to the page, like every other asset
-    // (the build serves the app from any base path).
     fetch: (input, init) => globalThis.fetch(input, init),
     indexUrl: new URL("decks/index.ttl", document.baseURI).href,
   }),

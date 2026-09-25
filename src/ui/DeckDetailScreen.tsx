@@ -40,8 +40,6 @@ export function DeckDetailScreen({
   /** Anything to say about the deck before its study state, e.g. an offer. */
   notice?: ComponentChildren;
 }) {
-  // Only offer a session that has something in it, so nobody has to
-  // start one to learn there is nothing to study.
   const canStudy = dueCount + newCount > 0;
   const studied = formatCardCount(studiedToday);
 

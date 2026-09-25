@@ -39,8 +39,6 @@ describe("Footer", () => {
 
   it("defaults to the commit baked in at build time", () => {
     render(<Footer />);
-    // Under vitest the build runs inside this checkout, so a commit is
-    // always known; its short form is what shows.
     expect(screen.getByRole("contentinfo")).toHaveTextContent(/Version [0-9a-f]{7}/);
   });
 });

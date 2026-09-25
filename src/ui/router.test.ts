@@ -112,7 +112,6 @@ describe("routeToHash / parseHash", () => {
 
   it.each([
     "",
-    // The brand link: an empty route that falls back to the default.
     "#/",
     "#/nope",
     "#/new-instance",

@@ -40,7 +40,6 @@ export function DeckStudyAction({
     newCount: queue.newPrompts.length,
   });
   if (summary === null) {
-    // A green tick says "done" at a glance; the label carries the words.
     return (
       <span
         class="hint study-done"
@@ -78,12 +77,6 @@ export function DeckStudyActionContainer({
   deck: Deck;
   onStudy: () => void;
 }) {
-  // Shares the cache entry of the deck page and the study session. The
-  // cached queue is shown at once — every local write that changes a
-  // queue (a session, a card added or removed, a reset, new caps) drops
-  // the entry, so whatever is cached is not known to be wrong — and a
-  // background refetch picks up changes made elsewhere. Only a first
-  // fetch, with nothing cached, shows the loader (isPending: no data).
   const queueQuery = useQuery({
     queryKey: ["studyQueue", deck.url],
     queryFn: () => useCases.getStudyQueue(instance.url, deck, new Date()),

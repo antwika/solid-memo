@@ -39,9 +39,6 @@ export function Workspace({
   session: Session;
 }) {
   const queryClient = useQueryClient();
-  // The URL hash is the route state, so every view has a shareable URL
-  // and Back/Forward walk the app's screens. The hash carries only
-  // identifiers; the instance and deck objects are resolved below.
   const { route, navigate, replace } = useHashRoute();
   const webId = session.webId;
 
@@ -61,9 +58,6 @@ export function Workspace({
   const deckUrl = route !== null && "deckUrl" in route ? route.deckUrl : null;
   const needsDeck = deckUrl !== null && activeInstance !== null;
 
-  // Initial route, once instances are known: one instance goes straight
-  // in, several offer a choice, none starts the create funnel. Replaces
-  // the URL so the empty hash is not a Back stop.
   useEffect(() => {
     if (route !== null || instances === undefined) return;
     if (instances.length === 1) {
@@ -75,8 +69,6 @@ export function Workspace({
     }
   }, [route, instances]);
 
-  // A deep link naming an unknown instance falls back to the picker (or
-  // the create funnel when there is nothing to pick).
   useEffect(() => {
     if (instanceUrl === null || instances === undefined) return;
     if (!instances.some((i) => i.url === instanceUrl)) {
@@ -88,8 +80,6 @@ export function Workspace({
     }
   }, [instanceUrl, instances]);
 
-  // Shares the ["decks", instanceUrl] cache with DeckListContainer, so
-  // navigating from the deck list resolves instantly.
   const decksQuery = useQuery({
     queryKey: ["decks", instanceUrl],
     queryFn: () => useCases.listDecks(instanceUrl!),
@@ -100,7 +90,6 @@ export function Workspace({
       ? (decksQuery.data?.find((d) => d.url === deckUrl) ?? null)
       : null;
 
-  // A deep link naming an unknown deck falls back to the instance home.
   useEffect(() => {
     if (!needsDeck || decksQuery.data === undefined) return;
     if (!decksQuery.data.some((d) => d.url === deckUrl)) {
@@ -108,8 +97,6 @@ export function Workspace({
     }
   }, [needsDeck, decksQuery.data, deckUrl, instanceUrl]);
 
-  // A card page names its card by URL; resolve it from the deck's cards
-  // (the cache entry the Browser and the card page's saves share).
   const cardUrl = route?.screen === "card" ? route.cardUrl : null;
   const needsCard = cardUrl !== null && activeDeck !== null;
   const cardsQuery = useQuery({
@@ -121,8 +108,6 @@ export function Workspace({
     ? (cardsQuery.data?.find((c) => c.url === cardUrl) ?? null)
     : null;
 
-  // A deep link naming an unknown card (or a card just removed) falls
-  // back to the deck's Browser.
   useEffect(() => {
     if (!needsCard || cardsQuery.data === undefined) return;
     if (!cardsQuery.data.some((c) => c.url === cardUrl)) {
@@ -134,9 +119,6 @@ export function Workspace({
     }
   }, [needsCard, cardsQuery.data, cardUrl, instanceUrl, deckUrl]);
 
-  // A library deck's page (and its card list) names its deck by URL;
-  // resolve it from the library index (the cache entry the library
-  // screen reads).
   const libraryDeckUrl =
     route?.screen === "libraryDeck" || route?.screen === "libraryBrowser"
       ? route.libraryDeckUrl
@@ -151,8 +133,6 @@ export function Workspace({
     ? (libraryQuery.data?.find((d) => d.url === libraryDeckUrl) ?? null)
     : null;
 
-  // A deep link naming a deck the library does not have falls back to
-  // the library.
   useEffect(() => {
     if (!needsLibraryDeck || libraryQuery.data === undefined) return;
     if (!libraryQuery.data.some((d) => d.url === libraryDeckUrl)) {
@@ -160,9 +140,6 @@ export function Workspace({
     }
   }, [needsLibraryDeck, libraryQuery.data, libraryDeckUrl, instanceUrl]);
 
-  // Developer settings are a per-instance preference. Shares the cache
-  // entry PreferencesContainer invalidates on save, so toggling takes
-  // effect immediately. A failed read just leaves developer tools hidden.
   const preferencesQuery = useQuery({
     queryKey: ["preferences", instanceUrl],
     queryFn: () => useCases.getPreferences(instanceUrl!),
@@ -176,9 +153,6 @@ export function Workspace({
     enabled: route?.screen === "storagePicker",
   });
 
-  // Auto-skip the storage picker when there is exactly one storage.
-  // Replaces the URL: pushing would make Back bounce straight forward
-  // again.
   useEffect(() => {
     if (
       route?.screen === "storagePicker" &&
@@ -236,8 +210,6 @@ export function Workspace({
     mutationFn: (instance: Instance) =>
       useCases.deleteInstance(session, instance),
     onSuccess: async (_, instance) => {
-      // Drop the deleted instance's cached documents so a later instance
-      // at the same URL never shows stale decks or preferences.
       queryClient.removeQueries({ queryKey: ["decks", instance.url] });
       queryClient.removeQueries({ queryKey: ["preferences", instance.url] });
       await queryClient.invalidateQueries({ queryKey: ["instances", webId] });
@@ -250,8 +222,6 @@ export function Workspace({
   if (route === null || instances === undefined) {
     return <Loading label="Loading your Solid Memo instances…" />;
   }
-  // An unknown instance in the URL: the redirect effect is about to
-  // replace the route.
   if (instanceUrl !== null && activeInstance === null) {
     return <Loading label="Loading your Solid Memo instances…" />;
   }
@@ -262,7 +232,6 @@ export function Workspace({
     if (decksQuery.data === undefined) {
       return <Loading label="Loading deck…" />;
     }
-    // Unknown deck: the redirect effect is about to replace the route.
     if (activeDeck === null) {
       return <Loading label="Loading deck…" />;
     }
@@ -271,8 +240,6 @@ export function Workspace({
     if (cardsQuery.error) {
       return <p class="error">{errorMessage(cardsQuery.error)}</p>;
     }
-    // Still loading, or unknown: the redirect effect is about to replace
-    // the route.
     if (activeCard === null) {
       return <Loading label="Loading card…" />;
     }
@@ -281,8 +248,6 @@ export function Workspace({
     if (libraryQuery.error) {
       return <p class="error">{errorMessage(libraryQuery.error)}</p>;
     }
-    // Still loading, or unknown: the redirect effect is about to replace
-    // the route.
     if (activeLibraryDeck === null) {
       return <Loading label="Loading the deck library…" />;
     }
@@ -343,8 +308,6 @@ export function Workspace({
             busy={createInstanceMutation.isPending}
             error={errorMessage(createInstanceMutation.error)}
             onCreate={(args) => createInstanceMutation.mutate(args)}
-            // Never back to the storage picker: with exactly one storage it
-            // would auto-forward straight here again.
             onBack={() => navigate({ screen: "instancePicker" })}
           />
         );
@@ -410,7 +373,6 @@ export function Workspace({
             deck={activeLibraryDeck!}
             deckHref={libraryDeckHref(instanceUrl!, libraryDeckUrl!)}
             page={route.page ?? 1}
-            // Replace: paging through a deck is one Back stop, not many.
             onPageChange={(page) => replace({ ...route, page })}
           />
         );
@@ -458,11 +420,9 @@ export function Workspace({
                 cardUrl: card.url,
               })
             }
-            // Replace: the removed deck's Browser must not be a Back stop.
             onDeckRemoved={() =>
               replace({ screen: "home", instanceUrl: instanceUrl! })
             }
-            // Replace: paging through a deck is one Back stop, not many.
             onPageChange={(page) => replace({ ...route, page })}
           />
         );
@@ -489,12 +449,10 @@ export function Workspace({
         } as const;
         return (
           <CardContainer
-            // Keyed by card: the form's draft must not leak between cards.
             key={activeCard!.url}
             useCases={useCases}
             deck={activeDeck!}
             card={activeCard!}
-            // Replace: the removed card's page must not be a Back stop.
             onRemoved={() => replace(browser)}
           />
         );
@@ -505,8 +463,6 @@ export function Workspace({
             useCases={useCases}
             instance={activeInstance!}
             deck={activeDeck!}
-            // Back to the deck list, not the deck: the next thing to do
-            // is usually another deck.
             onExit={() =>
               navigate({ screen: "home", instanceUrl: instanceUrl! })
             }
@@ -536,8 +492,6 @@ export function Workspace({
               navigate({ screen: "preferences", instanceUrl: instanceUrl! })
             }
           />
-          {/* Cards in an older format: offered an update wherever the
-              user is in the instance, never applied unasked. */}
           <MigrationContainer useCases={useCases} instance={activeInstance} />
         </>
       )}

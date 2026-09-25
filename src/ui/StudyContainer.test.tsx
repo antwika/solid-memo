@@ -235,14 +235,12 @@ describe("StudyContainer", () => {
         studiedToday: 0,
       })),
     });
-    // random() = 0 requeues at the earliest allowed slot: after one card.
     renderContainer(useCases, () => 0);
 
     expect(await screen.findByText("front-a")).toBeInTheDocument();
     expect(screen.getByText("Card 1 of 3")).toBeInTheDocument();
     await answer("1 — Wrong");
 
-    // b comes next, not a again; the session has grown by one.
     expect(await screen.findByText("front-b")).toBeInTheDocument();
     expect(screen.getByText("Card 2 of 4")).toBeInTheDocument();
     await answer("4 — Good");
@@ -272,7 +270,6 @@ describe("StudyContainer", () => {
     await answer("0 — Blackout");
     expect(await screen.findByText("Card 2 of 2")).toBeInTheDocument();
     expect(screen.getByText("front-a")).toBeInTheDocument();
-    // The repeat starts hidden again.
     expect(screen.queryByText("front-a-back")).toBeNull();
 
     await answer("2 — Almost");
@@ -325,7 +322,6 @@ describe("StudyContainer", () => {
       1,
       expect.any(Date),
     );
-    // Again requeues: a comes back after b.
     expect(screen.getByText("Card 2 of 3")).toBeInTheDocument();
   });
 
@@ -371,7 +367,6 @@ describe("StudyContainer", () => {
     await screen.findByText("front-a");
     expect(queryClient.getQueryData(queueKey)).toBeDefined();
 
-    // Any way out: no End session click, just navigating away.
     unmount();
     expect(queryClient.getQueryData(queueKey)).toBeUndefined();
   });

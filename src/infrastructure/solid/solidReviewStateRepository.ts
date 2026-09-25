@@ -64,7 +64,6 @@ export function createSolidReviewStateRepository({
         deck.reviewsDocumentUrl,
         fetch,
       );
-      // No document means no states: nothing to restore or remove.
       if (dataset === null) return;
       let updated = dataset;
       for (const state of save) {

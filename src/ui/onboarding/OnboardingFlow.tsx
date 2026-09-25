@@ -19,17 +19,13 @@ export function OnboardingFlow({
 }: {
   providers: readonly PodProvider[];
   busy: boolean;
-  /** The user was logged in before: skip straight to the WebID step. */
   returning: boolean;
   onLogin: (webId: string) => void;
-  /** Log in at a suggested provider, without typing a WebID. */
   onLoginWithProvider: (provider: PodProvider) => void;
 }) {
   const [step, setStep] = useState<Step>(returning ? "webId" : "choose");
-  // Only steal focus when the user navigated to the form themselves.
   const [cameFromChoice, setCameFromChoice] = useState(false);
 
-  // Not every suggested provider is offered for creating a Pod.
   const signUpProviders = providers.filter(
     (provider) => provider.signUpUrl !== undefined,
   );

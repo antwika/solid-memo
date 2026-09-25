@@ -29,9 +29,6 @@ export function MigrationContainer({
   const migrateMutation = useMutation({
     mutationFn: () => useCases.migrateInstance(instance.url),
     onSuccess: async () => {
-      // Every catalog entry and cards document may have changed; the plan
-      // is recomputed so the notice goes away (or names what a failure
-      // part-way left).
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
       await queryClient.invalidateQueries({ queryKey: ["cards"] });
       await queryClient.invalidateQueries({

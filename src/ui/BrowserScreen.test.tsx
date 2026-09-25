@@ -182,11 +182,9 @@ describe("BrowserScreen", () => {
       "href",
       "#/card?card=card-1",
     );
-    // The back cell goes to the same place, without a second announced link.
     const back = screen.getByText("water").closest("a")!;
     expect(back).toHaveAttribute("href", "#/card?card=card-1");
     expect(back).toHaveAttribute("aria-hidden", "true");
-    // The card is announced once: its back-cell link is not in the list.
     expect(
       screen.getAllByRole("link").map((link) => link.textContent?.trim()),
     ).toEqual(["Kanji N5", "水"]);
