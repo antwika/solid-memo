@@ -11,7 +11,9 @@ codebase; a change that violates them is wrong even if it works.
 | `@tanstack/react-query` | `src/ui/` and `src/main.tsx` | application, domain, infrastructure |
 | `preact` | `src/ui/`, `src/main.tsx` | application, domain, infrastructure |
 | `@fontsource/*`, `@fontsource-variable/*` | `src/style.css` | any TypeScript module |
-| `n3` | `tooling/` (build-time deck-library index) | `src/` — the app reads RDF through `@inrupt/solid-client` |
+| `n3` | `tooling/` (build-time parsing, index, generators, the Turtle formatter) | `src/` — the app reads RDF through `@inrupt/solid-client` |
+| `rdf-validate-shacl` | `src/infrastructure/shacl/engine.ts` only (loaded lazily); `tooling/` through that module | everywhere else |
+| `@rdfjs/types` (types only) | `src/infrastructure/shacl/`, `src/test/` | domain, application, UI |
 | Anything (imports at all) | — | `src/domain/` imports nothing except sibling domain modules |
 
 Additional rules:
@@ -20,7 +22,15 @@ Additional rules:
   as a prop.
 - Application imports domain types and nothing else.
 - Infrastructure may import domain types (to map onto them) and application
-  ports (to implement them) — never UI.
+  ports (to implement them) — never UI. `src/infrastructure/solid/` may
+  import `src/infrastructure/shacl/` (descriptors and the registry, which
+  are vendor-free data); `@inrupt/solid-client` is also allowed in
+  `src/infrastructure/shacl/` (it parses the shape documents).
+- `tooling/` may import `src/domain/` and `src/infrastructure/shacl/`
+  (both Node-safe); nothing in `src/` imports `tooling/`.
+- Generated files (`*.generated.ts`, `src/domain/shapes/generated.ts`)
+  are never edited by hand: change `vocab/` or `shapes/` and run
+  `npm run generate` ([shapes.md](shapes.md)).
 - `src/main.tsx` is the only module that imports across all layers.
 
 ```mermaid
@@ -38,9 +48,10 @@ graph LR
 Currently by convention, verified with:
 
 ```sh
-grep -rn "@inrupt" src --include="*.ts" --include="*.tsx" | grep -v infrastructure
+grep -rn "@inrupt" src --include="*.ts" --include="*.tsx" | grep -v infrastructure | grep -v src/test/
 grep -rn "@tanstack" src | grep -vE "src/(ui|main)"
 grep -rn "from \"n3\"" src
+grep -rn "rdf-validate-shacl" src | grep -v infrastructure/shacl/engine
 ```
 
 All must return nothing (test files mirror their subject's layer and follow

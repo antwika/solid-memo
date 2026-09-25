@@ -1,0 +1,12 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix dcterms:    <http://purl.org/dc/terms/> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<#it>
+    a solid-memo:Preferences ;
+    solid-memo:formatVersion 2 ;
+    solid-memo:newCardsPerDay 20 ;
+    solid-memo:maxReviewsPerDay 200 ;
+    solid-memo:dayBoundaryHour 24 ;
+    solid-memo:answerScale "sm2" ;
+    solid-memo:developerMode false .

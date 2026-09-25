@@ -123,7 +123,11 @@ export function PreferencesScreen({
             />
             Developer mode
           </label>
-          <p class="hint">Shows your raw WebID document below the app.</p>
+          <p class="hint">
+            Shows developer tools: your raw WebID document below the app,
+            and a check of this instance's documents against Solid Memo's
+            shapes.
+          </p>
         </fieldset>
         <button type="submit" disabled={busy}>
           Save

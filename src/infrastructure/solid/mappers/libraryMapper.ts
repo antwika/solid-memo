@@ -12,24 +12,25 @@ import {
   type Thing,
 } from "@inrupt/solid-client";
 import {
-  CARD_FORMAT_VERSION,
-  DECK_FORMAT_VERSION,
+  DEFAULT_DECK_DIRECTION,
+  isDeckDirection,
+  type DeckDirection,
 } from "../../../domain/deck";
-import type {
-  LibraryCard,
-  LibraryDeck,
-  LibraryDeckContent,
-  LibrarySource,
-} from "../../../domain/library";
+import { cardContentFromRecord, libraryDeckFromRecord } from "../../../domain/deckRecord";
+import type { LibraryCard, LibraryDeck, LibrarySource } from "../../../domain/library";
+import { LATEST_VERSION } from "../../../domain/shapes/generated";
+import { migrate } from "../../../domain/shapes/migrations";
+import { fragmentIdOf } from "../../../domain/subjectUrl";
+import { readVersioned, storedVersionOf } from "../records";
 import { DCTERMS, RDF, SM } from "../vocab";
-import { fragmentIdOf, toCardContent, toDeckDirection } from "./deckMapper";
 
 /**
  * Map an index subject to a LibraryDeck; null when the subject is not a
  * listed deck. The subject is the deck document itself (the index lists
  * `<file.ttl> a sm:Deck`), so its URL is where the deck is fetched from.
  * The deck's sources are described by their own subjects in the same
- * index, which is why the index is passed along.
+ * index, which is why the index is passed along. The index is a listing,
+ * not a shape: it is read field by field, leniently.
  */
 export function toLibraryDeck(
   thing: Thing,
@@ -55,6 +56,11 @@ export function toLibraryDeck(
   };
 }
 
+/** A listed direction; absent or unknown means front→back. */
+function toDeckDirection(value: string | null): DeckDirection {
+  return value !== null && isDeckDirection(value) ? value : DEFAULT_DECK_DIRECTION;
+}
+
 /** A source by URL, plus whatever the index says about it (maybe nothing). */
 function toLibrarySource(url: string, thing: Thing | null): LibrarySource {
   if (thing === null) return { url, authors: [] };
@@ -73,50 +79,51 @@ function toLibrarySource(url: string, thing: Thing | null): LibrarySource {
  * type, not by URL: a document's own subject may be its canonical URL
  * (declared with @base) rather than the URL it was fetched from. A deck
  * or card in a newer format than this app writes is refused: importing
- * it would silently drop whatever the newer format added.
+ * it would silently drop whatever the newer format added. Older formats
+ * are brought up to the current one in memory.
  */
 export function toLibraryDeckContent(
   url: string,
   dataset: SolidDataset,
-): LibraryDeckContent {
+): LibraryDeckContentOf {
   const things = getThingAll(dataset);
   const deck = things.find((thing) =>
     getUrlAll(thing, RDF.type).includes(SM.Deck),
   );
-  if (deck === undefined) {
-    throw new Error(`<${url}> is not a Solid Memo deck.`);
-  }
-  const formatVersion = getInteger(deck, SM.formatVersion) ?? 1;
-  if (formatVersion > DECK_FORMAT_VERSION) {
+  const formatVersion = deck === undefined ? 1 : storedVersionOf(deck);
+  if (formatVersion > LATEST_VERSION.libraryDeck) {
     throw new Error(
-      `<${url}> is in deck format ${formatVersion}, newer than this app supports (${DECK_FORMAT_VERSION}).`,
+      `<${url}> is in deck format ${formatVersion}, newer than this app supports (${LATEST_VERSION.libraryDeck}).`,
     );
   }
-  const license = getUrl(deck, DCTERMS.license);
-  const description = getStringNoLocale(deck, DCTERMS.description);
-  return {
+  const read = deck === undefined ? null : readVersioned(deck, "libraryDeck");
+  if (read === null) {
+    throw new Error(`<${url}> is not a Solid Memo deck.`);
+  }
+  const cards = things
+    .map((thing) => toLibraryCard(url, thing))
+    .filter((card): card is LibraryCard => card !== null);
+  return libraryDeckFromRecord(
     url,
-    name: getStringNoLocale(deck, DCTERMS.title) ?? url,
-    formatVersion,
-    authors: getStringNoLocaleAll(deck, DCTERMS.creator),
-    ...(license === null ? {} : { license }),
-    ...(description === null ? {} : { description }),
-    direction: toDeckDirection(getStringNoLocale(deck, SM.direction)),
-    cards: things
-      .map((thing) => toLibraryCard(url, thing))
-      .filter((card): card is LibraryCard => card !== null),
-  };
+    read.storedVersion,
+    migrate("libraryDeck", read.record),
+    cards,
+  );
 }
+
+type LibraryDeckContentOf = ReturnType<typeof libraryDeckFromRecord>;
 
 function toLibraryCard(url: string, thing: Thing): LibraryCard | null {
   if (!getUrlAll(thing, RDF.type).includes(SM.Card)) return null;
-  const content = toCardContent(thing);
-  if (content === null) return null;
-  const formatVersion = getInteger(thing, SM.formatVersion) ?? 1;
-  if (formatVersion > CARD_FORMAT_VERSION) {
+  const formatVersion = storedVersionOf(thing);
+  if (formatVersion > LATEST_VERSION.card) {
     throw new Error(
-      `<${asUrl(thing)}> in <${url}> is in card format ${formatVersion}, newer than this app supports (${CARD_FORMAT_VERSION}).`,
+      `<${asUrl(thing)}> in <${url}> is in card format ${formatVersion}, newer than this app supports (${LATEST_VERSION.card}).`,
     );
   }
+  const read = readVersioned(thing, "card");
+  if (read === null) return null;
+  const content = cardContentFromRecord(migrate("card", read.record));
+  if (content === null) return null;
   return { id: fragmentIdOf(asUrl(thing)), ...content, formatVersion };
 }

@@ -43,6 +43,11 @@ describe("breadcrumbsFor", () => {
       { label: "Decks", route: home },
       { label: "New deck", route: deckCreator },
     ]);
+    const validation: RouteRef = { screen: "validation", instanceUrl };
+    expect(breadcrumbsFor(validation, NO_NAMES)).toEqual([
+      { label: "Decks", route: { screen: "home", instanceUrl } },
+      { label: "Validation", route: validation },
+    ]);
     const preferences: RouteRef = { screen: "preferences", instanceUrl };
     expect(breadcrumbsFor(preferences, NO_NAMES)).toEqual([
       { label: "Decks", route: home },

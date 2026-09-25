@@ -8,7 +8,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate": "node -e \"import('./tooling/generate.ts').then((m) => m.run(process))\"",
+    "generate:check": "node -e \"import('./tooling/generate.ts').then((m) => m.run(process))\" -- --check",
+    "format:turtle": "node -e \"import('./tooling/formatTurtle.ts').then((m) => m.run(process))\"",
+    "format:turtle:check": "node -e \"import('./tooling/formatTurtle.ts').then((m) => m.run(process))\" -- --check"
   },
   "dependencies": {
     "@fontsource-variable/fredoka": "^5.3.0",
@@ -16,10 +20,12 @@
     "@inrupt/solid-client": "^4.0.0",
     "@inrupt/solid-client-authn-browser": "^5.0.0",
     "@tanstack/react-query": "^5.103.2",
-    "preact": "^10.29.8"
+    "preact": "^10.29.8",
+    "rdf-validate-shacl": "^0.6.5"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
+    "@rdfjs/types": "^2.0.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/preact": "^3.2.4",
     "@types/n3": "^1.26.4",
@@ -29,5 +35,8 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

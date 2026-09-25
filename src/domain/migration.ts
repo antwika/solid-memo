@@ -4,11 +4,17 @@ import {
   type Card,
   type Deck,
 } from "./deck";
+import { INSTANCE_FORMAT_VERSION, type InstanceMeta } from "./instance";
+import { PREFERENCES_FORMAT_VERSION, type StoredPreferences } from "./preferences";
+import { REVIEW_STATE_FORMAT_VERSION, type ReviewState } from "./review";
 
 /**
  * Format migrations: bringing data written by an older Solid Memo up to
  * the format this one writes (see docs/migrations.md). Everything here is
- * pure; the application layer does the reading and writing.
+ * pure; the application layer does the reading and writing. Content is
+ * already brought up to date when it is read (domain/shapes/migrations);
+ * what a pod migration writes is the same content stamped with the
+ * current version.
  */
 
 /** True when the card is stored in an older format than this app writes. */
@@ -16,12 +22,7 @@ export function isOutdated(card: Card): boolean {
   return card.formatVersion < CARD_FORMAT_VERSION;
 }
 
-/**
- * The card as this app writes it. Format 1 → 2 changes no content: every
- * format-1 card has text on both sides, which format 2 still allows, so
- * only the version moves. A card already at (or beyond) the current
- * format is returned as is.
- */
+/** The card as this app writes it: the same content, current version. */
 export function upgradeCard(card: Card): Card {
   return isOutdated(card) ? { ...card, formatVersion: CARD_FORMAT_VERSION } : card;
 }
@@ -32,11 +33,8 @@ export function isDeckOutdated(deck: Deck): boolean {
 }
 
 /**
- * The deck as this app writes it. Format 1 → 2 adds the study direction;
- * a deck read without one is already front→back, the only direction
- * format 1 knew, so only the version moves — the write then states the
- * direction explicitly. A deck already at (or beyond) the current format
- * is returned as is.
+ * The deck as this app writes it. A format-1 deck read without a
+ * direction is already front→back; the write then states it.
  */
 export function upgradeDeck(deck: Deck): Deck {
   return isDeckOutdated(deck)
@@ -44,36 +42,85 @@ export function upgradeDeck(deck: Deck): Deck {
     : deck;
 }
 
+/** True when the review state is stored in an older format than this app writes. */
+export function isReviewStateOutdated(state: ReviewState): boolean {
+  return state.formatVersion < REVIEW_STATE_FORMAT_VERSION;
+}
+
+/** The review state as this app writes it: the same state, current version. */
+export function upgradeReviewState(state: ReviewState): ReviewState {
+  return isReviewStateOutdated(state)
+    ? { ...state, formatVersion: REVIEW_STATE_FORMAT_VERSION }
+    : state;
+}
+
+/** True when the preferences document is in an older format than this app writes. */
+export function isPreferencesOutdated(stored: StoredPreferences): boolean {
+  return stored.formatVersion < PREFERENCES_FORMAT_VERSION;
+}
+
+/** True when the instance's meta document is in an older format than this app writes. */
+export function isInstanceOutdated(meta: InstanceMeta): boolean {
+  return meta.formatVersion < INSTANCE_FORMAT_VERSION;
+}
+
 /** What a migration would touch, for the user to approve first. */
 export interface MigrationPlan {
-  /** Decks with an outdated entry or outdated cards, with how many of each. */
-  decks: { deck: Deck; deckOutdated: boolean; cardCount: number }[];
+  /** Decks with an outdated entry, outdated cards or outdated review states. */
+  decks: {
+    deck: Deck;
+    deckOutdated: boolean;
+    cardCount: number;
+    reviewCount: number;
+  }[];
   /** Outdated deck entries across the instance. */
   deckCount: number;
   /** Outdated cards across the instance. */
   cardCount: number;
+  /** Outdated review states across the instance. */
+  reviewCount: number;
+  preferencesOutdated: boolean;
+  instanceOutdated: boolean;
 }
 
-/** Plan the migration of an instance from its decks and their cards. */
-export function planMigration(
-  entries: { deck: Deck; cards: Card[] }[],
-): MigrationPlan {
-  const decks = entries
-    .map(({ deck, cards }) => ({
+/** Plan the migration of an instance from everything it holds. */
+export function planMigration(input: {
+  instance: InstanceMeta | null;
+  preferences: StoredPreferences | null;
+  entries: { deck: Deck; cards: Card[]; reviews: ReviewState[] }[];
+}): MigrationPlan {
+  const decks = input.entries
+    .map(({ deck, cards, reviews }) => ({
       deck,
       deckOutdated: isDeckOutdated(deck),
       cardCount: cards.filter(isOutdated).length,
+      reviewCount: reviews.filter(isReviewStateOutdated).length,
     }))
-    .filter(({ deckOutdated, cardCount }) => deckOutdated || cardCount > 0);
+    .filter(
+      ({ deckOutdated, cardCount, reviewCount }) =>
+        deckOutdated || cardCount > 0 || reviewCount > 0,
+    );
   return {
     decks,
     deckCount: decks.filter(({ deckOutdated }) => deckOutdated).length,
     cardCount: decks.reduce((sum, { cardCount }) => sum + cardCount, 0),
+    reviewCount: decks.reduce((sum, { reviewCount }) => sum + reviewCount, 0),
+    preferencesOutdated:
+      input.preferences !== null && isPreferencesOutdated(input.preferences),
+    instanceOutdated: input.instance !== null && isInstanceOutdated(input.instance),
   };
 }
 
-/** What a migration did: how many deck entries and cards it rewrote. */
+/** True when nothing is outdated. */
+export function isPlanEmpty(plan: MigrationPlan): boolean {
+  return plan.decks.length === 0 && !plan.preferencesOutdated && !plan.instanceOutdated;
+}
+
+/** What a migration did. */
 export interface MigrationResult {
   deckCount: number;
   cardCount: number;
+  reviewCount: number;
+  preferencesMigrated: boolean;
+  instanceMigrated: boolean;
 }

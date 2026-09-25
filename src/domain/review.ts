@@ -1,4 +1,13 @@
 import type { StudyDirection } from "./deck";
+import { LATEST_VERSION } from "./shapes/generated";
+
+/**
+ * Format version written on every review state this app saves. Format 2
+ * has the fields format 1 had; it is where stamping began, and where the
+ * previous* snapshot and the per-direction subject naming became part of
+ * the contract (see docs/migrations.md).
+ */
+export const REVIEW_STATE_FORMAT_VERSION: number = LATEST_VERSION.reviewState;
 
 /** SM-2 answer quality: 0 (blackout) to 5 (perfect). */
 export type ReviewQuality = 0 | 1 | 2 | 3 | 4 | 5;
@@ -43,6 +52,8 @@ export interface ReviewState extends ReviewKey {
   firstReviewedAt: string;
   /** ISO dateTime of the most recent review. */
   lastReviewedAt: string;
+  /** The format the state is stored in; a missing one read as 1. */
+  formatVersion: number;
   /**
    * The state as it was before the first review of the study day in
    * `lastReviewedAt` — what resetting that day restores. Absent for a card

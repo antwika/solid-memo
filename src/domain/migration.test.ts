@@ -7,11 +7,18 @@ import {
 } from "./deck";
 import {
   isDeckOutdated,
+  isInstanceOutdated,
   isOutdated,
+  isPlanEmpty,
+  isPreferencesOutdated,
+  isReviewStateOutdated,
   planMigration,
   upgradeCard,
   upgradeDeck,
+  upgradeReviewState,
 } from "./migration";
+import { DEFAULT_PREFERENCES } from "./preferences";
+import type { ReviewState } from "./review";
 
 const deck: Deck = {
   id: "deck-1",
@@ -87,35 +94,101 @@ describe("upgradeDeck", () => {
   });
 });
 
+function review(cardId: string, formatVersion: number): ReviewState {
+  return {
+    cardId,
+    direction: "front-to-back",
+    easeFactor: 2.5,
+    intervalDays: 1,
+    repetitions: 1,
+    due: "2026-09-22",
+    firstReviewedAt: "2026-09-21T10:00:00.000Z",
+    lastReviewedAt: "2026-09-21T10:00:00.000Z",
+    formatVersion,
+  };
+}
+
+describe("review states, preferences and the instance record", () => {
+  it("are outdated below the current format only", () => {
+    expect(isReviewStateOutdated(review("a", 1))).toBe(true);
+    expect(isReviewStateOutdated(review("a", 2))).toBe(false);
+    expect(upgradeReviewState(review("a", 1))).toEqual(review("a", 2));
+    const current = review("a", 3);
+    expect(upgradeReviewState(current)).toBe(current);
+    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 1 })).toBe(true);
+    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 2 })).toBe(false);
+    expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 0 })).toBe(true);
+    expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 1 })).toBe(false);
+  });
+});
+
+const nothingElse = { instance: null, preferences: null };
+
 describe("planMigration", () => {
-  it("lists the decks with an outdated entry or outdated cards, counting both", () => {
+  it("lists the decks with an outdated entry, cards or review states, counting each", () => {
     const other: Deck = { ...deck, id: "deck-2", url: `${deck.url}2` };
     const oldEntry: Deck = { ...oldDeck, id: "deck-3", url: `${deck.url}3` };
     const upToDate: Deck = { ...deck, id: "deck-4", url: `${deck.url}4` };
+    const oldReviews: Deck = { ...deck, id: "deck-5", url: `${deck.url}5` };
     expect(
-      planMigration([
-        { deck, cards: [card("a", 1), card("b", 2), card("c", 1)] },
-        { deck: other, cards: [card("d", 1)] },
-        { deck: oldEntry, cards: [card("e", 2)] },
-        { deck: upToDate, cards: [card("f", 2)] },
-      ]),
+      planMigration({
+        ...nothingElse,
+        entries: [
+          { deck, cards: [card("a", 1), card("b", 2), card("c", 1)], reviews: [review("a", 1)] },
+          { deck: other, cards: [card("d", 1)], reviews: [] },
+          { deck: oldEntry, cards: [card("e", 2)], reviews: [review("e", 2)] },
+          { deck: upToDate, cards: [card("f", 2)], reviews: [] },
+          { deck: oldReviews, cards: [], reviews: [review("g", 1), review("h", 1)] },
+        ],
+      }),
     ).toEqual({
       decks: [
-        { deck, deckOutdated: false, cardCount: 2 },
-        { deck: other, deckOutdated: false, cardCount: 1 },
-        { deck: oldEntry, deckOutdated: true, cardCount: 0 },
+        { deck, deckOutdated: false, cardCount: 2, reviewCount: 1 },
+        { deck: other, deckOutdated: false, cardCount: 1, reviewCount: 0 },
+        { deck: oldEntry, deckOutdated: true, cardCount: 0, reviewCount: 0 },
+        { deck: oldReviews, deckOutdated: false, cardCount: 0, reviewCount: 2 },
       ],
       deckCount: 1,
       cardCount: 3,
+      reviewCount: 3,
+      preferencesOutdated: false,
+      instanceOutdated: false,
     });
   });
 
-  it("is empty when every deck and card is current", () => {
-    expect(planMigration([{ deck, cards: [card("a", 2)] }])).toEqual({
+  it("notices outdated preferences and instance records", () => {
+    const plan = planMigration({
+      instance: { name: "Main", createdAt: "", formatVersion: 0 },
+      preferences: { preferences: DEFAULT_PREFERENCES, formatVersion: 1 },
+      entries: [],
+    });
+    expect(plan).toMatchObject({ preferencesOutdated: true, instanceOutdated: true });
+    expect(isPlanEmpty(plan)).toBe(false);
+    expect(
+      isPlanEmpty(
+        planMigration({
+          instance: { name: "Main", createdAt: "", formatVersion: 1 },
+          preferences: { preferences: DEFAULT_PREFERENCES, formatVersion: 2 },
+          entries: [],
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("is empty when everything is current or absent", () => {
+    const plan = planMigration({
+      ...nothingElse,
+      entries: [{ deck, cards: [card("a", 2)], reviews: [review("a", 2)] }],
+    });
+    expect(plan).toEqual({
       decks: [],
       deckCount: 0,
       cardCount: 0,
+      reviewCount: 0,
+      preferencesOutdated: false,
+      instanceOutdated: false,
     });
-    expect(planMigration([])).toEqual({ decks: [], deckCount: 0, cardCount: 0 });
+    expect(isPlanEmpty(plan)).toBe(true);
+    expect(isPlanEmpty(planMigration({ ...nothingElse, entries: [] }))).toBe(true);
   });
 });

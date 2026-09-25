@@ -46,19 +46,24 @@ front. The picture is an IRI, never a quoted string:
     solid-memo:formatVersion 2 .
 ```
 
-Rules the build enforces (a broken file fails `npm run build` rather
-than silently vanishing from the library):
+Rules the build enforces (a broken file fails `npm run build` with the
+violations rather than silently vanishing from the library). Every file
+is validated against the [shapes](shapes.md): the deck as a library
+document (`shapes/deck/v<N>.ttl#inLibrary`) and each card
+(`shapes/card/v<N>.ttl`), at the format version each subject states
+(absent = 1); a version this app does not know fails the build too.
+In short:
 
-- exactly one `sm:Deck` subject, with a `dcterms:title` and a
-  `sm:formatVersion` (currently 2);
-- `sm:direction`, optional: `front-to-back` (the default), `back-to-front`
-  or `bidirectional`; anything else fails the build. The library's decks
-  are all bidirectional — a country ↔ capital pair is worth knowing both
-  ways — and whoever imports one can change that in the Browser;
+- exactly one `sm:Deck` subject (the one rule the shapes cannot say),
+  with a `dcterms:title` and a `sm:formatVersion` (currently 2);
+- at deck format 2, `sm:direction`: `front-to-back`, `back-to-front` or
+  `bidirectional`; anything else, or none, fails the build. The library's
+  decks are all bidirectional — a country ↔ capital pair is worth knowing
+  both ways — and whoever imports one can change that in the Browser;
 - cards are `sm:Card` subjects with their own `sm:formatVersion` and, on
   each side, text (`sm:front` / `sm:back`) or a picture (`sm:frontImage`
   / `sm:backImage`) or both; a picture must be an IRI (`<https://…>`), a
-  string literal fails the build; anything else is ignored on import;
+  string literal fails the build;
 - `dcterms:creator` (one literal per author) and `dcterms:license` (a
   URL) are optional but expected for published decks — the capitals deck
   is CC0, the most permissive choice, and the library screen credits both;
@@ -83,6 +88,17 @@ The `@base` is optional. The deck is found by type, not by URL, so the
 subjects inside may use a canonical URL (as above) or stay relative to
 wherever the file is served.
 
+Every hand-written Turtle file in the repository — `decks/`, `shapes/`,
+`vocab/` and `tooling/fixtures/` — follows one layout: `@base` first,
+prefixes aligned in a block, each subject on a line of its own, one
+predicate per line indented four spaces, further objects aligned under
+the first, a blank line between subjects, lists and blank nodes inline.
+`npm run format:turtle` ([tooling/formatTurtle.ts](../tooling/formatTurtle.ts))
+rewrites the files that way and `npm run format:turtle:check` (run by CI
+and by the test suite) fails on any that differ. Comment blocks are kept
+before the subject they precede; a comment anywhere else makes the
+formatter refuse the file rather than lose it.
+
 ## Publishing
 
 [`tooling/deckLibrary.ts`](../tooling/deckLibrary.ts) is a Vite plugin
@@ -93,6 +109,8 @@ flowchart LR
     src["decks/*.ttl<br/>(repository)"] -->|dev: served on request| dev["/decks/*.ttl"]
     src -->|build: emitted as assets| dist["dist/decks/*.ttl"]
     src -->|parsed with n3| idx["decks/index.ttl<br/>title + card count per deck"]
+    src -->|validated against| shapes["shapes/deck/v*.ttl#inLibrary<br/>shapes/card/v*.ttl"]
+    vocab["vocab/v1.ttl, shapes/"] -->|same plugin pattern| pub["dist/vocab/, dist/shapes/"]
 ```
 
 - **Dev server**: `/decks/<name>.ttl` and `/decks/index.ttl` are served
@@ -129,6 +147,9 @@ flowchart LR
 `n3` (already a transitive dependency of `@inrupt/solid-client`) does the
 build-time parsing. It is confined to `tooling/`; the app itself keeps
 reading RDF through `@inrupt/solid-client` in the infrastructure layer.
+The vocabulary and the shapes are published the same way by
+`turtleDirectoryPlugin` in [`tooling/publishTurtle.ts`](../tooling/publishTurtle.ts)
+([vocab.md](vocab.md), [shapes.md](shapes.md)).
 
 ## In the app
 

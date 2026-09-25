@@ -1,43 +1,9 @@
-/** Solid Memo's own vocabulary (see docs/data-model.md). */
-const SM_NS = "https://solid-memo.com/vocab/v1#";
-export const SM = {
-  Instance: `${SM_NS}Instance`,
-  Deck: `${SM_NS}Deck`,
-  Card: `${SM_NS}Card`,
-  ReviewState: `${SM_NS}ReviewState`,
-  Preferences: `${SM_NS}Preferences`,
-  formatVersion: `${SM_NS}formatVersion`,
-  cardsDocument: `${SM_NS}cardsDocument`,
-  reviewsDocument: `${SM_NS}reviewsDocument`,
-  /**
-   * Deck format 2: how the deck is studied — "front-to-back",
-   * "back-to-front" or "bidirectional". Absent means front-to-back.
-   */
-  direction: `${SM_NS}direction`,
-  front: `${SM_NS}front`,
-  back: `${SM_NS}back`,
-  /** Card format 2: a picture on a side, always an IRI, never a literal. */
-  frontImage: `${SM_NS}frontImage`,
-  backImage: `${SM_NS}backImage`,
-  easeFactor: `${SM_NS}easeFactor`,
-  intervalDays: `${SM_NS}intervalDays`,
-  repetitions: `${SM_NS}repetitions`,
-  due: `${SM_NS}due`,
-  firstReviewedAt: `${SM_NS}firstReviewedAt`,
-  lastReviewedAt: `${SM_NS}lastReviewedAt`,
-  previousEaseFactor: `${SM_NS}previousEaseFactor`,
-  previousIntervalDays: `${SM_NS}previousIntervalDays`,
-  previousRepetitions: `${SM_NS}previousRepetitions`,
-  previousDue: `${SM_NS}previousDue`,
-  previousLastReviewedAt: `${SM_NS}previousLastReviewedAt`,
-  newCardsPerDay: `${SM_NS}newCardsPerDay`,
-  maxReviewsPerDay: `${SM_NS}maxReviewsPerDay`,
-  dayBoundaryHour: `${SM_NS}dayBoundaryHour`,
-  answerScale: `${SM_NS}answerScale`,
-  developerMode: `${SM_NS}developerMode`,
-  /** Library index only: how many cards a listed deck document holds. */
-  cardCount: `${SM_NS}cardCount`,
-} as const;
+/**
+ * Solid Memo's own vocabulary is generated from vocab/v1.ttl (see
+ * docs/vocab.md); the external vocabularies below are not ours to
+ * publish and stay hand-written.
+ */
+export { SM, SM_NS } from "./vocab.generated";
 
 const SOLID_NS = "http://www.w3.org/ns/solid/terms#";
 export const SOLID = {

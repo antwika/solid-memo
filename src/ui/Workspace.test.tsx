@@ -1213,6 +1213,63 @@ describe("Workspace", () => {
       expect(screen.queryByText("preferences unreachable")).toBeNull();
     });
 
+    it("links to the validation tool only in developer mode, and the tool checks the instance", async () => {
+      const useCases = makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+      });
+      const { unmount } = renderWorkspace(useCases);
+      await screen.findByRole("heading", { name: "Decks" });
+      await waitFor(() => {
+        expect(useCases.getPreferences).toHaveBeenCalledWith(instanceA.url);
+      });
+      expect(screen.queryByRole("link", { name: "Validate this instance" })).toBeNull();
+      unmount();
+
+      const developer = makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+        getPreferences: vi.fn(async () => ({
+          ...DEFAULT_PREFERENCES,
+          developerMode: true,
+        })),
+      });
+      renderWorkspace(developer);
+      const link = await screen.findByRole("link", { name: "Validate this instance" });
+      expect(link).toHaveAttribute(
+        "href",
+        routeToHash({ screen: "validation", instanceUrl: instanceA.url }),
+      );
+      fireEvent.click(link);
+      expect(
+        await screen.findByRole("heading", { name: "Validation of Deck set A" }),
+      ).toBeInTheDocument();
+      expect(await screen.findByText("All 0 documents conform.")).toBeInTheDocument();
+      expect(developer.validateInstance).toHaveBeenCalledWith(instanceA.url);
+      expect(
+        screen.getByRole("link", { name: "Validation", current: "page" }),
+      ).toBeInTheDocument();
+    });
+
+    it("explains how to turn developer mode on when the validation route is opened without it", async () => {
+      const useCases = makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+      });
+      window.history.replaceState(
+        null,
+        "",
+        routeToHash({ screen: "validation", instanceUrl: instanceA.url }),
+      );
+      renderWorkspace(useCases);
+      expect(await screen.findByText(/Developer mode is off/)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+        "href",
+        routeToHash({ screen: "preferences", instanceUrl: instanceA.url }),
+      );
+      expect(useCases.validateInstance).not.toHaveBeenCalled();
+    });
+
     it("turns on as soon as the setting is saved", async () => {
       let developerMode = false;
       const useCases = makeUseCases({

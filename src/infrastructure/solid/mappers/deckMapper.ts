@@ -1,102 +1,29 @@
-import {
-  asUrl,
-  getDatetime,
-  getInteger,
-  getStringNoLocale,
-  getStringNoLocaleAll,
-  getUrl,
-  getUrlAll,
-  type Thing,
-} from "@inrupt/solid-client";
-import {
-  DEFAULT_DECK_DIRECTION,
-  isDeckDirection,
-  type Card,
-  type CardContent,
-  type Deck,
-  type DeckDirection,
-} from "../../../domain/deck";
-import { DCTERMS, RDF, SM } from "../vocab";
+import { asUrl, type Thing } from "@inrupt/solid-client";
+import type { Card, Deck } from "../../../domain/deck";
+import { cardFromRecord, deckFromRecord } from "../../../domain/deckRecord";
+import { migrate } from "../../../domain/shapes/migrations";
+import { readVersioned } from "../records";
 
-/** Fragment id of a subject URL, e.g. "deck-1" for ".../catalog.ttl#deck-1". */
-export function fragmentIdOf(subjectUrl: string): string {
-  return subjectUrl.slice(subjectUrl.indexOf("#") + 1);
-}
+export { fragmentIdOf } from "../../../domain/subjectUrl";
 
 /**
- * A stored `sm:direction`; absent (format 1) or unknown means front→back,
- * the only direction there was before the field existed.
- */
-export function toDeckDirection(value: string | null): DeckDirection {
-  return value !== null && isDeckDirection(value)
-    ? value
-    : DEFAULT_DECK_DIRECTION;
-}
-
-/**
- * Map a catalog subject to a Deck; null when the subject is not a
- * well-formed sm:Deck (wrong type or missing document links).
+ * Map a catalog subject to a Deck; null when the subject is not an
+ * sm:Deck that fits its format's shape. An older format is brought up to
+ * the current one in memory; the stored version stays on the model.
  */
 export function toDeck(thing: Thing): Deck | null {
-  if (!getUrlAll(thing, RDF.type).includes(SM.Deck)) return null;
-  const url = asUrl(thing);
-  const cardsDocumentUrl = getUrl(thing, SM.cardsDocument);
-  const reviewsDocumentUrl = getUrl(thing, SM.reviewsDocument);
-  if (cardsDocumentUrl === null || reviewsDocumentUrl === null) return null;
-  const id = fragmentIdOf(url);
-  const license = getUrl(thing, DCTERMS.license);
-  const description = getStringNoLocale(thing, DCTERMS.description);
-  const sourceUrl = getUrl(thing, DCTERMS.source);
-  return {
-    id,
-    url,
-    name: getStringNoLocale(thing, DCTERMS.title) ?? id,
-    cardsDocumentUrl,
-    reviewsDocumentUrl,
-    createdAt: getDatetime(thing, DCTERMS.created)?.toISOString() ?? "",
-    formatVersion: getInteger(thing, SM.formatVersion) ?? 1,
-    direction: toDeckDirection(getStringNoLocale(thing, SM.direction)),
-    authors: getStringNoLocaleAll(thing, DCTERMS.creator),
-    ...(license === null ? {} : { license }),
-    ...(description === null ? {} : { description }),
-    ...(sourceUrl === null ? {} : { sourceUrl }),
-  };
+  const read = readVersioned(thing, "deck");
+  if (read === null) return null;
+  return deckFromRecord(asUrl(thing), read.storedVersion, migrate("deck", read.record));
 }
 
 /**
- * Map a cards-document subject to a Card; null when the subject is not a
- * well-formed sm:Card.
+ * Map a cards-document subject to a Card; null when the subject is not
+ * an sm:Card that fits its format's shape, or a side has neither text
+ * nor a picture.
  */
 export function toCard(thing: Thing): Card | null {
-  if (!getUrlAll(thing, RDF.type).includes(SM.Card)) return null;
-  const content = toCardContent(thing);
-  if (content === null) return null;
-  const url = asUrl(thing);
-  return {
-    id: fragmentIdOf(url),
-    url,
-    ...content,
-    createdAt: getDatetime(thing, DCTERMS.created)?.toISOString() ?? "",
-    formatVersion: getInteger(thing, SM.formatVersion) ?? 1,
-  };
-}
-
-/**
- * The content of a card subject; null when a side has neither text nor
- * a picture. A picture is only ever an IRI object: a string literal in
- * its place is not a picture and is ignored.
- */
-export function toCardContent(thing: Thing): CardContent | null {
-  const front = getStringNoLocale(thing, SM.front) ?? "";
-  const back = getStringNoLocale(thing, SM.back) ?? "";
-  const frontImageUrl = getUrl(thing, SM.frontImage);
-  const backImageUrl = getUrl(thing, SM.backImage);
-  if (front === "" && frontImageUrl === null) return null;
-  if (back === "" && backImageUrl === null) return null;
-  return {
-    front,
-    back,
-    ...(frontImageUrl === null ? {} : { frontImageUrl }),
-    ...(backImageUrl === null ? {} : { backImageUrl }),
-  };
+  const read = readVersioned(thing, "card");
+  if (read === null) return null;
+  return cardFromRecord(asUrl(thing), read.storedVersion, migrate("card", read.record));
 }

@@ -1,17 +1,14 @@
 import {
-  buildThing,
   createSolidDataset,
-  createThing,
   getThing,
   saveSolidDatasetAt,
   setThing,
 } from "@inrupt/solid-client";
 import type { PreferencesRepository } from "../../application/ports";
-import type { StudyPreferences } from "../../domain/preferences";
+import { preferencesUrlOf } from "../../domain/instanceLayout";
+import type { StoredPreferences } from "../../domain/preferences";
 import { getSolidDatasetOrNull } from "./datasets";
-import { toPreferences } from "./mappers/preferencesMapper";
-import { ensureTrailingSlash } from "./urls";
-import { RDF, SM } from "./vocab";
+import { toPreferences, toPreferencesThing } from "./mappers/preferencesMapper";
 
 export interface SolidPreferencesRepositoryDeps {
   fetch: typeof globalThis.fetch;
@@ -21,7 +18,7 @@ export function createSolidPreferencesRepository({
   fetch,
 }: SolidPreferencesRepositoryDeps): PreferencesRepository {
   return {
-    async getPreferences(instanceUrl): Promise<StudyPreferences | null> {
+    async getPreferences(instanceUrl): Promise<StoredPreferences | null> {
       const documentUrl = preferencesUrlOf(instanceUrl);
       const dataset = await getSolidDatasetOrNull(documentUrl, fetch);
       if (dataset === null) return null;
@@ -30,27 +27,18 @@ export function createSolidPreferencesRepository({
       return toPreferences(subject);
     },
 
+    /** Rewrites the subject in place, so triples this app does not know survive. */
     async savePreferences(instanceUrl, preferences): Promise<void> {
       const documentUrl = preferencesUrlOf(instanceUrl);
       const dataset =
         (await getSolidDatasetOrNull(documentUrl, fetch)) ??
         createSolidDataset();
+      const url = `${documentUrl}#it`;
       const updated = setThing(
         dataset,
-        buildThing(createThing({ url: `${documentUrl}#it` }))
-          .addIri(RDF.type, SM.Preferences)
-          .addInteger(SM.newCardsPerDay, preferences.newCardsPerDay)
-          .addInteger(SM.maxReviewsPerDay, preferences.maxReviewsPerDay)
-          .addInteger(SM.dayBoundaryHour, preferences.dayBoundaryHour)
-          .addStringNoLocale(SM.answerScale, preferences.answerScale)
-          .addBoolean(SM.developerMode, preferences.developerMode)
-          .build(),
+        toPreferencesThing(url, preferences, getThing(dataset, url)),
       );
       await saveSolidDatasetAt(documentUrl, updated, { fetch });
     },
   };
-}
-
-function preferencesUrlOf(instanceUrl: string): string {
-  return `${ensureTrailingSlash(instanceUrl)}preferences.ttl`;
 }

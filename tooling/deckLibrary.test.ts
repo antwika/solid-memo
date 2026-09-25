@@ -8,7 +8,11 @@ import {
   readDeckFiles,
   readDeckLibrary,
   summarizeDeck,
+  validateDeckFile,
 } from "./deckLibrary";
+import { loadEngine } from "./shacl.ts";
+
+const engine = await loadEngine(process.cwd());
 
 const PREFIXES = `
 @prefix sm: <https://solid-memo.com/vocab/v1#> .
@@ -85,20 +89,7 @@ describe("summarizeDeck", () => {
     });
   });
 
-  it("requires a format version on the deck and on every card", () => {
-    expect(() =>
-      summarizeDeck("x.ttl", `${PREFIXES} <> a sm:Deck ; dcterms:title "A" .`),
-    ).toThrow("decks/x.ttl: <https://library.invalid/x.ttl> has no solid-memo:formatVersion.");
-    expect(() =>
-      summarizeDeck(
-        "x.ttl",
-        `${PREFIXES} <> a sm:Deck ; dcterms:title "A" ; sm:formatVersion 1 .
-         <#se> a sm:Card ; sm:front "f" ; sm:back "b" .`,
-      ),
-    ).toThrow("<https://library.invalid/x.ttl#se> has no solid-memo:formatVersion.");
-  });
-
-  it("counts picture cards and requires pictures to be IRIs", () => {
+  it("counts picture cards", () => {
     const deckLine = `${PREFIXES} <> a sm:Deck ; dcterms:title "Flags" ; sm:formatVersion 1 .`;
     expect(
       summarizeDeck(
@@ -108,52 +99,6 @@ describe("summarizeDeck", () => {
                sm:back "Afghanistan" ; sm:formatVersion 2 .`,
       ).cardCount,
     ).toBe(1);
-    expect(() =>
-      summarizeDeck(
-        "flags.ttl",
-        `${deckLine}
-         <#af> a sm:Card ; sm:frontImage "https://flagcdn.com/af.svg" ;
-               sm:back "Afghanistan" ; sm:formatVersion 2 .`,
-      ),
-    ).toThrow(
-      "decks/flags.ttl: <https://library.invalid/flags.ttl#af> solid-memo:frontImage must be an IRI (<https://flagcdn.com/af.svg>), not a string literal.",
-    );
-    expect(() =>
-      summarizeDeck(
-        "flags.ttl",
-        `${deckLine}
-         <#af> a sm:Card ; sm:front "?" ; sm:backImage "x" ; sm:formatVersion 2 .`,
-      ),
-    ).toThrow("solid-memo:backImage must be an IRI");
-  });
-
-  it("requires text or a picture on both sides of every card", () => {
-    const deckLine = `${PREFIXES} <> a sm:Deck ; dcterms:title "Flags" ; sm:formatVersion 1 .`;
-    expect(() =>
-      summarizeDeck(
-        "flags.ttl",
-        `${deckLine} <#af> a sm:Card ; sm:back "Afghanistan" ; sm:formatVersion 2 .`,
-      ),
-    ).toThrow(
-      "decks/flags.ttl: <https://library.invalid/flags.ttl#af> has neither solid-memo:front nor solid-memo:frontImage.",
-    );
-    expect(() =>
-      summarizeDeck(
-        "flags.ttl",
-        `${deckLine} <#af> a sm:Card ; sm:front "?" ; sm:formatVersion 2 .`,
-      ),
-    ).toThrow("has neither solid-memo:back nor solid-memo:backImage.");
-  });
-
-  it("rejects a direction the app does not know", () => {
-    expect(() =>
-      summarizeDeck(
-        "x.ttl",
-        `${PREFIXES} <> a sm:Deck ; dcterms:title "A" ; sm:formatVersion 2 ; sm:direction "sideways" .`,
-      ),
-    ).toThrow(
-      'decks/x.ttl: solid-memo:direction must be one of front-to-back, back-to-front, bidirectional, not "sideways".',
-    );
   });
 
   it("rejects a file without exactly one deck", () => {
@@ -172,6 +117,70 @@ describe("summarizeDeck", () => {
     expect(() =>
       summarizeDeck("x.ttl", `${PREFIXES} <> a sm:Deck ; sm:formatVersion 1 .`),
     ).toThrow("decks/x.ttl: the deck has no dcterms:title.");
+  });
+});
+
+describe("validateDeckFile", () => {
+  const deckLine = `${PREFIXES} <> a sm:Deck ; dcterms:title "Flags" ; sm:formatVersion 1 .`;
+
+  it("accepts a deck that follows the shapes", async () => {
+    await expect(
+      validateDeckFile(
+        "flags.ttl",
+        `${deckLine}
+         <#af> a sm:Card ; sm:frontImage <https://flagcdn.com/af.svg> ;
+               sm:back "Afghanistan" ; sm:formatVersion 2 .`,
+        engine,
+      ),
+    ).resolves.toBeUndefined();
+    await expect(validateDeckFile("elements.ttl", ELEMENTS, engine)).resolves.toBeUndefined();
+  });
+
+  it("names every violation, file first", async () => {
+    await expect(
+      validateDeckFile(
+        "flags.ttl",
+        `${deckLine}
+         <#af> a sm:Card ; sm:frontImage "https://flagcdn.com/af.svg" ;
+               sm:back "Afghanistan" ; sm:formatVersion 2 .
+         <#se> a sm:Card ; sm:front "?" ; sm:formatVersion 2 .`,
+        engine,
+      ),
+    ).rejects.toThrow(
+      `decks/flags.ttl:
+  <https://library.invalid/flags.ttl#af> (https://solid-memo.com/vocab/v1#frontImage): A picture is an IRI (<https://…>), never a string literal.
+  <https://library.invalid/flags.ttl#se>: Each side of a card needs text or a picture.`,
+    );
+  });
+
+  it("rejects a format-2 deck without a direction, and a deck with pod links", async () => {
+    await expect(
+      validateDeckFile(
+        "x.ttl",
+        `${PREFIXES} <> a sm:Deck ; dcterms:title "A" ; sm:formatVersion 2 .`,
+        engine,
+      ),
+    ).rejects.toThrow("A format-2 deck states its direction");
+    await expect(
+      validateDeckFile(
+        "x.ttl",
+        `${PREFIXES} <> a sm:Deck ; dcterms:title "A" ; sm:formatVersion 1 ;
+           sm:cardsDocument <https://pod.example/d.ttl> .`,
+        engine,
+      ),
+    ).rejects.toThrow("A library deck has no cards document");
+  });
+
+  it("rejects a format this app does not know", async () => {
+    await expect(
+      validateDeckFile(
+        "x.ttl",
+        `${PREFIXES} <> a sm:Deck ; dcterms:title "A" ; sm:formatVersion 3 .`,
+        engine,
+      ),
+    ).rejects.toThrow(
+      "decks/x.ttl:\n  <https://library.invalid/x.ttl> is libraryDeck format 3; this app knows formats 1–2.",
+    );
   });
 });
 
@@ -219,10 +228,22 @@ describe("readDeckFiles", () => {
 
 describe("readDeckLibrary", () => {
   it("returns the files together with their index", async () => {
-    const { files, index } = await readDeckLibrary(await libraryDir());
+    const { files, index } = await readDeckLibrary(await libraryDir(), engine);
     expect(files).toHaveLength(2);
     expect(index).toContain("<capitals.ttl>");
     expect(index).toContain("<rivers.ttl>");
+  });
+
+  it("refuses a library with a deck that breaks the shapes", async () => {
+    const dir = await libraryDir();
+    await writeFile(
+      join(dir, "bad.ttl"),
+      `${PREFIXES} <> a sm:Deck ; dcterms:title "Bad" ; sm:formatVersion 1 .
+       <#x> a sm:Card ; sm:front "?" ; sm:formatVersion 1 .`,
+    );
+    await expect(readDeckLibrary(dir, engine)).rejects.toThrow(
+      "decks/bad.ttl:\n  <https://library.invalid/bad.ttl#x> (https://solid-memo.com/vocab/v1#back): A format-1 card has text on its back.",
+    );
   });
 });
 

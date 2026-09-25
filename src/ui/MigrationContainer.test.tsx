@@ -23,12 +23,14 @@ const deck: Deck = {
   formatVersion: 1,
   authors: [],
 };
+const nothing = { reviewCount: 0, preferencesOutdated: false, instanceOutdated: false };
 const outdated: MigrationPlan = {
-  decks: [{ deck, deckOutdated: true, cardCount: 3 }],
+  decks: [{ deck, deckOutdated: true, cardCount: 3, reviewCount: 0 }],
   deckCount: 1,
   cardCount: 3,
+  ...nothing,
 };
-const current: MigrationPlan = { decks: [], deckCount: 0, cardCount: 0 };
+const current: MigrationPlan = { decks: [], deckCount: 0, cardCount: 0, ...nothing };
 
 function renderContainer(useCases: UseCases) {
   const queryClient = new QueryClient({
@@ -83,7 +85,13 @@ describe("MigrationContainer", () => {
       planMigration: vi.fn(async () => plan),
       migrateInstance: vi.fn(async () => {
         plan = current;
-        return { deckCount: 1, cardCount: 3 };
+        return {
+          deckCount: 1,
+          cardCount: 3,
+          reviewCount: 0,
+          preferencesMigrated: false,
+          instanceMigrated: false,
+        };
       }),
     });
     const { invalidate } = renderContainer(useCases);
@@ -96,6 +104,10 @@ describe("MigrationContainer", () => {
     expect(useCases.migrateInstance).toHaveBeenCalledWith(instance.url);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["cards"] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["reviews"] });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["preferences", instance.url],
+    });
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["migration", instance.url],
     });

@@ -1,21 +1,27 @@
 import {
-  buildThing,
   createSolidDataset,
-  createThing,
   deleteContainer,
   deleteFile,
   deleteSolidDataset,
   getContainedResourceUrlAll,
   getSolidDataset,
-  getStringNoLocale,
   getThing,
   saveSolidDatasetAt,
   setThing,
 } from "@inrupt/solid-client";
 import type { InstanceRepository } from "../../application/ports";
-import type { Instance } from "../../domain/instance";
+import {
+  INSTANCE_FORMAT_VERSION,
+  type Instance,
+  type InstanceMeta,
+} from "../../domain/instance";
+import { metaUrlOf } from "../../domain/instanceLayout";
 import { getSolidDatasetOrNull } from "./datasets";
-import { toInstance } from "./mappers/instanceMapper";
+import {
+  toInstance,
+  toInstanceMeta,
+  toInstanceMetaThing,
+} from "./mappers/instanceMapper";
 import {
   addInstanceRegistration,
   ensureTypeIndex,
@@ -25,9 +31,6 @@ import {
   type InstanceRegistration,
 } from "./typeIndex";
 import { ensureTrailingSlash, lastPathSegment } from "./urls";
-import { DCTERMS, RDF, SM } from "./vocab";
-
-const FORMAT_VERSION = 1;
 
 export interface SolidInstanceRepositoryDeps {
   fetch: typeof globalThis.fetch;
@@ -70,8 +73,12 @@ export function createSolidInstanceRepository({
 
     async createInstance({ webId, containerUrl, name, registrationTarget }) {
       const url = ensureTrailingSlash(containerUrl);
-      const metaUrl = `${url}meta.ttl`;
-      await saveMetaDocument(metaUrl, name, now(), fetch);
+      const metaUrl = metaUrlOf(url);
+      await saveMetaDocument(
+        metaUrl,
+        { name, createdAt: now().toISOString(), formatVersion: INSTANCE_FORMAT_VERSION },
+        fetch,
+      );
       try {
         const indexUrl = await ensureTypeIndex(
           registrationTarget,
@@ -113,6 +120,29 @@ export function createSolidInstanceRepository({
         );
       }
       return { url, name };
+    },
+
+    async readMeta(instanceUrl): Promise<InstanceMeta | null> {
+      const metaUrl = metaUrlOf(instanceUrl);
+      const dataset = await getSolidDatasetOrNull(metaUrl, fetch);
+      if (dataset === null) return null;
+      const subject = getThing(dataset, `${metaUrl}#it`);
+      return subject === null ? null : toInstanceMeta(subject);
+    },
+
+    async saveMeta(instanceUrl, meta): Promise<void> {
+      const metaUrl = metaUrlOf(instanceUrl);
+      const dataset = await getSolidDatasetOrNull(metaUrl, fetch);
+      const url = `${metaUrl}#it`;
+      const existing = dataset === null ? null : getThing(dataset, url);
+      if (dataset === null || existing === null) {
+        throw new Error(`<${instanceUrl}> has no meta document to update.`);
+      }
+      await saveSolidDatasetAt(
+        metaUrl,
+        setThing(dataset, toInstanceMetaThing(url, meta, existing)),
+        { fetch },
+      );
     },
 
     async deleteInstance({ webId, instance }) {
@@ -172,27 +202,21 @@ async function readRegistrationsSafely(
 
 async function saveMetaDocument(
   metaUrl: string,
-  name: string,
-  createdAt: Date,
+  meta: InstanceMeta,
   fetch: typeof globalThis.fetch,
 ): Promise<void> {
-  const meta = setThing(
+  const dataset = setThing(
     createSolidDataset(),
-    buildThing(createThing({ url: `${metaUrl}#it` }))
-      .addIri(RDF.type, SM.Instance)
-      .addStringNoLocale(DCTERMS.title, name)
-      .addDatetime(DCTERMS.created, createdAt)
-      .addInteger(SM.formatVersion, FORMAT_VERSION)
-      .build(),
+    toInstanceMetaThing(`${metaUrl}#it`, meta, null),
   );
-  await saveSolidDatasetAt(metaUrl, meta, { fetch });
+  await saveSolidDatasetAt(metaUrl, dataset, { fetch });
 }
 
 async function readInstanceName(
   instanceUrl: string,
   fetch: typeof globalThis.fetch,
 ): Promise<string> {
-  const metaUrl = `${instanceUrl}meta.ttl`;
+  const metaUrl = metaUrlOf(instanceUrl);
   let dataset;
   try {
     dataset = await getSolidDataset(metaUrl, { fetch });
@@ -207,7 +231,7 @@ async function readInstanceName(
       `<${instanceUrl}> is not a Solid Memo instance (meta.ttl has no #it subject).`,
     );
   }
-  return getStringNoLocale(meta, DCTERMS.title) ?? lastPathSegment(instanceUrl);
+  return toInstanceMeta(meta)?.name ?? lastPathSegment(instanceUrl);
 }
 
 async function bestEffortCleanup(

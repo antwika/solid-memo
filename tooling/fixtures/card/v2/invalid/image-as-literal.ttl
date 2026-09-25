@@ -1,0 +1,9 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix dcterms:    <http://purl.org/dc/terms/> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<#af>
+    a solid-memo:Card ;
+    solid-memo:frontImage "https://flagcdn.com/af.svg" ;
+    solid-memo:back "Afghanistan" ;
+    solid-memo:formatVersion 2 .

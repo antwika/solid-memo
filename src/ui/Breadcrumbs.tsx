@@ -64,6 +64,9 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
   if (route.screen === "preferences") {
     return [decks, { label: "Preferences", route }];
   }
+  if (route.screen === "validation") {
+    return [decks, { label: "Validation", route }];
+  }
 
   const deck: Crumb = {
     label: names.deck,

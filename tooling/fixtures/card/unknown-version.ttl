@@ -1,0 +1,9 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix dcterms:    <http://purl.org/dc/terms/> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<#se>
+    a solid-memo:Card ;
+    solid-memo:front "Sweden" ;
+    solid-memo:back "Stockholm" ;
+    solid-memo:formatVersion 3 .

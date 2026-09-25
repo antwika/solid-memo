@@ -1,0 +1,54 @@
+import { describe, expect, it } from "vitest";
+import { LATEST_VERSION } from "../../domain/shapes/generated";
+import { SM } from "../solid/vocab";
+import { pickShape } from "./registry";
+import { CARD_V1, CARD_V2, DECK_V2, LIBRARY_DECK_V1, SHAPES } from "./shapes.generated";
+
+describe("the generated registry", () => {
+  it("has every version from 1 to the latest of each kind", () => {
+    for (const [shape, latest] of Object.entries(LATEST_VERSION)) {
+      const versions = Object.values(SHAPES[shape as keyof typeof SHAPES]);
+      expect(versions.map((d) => d.version), shape).toEqual(
+        Array.from({ length: latest }, (_, i) => i + 1),
+      );
+      expect(versions.every((d) => d.shape === shape), shape).toBe(true);
+    }
+  });
+});
+
+describe("pickShape", () => {
+  it("picks the shape by class, version and context", () => {
+    expect(pickShape([SM.Card], 2, "pod")).toEqual({ kind: "shape", descriptor: CARD_V2 });
+    expect(pickShape([SM.Card], 1, "library")).toEqual({ kind: "shape", descriptor: CARD_V1 });
+    expect(pickShape(["https://other.example/#Thing", SM.Deck], 2, "pod")).toEqual({
+      kind: "shape",
+      descriptor: DECK_V2,
+    });
+    expect(pickShape([SM.Deck], 1, "library")).toEqual({
+      kind: "shape",
+      descriptor: LIBRARY_DECK_V1,
+    });
+  });
+
+  it("reports a version it does not know, with the latest it does", () => {
+    expect(pickShape([SM.Card], 3, "pod")).toEqual({
+      kind: "unknown-version",
+      shape: "card",
+      version: 3,
+      latest: 2,
+    });
+    expect(pickShape([SM.Instance], 0, "pod")).toEqual({
+      kind: "unknown-version",
+      shape: "instance",
+      version: 0,
+      latest: 1,
+    });
+  });
+
+  it("leaves subjects without a Solid Memo class alone", () => {
+    expect(pickShape([], 1, "pod")).toEqual({ kind: "untyped" });
+    expect(pickShape(["https://other.example/#Thing"], 1, "library")).toEqual({
+      kind: "untyped",
+    });
+  });
+});

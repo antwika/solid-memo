@@ -1,6 +1,4 @@
-export function ensureTrailingSlash(url: string): string {
-  return url.endsWith("/") ? url : `${url}/`;
-}
+export { ensureTrailingSlash } from "../../domain/instanceLayout";
 
 /** Last path segment of a URL, e.g. "japanese" for ".../solid-memo/japanese/". */
 export function lastPathSegment(url: string): string {

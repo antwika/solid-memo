@@ -1,7 +1,5 @@
 import {
-  buildThing,
   createSolidDataset,
-  createThing,
   deleteSolidDataset,
   getThing,
   getThingAll,
@@ -20,11 +18,14 @@ import {
   type Deck,
   type DeckDirection,
 } from "../../domain/deck";
+import { cardToRecord, deckToRecord } from "../../domain/deckRecord";
+import { catalogUrlOf, ensureTrailingSlash } from "../../domain/instanceLayout";
+import { documentUrlOf } from "../../domain/subjectUrl";
+import { CARD_V2, DECK_V2 } from "../shacl/shapes.generated";
 import { getSolidDatasetOrNull } from "./datasets";
 import { toCard, toDeck } from "./mappers/deckMapper";
 import { reviewSubjectUrl } from "./mappers/reviewStateMapper";
-import { ensureTrailingSlash } from "./urls";
-import { DCTERMS, RDF, SM } from "./vocab";
+import { recordThing } from "./records";
 
 export interface SolidDeckRepositoryDeps {
   fetch: typeof globalThis.fetch;
@@ -55,7 +56,7 @@ export function createSolidDeckRepository({
       const deck = newDeck(instanceUrl, content.name, content);
       let cards = createSolidDataset();
       for (const card of content.cards) {
-        cards = setThing(cards, cardThing(deck, card));
+        cards = setThing(cards, cardThing(deck, card, null));
       }
       await saveSolidDatasetAt(deck.cardsDocumentUrl, cards, { fetch });
       return registerDeck(deck);
@@ -101,7 +102,7 @@ export function createSolidDeckRepository({
       const dataset =
         (await getSolidDatasetOrNull(deck.cardsDocumentUrl, fetch)) ??
         createSolidDataset();
-      const updated = setThing(dataset, cardThing(deck, card));
+      const updated = setThing(dataset, cardThing(deck, card, null));
       await saveSolidDatasetAt(deck.cardsDocumentUrl, updated, { fetch });
       return card;
     },
@@ -129,7 +130,7 @@ export function createSolidDeckRepository({
       };
       await saveSolidDatasetAt(
         deck.cardsDocumentUrl,
-        setThing(dataset, applyCard(thing, updated)),
+        setThing(dataset, cardThing(deck, updated, thing)),
         { fetch },
       );
       return updated;
@@ -143,7 +144,9 @@ export function createSolidDeckRepository({
       if (dataset === null) return;
       const updated = cards.reduce((current, card) => {
         const thing = getThing(current, card.url);
-        return thing === null ? current : setThing(current, applyCard(thing, card));
+        return thing === null
+          ? current
+          : setThing(current, cardThing(deck, card, thing));
       }, dataset);
       await saveSolidDatasetAt(deck.cardsDocumentUrl, updated, { fetch });
     },
@@ -181,9 +184,9 @@ export function createSolidDeckRepository({
   };
 
   /**
-   * Rewrite a deck's catalog entry in place — name, direction and, as
-   * with every write, this app's format version — so unknown triples
-   * survive. Returns the deck as written.
+   * Rewrite a deck's catalog entry in place, in this app's format: the
+   * entry's own predicates are replaced from the deck, so unknown
+   * triples survive. Returns the deck as written.
    */
   async function saveDeck(deck: Deck): Promise<Deck> {
     const catalogUrl = documentUrlOf(deck.url);
@@ -193,14 +196,7 @@ export function createSolidDeckRepository({
       throw new Error(`The deck <${deck.name}> no longer exists.`);
     }
     const written: Deck = { ...deck, formatVersion: DECK_FORMAT_VERSION };
-    const updated = setThing(
-      dataset,
-      buildThing(thing)
-        .setStringNoLocale(DCTERMS.title, written.name)
-        .setStringNoLocale(SM.direction, written.direction)
-        .setInteger(SM.formatVersion, written.formatVersion)
-        .build(),
-    );
+    const updated = setThing(dataset, deckThing(written, thing));
     await saveSolidDatasetAt(catalogUrl, updated, { fetch });
     return written;
   }
@@ -249,80 +245,35 @@ export function createSolidDeckRepository({
     const dataset =
       (await getSolidDatasetOrNull(catalogUrl, fetch)) ??
       createSolidDataset();
-    const entry = buildThing(createThing({ url: deck.url }))
-      .addIri(RDF.type, SM.Deck)
-      .addStringNoLocale(DCTERMS.title, deck.name)
-      .addDatetime(DCTERMS.created, now())
-      .addInteger(SM.formatVersion, deck.formatVersion)
-      .addStringNoLocale(SM.direction, deck.direction)
-      .addIri(SM.cardsDocument, deck.cardsDocumentUrl)
-      .addIri(SM.reviewsDocument, deck.reviewsDocumentUrl);
-    for (const author of deck.authors) {
-      entry.addStringNoLocale(DCTERMS.creator, author);
-    }
-    if (deck.license !== undefined) {
-      entry.addIri(DCTERMS.license, deck.license);
-    }
-    if (deck.description !== undefined) {
-      entry.addStringNoLocale(DCTERMS.description, deck.description);
-    }
-    if (deck.sourceUrl !== undefined) {
-      entry.addIri(DCTERMS.source, deck.sourceUrl);
-    }
-    const updated = setThing(dataset, entry.build());
+    const updated = setThing(dataset, deckThing(deck, null));
     await saveSolidDatasetAt(catalogUrl, updated, { fetch });
     return deck;
   }
 
   /**
-   * The RDF subject of a new card, in the deck's cards document, written
-   * in this app's format.
+   * The RDF subject of a card in the deck's cards document, written in
+   * this app's format onto the existing subject when there is one: the
+   * card's own predicates are replaced (empty text and a missing picture
+   * remove theirs), anything else on the subject survives. A new card is
+   * stamped with the time of writing.
    */
-  function cardThing(deck: Deck, card: CardContent & { id: string }) {
-    const thing = buildThing(
-      createThing({ url: `${deck.cardsDocumentUrl}#${card.id}` }),
-    )
-      .addIri(RDF.type, SM.Card)
-      .addDatetime(DCTERMS.created, now())
-      .build();
-    return applyCard(thing, { ...card, formatVersion: CARD_FORMAT_VERSION });
+  function cardThing(
+    deck: Deck,
+    card: CardContent & { id: string; createdAt?: string },
+    existing: ThingPersisted | null,
+  ): ThingPersisted {
+    return recordThing(
+      `${deck.cardsDocumentUrl}#${card.id}`,
+      CARD_V2,
+      cardToRecord(card, card.createdAt ?? now().toISOString()),
+      existing,
+    );
   }
 }
 
-/**
- * Write a card's content and format version onto its existing subject,
- * replacing only the triples this app owns: empty text and a missing
- * picture remove theirs, anything else on the subject survives. Pictures
- * are IRIs — never string literals — so a reader finds them with getUrl.
- */
-function applyCard(
-  thing: ThingPersisted,
-  card: CardContent & { formatVersion: number },
-): ThingPersisted {
-  const builder = buildThing(thing)
-    .removeAll(SM.front)
-    .removeAll(SM.back)
-    .removeAll(SM.frontImage)
-    .removeAll(SM.backImage)
-    .setInteger(SM.formatVersion, card.formatVersion);
-  if (card.front !== "") builder.addStringNoLocale(SM.front, card.front);
-  if (card.back !== "") builder.addStringNoLocale(SM.back, card.back);
-  if (card.frontImageUrl !== undefined) {
-    builder.addIri(SM.frontImage, card.frontImageUrl);
-  }
-  if (card.backImageUrl !== undefined) {
-    builder.addIri(SM.backImage, card.backImageUrl);
-  }
-  return builder.build();
-}
-
-function catalogUrlOf(instanceUrl: string): string {
-  return `${ensureTrailingSlash(instanceUrl)}catalog.ttl`;
-}
-
-/** Document URL of a subject URL (strips the fragment). */
-function documentUrlOf(subjectUrl: string): string {
-  return subjectUrl.split("#")[0];
+/** The RDF subject of a deck's catalog entry, in this app's format. */
+function deckThing(deck: Deck, existing: ThingPersisted | null): ThingPersisted {
+  return recordThing(deck.url, DECK_V2, deckToRecord(deck), existing);
 }
 
 async function deleteDocumentIfPresent(

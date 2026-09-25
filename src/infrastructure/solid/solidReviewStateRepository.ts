@@ -54,7 +54,11 @@ export function createSolidReviewStateRepository({
         createSolidDataset();
       const updated = setThing(
         dataset,
-        toReviewStateThing(deck.reviewsDocumentUrl, state),
+        toReviewStateThing(
+          deck.reviewsDocumentUrl,
+          state,
+          getThing(dataset, reviewSubjectUrl(deck.reviewsDocumentUrl, state)),
+        ),
       );
       await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
     },
@@ -69,7 +73,11 @@ export function createSolidReviewStateRepository({
       for (const state of save) {
         updated = setThing(
           updated,
-          toReviewStateThing(deck.reviewsDocumentUrl, state),
+          toReviewStateThing(
+            deck.reviewsDocumentUrl,
+            state,
+            getThing(updated, reviewSubjectUrl(deck.reviewsDocumentUrl, state)),
+          ),
         );
       }
       for (const key of remove) {

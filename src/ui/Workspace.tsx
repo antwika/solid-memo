@@ -28,7 +28,9 @@ import {
   libraryDeckHref,
   routeToHash,
   useHashRoute,
+  validationHref,
 } from "./router";
+import { ValidationContainer } from "./ValidationContainer";
 import { WebIdDocumentContainer } from "./WebIdDocumentContainer";
 
 export function Workspace({
@@ -478,6 +480,23 @@ export function Workspace({
             }
           />
         );
+      case "validation":
+        if (developerMode) {
+          return (
+            <ValidationContainer useCases={useCases} instance={activeInstance!} />
+          );
+        }
+        return preferencesQuery.isPending ? (
+          <Loading label="Loading preferences…" />
+        ) : (
+          <p class="hint">
+            Developer mode is off. Turn it on in{" "}
+            <a href={routeToHash({ screen: "preferences", instanceUrl: instanceUrl! })}>
+              Preferences
+            </a>{" "}
+            to check this instance against Solid Memo's shapes.
+          </p>
+        );
     }
   })();
 
@@ -503,6 +522,11 @@ export function Workspace({
         })}
       />
       {screen}
+      {developerMode && activeInstance !== null && (
+        <nav class="developer-tools" aria-label="Developer tools">
+          <a href={validationHref(activeInstance.url)}>Validate this instance</a>
+        </nav>
+      )}
       {developerMode && (
         <WebIdDocumentContainer useCases={useCases} session={session} />
       )}
