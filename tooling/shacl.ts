@@ -1,7 +1,7 @@
 import { Store, type Quad } from "n3";
-import { createEngine, type ShapeEngine } from "../src/infrastructure/shacl/engine";
-import { pickShape } from "../src/infrastructure/shacl/registry";
-import type { ShapeContext } from "../src/infrastructure/shacl/shapeDescriptor";
+import { createEngine, type ShapeEngine } from "../src/infrastructure/shacl/engine.ts";
+import { pickShape } from "../src/infrastructure/shacl/registry.ts";
+import type { ShapeContext } from "../src/infrastructure/shacl/shapeDescriptor.ts";
 import { RDF_TYPE, objectsOf, parseTurtle, readTurtleTree } from "./rdf.ts";
 import { SM_NS } from "./vocab.ts";
 import { SHAPES_BASE } from "./shapes.ts";

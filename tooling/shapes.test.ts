@@ -213,6 +213,8 @@ export type LatestRecord = {
 
   it("renders the descriptors and the registry", () => {
     const text = renderDescriptors(models);
+    expect(text).toContain(`import type { ShapeDescriptor } from "./shapeDescriptor.ts";`);
+    expect(text).toContain(`} from "../../domain/shapes/generated.ts";`);
     expect(text).toContain(`export const THING_V1: ShapeDescriptor<ThingV1> = {
   shape: "thing",
   version: 1,

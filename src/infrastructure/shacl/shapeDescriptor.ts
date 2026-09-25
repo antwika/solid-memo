@@ -1,4 +1,4 @@
-import type { ShapeName } from "../../domain/shapes/generated";
+import type { ShapeName } from "../../domain/shapes/generated.ts";
 
 /**
  * What a shape says about a class at one version, in the form the generic

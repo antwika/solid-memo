@@ -28,6 +28,9 @@ Additional rules:
   `src/infrastructure/shacl/` (it parses the shape documents).
 - `tooling/` may import `src/domain/` and `src/infrastructure/shacl/`
   (both Node-safe); nothing in `src/` imports `tooling/`.
+- Modules reachable from `vite.config.ts` (`tooling/` and
+  `src/infrastructure/shacl/`) spell out `.ts` on relative imports: a
+  future Vite loads the config with Node's own loader, which needs them.
 - Generated files (`*.generated.ts`, `src/domain/shapes/generated.ts`)
   are never edited by hand: change `vocab/` or `shapes/` and run
   `npm run generate` ([shapes.md](shapes.md)).

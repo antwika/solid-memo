@@ -1,6 +1,6 @@
 /* Generated from shapes/<class>/v<N>.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
-import type { ShapeDescriptor } from "./shapeDescriptor";
+import type { ShapeDescriptor } from "./shapeDescriptor.ts";
 import type {
   CardV1,
   CardV2,
@@ -13,7 +13,7 @@ import type {
   PreferencesV2,
   ReviewStateV1,
   ReviewStateV2,
-} from "../../domain/shapes/generated";
+} from "../../domain/shapes/generated.ts";
 
 export const CARD_V1: ShapeDescriptor<CardV1> = {
   shape: "card",
