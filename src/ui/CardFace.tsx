@@ -28,7 +28,6 @@ export function CardFace({
           <img
             class="card-image"
             src={imageUrl}
-            // With text beside it the picture needs no second description.
             alt={text === "" ? `Picture on the ${side} of the card` : ""}
           />
         ) : (

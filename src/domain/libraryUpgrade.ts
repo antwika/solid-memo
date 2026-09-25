@@ -46,7 +46,6 @@ export function planLibraryUpgrade(
   if (source.cards.some((card) => card.formatVersion > CARD_FORMAT_VERSION)) {
     return null;
   }
-  // Deck format 1 → 2 adds the direction; nothing else has changed since.
   if (source.direction === deck.direction) return null;
   return {
     fromVersion: deck.formatVersion,

@@ -30,7 +30,6 @@ export function CardContainer({
       await queryClient.invalidateQueries({
         queryKey: ["cards", deck.cardsDocumentUrl],
       });
-      // The cached queue carries the card's old text.
       queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
     },
   });
@@ -41,7 +40,6 @@ export function CardContainer({
       await queryClient.invalidateQueries({
         queryKey: ["cards", deck.cardsDocumentUrl],
       });
-      // Removing a card also removes its review state.
       await queryClient.invalidateQueries({
         queryKey: ["reviews", deck.reviewsDocumentUrl],
       });

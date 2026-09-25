@@ -86,7 +86,6 @@ async function walkUpToStorage(
       const response = await fetch(candidate, { method: "HEAD" });
       linkHeader = response.headers.get("Link");
     } catch {
-      // One unreachable candidate must not abort the walk.
       continue;
     }
     if (hasStorageLink(linkHeader)) {

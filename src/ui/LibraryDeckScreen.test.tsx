@@ -25,7 +25,6 @@ const capitals: LibraryDeck = {
       authors: ["Wikipedia contributors"],
       license: BY_SA,
     },
-    // Listed without a description of its own.
     { url: WIKIDATA, authors: [] },
   ],
 };
@@ -64,7 +63,6 @@ describe("LibraryDeckScreen", () => {
     ).toHaveAttribute("href", "#/library-deck?deck=capitals");
     expect(fact("Size")).toHaveTextContent("243 cards");
 
-    // The blurb, with its URL as a link.
     expect(screen.getByText(/Every country and its capital/)).toHaveClass(
       "deck-description",
     );
@@ -98,7 +96,6 @@ describe("LibraryDeckScreen", () => {
     expect(
       within(sources[0]).getByRole("link", { name: licenseLabel(BY_SA) }),
     ).toHaveAttribute("href", BY_SA);
-    // A bare source is named by its URL and says nothing more.
     expect(within(sources[1]).getByRole("link", { name: WIKIDATA })).toHaveAttribute(
       "href",
       WIKIDATA,
@@ -149,7 +146,6 @@ describe("LibraryDeckScreen", () => {
       },
     });
     expect(container.querySelector(".deck-description")).toBeNull();
-    // Only the size and direction, which every deck has.
     expect(container.querySelectorAll("dt")).toHaveLength(2);
     expect(fact("Size")).toHaveTextContent("1 card");
     expect(fact("Studied")).toHaveTextContent("Front → back");
@@ -175,7 +171,6 @@ describe("LibraryDeckScreen", () => {
   it("marks a deck the instance already holds, still importable", () => {
     renderScreen({ imported: true });
     expect(screen.getByText("Already imported")).toBeInTheDocument();
-    // A second copy may be wanted.
     expect(screen.getByRole("button", { name: "Import this deck" })).toBeEnabled();
   });
 

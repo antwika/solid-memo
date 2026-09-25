@@ -48,7 +48,6 @@ describe("PodConnectionScreen", () => {
     expect(screen.getByText(account.webId)).toBeInTheDocument();
     expect(screen.getByText(account.podUrl!)).toBeInTheDocument();
     expect(screen.getByText(account.oidcIssuer!)).toBeInTheDocument();
-    // Every URL shown is a clickable link.
     for (const url of [account.webId, account.podUrl!, account.oidcIssuer!]) {
       expect(screen.getByRole("link", { name: url })).toHaveAttribute(
         "href",

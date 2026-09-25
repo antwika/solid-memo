@@ -62,17 +62,7 @@ export interface DeckSource {
   license?: string;
 }
 
-/**
- * Summarize one deck document. Throws when the file is not a deck, when
- * the deck or any card lacks its `sm:formatVersion`, or when a card's
- * side has neither text nor a picture (or a picture written as a string
- * instead of an IRI): a broken library file should fail the build, not
- * vanish from the index. (Pod data is read more leniently; the library
- * is authored, so it is held to the full format.)
- */
 export function summarizeDeck(file: string, turtle: string): DeckSummary {
-  // The base only matters for resolving relative IRIs, which the summary
-  // never keeps; any absolute base will do.
   const quads = new Parser({ baseIRI: `https://library.invalid/${file}` }).parse(
     turtle,
   );
@@ -105,8 +95,6 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
   }
   for (const card of cards) {
     for (const side of ["front", "back"] as const) {
-      // A picture is a link to an image, so it is an IRI; a string in its
-      // place would be ignored by the app and the side would be blank.
       const pictures = of(card, `${SM}${side}Image`);
       const literal = pictures.find((object) => object.termType === "Literal");
       if (literal !== undefined) {
@@ -132,8 +120,6 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
       `decks/${file}: solid-memo:direction must be one of ${DECK_DIRECTIONS.join(", ")}, not "${direction.value}".`,
     );
   }
-  // A source is described by its own triples, if the file has any: an
-  // undescribed source is still listed, by URL alone.
   const sources = of(deck, DCTERMS_SOURCE)
     .filter(isIri)
     .map(({ value: url }): DeckSource => {
@@ -207,8 +193,6 @@ export function buildIndex(summaries: DeckSummary[]): string {
     for (const source of deck.sources) {
       writer.addQuad(subject, namedNode(DCTERMS_SOURCE), namedNode(source.url));
     }
-    // What the deck says about each source, as its own subject: the
-    // source's authors and licence must not read as the deck's.
     for (const source of deck.sources) {
       const sourceNode = namedNode(source.url);
       if (source.title !== undefined) {
@@ -268,8 +252,6 @@ export function deckLibraryPlugin({
   return {
     name: "solid-memo:deck-library",
 
-    // Dev: read the folder on every request, so a new or edited deck
-    // shows up without a restart.
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const path = (req.url ?? "").split("?")[0];
@@ -293,7 +275,6 @@ export function deckLibraryPlugin({
       });
     },
 
-    // Build: the deck documents and their index become plain assets.
     async generateBundle() {
       const { files, index } = await readDeckLibrary(dir);
       for (const { file, turtle } of files) {

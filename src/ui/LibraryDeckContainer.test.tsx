@@ -76,7 +76,6 @@ describe("LibraryDeckContainer", () => {
       makeUseCasesFake({
         listDecks: vi.fn(async () => [
           importedDeck,
-          // A hand-made deck has no source and marks nothing.
           { ...importedDeck, id: "deck-2", sourceUrl: undefined },
         ]),
       }),
@@ -93,7 +92,6 @@ describe("LibraryDeckContainer", () => {
 
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     expect(importLibraryDeck).toHaveBeenCalledWith(instance.url, capitals);
-    // The deck list's cache entry is refreshed once the deck is in.
     await waitFor(() => expect(useCases.listDecks).toHaveBeenCalledTimes(2));
   });
 

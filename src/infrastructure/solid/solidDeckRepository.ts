@@ -52,9 +52,6 @@ export function createSolidDeckRepository({
     },
 
     async importDeck(instanceUrl, content): Promise<Deck> {
-      // Cards first: a deck listed in the catalog whose cards document
-      // failed to save would look like an empty import; an unlisted cards
-      // document is merely an orphan file.
       const deck = newDeck(instanceUrl, content.name, content);
       let cards = createSolidDataset();
       for (const card of content.cards) {
@@ -123,7 +120,6 @@ export function createSolidDeckRepository({
       if (thing === null) {
         throw new Error(`Card <${card.url}> no longer exists.`);
       }
-      // An edited card is written in this app's format, whatever it was.
       const updated: Card = {
         id: card.id,
         url: card.url,
@@ -144,7 +140,6 @@ export function createSolidDeckRepository({
         deck.cardsDocumentUrl,
         fetch,
       );
-      // No document: nothing the cards could have come from is left.
       if (dataset === null) return;
       const updated = cards.reduce((current, card) => {
         const thing = getThing(current, card.url);
@@ -165,8 +160,6 @@ export function createSolidDeckRepository({
           { fetch },
         );
       }
-      // The review state joins on the same fragment id; remove it too, in
-      // both directions.
       const reviews = await getSolidDatasetOrNull(
         deck.reviewsDocumentUrl,
         fetch,

@@ -25,8 +25,6 @@ export function AddCardForm({
     setDraft(EMPTY_DRAFT);
   }
 
-  // noValidate: what a side needs (text or a picture) is more than the
-  // browser's `required` can say, so the messages come from the domain.
   return (
     <form onSubmit={handleSubmit} noValidate>
       <CardContentFields draft={draft} busy={busy} onChange={setDraft} />

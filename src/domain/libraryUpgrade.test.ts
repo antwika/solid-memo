@@ -54,11 +54,9 @@ describe("planLibraryUpgrade", () => {
   });
 
   it("offers nothing when this app does not know the library's formats", () => {
-    // A deck format from the future: the steps to it are unknown here.
     expect(
       planLibraryUpgrade(copy, { ...source, formatVersion: DECK_FORMAT_VERSION + 1 }),
     ).toBeNull();
-    // Likewise a card format the app cannot read.
     expect(
       planLibraryUpgrade(copy, {
         ...source,
@@ -68,8 +66,6 @@ describe("planLibraryUpgrade", () => {
   });
 
   it("offers nothing when only the version number would move", () => {
-    // The user already studies it the library's way: the ordinary
-    // migration brings the version up.
     expect(planLibraryUpgrade({ ...copy, direction: "bidirectional" }, source)).toBeNull();
   });
 });

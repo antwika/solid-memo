@@ -1,17 +1,6 @@
-/* The app's typeface: Fredoka — round and a little cartoonish, like the
-   logotype. SIL Open Font License 1.1 (free to use, bundle and embed).
-   Self-hosted: bundled by Vite, so no third-party font requests; variable
-   weight 300–700, per-script files load on demand. */
 @import "@fontsource-variable/fredoka";
-
-/* Display face for the big headings (h1, h2): Bangers — comic-book cover
-   lettering. Also SIL OFL 1.1 and self-hosted. */
 @import "@fontsource/bangers";
 
-/* Design tokens. The palette comes from the logotype illustration — cream
-   ground, navy ink, green primary, with its light blue, yellow and red as
-   accents — and every colour below is used through a token so the dark
-   theme only has to redefine this block. */
 :root {
   color-scheme: light dark;
 
@@ -25,16 +14,11 @@
   --border-strong: #cfcbbb;
 
   --primary: #2c6b3d;
-  /* Filled buttons: their ground, its hover, and their text. Kept apart
-     from --primary so the dark theme can brighten its accents (focus
-     ring, ticks) while the fill stays deep enough under light text. */
   --primary-fill: #2c6b3d;
   --primary-hover: #235430;
   --primary-soft: #e6f1e8;
   --on-primary: #ffffff;
   --link: #25603a;
-  /* A hovered link: a gray ground inside a rounded outline. Always a
-     neutral gray — only its lightness follows the surface it sits on. */
   --link-hover-bg: #e4e5e7;
   --link-hover-border: #9a9fa6;
 
@@ -49,11 +33,9 @@
   --warning-soft: #fdf4dc;
   --warning-border: #e6c876;
 
-  /* Cut-paper shapes behind the page, echoing the logotype. */
   --paper-blue: rgba(177, 207, 227, 0.5);
   --paper-yellow: rgba(232, 171, 20, 0.16);
 
-  /* Masthead: the logotype's navy ink, with cream lettering. */
   --masthead-bg: #16202a;
   --masthead-text: #f7f6f1;
   --masthead-border: transparent;
@@ -66,22 +48,14 @@
   --shadow: 0 1px 2px rgba(22, 32, 42, 0.05), 0 8px 24px -12px rgba(22, 32, 42, 0.18);
   --ring: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent);
 
-  /* The "pop" behind big headings: a small offset shadow, like a colour
-     plate printed slightly off-register. Yellow on the page, red on the
-     navy masthead. */
   --heading-pop: var(--accent-yellow);
 
-  /* Big headings (h1, h2). Falls back to the body family, so a script
-     Bangers does not cover still gets a rounded face. */
   --font-display:
     "Bangers", "Fredoka Variable", ui-rounded,
     "Hiragino Maru Gothic ProN", "Arial Rounded MT Bold", system-ui,
     "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic",
     "Noto Sans KR", sans-serif;
 
-  /* One family for everything else; h3 is simply its heaviest weight.
-     Text in scripts Fredoka does not cover (CJK card text and deck names)
-     falls back to rounded, then ordinary, system fonts. */
   font-family:
     "Fredoka Variable", ui-rounded, "Hiragino Maru Gothic ProN",
     "Arial Rounded MT Bold", system-ui, -apple-system, "Segoe UI", Roboto,
@@ -107,8 +81,6 @@
     --border-strong: #3a4859;
 
     --primary: #4fae6a;
-    /* Deeper than --primary: white text on the accent green would fall
-       short of 3:1; on these it clears 4.5:1. */
     --primary-fill: #2a7340;
     --primary-hover: #33864b;
     --primary-soft: #1b3324;
@@ -145,8 +117,6 @@
 body {
   margin: 0;
   min-height: 100vh;
-  /* Two hard-edged circles, like paper cut-outs slipped behind the page.
-     They peek in from the sides, clear of the masthead and its own shapes. */
   background:
     radial-gradient(circle at calc(100% + 5rem) 30rem, var(--paper-blue) 0 17rem, transparent 17.05rem) no-repeat,
     radial-gradient(circle at -4rem 11rem, var(--paper-yellow) 0 9rem, transparent 9.05rem) no-repeat,
@@ -154,8 +124,6 @@ body {
   background-attachment: fixed;
 }
 
-/* The app root is a full-height column so the footer rests at the bottom
-   of the window on short pages. */
 #app {
   display: flex;
   flex-direction: column;
@@ -193,8 +161,6 @@ main {
 h1,
 h2,
 h3 {
-  /* Fredoka's heaviest weight. Its word space is tight when this bold
-     ("Study: Verbs" reads as one word), so open it up a little. */
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: 0;
@@ -202,14 +168,9 @@ h3 {
   text-wrap: balance;
 }
 
-/* The big headings borrow from cartoon magazines — comic lettering, set
-   at a tilt, with a small off-register shadow — but stay in the page's
-   own text colour, so they read as titles rather than shouting.
-   Links inside them (deck names, "Decks") inherit it. */
 h1,
 h2 {
   font-family: var(--font-display);
-  /* Bangers has one weight; synthetic bold would smear it. */
   font-weight: 400;
   line-height: 1.1;
   letter-spacing: 0.04em;
@@ -249,10 +210,6 @@ a:hover {
   text-decoration-thickness: 2px;
 }
 
-/* Hovered text links get a gray background inside a rounded outline. Both are painted with box-shadow rings (a pad in the background
-   colour, then a thin outline), so the link takes no extra space and
-   nothing shifts. Links with a look of their own — buttons, the logo, the
-   wordmark — are left alone. */
 a:not(.button, .brand, .wordmark) {
   border-radius: 0.35em;
   transition:
@@ -267,14 +224,11 @@ a:not(.button, .brand, .wordmark):hover {
     0 0 0 calc(0.22em + 1.5px) var(--link-hover-border);
 }
 
-/* The outline follows each element's own radius. */
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
-/* Inline icons beside titles and names: sized to the text, vertically
-   centred, a touch of air before the word. */
 svg.icon {
   width: 1em;
   height: 1em;
@@ -284,12 +238,9 @@ svg.icon {
 }
 
 h2 svg.icon {
-  /* Comic lettering sits high; the icon meets it mid-height. */
   vertical-align: -0.08em;
 }
 
-/* Header rows: title left, actions right. Wraps instead of squeezing, so
-   long titles and several actions stay legible on a phone. */
 header {
   display: flex;
   flex-wrap: wrap;
@@ -304,14 +255,10 @@ header h2 {
   margin-right: auto;
 }
 
-/* Wide enough a basis that, on a phone, a long title takes the first
-   row and the actions line up together beneath it. */
-section > header h2 {
+section>header h2 {
   flex: 1 1 14rem;
 }
 
-/* A link inside a heading (deck names, "Decks"): heading ink, with a
-   link-coloured underline to show it can be clicked. */
 h2 a {
   color: inherit;
   text-decoration: underline;
@@ -324,15 +271,9 @@ h2 a:hover {
   color: var(--link);
 }
 
-/* Masthead: the site header. A band of the logotype's navy ink, with the
-   logo as a tilted sticker and hard-edged paper shapes (blue, yellow, red)
-   tucked into the right-hand side behind the Log out button. */
 .masthead {
-  /* The navy band carries light text, so its gray is a darker one. */
   --link-hover-bg: #4a525d;
   --link-hover-border: #8d96a2;
-  /* Shape sizes and positions; the phone breakpoint shrinks them so they
-     stay clear of the title. */
   --blob: 6.5rem;
   --dot: 0.5rem;
   --dot-x: 9.6rem;
@@ -355,8 +296,6 @@ h2 a:hover {
 }
 
 header a.brand {
-  /* An image-only link: kill the inline line box so the logo governs
-     the header height. */
   flex: none;
   line-height: 0;
   border-radius: var(--radius);
@@ -372,8 +311,6 @@ header a.brand:hover {
   outline-color: var(--masthead-text);
 }
 
-/* The illustration carries its own cream ground, so it reads as a
-   sticker on the navy band in either theme. */
 header img.logo {
   height: 3.6rem;
   width: auto;
@@ -391,15 +328,12 @@ header img.logo {
 }
 
 .masthead h1 {
-  /* Red pops on the navy band. */
   --heading-pop: var(--accent-red);
   margin: 0;
   font-size: 1.9rem;
   white-space: nowrap;
 }
 
-/* The wordmark is the cover title (see h1). In the masthead it is a link
-   to the root, and jumps a little on hover. */
 .wordmark {
   display: inline-block;
   color: inherit;
@@ -416,8 +350,6 @@ a.wordmark:focus-visible {
 }
 
 .session-line {
-  /* Clips its overflow for the ellipsis, so give the hover ring of the
-     link inside room on every side (cancelled out by the margin). */
   margin: -0.3rem;
   padding: 0.3rem;
   font-size: 0.8rem;
@@ -435,7 +367,6 @@ a.wordmark:focus-visible {
   color: var(--masthead-text);
 }
 
-/* Log out: a cream pill, legible on both the ink and the blue shape. */
 .masthead button {
   flex: none;
   background: var(--masthead-text);
@@ -444,15 +375,12 @@ a.wordmark:focus-visible {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* Log out leans to the right under the pointer (and on keyboard focus),
-   keeping the small lift every button gets. */
 .masthead button:hover:not(:disabled),
 .masthead button:focus-visible {
   background: #ffffff;
   transform: translateY(-1px) rotate(2deg);
 }
 
-/* Pressed: still leaning, pushed in a little. */
 .masthead button:active:not(:disabled) {
   transform: rotate(2deg) scale(0.96);
 }
@@ -461,17 +389,15 @@ a.wordmark:focus-visible {
   outline-color: var(--masthead-text);
 }
 
-/* Signed-out pages: a narrower, centred column under the illustration */
 main.landing {
   max-width: 31rem;
   padding-top: 2.5rem;
 }
 
-main.landing > h1 {
+main.landing>h1 {
   margin: 0.25rem 0 0.4rem;
   font-size: 2.8rem;
   text-align: center;
-  /* Centred, so it tilts about its middle. */
   transform-origin: center;
 }
 
@@ -493,7 +419,6 @@ img.hero {
   transform: rotate(-1.5deg);
 }
 
-/* Screens render as cards */
 section {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -503,11 +428,10 @@ section {
   margin-bottom: 1.5rem;
 }
 
-section > :last-child {
+section> :last-child {
   margin-bottom: 0;
 }
 
-/* Forms: stacked, labels above fields */
 form {
   display: flex;
   flex-direction: column;
@@ -564,7 +488,6 @@ input[type="checkbox"] {
   accent-color: var(--primary);
 }
 
-/* Buttons: quiet by default, one loud primary per screen */
 button,
 a.button {
   display: inline-flex;
@@ -610,7 +533,6 @@ button:disabled {
   box-shadow: none;
 }
 
-/* Primary action: form submit buttons and explicit .primary */
 button[type="submit"],
 button.primary,
 a.button.primary {
@@ -629,8 +551,7 @@ a.button.primary:hover {
   border-color: var(--primary-hover);
 }
 
-/* Buttons keep their natural width inside the stretched form column. */
-form > button {
+form>button {
   align-self: flex-start;
 }
 
@@ -651,7 +572,6 @@ button.icon {
   padding: 0.5rem 0.6rem;
 }
 
-/* Study is the deck's main call-to-action */
 .session-actions {
   display: flex;
   flex-wrap: wrap;
@@ -666,7 +586,6 @@ button.icon {
   font-size: 1.05rem;
 }
 
-/* "N cards studied today" with the option to undo the day */
 .day-reset {
   display: flex;
   flex-wrap: wrap;
@@ -695,7 +614,6 @@ details.add-cards summary {
   font-size: 0.9rem;
 }
 
-/* Messages */
 .error,
 .warning {
   border: 1px solid;
@@ -720,8 +638,6 @@ details.add-cards summary {
   font-size: 0.9rem;
 }
 
-/* The format-update notice: a warning box with the decks it touches and
-   the one button that starts the update. */
 .migration {
   margin-bottom: 1rem;
   padding: 0.85rem 1rem;
@@ -746,8 +662,6 @@ details.add-cards summary {
   font-size: 0.9em;
 }
 
-/* Linked URLs in muted or tinted text keep the surrounding colour; the
-   underline (and hover) is what marks them as links. */
 a.hint,
 .warning a,
 .error a {
@@ -758,7 +672,6 @@ a.hint:hover {
   color: var(--link);
 }
 
-/* Onboarding: Pod provider choice, WebID login, Pod connection */
 .provider-list {
   list-style: none;
   padding: 0;
@@ -777,7 +690,7 @@ a.hint:hover {
   background: var(--surface-sunken);
 }
 
-.provider-list li + li {
+.provider-list li+li {
   margin-top: 0.5rem;
 }
 
@@ -785,7 +698,6 @@ a.hint:hover {
   font-weight: 650;
 }
 
-/* Alternative to typing a WebID: log in at a suggested provider. */
 .provider-login {
   margin-top: 1.5rem;
   padding-top: 1.25rem;
@@ -809,13 +721,11 @@ a.hint:hover {
   margin-top: 0.85rem;
 }
 
-/* The form's submit rule adds its own offsets; the row handles spacing. */
 .onboarding-actions button[type="submit"] {
   align-self: auto;
   margin-top: 0;
 }
 
-/* Labelled facts in a panel: the connected account, a library deck. */
 dl.account,
 dl.facts {
   margin: 0 0 0.75rem;
@@ -838,22 +748,17 @@ dl.facts dt {
 dl.account dd,
 dl.facts dd {
   margin: 0.1rem 0 0.65rem;
-  /* Only a token wider than the line (a URL) breaks mid-word; prose
-     wraps at spaces. */
   overflow-wrap: anywhere;
 }
 
-/* A deck's sources, one per line, inside its facts. */
 dl.facts .sources {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-/* Persistent instance context bar */
 .instance-bar {
   display: flex;
-  /* On a phone the identity takes its own row above the actions. */
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
@@ -883,8 +788,6 @@ dl.facts .sources {
 
 .instance-bar-identity .hint {
   font-size: 0.8rem;
-  /* A link here must be no wider than its text: no invisible click area
-     stretching across the bar. */
   align-self: flex-start;
   max-width: 100%;
 }
@@ -896,7 +799,6 @@ dl.facts .sources {
   box-shadow: none;
 }
 
-/* Breadcrumb trail above each screen */
 .breadcrumbs ol {
   display: flex;
   flex-wrap: wrap;
@@ -914,22 +816,17 @@ dl.facts .sources {
   min-width: 0;
 }
 
-/* The separator trails its item, so a wrapped line never starts with one. */
 .breadcrumbs li:not(:last-child)::after {
   content: "›";
   margin: 0 0.5rem;
   color: var(--border-strong);
 }
 
-/* Every crumb is a link and looks like one: underlined, in the link
-   colour. The current page is the same, only bolder. */
 .breadcrumbs a {
-  /* Long deck names must not push the trail off a phone screen. */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 14rem;
-  /* Comfortable tap target without changing the visual rhythm. */
   padding: 0.25rem 0;
   color: var(--link);
   text-decoration: underline;
@@ -943,7 +840,6 @@ dl.facts .sources {
   font-weight: 700;
 }
 
-/* Item lists (storages, instances, decks): each row is a tile */
 .storage-list,
 .instance-list,
 .deck-list {
@@ -985,23 +881,13 @@ dl.facts .sources {
   font-size: 0.8rem;
 }
 
-/* Deck rows: the whole line opens the deck. The name stays the one real
-   link (keyboard, middle-click, screen readers); an invisible layer
-   stretches it over its row. The layer is positioned against the row —
-   the link itself must stay unpositioned, or its ellipsis clipping would
-   clip the layer too. The row's action floats above the layer.
-   One line only: with wrapping, a long name would claim the first line at
-   its full width and push the counts and Study button to a second line
-   before the name was ever shrunk. Without it, the name is the only item
-   that can shrink (min-width: 0), so it ellipsizes and the action stays
-   on the right. */
 .deck-list li {
   position: relative;
   flex-wrap: nowrap;
 }
 
-.deck-list li > button,
-.deck-list li > .hint {
+.deck-list li>button,
+.deck-list li>.hint {
   flex-shrink: 0;
 }
 
@@ -1012,23 +898,20 @@ dl.facts .sources {
   border-radius: inherit;
 }
 
-.deck-list li > button {
+.deck-list li>button {
   position: relative;
   z-index: 1;
 }
 
-/* "12 to review" beside the row's action. */
 .deck-list .study-counts {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
-/* A green tick where the row's action would be: nothing left today. */
 .deck-list .study-done {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* Same height as the Study button it stands in for, so rows line up. */
   min-height: 2.5rem;
   padding: 0 0.6rem;
   font-size: 1.25rem;
@@ -1041,8 +924,6 @@ dl.facts .sources {
   stroke-width: 2.5;
 }
 
-/* The same slot while the row's queue is first fetched: the loader's
-   dots, smaller, and only after a beat so a fast load never flashes. */
 .deck-list .study-loading {
   display: inline-flex;
   align-items: center;
@@ -1056,10 +937,7 @@ dl.facts .sources {
   transform: scale(0.7);
 }
 
-/* Deck rows: the deck name is the main, prominent link */
 .deck-list .deck-open {
-  /* Hugs the name (so the hover highlight wraps just the name, not the
-     whole row) and pushes the row's action to the right. */
   flex: 0 1 auto;
   margin-right: auto;
   min-width: 0;
@@ -1069,14 +947,10 @@ dl.facts .sources {
   padding: 0.5rem 0.4rem;
   font-weight: 650;
   font-size: 1rem;
-  /* Text ink: the row is already a tile, so the name (and its icon,
-     which takes its colour) needs no link colour of its own; the
-     underline says it can be clicked. */
   color: inherit;
   text-decoration: underline;
 }
 
-/* The deck list's footer: create a deck, or visit the library. */
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -1084,17 +958,6 @@ dl.facts .sources {
   gap: 0.6rem;
 }
 
-/* Library rows: a tile per ready-made deck, ticked to import. Like a
-   deck row, the whole tile opens the deck: the name is the one real link
-   and an invisible layer stretches it over the row (the link itself stays
-   unpositioned so its ellipsis clipping cannot clip the layer); the
-   checkbox floats above the layer so it can still be ticked. The counts
-   sit right.
-   One line only, for the same reason as a deck row: with wrapping, a long
-   name would claim the first line at its full width and push the counts
-   to a second line before the name was ever shrunk. Without it, the name
-   is the only item that can shrink, so it ellipsizes and the counts stay
-   on the right. */
 .library-list {
   list-style: none;
   padding: 0;
@@ -1142,7 +1005,6 @@ dl.facts .sources {
   white-space: nowrap;
   font-size: 1rem;
   font-weight: 650;
-  /* Text ink, like a deck row's name. */
   color: inherit;
   text-decoration: underline;
 }
@@ -1159,14 +1021,11 @@ dl.facts .sources {
   font-variant-numeric: tabular-nums;
 }
 
-/* "By … · CC0 1.0" under a deck's name on the deck page. */
 .provenance {
   display: block;
   margin: -0.25rem 0 0.75rem;
 }
 
-/* The deck's blurb: its own line under the byline on the deck page, a
-   paragraph of its own on a library deck's page. */
 .deck-description {
   display: block;
   margin-top: 0.15rem;
@@ -1179,11 +1038,10 @@ dl.facts .sources {
   font-size: 0.75rem;
 }
 
-.library-list + button {
+.library-list+button {
   align-self: flex-start;
 }
 
-/* Links inside muted text keep its colour. */
 .hint a {
   color: inherit;
 }
@@ -1216,7 +1074,6 @@ fieldset .hint {
   margin: 0.25rem 0 0;
 }
 
-/* Tables: row rules only, inside one rounded frame */
 table {
   width: 100%;
   border-collapse: separate;
@@ -1235,8 +1092,8 @@ td {
   vertical-align: middle;
 }
 
-tr:last-child > th,
-tr:last-child > td {
+tr:last-child>th,
+tr:last-child>td {
   border-bottom: none;
 }
 
@@ -1249,8 +1106,6 @@ th {
   color: var(--text-muted);
 }
 
-/* A Browser row opens the card's page: the links fill their cells, so
-   the whole row is one click target. */
 td.clickable {
   padding: 0;
 }
@@ -1263,7 +1118,6 @@ td.clickable a {
   overflow-wrap: anywhere;
 }
 
-/* The row itself is the hover target here. */
 td.clickable a:hover {
   background-color: transparent;
   box-shadow: none;
@@ -1287,17 +1141,14 @@ td.clickable:first-child a {
   box-shadow: none;
 }
 
-.card-table td button + button {
+.card-table td button+button {
   margin-left: 0.4rem;
 }
 
-/* Highlight the whole row when hovering a card in the Browser
-   (only rows with clickable cells, i.e. not the inline editor row). */
 .card-table tbody tr:has(td.clickable):hover td {
   background: var(--surface-hover);
 }
 
-/* Browser pager: Previous · "Page x of y" · Next, under the card table. */
 .pager {
   display: flex;
   align-items: center;
@@ -1328,7 +1179,6 @@ form.card-edit {
   margin-top: 0;
 }
 
-/* Practice: the flashcard is the hero of the screen */
 .practice-card {
   display: flex;
   flex-direction: column;
@@ -1346,7 +1196,6 @@ form.card-edit {
   box-shadow: inset 0 0 0 4px var(--surface), var(--shadow-sm);
 }
 
-/* A side of the card: its picture (if any) above its text (if any). */
 .card-face {
   display: flex;
   flex-direction: column;
@@ -1360,8 +1209,6 @@ form.card-edit {
   overflow-wrap: anywhere;
 }
 
-/* The side asked is large; the answer, revealed under a rule, smaller —
-   whichever side each happens to be. */
 .card-question p {
   font-size: clamp(2rem, 9vw, 3.25rem);
   font-weight: 700;
@@ -1378,14 +1225,10 @@ form.card-edit {
   font-size: clamp(1.4rem, 5.5vw, 1.8rem);
 }
 
-/* The note that a picture could not be shown keeps its muted size. */
 .card-face p.hint {
   font-size: 0.9em;
 }
 
-/* A picture on a card: as wide as the card allows, never taller than the
-   card is meant to be, on a thin card-stock frame (a flag has no edges
-   of its own). */
 .card-image {
   display: block;
   max-width: min(100%, 24rem);
@@ -1400,7 +1243,6 @@ form.card-edit {
   max-height: 10rem;
 }
 
-/* Beside its text in a Browser row: a small picture, aligned to the text. */
 .card-thumbnail {
   height: 1.5rem;
   width: auto;
@@ -1410,8 +1252,7 @@ form.card-edit {
   border-radius: 3px;
 }
 
-/* Reveal: the one thing to press */
-.practice-card > button {
+.practice-card>button {
   min-height: 3rem;
   padding: 0.7rem 2.5rem;
   font-size: 1.05rem;
@@ -1420,12 +1261,11 @@ form.card-edit {
   color: var(--on-primary);
 }
 
-.practice-card > button:hover:not(:disabled) {
+.practice-card>button:hover:not(:disabled) {
   background: var(--primary-hover);
   border-color: var(--primary-hover);
 }
 
-/* Answer grades run red → green, so the scale reads without the labels. */
 .quality-buttons {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1445,8 +1285,6 @@ form.card-edit {
   background: color-mix(in srgb, var(--grade) 24%, var(--surface));
 }
 
-/* Coloured by the SM-2 grade a button records, so the minimal scale's
-   four buttons take the colours of the grades they map to. */
 .quality-buttons button[data-grade="0"] {
   --grade: #d63a25;
 }
@@ -1481,13 +1319,11 @@ form.card-edit {
   }
 }
 
-/* Radio options with a one-line explanation underneath */
 fieldset label.radio-option .hint {
   display: block;
   margin: 0.1rem 0 0.4rem 1.6rem;
 }
 
-/* Disclosure widgets (attach instance, WebID document viewer) */
 details {
   margin-top: 1rem;
 }
@@ -1517,7 +1353,6 @@ details summary:hover {
   word-break: break-all;
 }
 
-/* Subject URLs, not titles: body weight. */
 .thing h3 {
   font-weight: 500;
 }
@@ -1550,13 +1385,10 @@ details summary:hover {
     border-radius: var(--radius);
   }
 
-  /* The instance's name and URL always get their own row on a phone, with
-     both actions together beneath. */
   .instance-bar-identity {
     flex-basis: 100%;
   }
 
-  /* Smaller shapes, so they stay clear of the title on a phone. */
   .masthead {
     --blob: 4.2rem;
     --dot: 0rem;
@@ -1575,15 +1407,6 @@ details summary:hover {
   }
 }
 
-/* ------------------------------------------------------------------
-   Motion. Two jobs: a loader while data is on its way, and entrances
-   when it lands. Everything is short (≤ 0.45s) with a little overshoot,
-   runs once on mount (fill-mode backwards: it lets go of the element
-   afterwards, so hover effects keep working), and is switched off by
-   prefers-reduced-motion.
-   ------------------------------------------------------------------ */
-
-/* Loader: the logotype's four colours bouncing in turn */
 .loading {
   display: flex;
   align-items: center;
@@ -1591,7 +1414,6 @@ details summary:hover {
   margin: 1rem 0.25rem;
   color: var(--text-muted);
   animation: fade-in 0.3s ease backwards;
-  /* Fast loads never flash a loader: it only fades in after a beat. */
   animation-delay: 0.15s;
 }
 
@@ -1626,15 +1448,17 @@ details summary:hover {
 }
 
 @keyframes dot-bounce {
+
   0%,
   55%,
   100% {
     transform: translateY(0) scaleY(1);
   }
-  /* squash on landing, stretch on the way up */
+
   10% {
     transform: translateY(0) scale(1.15, 0.8);
   }
+
   30% {
     transform: translateY(-0.75rem) scale(0.92, 1.1);
   }
@@ -1646,12 +1470,12 @@ details summary:hover {
   }
 }
 
-/* A screen (card) arriving with its data */
 @keyframes pop-in {
   from {
     opacity: 0;
     transform: translateY(14px) scale(0.98);
   }
+
   65% {
     opacity: 1;
     transform: translateY(-3px) scale(1.004);
@@ -1663,7 +1487,6 @@ section,
   animation: pop-in 0.42s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
 }
 
-/* Nested cards (WebID document subjects) ride in with their parent. */
 section section {
   animation: none;
 }
@@ -1672,12 +1495,12 @@ section section {
   animation: fade-in 0.35s ease backwards;
 }
 
-/* A title stamped on: it drops in over-rotated and settles at its tilt */
 @keyframes stamp-in {
   from {
     opacity: 0;
     transform: rotate(calc(var(--tilt) - 7deg)) scale(1.25);
   }
+
   70% {
     opacity: 1;
     transform: rotate(calc(var(--tilt) + 1deg)) scale(0.98);
@@ -1689,7 +1512,6 @@ h2 {
   animation: stamp-in 0.4s cubic-bezier(0.2, 0.8, 0.3, 1) 0.08s backwards;
 }
 
-/* List rows and table rows cascade in */
 @keyframes row-in {
   from {
     opacity: 0;
@@ -1725,35 +1547,31 @@ h2 {
   animation-delay: 0.2s;
 }
 
-/* From the sixth on they arrive together: a long list must not crawl. */
 :is(.storage-list, .instance-list, .deck-list, .provider-list) li:nth-child(n + 6),
 .card-table tbody tr:nth-child(n + 6) {
   animation-delay: 0.25s;
 }
 
-/* Things that appear once their own data has loaded — a deck row's
-   Study/Practice suggestion, the day-reset note — bounce into place */
 @keyframes bounce-in {
   from {
     opacity: 0;
     transform: scale(0.6);
   }
+
   60% {
     opacity: 1;
     transform: scale(1.08);
   }
 }
 
-.deck-list li > button,
-.deck-list li > .hint,
+.deck-list li>button,
+.deck-list li>.hint,
 .day-reset,
 .session-actions button,
 p[role="status"]:not(.loading) {
   animation: bounce-in 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
 }
 
-/* The flashcard is dealt onto the table; its answer slides out from
-   under the rule, and the grades fan out after it */
 @keyframes deal-in {
   from {
     opacity: 0;
@@ -1801,11 +1619,11 @@ p[role="status"]:not(.loading) {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
     transition: none !important;
-    /* No entrances, and a loader whose dots simply sit still. */
     animation: none !important;
   }
 

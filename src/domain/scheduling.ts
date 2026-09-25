@@ -87,8 +87,6 @@ export function buildStudyQueue(args: {
     })
     .slice(0, dueBudget);
 
-  // New prompts are drawn at random, not in deck order, so a long deck is
-  // not always introduced front to back.
   const newPrompts = shuffle(
     prompts.filter((prompt) => !reviewOf.has(keyOf(prompt))),
     random,
@@ -109,9 +107,6 @@ export function interleave<T>(due: T[], fresh: T[]): T[] {
   let i = 0;
   let j = 0;
   while (i < due.length || j < fresh.length) {
-    // Take from whichever list is proportionally behind (comparing the
-    // midpoints of the next items, so a lone new prompt lands in the
-    // middle), the first prompt being due whenever one exists.
     const dueTurn =
       j >= fresh.length ||
       (i < due.length &&
@@ -146,7 +141,6 @@ export function requeueCard<T>(
   random: () => number,
 ): T[] {
   if (remaining.length === 0) return [card];
-  // Positions 1 … length (after at least one other card).
   const at = 1 + Math.floor(random() * remaining.length);
   return [...remaining.slice(0, at), card, ...remaining.slice(at)];
 }

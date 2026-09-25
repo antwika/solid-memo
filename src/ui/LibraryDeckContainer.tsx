@@ -28,7 +28,6 @@ export function LibraryDeckContainer({
 }) {
   const queryClient = useQueryClient();
 
-  // Shares the deck list's cache entry: says whether this deck is in.
   const decksQuery = useQuery({
     queryKey: ["decks", instance.url],
     queryFn: () => useCases.listDecks(instance.url),

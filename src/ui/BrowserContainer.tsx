@@ -35,8 +35,6 @@ export function BrowserContainer({
     queryFn: () => useCases.listCards(deck),
   });
 
-  // The deck list is keyed by instance; match every ["decks", …] entry
-  // rather than threading the instance through for one cache key.
   const renameDeckMutation = useMutation({
     mutationFn: (name: string) => useCases.renameDeck(deck, name),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["decks"] }),
@@ -47,7 +45,6 @@ export function BrowserContainer({
       useCases.setDeckDirection(deck, direction),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
-      // What is due depends on which way the deck is asked.
       queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
     },
   });
@@ -66,7 +63,6 @@ export function BrowserContainer({
       await queryClient.invalidateQueries({
         queryKey: ["cards", deck.cardsDocumentUrl],
       });
-      // Removing a card also removes its review state.
       await queryClient.invalidateQueries({
         queryKey: ["reviews", deck.reviewsDocumentUrl],
       });

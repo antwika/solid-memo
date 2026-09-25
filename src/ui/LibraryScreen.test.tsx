@@ -71,7 +71,6 @@ describe("LibraryScreen", () => {
       "href",
       `#/library-deck?deck=${rivers.url}`,
     );
-    // The blurb, authors and licence are for the deck's page.
     expect(screen.queryByText(/Anton Wiklund/)).toBeNull();
     expect(screen.queryByText(/from Wikipedia/)).toBeNull();
     expect(screen.queryByRole("link", { name: "CC0 1.0" })).toBeNull();
@@ -91,7 +90,6 @@ describe("LibraryScreen", () => {
   it("marks decks the instance already holds", () => {
     renderScreen({ isImported: (deck) => deck === rivers });
     expect(screen.getAllByText("Already imported")).toHaveLength(1);
-    // Still importable: a second copy may be wanted.
     expect(screen.getByRole("checkbox", { name: "Rivers" })).toBeEnabled();
   });
 

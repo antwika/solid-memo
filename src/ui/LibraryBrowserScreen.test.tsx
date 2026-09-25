@@ -49,7 +49,6 @@ describe("LibraryBrowserScreen", () => {
     expect(
       screen.getByText("2 cards. Import the deck to study or edit them."),
     ).toBeInTheDocument();
-    // Nothing to click or edit: the deck is not the user's.
     expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(screen.queryByRole("button")).toBeNull();
   });

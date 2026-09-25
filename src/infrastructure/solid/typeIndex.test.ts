@@ -349,7 +349,6 @@ describe("createTypeIndex", () => {
   });
 
   it("adopts an existing index document instead of overwriting it", async () => {
-    // Left behind by an earlier run whose profile link failed.
     const leftover = setThing(
       mockSolidDatasetFrom(PRIVATE_INDEX),
       buildThing(createThing({ url: `${PRIVATE_INDEX}#sm-inst-old` }))
@@ -551,7 +550,6 @@ describe("readInstanceRegistrations", () => {
         .addIri(SOLID.instance, "https://alice.example/solid-memo/b/")
         .build(),
     );
-    // Registration for another class: skipped.
     dataset = setThing(
       dataset,
       buildThing(createThing({ url: `${PRIVATE_INDEX}#other` }))
@@ -560,14 +558,12 @@ describe("readInstanceRegistrations", () => {
         .addIri(SOLID.instanceContainer, "https://alice.example/recipes/")
         .build(),
     );
-    // Not a registration: skipped.
     dataset = setThing(
       dataset,
       buildThing(createThing({ url: `${PRIVATE_INDEX}#stray` }))
         .addIri(RDF.type, SOLID.TypeIndex)
         .build(),
     );
-    // Registration without any target: skipped.
     dataset = setThing(
       dataset,
       buildThing(createThing({ url: `${PRIVATE_INDEX}#empty` }))
@@ -635,7 +631,6 @@ describe("removeInstanceRegistrations", () => {
       dataset,
       registration("a", SOLID.instanceContainer, "https://alice.example/solid-memo/a/"),
     );
-    // Same container, other spelling and no trailing slash.
     dataset = setThing(
       dataset,
       registration("a2", SOLID.instance, "https://alice.example/solid-memo/a"),
@@ -644,7 +639,6 @@ describe("removeInstanceRegistrations", () => {
       dataset,
       registration("b", SOLID.instanceContainer, "https://alice.example/solid-memo/b/"),
     );
-    // Another class registered at the same URL: not ours to touch.
     dataset = setThing(
       dataset,
       buildThing(createThing({ url: `${PRIVATE_INDEX}#other` }))
@@ -653,7 +647,6 @@ describe("removeInstanceRegistrations", () => {
         .addIri(SOLID.instanceContainer, "https://alice.example/solid-memo/a/")
         .build(),
     );
-    // Not a registration at all.
     dataset = setThing(
       dataset,
       buildThing(createThing({ url: PRIVATE_INDEX }))

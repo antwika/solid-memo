@@ -13,7 +13,6 @@ import { DCTERMS, RDF, SM } from "../vocab";
 
 const INDEX = "https://solid-memo.com/decks/index.ttl";
 const DOC = "https://solid-memo.com/decks/capitals.ttl";
-// Declared with @base, a deck's own subject need not be its fetch URL.
 const CANONICAL = "https://solid-memo.com/decks/capitals";
 const CC0 = "https://creativecommons.org/publicdomain/zero/1.0/";
 const FLAG = "https://flagcdn.com/af.svg";
@@ -30,7 +29,6 @@ const WIKIPEDIA = "https://en.wikipedia.org/wiki/List_of_national_capitals";
 const WIKIDATA = "https://www.wikidata.org/wiki/Property:P36";
 
 describe("toLibraryDeck", () => {
-  /** An index holding the given subjects. */
   function index(...things: ReturnType<typeof thing>[]): SolidDataset {
     return things.reduce(
       (dataset, t) => setThing(dataset, t),
@@ -78,7 +76,6 @@ describe("toLibraryDeck", () => {
         .addStringNoLocale(DCTERMS.creator, "Wikipedia contributors")
         .addIri(DCTERMS.license, BY_SA),
     );
-    // Described by its author alone: no title, no licence stated.
     const iupac = thing(IUPAC, (t) =>
       t.addStringNoLocale(DCTERMS.creator, "IUPAC"),
     );
@@ -92,7 +89,6 @@ describe("toLibraryDeck", () => {
         license: BY_SA,
       },
       { url: IUPAC, authors: ["IUPAC"] },
-      // Listed but not described: the URL is all there is.
       { url: WIKIDATA, authors: [] },
     ]);
   });
@@ -155,7 +151,6 @@ describe("toLibraryDeckContent", () => {
           .addStringNoLocale(SM.back, "Stockholm")
           .addInteger(SM.formatVersion, 1),
       ),
-      // A picture-only front (card format 2).
       thing(`${CANONICAL}#afghanistan`, (t) =>
         t
           .addIri(RDF.type, SM.Card)
@@ -163,7 +158,6 @@ describe("toLibraryDeckContent", () => {
           .addStringNoLocale(SM.back, "Afghanistan")
           .addInteger(SM.formatVersion, 2),
       ),
-      // Not cards: wrong type, missing back, a picture that is a literal.
       thing(`${CANONICAL}#note`, (t) => t.addStringNoLocale(SM.front, "x")),
       thing(`${CANONICAL}#half`, (t) =>
         t.addIri(RDF.type, SM.Card).addStringNoLocale(SM.front, "Norway"),
@@ -207,8 +201,6 @@ describe("toLibraryDeckContent", () => {
       ),
     );
     const content = toLibraryDeckContent(DOC, dataset);
-    // An untitled deck is named after its URL; no authors, no licence, and
-    // studied the one way format 1 knew.
     expect(content).toEqual({
       url: DOC,
       name: DOC,

@@ -28,7 +28,6 @@ export function CardCreatorContainer({
       await queryClient.invalidateQueries({
         queryKey: ["cards", deck.cardsDocumentUrl],
       });
-      // A new card is a new card to study; the cached queue predates it.
       queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
     },
   });

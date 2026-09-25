@@ -34,7 +34,7 @@ describe("PreferencesContainer", () => {
     renderContainer(
       makeUseCasesFake({
         getPreferences: vi.fn(
-          () => new Promise<StudyPreferences>(() => {}),
+          () => new Promise<StudyPreferences>(() => { }),
         ),
       }),
     );
@@ -68,7 +68,6 @@ describe("PreferencesContainer", () => {
     await waitFor(() => {
       expect(onBack).toHaveBeenCalledOnce();
     });
-    // New caps reshape every deck's queue.
     expect(queryClient.getQueryData(queueKey)).toBeUndefined();
     expect(useCases.savePreferences).toHaveBeenCalledWith(instance.url, {
       newCardsPerDay: 7,

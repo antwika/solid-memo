@@ -44,11 +44,10 @@ describe("App", () => {
   it("shows a restoring indicator while the session check is pending", () => {
     renderApp(
       makeUseCases({
-        restoreSession: vi.fn(() => new Promise<null>(() => {})),
+        restoreSession: vi.fn(() => new Promise<null>(() => { })),
       }),
     );
     expect(screen.getByText("Restoring session…")).toBeInTheDocument();
-    // The attribution footer is there from the very first paint.
     expect(screen.getByRole("contentinfo")).toHaveTextContent(
       "Created by antwika",
     );
@@ -90,7 +89,7 @@ describe("App", () => {
   });
 
   it("logs in with the entered WebID and stays busy while redirecting", async () => {
-    const loginWithWebId = vi.fn(() => new Promise<void>(() => {}));
+    const loginWithWebId = vi.fn(() => new Promise<void>(() => { }));
     const useCases = makeUseCases({ loginWithWebId });
     renderApp(useCases);
 
@@ -103,7 +102,7 @@ describe("App", () => {
   });
 
   it("logs in at a suggested provider without a WebID", async () => {
-    const loginWithProvider = vi.fn(() => new Promise<void>(() => {}));
+    const loginWithProvider = vi.fn(() => new Promise<void>(() => { }));
     const useCases = makeUseCases({ loginWithProvider });
     renderApp(useCases);
 
@@ -114,7 +113,6 @@ describe("App", () => {
 
     expect(loginWithProvider).toHaveBeenCalledWith("https://login.inrupt.com");
     expect(useCases.loginWithWebId).not.toHaveBeenCalled();
-    // Busy while the browser heads to the provider.
     expect(
       await screen.findByRole("button", { name: "Redirecting…" }),
     ).toBeInTheDocument();
@@ -181,11 +179,9 @@ describe("App", () => {
       await screen.findByRole("link", { name: session.webId }),
     ).toBeInTheDocument();
     expect(container.querySelector("header img.logo")).toBeInTheDocument();
-    // The logotype is a link back to the start of the app.
     expect(
       screen.getByRole("link", { name: "Solid Memo — back to start" }),
     ).toHaveAttribute("href", "#/");
-    // So is the title itself.
     expect(screen.getByRole("link", { name: "Solid Memo" })).toHaveAttribute(
       "href",
       "#/",
@@ -194,7 +190,6 @@ describe("App", () => {
     expect(screen.getByRole("contentinfo")).toHaveTextContent(
       "Created by antwika",
     );
-    // The WebID document is a developer tool, never shown by default.
     expect(screen.queryByText("WebID document")).toBeNull();
     expect(useCases.viewWebIdDocument).not.toHaveBeenCalled();
   });
@@ -216,7 +211,6 @@ describe("App", () => {
       await waitFor(() => {
         expect(useCases.discoverAccount).toHaveBeenCalledWith(session);
       });
-      // The app proper stays out of the way until the user continues.
       expect(useCases.listInstances).not.toHaveBeenCalled();
 
       await act(async () =>
@@ -300,7 +294,6 @@ describe("App", () => {
     expect(
       await screen.findByText("Your session has expired. Please log in again."),
     ).toBeInTheDocument();
-    // A returning user skips the Pod-provider pitch.
     expect(
       screen.getByRole("button", { name: "Log in with Solid" }),
     ).toBeInTheDocument();

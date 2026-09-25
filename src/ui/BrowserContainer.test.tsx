@@ -103,7 +103,6 @@ describe("BrowserContainer", () => {
     expect(
       await screen.findByText("No cards in this deck yet."),
     ).toBeInTheDocument();
-    // The removed card may have been in the cached queue.
     expect(queryClient.getQueryData(queueKey)).toBeUndefined();
   });
 

@@ -55,8 +55,6 @@ export function createSolidSessionGateway(clientName: string): SessionGateway {
 
   return {
     async restore() {
-      // The library emits LOGIN only when a login redirect completes; a
-      // silently restored session emits SESSION_RESTORED instead.
       let origin: SessionOrigin = "restored";
       const onLogin = () => {
         origin = "login";

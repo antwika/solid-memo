@@ -27,7 +27,6 @@ describe("parseAuthor", () => {
   it.each([
     "Anton Wiklund",
     "Wikipedia contributors",
-    // Brackets around something that is not an address.
     "Anton <not an address>",
     "Anton <anton@example.com> and friends",
     "Anton <@example.com>",

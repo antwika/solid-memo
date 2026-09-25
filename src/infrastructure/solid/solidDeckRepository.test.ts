@@ -117,9 +117,7 @@ describe("createDeck", () => {
     const thing = getThing(saved as SolidDataset, created.url)!;
     expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Kanji N5");
     expect(getInteger(thing, SM.formatVersion)).toBe(2);
-    // A new deck is studied the one way format 1 knew, stated explicitly.
     expect(getStringNoLocale(thing, SM.direction)).toBe("front-to-back");
-    // Own decks state no author or licence.
     expect(getStringNoLocaleAll(thing, DCTERMS.creator)).toEqual([]);
     expect(getUrl(thing, DCTERMS.license)).toBeNull();
   });
@@ -169,7 +167,6 @@ describe("importDeck", () => {
       name: "Capitals",
       cardsDocumentUrl: `${INSTANCE}decks/deck-fixed.ttl`,
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
-      // The library deck's direction comes along; the format is this app's.
       direction: "bidirectional",
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 2,
@@ -187,7 +184,6 @@ describe("importDeck", () => {
     const sweden = getThing(cards, `${imported.cardsDocumentUrl}#sweden`)!;
     expect(getStringNoLocale(sweden, SM.front)).toBe("Sweden");
     expect(getStringNoLocale(sweden, SM.back)).toBe("Stockholm");
-    // Copies are written in this app's format, whatever the library said.
     expect(getInteger(sweden, SM.formatVersion)).toBe(2);
     const afghanistan = getThing(
       cards,
@@ -196,7 +192,6 @@ describe("importDeck", () => {
     expect(getStringNoLocale(afghanistan, SM.front)).toBeNull();
     expect(getUrl(afghanistan, SM.frontImage)).toBe(FLAG);
     expect(getStringNoLocale(afghanistan, SM.back)).toBe("Afghanistan");
-    // The catalog is only read once the cards are safely written.
     expect(getSolidDatasetOrNull).toHaveBeenCalledTimes(1);
     const entry = getThing(calls[1][1] as SolidDataset, imported.url)!;
     expect(getStringNoLocale(entry, DCTERMS.title)).toBe("Capitals");
@@ -230,7 +225,6 @@ describe("renameDeck", () => {
 
     const renamed = await makeRepository().renameDeck(deck, "Kanji N4");
 
-    // Like every write, in this app's format.
     expect(renamed).toEqual({ ...deck, name: "Kanji N4", formatVersion: 2 });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
@@ -238,7 +232,6 @@ describe("renameDeck", () => {
     expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Kanji N4");
     expect(getInteger(thing, SM.formatVersion)).toBe(2);
     expect(getStringNoLocale(thing, SM.direction)).toBe("front-to-back");
-    // The links to the deck's documents survive the rename.
     expect(getUrl(thing, SM.cardsDocument)).toBe(deck.cardsDocumentUrl);
   });
 
@@ -441,10 +434,8 @@ describe("updateCard", () => {
     expect(getStringNoLocale(thing, SM.front)).toBe("수영하다");
     expect(getStringNoLocale(thing, SM.back)).toBe("to swim");
     expect(getUrl(thing, SM.frontImage)).toBe(FLAG);
-    // The picture that was dropped from the back is gone from the pod too.
     expect(getUrl(thing, SM.backImage)).toBeNull();
     expect(getInteger(thing, SM.formatVersion)).toBe(2);
-    // Triples this app does not know survive the edit.
     expect(
       getStringNoLocale(thing, "https://other.example/vocab#note"),
     ).toBe("kept");
@@ -537,7 +528,6 @@ describe("removeCard", () => {
         .addStringNoLocale(SM.back, card.back)
         .build(),
     );
-    // Review state in both directions goes with the card.
     const reviewsDoc = [
       `${deck.reviewsDocumentUrl}#card-1`,
       `${deck.reviewsDocumentUrl}#card-1@back-to-front`,

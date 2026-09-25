@@ -42,7 +42,6 @@ describe("DeckListScreen", () => {
   it("lists every deck under a Decks heading with a count", () => {
     renderScreen();
     expect(screen.getByRole("heading", { name: "Decks" })).toBeInTheDocument();
-    // Wherever the UI says "Decks", it links to the deck list.
     expect(screen.getByRole("link", { name: "Decks" })).toHaveAttribute(
       "href",
       "#/decks?instance=a",
@@ -80,7 +79,6 @@ describe("DeckListScreen", () => {
     renderScreen();
     expect(screen.getByText("action for Kanji N5")).toBeInTheDocument();
     expect(screen.getByText("action for Kana")).toBeInTheDocument();
-    // The screen itself never suggests studying.
     expect(screen.queryByRole("button", { name: /Study/ })).toBeNull();
   });
 
@@ -88,7 +86,6 @@ describe("DeckListScreen", () => {
     const { container } = renderScreen();
     expect(container.querySelector("h2 svg.icon")).toHaveAttribute("aria-hidden", "true");
     expect(container.querySelectorAll(".deck-open svg.icon")).toHaveLength(2);
-    // Icons never change a link's accessible name.
     expect(screen.getByRole("link", { name: "Decks" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Kanji N5" })).toBeInTheDocument();
   });

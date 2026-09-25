@@ -26,17 +26,11 @@ function AppContent({ useCases }: { useCases: UseCases }) {
   const queryClient = useQueryClient();
   const [checkingSession, setCheckingSession] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
-  // True from a completed login redirect until the user leaves the "Pod
-  // connected" step. Silently restored sessions go straight to the app.
   const [connecting, setConnecting] = useState(false);
-  // Someone who was logged in before skips the Pod-provider pitch.
   const [returning, setReturning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // On every page load, complete a pending OIDC redirect (or restore a
-  // previous session). This is boot-time initialization, not server
-  // state, so it stays an explicit effect rather than a query.
   useEffect(() => {
     void (async () => {
       try {
@@ -53,8 +47,6 @@ function AppContent({ useCases }: { useCases: UseCases }) {
     })();
   }, [useCases]);
 
-  // A 401 from the pod means the tokens are dead: drop to the login
-  // screen and clear any cached pod data.
   useEffect(() => {
     return useCases.onSessionExpired(() => {
       setSession(null);
@@ -65,8 +57,6 @@ function AppContent({ useCases }: { useCases: UseCases }) {
     });
   }, [useCases, queryClient]);
 
-  // Pod discovery for the onboarding step. No automatic retries: the
-  // step has its own "Try again".
   const accountQuery = useQuery({
     queryKey: ["account", session?.webId],
     queryFn: () => useCases.discoverAccount(session!),
@@ -74,8 +64,6 @@ function AppContent({ useCases }: { useCases: UseCases }) {
     retry: false,
   });
 
-  // Either way of logging in ends in a redirect to the identity provider,
-  // so the flow stays busy unless starting it fails.
   async function startLogin(login: () => Promise<void>) {
     setAuthError(null);
     setBusy(true);
@@ -93,7 +81,6 @@ function AppContent({ useCases }: { useCases: UseCases }) {
     setConnecting(false);
     setReturning(true);
     setAuthError(null);
-    // Cached Pod data belongs to the session that fetched it.
     queryClient.clear();
   }
 
@@ -161,8 +148,6 @@ function AppContent({ useCases }: { useCases: UseCases }) {
   return (
     <main>
       <header class="masthead">
-        {/* An empty route: Workspace's default-route logic takes the
-            user back to the start (deck list, or a picker). */}
         <a class="brand" href="#/">
           <img
             class="logo"
@@ -174,7 +159,6 @@ function AppContent({ useCases }: { useCases: UseCases }) {
         </a>
         <div class="masthead-title">
           <h1>
-            {/* Like the logo: back to the root of the app. */}
             <a class="wordmark" href="#/">
               Solid Memo
             </a>

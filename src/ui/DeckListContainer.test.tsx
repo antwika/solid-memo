@@ -38,7 +38,7 @@ const prompt: Prompt = { card, direction: "front-to-back" };
 
 function renderContainer(
   useCases: UseCases,
-  seed: (queryClient: QueryClient) => void = () => {},
+  seed: (queryClient: QueryClient) => void = () => { },
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -132,8 +132,7 @@ describe("DeckListContainer", () => {
   it("shows a cached queue at once while a fresh one is fetched", async () => {
     const useCases = makeUseCasesFake({
       listDecks: vi.fn(async () => [deck]),
-      // The refetch never resolves: what shows is the cache.
-      getStudyQueue: vi.fn(() => new Promise<StudyQueue>(() => {})),
+      getStudyQueue: vi.fn(() => new Promise<StudyQueue>(() => { })),
     });
     renderContainer(useCases, (queryClient) =>
       queryClient.setQueryData(["studyQueue", deck.url], {
@@ -147,8 +146,6 @@ describe("DeckListContainer", () => {
       await screen.findByRole("button", { name: "Study Kanji N5" }),
     ).toBeInTheDocument();
     expect(screen.getByText("2 to review")).toBeInTheDocument();
-    // …and the background refresh was still asked for, without a loader
-    // replacing what is cached.
     await waitFor(() => {
       expect(useCases.getStudyQueue).toHaveBeenCalledOnce();
     });
@@ -156,7 +153,7 @@ describe("DeckListContainer", () => {
   });
 
   it("shows a loader in the action slot until the first queue arrives", async () => {
-    let resolveQueue: (queue: StudyQueue) => void = () => {};
+    let resolveQueue: (queue: StudyQueue) => void = () => { };
     const useCases = makeUseCasesFake({
       listDecks: vi.fn(async () => [deck]),
       getStudyQueue: vi.fn(
@@ -170,7 +167,6 @@ describe("DeckListContainer", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Nothing to study today" })).toBeNull();
 
-    // The loader shows from the first render; the fetch starts a beat later.
     await waitFor(() => {
       expect(useCases.getStudyQueue).toHaveBeenCalledOnce();
     });
@@ -225,13 +221,11 @@ describe("DeckListContainer", () => {
     expect(
       screen.queryByRole("img", { name: "Nothing to study today" }),
     ).toBeNull();
-    // A failed fetch is not a pending one: no loader lingers either.
     await waitFor(() => {
       expect(
         screen.queryByRole("status", { name: "Checking what is due" }),
       ).toBeNull();
     });
-    // The deck itself stays reachable; the error shows up on its page.
     expect(screen.queryByText("reviews unreachable")).toBeNull();
   });
 });

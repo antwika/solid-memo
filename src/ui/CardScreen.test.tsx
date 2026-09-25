@@ -73,7 +73,6 @@ describe("CardScreen", () => {
     const front = container.querySelector(".card-front img")!;
     expect(front).toHaveAttribute("src", FLAG);
     expect(front).toHaveAttribute("alt", "Picture on the front of the card");
-    // With text beside it, the back's picture needs no description.
     expect(container.querySelector(".card-back img")).toHaveAttribute("alt", "");
     expect(container.querySelector(".card-back")).toHaveTextContent(
       "Afghanistan",

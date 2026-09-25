@@ -53,7 +53,6 @@ function renderWorkspace(useCases: UseCases) {
 }
 
 describe("Workspace", () => {
-  // Route state lives in the URL hash; give every test a clean one.
   beforeEach(() => {
     window.history.replaceState(null, "", window.location.pathname);
   });
@@ -61,7 +60,7 @@ describe("Workspace", () => {
   it("shows a loading state while instances are being listed", () => {
     renderWorkspace(
       makeUseCases({
-        listInstances: vi.fn(() => new Promise<Instance[]>(() => {})),
+        listInstances: vi.fn(() => new Promise<Instance[]>(() => { })),
       }),
     );
     expect(
@@ -116,7 +115,7 @@ describe("Workspace", () => {
   it("shows a storage loading state", async () => {
     renderWorkspace(
       makeUseCases({
-        listStorages: vi.fn(() => new Promise<Storage[]>(() => {})),
+        listStorages: vi.fn(() => new Promise<Storage[]>(() => { })),
       }),
     );
     expect(
@@ -143,8 +142,6 @@ describe("Workspace", () => {
   });
 
   it("selects a storage and creates an instance there", async () => {
-    // After creation the instance shows up in the listing, which the
-    // URL router resolves the instance from.
     const useCases = makeUseCases({
       listInstances: vi
         .fn<() => Promise<Instance[]>>()
@@ -343,7 +340,6 @@ describe("Workspace", () => {
       await screen.findByRole("heading", { name: "Study preferences" }),
     ).toBeInTheDocument();
 
-    // No "Back to decks" button: the breadcrumb takes you back.
     const trail = within(screen.getByRole("navigation", { name: "Breadcrumb" }));
     fireEvent.click(trail.getByRole("link", { name: "Decks" }));
     expect(
@@ -503,7 +499,6 @@ describe("Workspace", () => {
       }),
     );
     expect(screen.getByText("Every capital.")).toBeInTheDocument();
-    // The trail leads back through the library.
     const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
     expect(
       within(nav).getByRole("link", { name: "Deck library" }),
@@ -558,12 +553,10 @@ describe("Workspace", () => {
     } as const;
     expect(window.location.hash).toBe(routeToHash(browse));
 
-    // Paging replaces the URL, so Back still leaves the card list.
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(await screen.findByText("Front 11")).toBeInTheDocument();
     expect(window.location.hash).toBe(routeToHash({ ...browse, page: 2 }));
 
-    // The trail leads back to the deck's page.
     const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
     expect(within(nav).getByRole("link", { name: "Cards" })).toHaveAttribute(
       "aria-current",
@@ -647,7 +640,6 @@ describe("Workspace", () => {
       await screen.findByRole("heading", { name: "Kanji N5" }),
     ).toBeInTheDocument();
 
-    // No "Back to decks" button: the breadcrumb takes you back.
     const trail = within(screen.getByRole("navigation", { name: "Breadcrumb" }));
     fireEvent.click(trail.getByRole("link", { name: "Decks" }));
     expect(
@@ -674,7 +666,6 @@ describe("Workspace", () => {
       }),
     );
 
-    // The deck detail is for studying: no card editing there.
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     const browserButton = await screen.findByRole("button", {
       name: "Browser",
@@ -726,7 +717,6 @@ describe("Workspace", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Next" }));
     expect(await screen.findByText("Page 2 of 2")).toBeInTheDocument();
-    // Paging replaces the entry rather than pushing one.
     expect(window.history.length).toBe(historyBefore);
     expect(window.location.hash).toBe(`${browserHash}&page=2`);
 
@@ -835,7 +825,6 @@ describe("Workspace", () => {
       await screen.findByRole("heading", { name: "Browser: Kanji N5" }),
     ).toBeInTheDocument();
 
-    // No "Back to deck" button: the deck's name in the breadcrumb.
     const trail = within(screen.getByRole("navigation", { name: "Breadcrumb" }));
     fireEvent.click(trail.getByRole("link", { name: "Kanji N5" }));
     expect(
@@ -859,7 +848,6 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listDecks: vi.fn(async () => [deck]),
-        // A due card, so the deck detail offers both sessions.
         getStudyQueue: vi.fn(async () => ({
           due: [
             {
@@ -1012,7 +1000,6 @@ describe("Workspace", () => {
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     await screen.findByRole("heading", { name: "Kanji N5" });
 
-    // The browser fires hashchange when the user walks history.
     window.history.replaceState(
       null,
       "",
@@ -1069,7 +1056,6 @@ describe("Workspace", () => {
         "page",
       );
 
-      // And back, via the breadcrumb.
       fireEvent.click(trail.getByRole("link", { name: "Browser" }));
       expect(
         await screen.findByRole("heading", { name: `Browser: ${deck.name}` }),
@@ -1170,7 +1156,6 @@ describe("Workspace", () => {
       });
       renderWorkspace(useCases);
       expect(await screen.findByText("Loading card…")).toBeInTheDocument();
-      // The query starts a tick after the loading state renders.
       await waitFor(() => {
         expect(useCases.listCards).toHaveBeenCalled();
       });
@@ -1261,7 +1246,6 @@ describe("Workspace", () => {
       }),
     );
 
-    // Top level: "Decks" is already there, as a link to the deck list.
     await screen.findByRole("heading", { name: "Decks" });
     expect(
       within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole(
@@ -1279,7 +1263,6 @@ describe("Workspace", () => {
     );
     expect(trail.getByText("Browser")).toHaveAttribute("aria-current", "page");
 
-    // Following a crumb is an ordinary hash navigation.
     const decksHref = trail.getByRole("link", { name: "Decks" }).getAttribute("href")!;
     window.history.pushState(null, "", decksHref);
     fireEvent(window, new Event("hashchange"));
@@ -1300,8 +1283,6 @@ describe("Workspace", () => {
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
     await screen.findByRole("heading", { name: "Kanji N5" });
 
-    // Clicking the logotype navigates to "#/", which parses to no
-    // route and falls back to the default.
     window.history.replaceState(null, "", "#/");
     fireEvent(window, new Event("hashchange"));
 
@@ -1373,7 +1354,7 @@ describe("Workspace", () => {
     renderWorkspace(
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
-        listDecks: vi.fn(() => new Promise<Deck[]>(() => {})),
+        listDecks: vi.fn(() => new Promise<Deck[]>(() => { })),
       }),
     );
 

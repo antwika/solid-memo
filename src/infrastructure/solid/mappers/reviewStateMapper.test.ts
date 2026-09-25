@@ -25,8 +25,6 @@ describe("review state mapping", () => {
     const reverse: ReviewState = { ...state, direction: "back-to-front" };
     const forwardThing = toReviewStateThing(REVIEWS_DOC, state);
     const reverseThing = toReviewStateThing(REVIEWS_DOC, reverse);
-    // The front→back subject is the plain card id, as before directions
-    // existed; the other direction is marked in the fragment.
     expect(forwardThing.url).toBe(`${REVIEWS_DOC}#card-1`);
     expect(reverseThing.url).toBe(`${REVIEWS_DOC}#card-1@back-to-front`);
     expect(toReviewState(reverseThing)).toEqual(reverse);

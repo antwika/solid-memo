@@ -77,8 +77,6 @@ export function LibraryScreen({
           <ul class="library-list">
             {decks.map((deck) => (
               <li key={deck.url}>
-                {/* Named after the deck, as a label would; the name itself
-                    is the row's link, stretched over the row by CSS. */}
                 <input
                   type="checkbox"
                   aria-label={deck.name}

@@ -188,8 +188,6 @@ export function BrowserScreen({
                     </a>
                   </td>
                   <td class="clickable">
-                    {/* Same destination as the front: the whole row is
-                        clickable, but only one link is announced/tabbed. */}
                     <a href={cardHref(card)} tabIndex={-1} aria-hidden="true">
                       <CardThumbnail imageUrl={card.backImageUrl} />
                       {card.back}

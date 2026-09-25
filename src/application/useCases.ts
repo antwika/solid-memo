@@ -199,9 +199,6 @@ export function createUseCases({
     return validation.content;
   }
 
-  // Concurrent reads of one instance's preferences share a single request
-  // (every deck-list row asks at once). Only in-flight reads are shared:
-  // nothing is cached once a read settles, so saves are seen immediately.
   const preferenceReads = new Map<string, Promise<StudyPreferences>>();
 
   function getPreferences(instanceUrl: string): Promise<StudyPreferences> {
@@ -241,7 +238,6 @@ export function createUseCases({
     async discoverAccount(session) {
       const [storages, oidcIssuer] = await Promise.all([
         storageGateway.discoverStorages(session.webId),
-        // Informational only: the Pod matters, the issuer is a nicety.
         sessionGateway
           .discoverOidcIssuer(session.webId)
           .catch(() => undefined),
@@ -341,8 +337,6 @@ export function createUseCases({
     },
     async migrateInstance(instanceUrl) {
       const migrated: MigrationResult = { deckCount: 0, cardCount: 0 };
-      // Deck by deck: a failure part-way leaves whole decks either done or
-      // untouched, and the plan shown afterwards says which remain.
       for (const deck of await deckRepository.listDecks(instanceUrl)) {
         if (isDeckOutdated(deck)) {
           await deckRepository.saveDeck(upgradeDeck(deck));
@@ -383,7 +377,6 @@ export function createUseCases({
         reviewStateRepository.getReviewState(deck, key),
       ]);
       const next = applySm2(current ?? INITIAL_SM2_STATE, quality);
-      // What a reset of today would restore.
       const previous = snapshotBeforeReview(
         current,
         now,

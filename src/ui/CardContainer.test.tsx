@@ -68,7 +68,6 @@ describe("CardContainer", () => {
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["cards", deck.cardsDocumentUrl],
     });
-    // The cached queue carried the old text.
     await waitFor(() => {
       expect(queryClient.getQueryData(queueKey)).toBeUndefined();
     });

@@ -27,9 +27,6 @@ export function DeckDetailContainer({
     queryFn: () => useCases.listCards(deck),
   });
 
-  // Shares its cache entry with StudyContainer. Always refetched on
-  // mount and hidden while fetching: a queue cached before a session or
-  // before adding a card must never be shown as today's state.
   const queueQuery = useQuery({
     queryKey: ["studyQueue", deck.url],
     queryFn: () => useCases.getStudyQueue(instance.url, deck, new Date()),
@@ -42,7 +39,6 @@ export function DeckDetailContainer({
   const resetDayMutation = useMutation({
     mutationFn: () => useCases.resetStudyDay(instance.url, deck, new Date()),
     onSuccess: async () => {
-      // Review state changed under both caches that are derived from it.
       await queryClient.invalidateQueries({
         queryKey: ["reviews", deck.reviewsDocumentUrl],
       });
@@ -56,8 +52,6 @@ export function DeckDetailContainer({
   if (error) {
     return <p class="error">{errorMessage(error)}</p>;
   }
-  // While a reset is running the screen stays up (showing "Resetting…");
-  // only an ordinary (re)load hides it.
   if (
     cardsQuery.data === undefined ||
     queueQuery.data === undefined ||
@@ -79,7 +73,6 @@ export function DeckDetailContainer({
       deckHref={deckHref(instance.url, deck.url)}
       onStudy={onStudy}
       onBrowse={onBrowse}
-      // An imported deck may be offered the library's newer format.
       notice={
         <LibraryUpgradeContainer
           useCases={useCases}
