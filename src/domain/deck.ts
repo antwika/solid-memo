@@ -104,6 +104,8 @@ export interface Deck {
   reviewsDocumentUrl: string;
   /** ISO dateTime. */
   createdAt: string;
+  /** ISO dateTime of the last change to the deck's content, when stated. */
+  modifiedAt?: string;
   formatVersion: number;
   /** How the deck is studied; a deck that states none is front→back. */
   direction: DeckDirection;

@@ -18,6 +18,7 @@ export function deckFromRecord(url: string, storedVersion: number, data: DeckV2)
     cardsDocumentUrl: data.cardsDocument,
     reviewsDocumentUrl: data.reviewsDocument,
     createdAt: data.created ?? "",
+    ...(data.modified === undefined ? {} : { modifiedAt: data.modified }),
     formatVersion: storedVersion,
     direction: data.direction,
     authors: [...data.creator],
@@ -31,6 +32,7 @@ export function deckToRecord(deck: Deck): DeckV2 {
   return {
     title: deck.name,
     ...(deck.createdAt === "" ? {} : { created: deck.createdAt }),
+    ...(deck.modifiedAt === undefined ? {} : { modified: deck.modifiedAt }),
     creator: deck.authors,
     ...(deck.license === undefined ? {} : { license: deck.license }),
     ...(deck.description === undefined ? {} : { description: deck.description }),

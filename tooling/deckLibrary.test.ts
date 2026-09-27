@@ -41,6 +41,7 @@ const ELEMENTS = `${PREFIXES}
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 <> a sm:Deck ; dcterms:title "Elements" ; sm:formatVersion 2 ;
    dcterms:created "2026-09-22T15:49:38.000Z"^^xsd:dateTime ;
+   dcterms:modified "2026-09-27T20:12:13.000Z"^^xsd:dateTime ;
    sm:direction "bidirectional" ;
    dcterms:source <${WIKIPEDIA}>, <${IUPAC}> ;
    dcterms:license <${CC0}> .
@@ -68,7 +69,7 @@ describe("summarizeDeck", () => {
     });
   });
 
-  it("keeps the creation date and describes each source from its own triples", () => {
+  it("keeps the creation and modification dates and describes each source from its own triples", () => {
     expect(summarizeDeck("elements.ttl", ELEMENTS)).toEqual({
       file: "elements.ttl",
       title: "Elements",
@@ -76,6 +77,7 @@ describe("summarizeDeck", () => {
       authors: [],
       license: CC0,
       createdAt: "2026-09-22T15:49:38.000Z",
+      modifiedAt: "2026-09-27T20:12:13.000Z",
       direction: "bidirectional",
       sources: [
         {
@@ -196,10 +198,10 @@ describe("buildIndex", () => {
     expect(index).toContain('<rivers.ttl> a sm:Deck;\n    dcterms:title "Rivers \\"long\\"";\n    sm:cardCount 0.');
   });
 
-  it("carries the creation date and the sources, each described as its own subject", () => {
+  it("carries the dates and the sources, each described as its own subject", () => {
     const index = buildIndex([summarizeDeck("elements.ttl", ELEMENTS)]);
     expect(index).toContain(
-      `<elements.ttl> a sm:Deck;\n    dcterms:title "Elements";\n    sm:cardCount 0;\n    dcterms:license <${CC0}>;\n    dcterms:created "2026-09-22T15:49:38.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>;\n    sm:direction "bidirectional";\n    dcterms:source <${WIKIPEDIA}>, <${IUPAC}>.`,
+      `<elements.ttl> a sm:Deck;\n    dcterms:title "Elements";\n    sm:cardCount 0;\n    dcterms:license <${CC0}>;\n    dcterms:created "2026-09-22T15:49:38.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>;\n    dcterms:modified "2026-09-27T20:12:13.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>;\n    sm:direction "bidirectional";\n    dcterms:source <${WIKIPEDIA}>, <${IUPAC}>.`,
     );
     expect(index).toContain(
       `<${WIKIPEDIA}> dcterms:title "List of chemical elements";\n    dcterms:creator "Wikipedia contributors";\n    dcterms:license <${BY_SA}>.`,

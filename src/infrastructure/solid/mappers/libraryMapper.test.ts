@@ -46,7 +46,8 @@ describe("toLibraryDeck", () => {
         .addStringNoLocale(DCTERMS.creator, "A friend")
         .addIri(DCTERMS.license, CC0)
         .addStringNoLocale(DCTERMS.description, "From Wikipedia.")
-        .addDatetime(DCTERMS.created, new Date("2026-09-22T09:49:00.236Z")),
+        .addDatetime(DCTERMS.created, new Date("2026-09-22T09:49:00.236Z"))
+        .addDatetime(DCTERMS.modified, new Date("2026-09-27T20:12:13.000Z")),
     );
     expect(toLibraryDeck(deck, index(deck))).toEqual({
       url: DOC,
@@ -56,6 +57,7 @@ describe("toLibraryDeck", () => {
       license: CC0,
       description: "From Wikipedia.",
       createdAt: "2026-09-22T09:49:00.236Z",
+      modifiedAt: "2026-09-27T20:12:13.000Z",
       direction: "front-to-back",
       sources: [],
     });

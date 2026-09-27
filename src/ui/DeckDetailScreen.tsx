@@ -67,6 +67,7 @@ export function DeckDetailScreen({
       <DeckProvenance
         authors={deck.authors}
         license={deck.license}
+        modifiedAt={deck.modifiedAt}
         description={deck.description}
       />
       {notice}

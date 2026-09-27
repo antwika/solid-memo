@@ -3,21 +3,14 @@ import type { LibraryDeck, LibrarySource } from "../domain/library";
 import { AuthorNames } from "./AuthorName";
 import { DIRECTION_LABELS } from "./direction";
 import { ExternalLink } from "./ExternalLink";
+import { formatDate } from "./formatDate";
 import { LibraryIcon } from "./icons";
 import { linkify } from "./linkify";
 import { cardCount } from "./studyCounts";
 
-/** "September 22, 2026" — the day the deck says it was made. */
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en", {
-    dateStyle: "long",
-    timeZone: "UTC",
-  });
-}
-
 /**
  * One library deck in full — its blurb, who made it and under what
- * terms, when, and what it was compiled from — with a look at its cards
+ * terms, when it was made and last changed, and what it was compiled from — with a look at its cards
  * and an import button for this deck alone. Everything shown comes from
  * the library index, so any link in it goes through ExternalLink.
  */
@@ -87,6 +80,12 @@ export function LibraryDeckScreen({
           <>
             <dt>Created</dt>
             <dd>{formatDate(deck.createdAt)}</dd>
+          </>
+        )}
+        {deck.modifiedAt !== undefined && (
+          <>
+            <dt>Updated</dt>
+            <dd>{formatDate(deck.modifiedAt)}</dd>
           </>
         )}
         {deck.sources.length > 0 && (

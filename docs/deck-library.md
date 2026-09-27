@@ -79,8 +79,11 @@ In short:
   them, but they are not copied on import — the pod's catalog entry uses
   `dcterms:source` for the library document itself (see
   [In the app](#in-the-app));
-- `dcterms:created` (an `xsd:dateTime`) is optional; the deck's page
-  shows it as the day the deck was made;
+- `dcterms:created` and `dcterms:modified` (each an `xsd:dateTime`) are
+  optional; the deck's page shows them as the day the deck was made and
+  the day it was last changed. Bump `dcterms:modified` when a deck's
+  cards or metadata change, so people can tell an updated deck apart
+  from the copy they imported;
 - the file name is a plain `name.ttl` (no hidden files, no
   subdirectories); `index.ttl` is reserved for the generated index.
 
@@ -131,6 +134,7 @@ flowchart LR
       dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
       dcterms:description "…" ;
       dcterms:created "2026-09-22T09:49:00.236Z"^^xsd:dateTime ;
+      dcterms:modified "2026-09-27T20:12:13.000Z"^^xsd:dateTime ;
       sm:direction "bidirectional" ;
       dcterms:source <https://en.wikipedia.org/wiki/List_of_national_capitals> .
 

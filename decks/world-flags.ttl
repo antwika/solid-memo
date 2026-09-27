@@ -9,10 +9,11 @@
     dcterms:title "World flags" ;
     dcterms:creator "Anton Wiklund <antonwiklund91@gmail.com>" ;
     dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
-    dcterms:description "The list of countries and territories follows https://flagpedia.net/index; the flag images are the public-domain SVGs served by https://flagcdn.com (Flagpedia's CDN), each in its official aspect ratio." ;
+    dcterms:description "The list of countries and territories follows Flagpedia's index; the flag images are public-domain SVGs served by Flagpedia's CDN, each in its official aspect ratio." ;
     dcterms:source <https://flagpedia.net/index> ,
                    <https://flagcdn.com> ;
     dcterms:created "2026-09-22T21:00:10.236Z"^^xsd:dateTime ;
+    dcterms:modified "2026-09-27T20:12:13.000Z"^^xsd:dateTime ;
     solid-memo:direction "bidirectional" ;
     solid-memo:formatVersion 2 .
 

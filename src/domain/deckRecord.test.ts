@@ -21,6 +21,7 @@ const deck: Deck = {
   cardsDocumentUrl: CARDS,
   reviewsDocumentUrl: REVIEWS,
   createdAt: "2026-09-21T10:00:00.000Z",
+  modifiedAt: "2026-09-27T20:12:13.000Z",
   formatVersion: 2,
   direction: "bidirectional",
   authors: ["Anton Wiklund"],
@@ -35,6 +36,7 @@ describe("deck records", () => {
     expect(record).toEqual({
       title: "Capitals",
       created: deck.createdAt,
+      modified: deck.modifiedAt,
       creator: ["Anton Wiklund"],
       license: deck.license,
       description: deck.description,
