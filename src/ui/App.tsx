@@ -164,7 +164,10 @@ function AppContent({ useCases }: { useCases: UseCases }) {
             </a>
           </h1>
           <p class="session-line">
-            Logged in as <ExternalLink url={session.webId} />
+            Logged in as{" "}
+            <ExternalLink url={session.webId}>
+              {accountQuery.data?.name}
+            </ExternalLink>
           </p>
         </div>
         <button onClick={handleLogout}>Log out</button>

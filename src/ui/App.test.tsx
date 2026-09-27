@@ -216,6 +216,7 @@ describe("App", () => {
       await act(async () =>
         resolveAccount({
           webId: session.webId,
+          name: "Alice",
           podUrl: "https://alice.example/",
           oidcIssuer: "https://issuer.example",
         }),
@@ -229,6 +230,13 @@ describe("App", () => {
       expect(
         await screen.findByRole("button", { name: "Log out" }),
       ).toBeInTheDocument();
+      expect(screen.getByText(/Logged in as/)).toHaveTextContent(
+        "Logged in as Alice",
+      );
+      expect(screen.getByRole("link", { name: "Alice" })).toHaveAttribute(
+        "href",
+        session.webId,
+      );
       await waitFor(() => {
         expect(useCases.listInstances).toHaveBeenCalled();
       });

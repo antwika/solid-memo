@@ -1,4 +1,4 @@
-import type { SolidAccount } from "../domain/account";
+import { profileNameOf, type SolidAccount } from "../domain/account";
 import {
   validateCardContent,
   type Card,
@@ -77,7 +77,7 @@ export interface UseCases {
   onSessionExpired(listener: () => void): () => void;
   /**
    * The account behind a session: its Pod, discovered through the WebID
-   * profile's storage link, and its identity provider.
+   * profile's storage link, its identity provider and its foaf:name.
    */
   discoverAccount(session: Session): Promise<SolidAccount>;
   viewWebIdDocument(session: Session): Promise<WebIdDocument>;
@@ -254,13 +254,17 @@ export function createUseCases({
       return sessionGateway.onSessionExpired(listener);
     },
     async discoverAccount(session) {
-      const [storages, oidcIssuer] = await Promise.all([
+      const [storages, oidcIssuer, name] = await Promise.all([
         storageGateway.discoverStorages(session.webId),
         sessionGateway
           .discoverOidcIssuer(session.webId)
           .catch(() => undefined),
+        webIdDocumentRepository
+          .fetchWebIdDocument(session.webId)
+          .then((document) => profileNameOf(document, session.webId))
+          .catch(() => undefined),
       ]);
-      return { webId: session.webId, podUrl: storages[0]?.url, oidcIssuer };
+      return { webId: session.webId, name, podUrl: storages[0]?.url, oidcIssuer };
     },
     async validateInstance(instanceUrl) {
       const decks = await deckRepository.listDecks(instanceUrl);

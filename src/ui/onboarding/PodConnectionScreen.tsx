@@ -4,7 +4,9 @@ import { Loading } from "../Loading";
 
 /**
  * Post-login onboarding step: shows Pod discovery in progress, then the
- * connected account (or why there is none) before entering the app.
+ * connected account (or why there is none) before entering the app. The
+ * WebID is shown by the profile's name when it has one, linked to the
+ * WebID itself.
  */
 export function PodConnectionScreen({
   account,
@@ -54,7 +56,9 @@ export function PodConnectionScreen({
       <section class="onboarding">
         <h2>No Pod found</h2>
         <p class="warning">
-          You are logged in as <ExternalLink url={account.webId} />, but your
+          You are logged in as{" "}
+          <ExternalLink url={account.webId}>{account.name}</ExternalLink>, but
+          your
           WebID profile does not link to a Pod storage, so Solid Memo cannot
           tell where to keep your data.
         </p>
@@ -79,7 +83,7 @@ export function PodConnectionScreen({
       <dl class="account">
         <dt>WebID</dt>
         <dd>
-          <ExternalLink url={account.webId} />
+          <ExternalLink url={account.webId}>{account.name}</ExternalLink>
         </dd>
         <dt>Pod</dt>
         <dd>
