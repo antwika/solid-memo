@@ -28,6 +28,7 @@ const DCTERMS_CREATOR = "http://purl.org/dc/terms/creator";
 const DCTERMS_LICENSE = "http://purl.org/dc/terms/license";
 const DCTERMS_DESCRIPTION = "http://purl.org/dc/terms/description";
 const DCTERMS_CREATED = "http://purl.org/dc/terms/created";
+const DCTERMS_MODIFIED = "http://purl.org/dc/terms/modified";
 const DCTERMS_SOURCE = "http://purl.org/dc/terms/source";
 const SM_DIRECTION = `${SM}direction`;
 const XSD_INTEGER = "http://www.w3.org/2001/XMLSchema#integer";
@@ -49,6 +50,8 @@ export interface DeckSummary {
   description?: string;
   /** When the deck was made (xsd:dateTime), when stated. */
   createdAt?: string;
+  /** When the deck was last changed (xsd:dateTime), when stated. */
+  modifiedAt?: string;
   /** How the deck is meant to be studied, when stated (else front-to-back). */
   direction?: string;
   /** The resources the deck says it was compiled from, in document order. */
@@ -116,6 +119,7 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
   const license = of(deck, DCTERMS_LICENSE).find(isIri);
   const description = of(deck, DCTERMS_DESCRIPTION).find(isLiteral);
   const createdAt = of(deck, DCTERMS_CREATED).find(isLiteral);
+  const modifiedAt = of(deck, DCTERMS_MODIFIED).find(isLiteral);
   const direction = of(deck, SM_DIRECTION).find(isLiteral);
   const sources = of(deck, DCTERMS_SOURCE)
     .filter(isIri)
@@ -141,6 +145,7 @@ export function summarizeDeck(file: string, turtle: string): DeckSummary {
     ...(license === undefined ? {} : { license: license.value }),
     ...(description === undefined ? {} : { description: description.value }),
     ...(createdAt === undefined ? {} : { createdAt: createdAt.value }),
+    ...(modifiedAt === undefined ? {} : { modifiedAt: modifiedAt.value }),
     ...(direction === undefined ? {} : { direction: direction.value }),
     sources,
   };
@@ -182,6 +187,13 @@ export function buildIndex(summaries: DeckSummary[]): string {
         subject,
         namedNode(DCTERMS_CREATED),
         literal(deck.createdAt, namedNode(XSD_DATETIME)),
+      );
+    }
+    if (deck.modifiedAt !== undefined) {
+      writer.addQuad(
+        subject,
+        namedNode(DCTERMS_MODIFIED),
+        literal(deck.modifiedAt, namedNode(XSD_DATETIME)),
       );
     }
     if (deck.direction !== undefined) {

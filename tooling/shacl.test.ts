@@ -18,6 +18,7 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "deck/v2/invalid/missing-direction.ttl": { path: `${SM}direction`, message: "A format-2 deck states its direction" },
   "deck/v2/invalid/pod-without-cards-document.ttl": { path: `${SM}cardsDocument`, message: "Less than 1 values" },
   "deck/v2/invalid/library-with-cards-document.ttl": { path: `${SM}cardsDocument`, message: "A library deck has no cards document" },
+  "deck/v2/invalid/modified-not-a-datetime.ttl": { path: `${DC}modified`, message: "A modification time is an xsd:dateTime" },
   "instance/v1/invalid/missing-created.ttl": { path: `${DC}created`, message: "Less than 1 values" },
   "review-state/v1/invalid/missing-due.ttl": { path: `${SM}due`, message: "The due day is a plain" },
   "review-state/v2/invalid/partial-snapshot.ttl": { message: "A review state is named #<cardId> or #<cardId>@back-to-front, and its previous* snapshot is all five triples or none." },

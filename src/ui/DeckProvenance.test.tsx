@@ -24,6 +24,21 @@ describe("DeckProvenance", () => {
     );
   });
 
+  it("says when the deck was last updated, after the byline", () => {
+    const { container, rerender } = render(
+      <DeckProvenance
+        authors={["Anton Wiklund"]}
+        license={CC0}
+        modifiedAt="2026-09-27T20:12:13.000Z"
+      />,
+    );
+    expect(container.textContent).toBe(
+      "By Anton Wiklund · CC0 1.0 · Updated September 27, 2026",
+    );
+    rerender(<DeckProvenance authors={[]} modifiedAt="2026-09-27T20:12:13.000Z" />);
+    expect(container.textContent).toBe("Updated September 27, 2026");
+  });
+
   it("shows authors alone or the licence alone", () => {
     const { container, rerender } = render(
       <DeckProvenance authors={["Anton Wiklund"]} />,

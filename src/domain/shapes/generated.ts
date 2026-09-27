@@ -45,6 +45,7 @@ export interface DeckV1 {
 export interface DeckV2 {
   readonly title: string;
   readonly created?: string;
+  readonly modified?: string;
   readonly creator: readonly string[];
   readonly license?: string;
   readonly description?: string;
@@ -74,6 +75,7 @@ export interface LibraryDeckV1 {
 export interface LibraryDeckV2 {
   readonly title: string;
   readonly created?: string;
+  readonly modified?: string;
   readonly creator: readonly string[];
   readonly license?: string;
   readonly description?: string;

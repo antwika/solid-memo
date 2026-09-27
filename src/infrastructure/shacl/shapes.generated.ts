@@ -74,6 +74,7 @@ export const DECK_V2: ShapeDescriptor<DeckV2> = {
   fields: [
     { name: "title", predicate: "http://purl.org/dc/terms/title", kind: "string", cardinality: "one" },
     { name: "created", predicate: "http://purl.org/dc/terms/created", kind: "dateTime", cardinality: "optional" },
+    { name: "modified", predicate: "http://purl.org/dc/terms/modified", kind: "dateTime", cardinality: "optional" },
     { name: "creator", predicate: "http://purl.org/dc/terms/creator", kind: "string", cardinality: "many" },
     { name: "license", predicate: "http://purl.org/dc/terms/license", kind: "iri", cardinality: "optional" },
     { name: "description", predicate: "http://purl.org/dc/terms/description", kind: "string", cardinality: "optional" },
@@ -124,6 +125,7 @@ export const LIBRARY_DECK_V2: ShapeDescriptor<LibraryDeckV2> = {
   fields: [
     { name: "title", predicate: "http://purl.org/dc/terms/title", kind: "string", cardinality: "one" },
     { name: "created", predicate: "http://purl.org/dc/terms/created", kind: "dateTime", cardinality: "optional" },
+    { name: "modified", predicate: "http://purl.org/dc/terms/modified", kind: "dateTime", cardinality: "optional" },
     { name: "creator", predicate: "http://purl.org/dc/terms/creator", kind: "string", cardinality: "many" },
     { name: "license", predicate: "http://purl.org/dc/terms/license", kind: "iri", cardinality: "optional" },
     { name: "description", predicate: "http://purl.org/dc/terms/description", kind: "string", cardinality: "optional" },

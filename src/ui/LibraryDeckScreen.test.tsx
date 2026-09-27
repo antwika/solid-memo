@@ -17,6 +17,7 @@ const capitals: LibraryDeck = {
   license: CC0,
   description: `Every country and its capital. Compiled from ${WIKIPEDIA}.`,
   createdAt: "2026-09-22T21:00:10.236Z",
+  modifiedAt: "2026-09-27T20:12:13.000Z",
   direction: "bidirectional",
   sources: [
     {
@@ -72,6 +73,14 @@ describe("LibraryDeckScreen", () => {
     expect(within(fact("Licence")).getByRole("link", { name: "CC0 1.0" }))
       .toHaveAttribute("href", CC0);
     expect(fact("Created")).toHaveTextContent("September 22, 2026");
+    expect(fact("Updated")).toHaveTextContent("September 27, 2026");
+  });
+
+  it("leaves out the dates a deck does not state", () => {
+    const { createdAt: _c, modifiedAt: _m, ...undated } = capitals;
+    renderScreen({ deck: undated });
+    expect(screen.queryByText("Created", { selector: "dt" })).toBeNull();
+    expect(screen.queryByText("Updated", { selector: "dt" })).toBeNull();
   });
 
   it("says which way the deck is studied", () => {

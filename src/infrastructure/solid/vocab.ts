@@ -28,6 +28,8 @@ export const PIM = {
 export const DCTERMS = {
   title: "http://purl.org/dc/terms/title",
   created: "http://purl.org/dc/terms/created",
+  /** When a deck's content was last changed, when it says. */
+  modified: "http://purl.org/dc/terms/modified",
   /**
    * On an imported deck: the library document it was copied from. In the
    * library index: the resources a deck was compiled from.

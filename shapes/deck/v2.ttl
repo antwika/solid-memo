@@ -7,7 +7,8 @@
 @prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
 
 # Deck format 2: format 1 plus the study direction, which a format-2 deck
-# always states. Shaped two ways like format 1: <#inPod> and <#inLibrary>.
+# always states, and an optional modification time. Shaped two ways like
+# format 1: <#inPod> and <#inLibrary>.
 <#inPod>
     a sh:NodeShape ;
     sh:name "DeckV2" ;
@@ -17,6 +18,7 @@
     sh:property <#formatVersion> ,
                 <#title> ,
                 <#created> ,
+                <#modified> ,
                 <#creator> ,
                 <#license> ,
                 <#description> ,
@@ -34,6 +36,7 @@
     sh:property <#formatVersion> ,
                 <#title> ,
                 <#created> ,
+                <#modified> ,
                 <#creator> ,
                 <#license> ,
                 <#description> ,
@@ -63,6 +66,13 @@
     sh:path dcterms:created ;
     sh:datatype xsd:dateTime ;
     sh:maxCount 1 .
+
+<#modified>
+    a sh:PropertyShape ;
+    sh:path dcterms:modified ;
+    sh:datatype xsd:dateTime ;
+    sh:maxCount 1 ;
+    sh:message "A modification time is an xsd:dateTime, like the creation time." .
 
 <#creator>
     a sh:PropertyShape ;

@@ -17,6 +17,8 @@ export interface LibraryDeck {
   direction: DeckDirection;
   /** When the deck was made (ISO 8601), when it says. */
   createdAt?: string;
+  /** When the deck was last changed (ISO 8601), when it says. */
+  modifiedAt?: string;
   /** Where its content came from, as the deck states. */
   sources: LibrarySource[];
 }

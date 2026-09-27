@@ -41,6 +41,7 @@ export function toLibraryDeck(
   const license = getUrl(thing, DCTERMS.license);
   const description = getStringNoLocale(thing, DCTERMS.description);
   const createdAt = getDatetime(thing, DCTERMS.created)?.toISOString();
+  const modifiedAt = getDatetime(thing, DCTERMS.modified)?.toISOString();
   return {
     url,
     name: getStringNoLocale(thing, DCTERMS.title) ?? url,
@@ -50,6 +51,7 @@ export function toLibraryDeck(
     ...(description === null ? {} : { description }),
     direction: toDeckDirection(getStringNoLocale(thing, SM.direction)),
     ...(createdAt === undefined ? {} : { createdAt }),
+    ...(modifiedAt === undefined ? {} : { modifiedAt }),
     sources: getUrlAll(thing, DCTERMS.source).map((sourceUrl) =>
       toLibrarySource(sourceUrl, getThing(index, sourceUrl)),
     ),
