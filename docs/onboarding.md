@@ -69,7 +69,7 @@ caller can skip it). The discovered OIDC issuer passes the same
 ## Pod discovery
 
 `discoverAccount(session)` returns a
-[SolidAccount](../src/domain/account.ts) `{ webId, podUrl?, oidcIssuer? }`:
+[SolidAccount](../src/domain/account.ts) `{ webId, name?, podUrl?, oidcIssuer? }`:
 
 - `podUrl` — first result of `StorageGateway.discoverStorages`: the
   profile's `pim:storage` (`http://www.w3.org/ns/pim/space#storage`)
@@ -78,6 +78,11 @@ caller can skip it). The discovered OIDC issuer passes the same
   the WebID's origin.
 - `oidcIssuer` — the profile's `solid:oidcIssuer`; informational, so a
   failed lookup does not fail discovery.
+- `name` — the profile's `foaf:name` (`profileNameOf` in
+  [domain/account.ts](../src/domain/account.ts)), read from the WebID
+  document; also informational. When present, the masthead's "Logged in
+  as" and the connection screen show it instead of the WebID, as a link
+  to the WebID.
 
 The account is held in the react-query cache (`["account", webId]`) and,
 like all Pod data, is cleared on logout. Nothing is persisted by the app;

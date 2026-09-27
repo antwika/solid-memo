@@ -196,6 +196,7 @@ describe("createUseCases", () => {
     const useCases = createUseCases(deps);
     await expect(useCases.discoverAccount(session)).resolves.toEqual({
       webId: session.webId,
+      name: undefined,
       podUrl: storage.url,
       oidcIssuer: "https://issuer.example",
     });
@@ -205,6 +206,41 @@ describe("createUseCases", () => {
     expect(deps.sessionGateway.discoverOidcIssuer).toHaveBeenCalledWith(
       session.webId,
     );
+  });
+
+  it("discoverAccount takes the name from the profile's foaf:name", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.webIdDocumentRepository.fetchWebIdDocument).mockResolvedValue({
+      url: document.url,
+      subjects: [
+        {
+          url: session.webId,
+          properties: [
+            {
+              predicate: "http://xmlns.com/foaf/0.1/name",
+              values: [{ type: "langString", value: "Alice", language: "en" }],
+            },
+          ],
+        },
+      ],
+    });
+    const useCases = createUseCases(deps);
+    const account = await useCases.discoverAccount(session);
+    expect(account.name).toBe("Alice");
+    expect(
+      deps.webIdDocumentRepository.fetchWebIdDocument,
+    ).toHaveBeenCalledWith(session.webId);
+  });
+
+  it("discoverAccount tolerates an unreadable profile document", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.webIdDocumentRepository.fetchWebIdDocument).mockRejectedValue(
+      new Error("profile unreachable"),
+    );
+    const useCases = createUseCases(deps);
+    const account = await useCases.discoverAccount(session);
+    expect(account.name).toBeUndefined();
+    expect(account.podUrl).toBe(storage.url);
   });
 
   it("discoverAccount leaves the Pod out when no storage is advertised", async () => {
@@ -223,6 +259,7 @@ describe("createUseCases", () => {
     const useCases = createUseCases(deps);
     await expect(useCases.discoverAccount(session)).resolves.toEqual({
       webId: session.webId,
+      name: undefined,
       podUrl: storage.url,
       oidcIssuer: undefined,
     });

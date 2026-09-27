@@ -59,6 +59,23 @@ describe("PodConnectionScreen", () => {
     expect(onContinue).toHaveBeenCalledOnce();
   });
 
+  it("shows the profile's name in place of the WebID, linked to it", () => {
+    renderScreen({ account: { ...account, name: "Alice" } });
+    expect(screen.getByRole("link", { name: "Alice" })).toHaveAttribute(
+      "href",
+      account.webId,
+    );
+    expect(screen.queryByText(account.webId)).not.toBeInTheDocument();
+  });
+
+  it("names the user in the no-Pod message when the profile has a name", () => {
+    renderScreen({ account: { webId: account.webId, name: "Alice" } });
+    expect(screen.getByRole("link", { name: "Alice" })).toHaveAttribute(
+      "href",
+      account.webId,
+    );
+  });
+
   it("omits the identity provider when it is unknown", () => {
     renderScreen({ account: { ...account, oidcIssuer: undefined } });
     expect(screen.queryByText("Identity provider")).not.toBeInTheDocument();
