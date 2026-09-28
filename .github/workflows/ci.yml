@@ -34,7 +34,7 @@ jobs:
       # independent SHACL engine (pySHACL), SPARQL constraints included.
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
           cache: pip
           cache-dependency-path: scripts/requirements-ci.txt
       - run: pip install -r scripts/requirements-ci.txt
