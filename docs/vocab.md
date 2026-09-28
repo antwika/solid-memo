@@ -38,7 +38,7 @@ string, so other applications can look up what it means:
 |---|---|---|---|
 | `sm:StudyDirections` | `packages/vocab/vocab/v1.ttl` | `sm:frontToBack`, `sm:backToFront`, `sm:bidirectional` | `sm:studyDirection` on a deck |
 | `sm:InvalidDataPolicies` | `packages/vocab/vocab/v1.ttl` | `sm:blockInstance` (default), `sm:blockSubject`, `sm:warnOnly` | `sm:invalidDataPolicy` in preferences |
-| Topics (`https://solid-memo.com/vocab/topics`) | [`packages/vocab/vocab/topics.ttl`](../packages/vocab/vocab/topics.ttl) | languages (swedish), geography, computing, science (chemistry) | `dcat:theme` on a deck, next to the EU data theme `EDUC` |
+| Topics (`https://solid-memo.com/vocab/topics`) | [`packages/vocab/vocab/topics.ttl`](../packages/vocab/vocab/topics.ttl) | languages (swedish), geography, computing, science (chemistry), art | `dcat:theme` on a deck, next to the EU data theme `EDUC` |
 
 - Every scheme has a `dcterms:title` and a `skos:definition`; every
   concept an English `skos:prefLabel` and `skos:definition` and its

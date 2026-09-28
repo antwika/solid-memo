@@ -15,7 +15,8 @@
     skos:hasTopConcept topic:languages ,
                        topic:geography ,
                        topic:computing ,
-                       topic:science .
+                       topic:science ,
+                       topic:art .
 
 topic:languages
     a skos:Concept ;
@@ -60,3 +61,10 @@ topic:chemistry
     skos:definition "Elements, compounds and their reactions."@en ;
     skos:inScheme <> ;
     skos:broader topic:science .
+
+topic:art
+    a skos:Concept ;
+    skos:prefLabel "Art"@en ;
+    skos:definition "Paintings, artists and the history of art."@en ;
+    skos:inScheme <> ;
+    skos:topConceptOf <> .

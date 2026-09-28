@@ -240,18 +240,29 @@ describe("validateWithRelease", () => {
 
 describe("readDeckLibrary", () => {
   it("reads, checks and validates the library, released as it is", async () => {
-    const { releases, index, warnings } = await readDeckLibrary(await libraryRoot(), validators);
+    const { releases, index, warnings, previews } = await readDeckLibrary(await libraryRoot(), validators);
     expect(releases).toEqual(CAPITALS);
     expect(index).toBe(buildIndex(CAPITALS));
     expect(warnings).toEqual([]);
+    expect(previews).toEqual([]);
   });
 
-  it("warns of a source with changes not released yet, and of a deck never released", async () => {
-    const root = await libraryRoot({ capitals: NORWAY.replace('"Oslo"', '"Oslo!"'), rivers: RIVERS });
-    const { warnings } = await readDeckLibrary(root, validators);
+  it("warns of a source with changes not released yet, and of a deck never released, previewing their next releases", async () => {
+    const changed = NORWAY.replace('"Oslo"', '"Oslo!"');
+    const root = await libraryRoot({ capitals: changed, rivers: RIVERS });
+    const now = () => new Date("2026-09-28T12:00:00Z");
+    const { warnings, previews } = await readDeckLibrary(root, validators, now);
     expect(warnings).toEqual([
       'decks/capitals.ttl has changed since release 2: npm run deck:release -- capitals --notes "What changed."',
       "decks/rivers.ttl is not released yet: npm run deck:release -- rivers",
+    ]);
+    const info = (deck: string) => ({
+      issued: "2026-09-28T12:00:00.000Z",
+      notes: `Preview of decks/${deck}.ttl, not released: shown by the dev server only.`,
+    });
+    expect(previews).toEqual([
+      { deck: "capitals", version: 3, turtle: releaseText("capitals", changed, { version: 3, ...info("capitals") }) },
+      { deck: "rivers", version: 1, turtle: releaseText("rivers", RIVERS, { version: 1, ...info("rivers") }) },
     ]);
   });
 
@@ -309,6 +320,21 @@ describe("deckLibraryPlugin", () => {
     expect((await request("/decks/capitals.ttl")).res.end).toHaveBeenCalledWith(CAPITALS[1].turtle);
   });
 
+  it("previews an unreleased source in dev as its next release, in the index too", async () => {
+    const index = (await request("/decks/index.ttl")).res.end.mock.calls[0][0] as string;
+    expect(index).toContain("<#rivers>");
+    expect(index).toContain("<rivers/1.ttl>");
+    const rivers = (await request("/decks/rivers/1.ttl")).res.end.mock.calls[0][0] as string;
+    expect(rivers).toContain("Preview of decks/rivers.ttl, not released: shown by the dev server only.");
+    expect((await request("/decks/rivers.ttl")).res.end.mock.calls[0][0]).toContain("Preview of decks/rivers.ttl");
+  });
+
+  it("serves the releases alone in dev when every source is released", async () => {
+    root = await libraryRoot();
+    const index = (await request("/decks/index.ttl")).res.end.mock.calls[0][0] as string;
+    expect(index).toBe(buildIndex(CAPITALS));
+  });
+
   it("passes other requests on", async () => {
     for (const url of ["/index.html", "/decks/missing.ttl", "/decks/capitals/9.ttl", undefined]) {
       const { res, next } = await request(url);
@@ -323,7 +349,7 @@ describe("deckLibraryPlugin", () => {
     expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
 
-  it("emits the library into the build", async () => {
+  it("emits the library into the build, releases only: never a preview", async () => {
     const plugin = deckLibraryPlugin({ root, publicPath: "library", warn: vi.fn(), validators: async () => validators });
     const emitFile = vi.fn();
     await (plugin.generateBundle as unknown as (this: { emitFile: typeof emitFile }) => Promise<void>).call({ emitFile });
