@@ -209,12 +209,33 @@ every dataset.
 
 ## Write discipline
 
-- Mutations always follow `getSolidDataset` → modify → `saveSolidDatasetAt`
-  (issues a PATCH of the delta — never a clobbering PUT). Only brand-new
-  documents are saved from `createSolidDataset()`.
+- Mutations always follow read → modify → save
+  ([datasets.ts](../packages/solid/src/datasets.ts): `readDataset` or
+  `getSolidDatasetOrNull`, then `saveDataset`), which issues a PATCH of the
+  delta — never a clobbering PUT. Only brand-new documents are saved from
+  `createSolidDataset()`.
+- **Every write states what it expects to find**, as an HTTP precondition,
+  so a write never silently undoes someone else's (another tab, device or
+  app):
+  - an edit is sent with `If-Match: <the ETag the document was read with>`;
+    had it changed since, the pod answers 412 and nothing is written;
+  - a creation is sent with `If-None-Match: *` (by
+    `@inrupt/solid-client` for datasets and containers, by the copier for
+    files); had something appeared there meanwhile, 412;
+  - deleting a document read before sends `If-Match` too.
+
+  A 412 surfaces as a `PreconditionFailedError` naming the document
+  ("changed elsewhere … Reload and try again"); nothing retries on its
+  own. Weak ETags (`W/"…"`) are never sent in `If-Match`, whose
+  comparison is strong; a document the pod gives no ETag, or one saved
+  since it was read (pods need not return the new ETag), is written
+  without `If-Match`. The end-to-end tests hold all of this against a
+  real server ([testing.md](testing.md)).
 - 404 is a normal state for not-yet-created documents; repositories treat it
   as empty, not as an error.
-- No `.acl`/`.acr` resources are ever written: a resource without its own
-  ACL safely inherits its ancestors' access, while a malformed one replaces
-  inheritance entirely and can lock the owner out (WAC) or expose data.
-  Access control stays whatever the user's server dictates.
+- No `.acl`/`.acr` resource is ever written except as a rebased copy of
+  one that exists, by the [format update](migrations.md#the-pod-migration):
+  a resource without its own ACL safely inherits its ancestors' access,
+  while a malformed one replaces inheritance entirely and can lock the
+  owner out (WAC) or expose data. Access control stays whatever the
+  user's server dictates.

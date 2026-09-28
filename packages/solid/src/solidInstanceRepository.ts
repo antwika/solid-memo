@@ -2,9 +2,7 @@ import {
   createSolidDataset,
   deleteContainer,
   deleteSolidDataset,
-  getSolidDataset,
   getThing,
-  saveSolidDatasetAt,
   setThing,
 } from "@inrupt/solid-client";
 import type { InstanceRepository } from "@solid-memo/application/ports";
@@ -15,7 +13,7 @@ import {
 } from "@solid-memo/domain/instance";
 import { catalogNodeUrlOf, metaUrlOf } from "@solid-memo/domain/instanceLayout";
 import { deleteContainerRecursively } from "./containers";
-import { getSolidDatasetOrNull } from "./datasets";
+import { getSolidDatasetOrNull, readDataset, saveDataset } from "./datasets";
 import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import {
   toInstance,
@@ -190,7 +188,7 @@ export function createSolidInstanceRepository({
       }
       const updated = setThing(dataset, toInstanceMetaThing(url, meta, existing));
       await checkWrite(updated, [url]);
-      await saveSolidDatasetAt(metaUrl, updated, { fetch });
+      await saveDataset(metaUrl, updated, fetch);
     },
 
     async deleteInstance({ webId, instance }) {
@@ -231,7 +229,7 @@ async function saveMetaDocument(
     toInstanceMetaThing(`${metaUrl}#it`, meta, null),
   );
   await checkWrite(dataset, [`${metaUrl}#it`]);
-  await saveSolidDatasetAt(metaUrl, dataset, { fetch });
+  await saveDataset(metaUrl, dataset, fetch);
 }
 
 async function readInstanceName(
@@ -241,7 +239,7 @@ async function readInstanceName(
   const metaUrl = metaUrlOf(instanceUrl);
   let dataset;
   try {
-    dataset = await getSolidDataset(metaUrl, { fetch });
+    dataset = await readDataset(metaUrl, fetch);
   } catch {
     throw new Error(
       `<${instanceUrl}> is not a Solid Memo instance (no readable meta.ttl).`,

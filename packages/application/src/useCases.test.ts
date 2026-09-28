@@ -157,8 +157,8 @@ function makeDeps() {
     ensureAbsent: vi.fn(async () => undefined),
     createContainer: vi.fn(async () => undefined),
     copyAccessControl: vi.fn(async () => false),
-    copyResource: vi.fn(async () => undefined),
-    fingerprint: vi.fn(async (url: string) => `etag of ${url}`),
+    copyResource: vi.fn(async (from: string) => `version of ${from}`),
+    isUnchanged: vi.fn(async () => true),
     deleteRecursively: vi.fn(async () => undefined),
   };
   const updateJournal = { begin: vi.fn(), end: vi.fn(), staging: vi.fn((): string | null => null) };
@@ -754,13 +754,15 @@ describe("createUseCases", () => {
     it("updateInstance refuses to switch when the original changed while it was copied", async () => {
       const deps = makeDeps();
       vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
-      vi.mocked(deps.instanceCopier.fingerprint).mockResolvedValueOnce("v1").mockResolvedValueOnce("v1").mockResolvedValueOnce("v2");
+      vi.mocked(deps.instanceCopier.isUnchanged).mockResolvedValueOnce(false);
       expect(await createUseCases(deps).updateInstance(session, instance)).toEqual({
         ok: false,
         step: "verify",
         error: `<${instance.url}decks/> changed while it was being copied (in another tab or app?); try again.`,
         cleanedUp: true,
       });
+      // Asked of the version each copy was made from.
+      expect(deps.instanceCopier.isUnchanged).toHaveBeenCalledWith(`${instance.url}decks/`, `version of ${instance.url}decks/`);
       const more = makeDeps();
       vi.mocked(more.deckRepository.listCards).mockResolvedValue([]);
       vi.mocked(more.instanceCopier.listResources)

@@ -1,11 +1,9 @@
 import {
   createSolidDataset,
-  deleteSolidDataset,
   getDatetime,
   getThing,
   getThingAll,
   removeThing,
-  saveSolidDatasetAt,
   setThing,
   type SolidDataset,
   type ThingPersisted,
@@ -24,7 +22,7 @@ import { cardToRecord } from "@solid-memo/domain/deckRecord";
 import { catalogUrlOf, ensureTrailingSlash } from "@solid-memo/domain/instanceLayout";
 import { documentUrlOf } from "@solid-memo/domain/subjectUrl";
 import { CARD_V2 } from "@solid-memo/vocab/descriptors.generated";
-import { getSolidDatasetOrNull } from "./datasets";
+import { deleteDataset, getSolidDatasetOrNull, saveDataset } from "./datasets";
 import { DCTERMS } from "./vocab";
 import {
   deckSubjects,
@@ -56,7 +54,7 @@ export function createSolidDeckRepository({
   /** Save a document once the subjects the write touched are checked. */
   async function save(url: string, dataset: SolidDataset, subjects: readonly string[]): Promise<void> {
     await checkWrite(dataset, subjects);
-    await saveSolidDatasetAt(url, dataset, { fetch });
+    await saveDataset(url, dataset, fetch);
   }
 
   return {
@@ -113,9 +111,7 @@ export function createSolidDeckRepository({
       const catalogUrl = documentUrlOf(deck.url);
       const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
       if (dataset === null) return;
-      await saveSolidDatasetAt(catalogUrl, withoutDeck(dataset, deck), {
-        fetch,
-      });
+      await saveDataset(catalogUrl, withoutDeck(dataset, deck), fetch);
     },
 
     async listCards(deck): Promise<Card[]> {
@@ -213,11 +209,7 @@ export function createSolidDeckRepository({
         fetch,
       );
       if (dataset !== null) {
-        await saveSolidDatasetAt(
-          deck.cardsDocumentUrl,
-          removeThing(dataset, card.url),
-          { fetch },
-        );
+        await saveDataset(deck.cardsDocumentUrl, removeThing(dataset, card.url), fetch);
       }
       const reviews = await getSolidDatasetOrNull(
         deck.reviewsDocumentUrl,
@@ -234,7 +226,7 @@ export function createSolidDeckRepository({
             }),
           );
         }
-        await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
+        await saveDataset(deck.reviewsDocumentUrl, updated, fetch);
       }
     },
   };
@@ -339,6 +331,6 @@ async function deleteDocumentIfPresent(
 ): Promise<void> {
   const existing = await getSolidDatasetOrNull(url, fetch);
   if (existing !== null) {
-    await deleteSolidDataset(url, { fetch });
+    await deleteDataset(url, existing, fetch);
   }
 }

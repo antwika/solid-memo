@@ -2,7 +2,6 @@ import {
   buildThing,
   createSolidDataset,
   createThing,
-  getSolidDataset,
   getSourceUrl,
   getStringNoLocale,
   getThing,
@@ -10,13 +9,12 @@ import {
   getUrl,
   getUrlAll,
   removeThing,
-  saveSolidDatasetAt,
   setThing,
   type SolidDataset,
   type Thing,
   type WithResourceInfo,
 } from "@inrupt/solid-client";
-import { getSolidDatasetOrNull } from "./datasets";
+import { getSolidDatasetOrNull, readDataset, saveDataset } from "./datasets";
 import { ensureTrailingSlash } from "./urls";
 import { DCAT, DCTERMS, FOAF, PIM, RDF, RDFS, SM, SOLID } from "./vocab";
 import {
@@ -44,7 +42,7 @@ export async function locateTypeIndexes(
   webId: string,
   fetch: Fetch,
 ): Promise<TypeIndexLocations> {
-  const profileDataset = await getSolidDataset(webId, { fetch });
+  const profileDataset = await readDataset(webId, fetch);
   const profile = getThing(profileDataset, webId);
   if (profile === null) {
     return { privateIndexUrl: null, publicIndexUrl: null };
@@ -111,7 +109,7 @@ async function readSubjectSafely(
   fetch: Fetch,
 ): Promise<Thing | null> {
   try {
-    const dataset = await getSolidDataset(documentUrl, { fetch });
+    const dataset = await readDataset(documentUrl, fetch);
     return getThing(dataset, webId);
   } catch {
     return null;
@@ -145,7 +143,7 @@ export async function createTypeIndex(
         )
         .build(),
     );
-    await saveSolidDatasetAt(indexUrl, indexDocument, { fetch });
+    await saveDataset(indexUrl, indexDocument, fetch);
   }
   await linkTypeIndexFromProfile(kind, webId, indexUrl, fetch);
   return indexUrl;
@@ -164,7 +162,7 @@ async function linkTypeIndexFromProfile(
   indexUrl: string,
   fetch: Fetch,
 ): Promise<void> {
-  const profileDataset = await getSolidDataset(webId, { fetch });
+  const profileDataset = await readDataset(webId, fetch);
   const profile = getThing(profileDataset, webId);
   if (profile === null) {
     throw new Error(`No subject <${webId}> found in the profile document.`);
@@ -178,9 +176,7 @@ async function linkTypeIndexFromProfile(
       profileDataset,
       buildThing(profile).addIri(predicate, indexUrl).build(),
     );
-    await saveSolidDatasetAt(getSourceUrl(profileDataset), updated, {
-      fetch,
-    });
+    await saveDataset(getSourceUrl(profileDataset), updated, fetch);
     return;
   } catch (error) {
     failures.push(describeFailure(getSourceUrl(profileDataset), error));
@@ -188,14 +184,14 @@ async function linkTypeIndexFromProfile(
 
   for (const documentUrl of extendedProfileUrls(profile, profileDataset)) {
     try {
-      const dataset = await getSolidDataset(documentUrl, { fetch });
+      const dataset = await readDataset(documentUrl, fetch);
       const subject =
         getThing(dataset, webId) ?? createThing({ url: webId });
       const updated = setThing(
         dataset,
         buildThing(subject).addIri(predicate, indexUrl).build(),
       );
-      await saveSolidDatasetAt(documentUrl, updated, { fetch });
+      await saveDataset(documentUrl, updated, fetch);
       return;
     } catch (error) {
       failures.push(describeFailure(documentUrl, error));
@@ -236,7 +232,7 @@ export async function readInstanceRegistrations(
   indexUrl: string,
   fetch: Fetch,
 ): Promise<InstanceRegistration[]> {
-  const dataset = await getSolidDataset(indexUrl, { fetch });
+  const dataset = await readDataset(indexUrl, fetch);
   const registrations: InstanceRegistration[] = [];
   for (const thing of getThingAll(dataset)) {
     const types = getUrlAll(thing, RDF.type);
@@ -259,7 +255,7 @@ export async function addInstanceRegistration(
   registration: { id: string; containerUrl: string; title: string },
   fetch: Fetch,
 ): Promise<void> {
-  const dataset = await getSolidDataset(indexUrl, { fetch });
+  const dataset = await readDataset(indexUrl, fetch);
   const updated = setThing(
     dataset,
     buildThing(createThing({ url: `${indexUrl}#${registration.id}` }))
@@ -269,7 +265,7 @@ export async function addInstanceRegistration(
       .addStringNoLocale(DCTERMS.title, registration.title)
       .build(),
   );
-  await saveSolidDatasetAt(indexUrl, updated, { fetch });
+  await saveDataset(indexUrl, updated, fetch);
 }
 
 /**
@@ -282,7 +278,7 @@ export async function addCatalogRegistration(
   registration: { id: string; catalogUrl: string; title: string },
   fetch: Fetch,
 ): Promise<void> {
-  const dataset = await getSolidDataset(indexUrl, { fetch });
+  const dataset = await readDataset(indexUrl, fetch);
   const registered = getThingAll(dataset).some(
     (thing) =>
       getUrlAll(thing, RDF.type).includes(SOLID.TypeRegistration) &&
@@ -299,7 +295,7 @@ export async function addCatalogRegistration(
       .addStringNoLocale(DCTERMS.title, registration.title)
       .build(),
   );
-  await saveSolidDatasetAt(indexUrl, updated, { fetch });
+  await saveDataset(indexUrl, updated, fetch);
 }
 
 /**
@@ -313,7 +309,7 @@ export async function removeInstanceRegistrations(
   containerUrl: string,
   fetch: Fetch,
 ): Promise<void> {
-  const dataset = await getSolidDataset(indexUrl, { fetch });
+  const dataset = await readDataset(indexUrl, fetch);
   const target = ensureTrailingSlash(containerUrl);
   let updated = dataset;
   for (const thing of getThingAll(dataset)) {
@@ -333,7 +329,7 @@ export async function removeInstanceRegistrations(
     }
   }
   if (updated !== dataset) {
-    await saveSolidDatasetAt(indexUrl, updated, { fetch });
+    await saveDataset(indexUrl, updated, fetch);
   }
 }
 
@@ -371,7 +367,7 @@ export async function switchInstanceRegistrations(
   { from, to, title, catalogId }: { from: string; to: string; title: string; catalogId: string },
   fetch: Fetch,
 ): Promise<boolean> {
-  const dataset = await getSolidDataset(indexUrl, { fetch });
+  const dataset = await readDataset(indexUrl, fetch);
   const source = ensureTrailingSlash(from);
   const target = ensureTrailingSlash(to);
   const catalogOf = (container: string) => `${container}catalog.ttl#catalog`;
@@ -412,6 +408,6 @@ export async function switchInstanceRegistrations(
         .build(),
     );
   }
-  await saveSolidDatasetAt(indexUrl, updated, { fetch });
+  await saveDataset(indexUrl, updated, fetch);
   return true;
 }

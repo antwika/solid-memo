@@ -227,10 +227,20 @@ export interface InstanceCopier {
    * rebased; false when it has none of its own (it inherits).
    */
   copyAccessControl(from: string, to: string, move: ContainerMove): Promise<boolean>;
-  /** Copy one resource: a container is created, RDF rebased, anything else byte for byte. */
-  copyResource(from: string, to: string, move: ContainerMove): Promise<void>;
-  /** What identifies a resource's content now: its ETag, else Last-Modified, else a hash of it. */
-  fingerprint(url: string): Promise<string>;
+  /**
+   * Copy one resource: a container is created, RDF rebased, anything
+   * else byte for byte; the target must not exist yet (If-None-Match: *).
+   * Resolves to the version that was copied (opaque: its ETag, else its
+   * Last-Modified, else a hash of its content), taken from the very
+   * response the copy was made from.
+   */
+  copyResource(from: string, to: string, move: ContainerMove): Promise<string>;
+  /**
+   * Whether the resource is still at that version: asked of the pod with
+   * a conditional request (If-None-Match / If-Modified-Since), which
+   * answers 304 when it is.
+   */
+  isUnchanged(url: string, version: string): Promise<boolean>;
   /** Delete a container and everything below it; one that is gone counts as deleted. */
   deleteRecursively(url: string): Promise<void>;
 }
