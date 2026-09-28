@@ -1,10 +1,18 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
+    "transit": {
+      "dependsOn": [
+        "^transit"
+      ]
+    },
     "typecheck": {
       "inputs": [
         "$TURBO_DEFAULT$",
-        "../../tsconfig.base.json"
+        "$TURBO_ROOT$/tsconfig.base.json"
+      ],
+      "dependsOn": [
+        "transit"
       ]
     },
     "test": {
@@ -13,11 +21,15 @@
       ],
       "inputs": [
         "$TURBO_DEFAULT$",
-        "../../vitest.shared.ts"
+        "$TURBO_ROOT$/vitest.shared.ts"
+      ],
+      "dependsOn": [
+        "transit"
       ]
     },
     "build": {
       "dependsOn": [
+        "transit",
         "^generate:check"
       ],
       "outputs": [
@@ -27,15 +39,26 @@
         "GITHUB_SHA"
       ]
     },
-    "generate:check": {},
+    "generate:check": {
+      "dependsOn": [
+        "transit"
+      ]
+    },
     "format:turtle": {
       "cache": false
     },
-    "format:turtle:check": {},
+    "format:turtle:check": {
+      "dependsOn": [
+        "transit"
+      ]
+    },
     "test:pod": {
       "cache": false,
       "env": [
         "SOLID_SERVER_URL"
+      ],
+      "dependsOn": [
+        "transit"
       ]
     }
   }
