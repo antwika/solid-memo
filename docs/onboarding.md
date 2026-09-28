@@ -1,7 +1,7 @@
 # Onboarding
 
 How a signed-out visitor ends up with a connected Pod. The UI lives in
-[src/ui/onboarding/](../src/ui/onboarding/); everything Solid-specific
+[apps/web/src/ui/onboarding/](../apps/web/src/ui/onboarding/); everything Solid-specific
 stays behind use cases (see [boundaries.md](boundaries.md)).
 
 ## Flow
@@ -39,7 +39,7 @@ redirect just completed.
 
 ## Pod providers
 
-[src/domain/podProvider.ts](../src/domain/podProvider.ts) lists the
+[packages/domain/src/podProvider.ts](../packages/domain/src/podProvider.ts) lists the
 providers suggested (`POD_PROVIDERS`). A provider is data, nothing more —
 a name, its Solid-OIDC issuer, and optionally a sign-up link — so adding a
 provider is adding a list entry:
@@ -60,7 +60,7 @@ Issuers are the exact values each provider advertises in its
 A chosen provider's issuer passes `isSecureUrl` in the use case, like every
 other URL that steers authentication.
 
-`validateWebId` ([src/domain/webId.ts](../src/domain/webId.ts)) accepts
+`validateWebId` ([packages/domain/src/webId.ts](../packages/domain/src/webId.ts)) accepts
 only absolute `https:` URLs without embedded credentials. It runs in the
 form (for the message) and again in the `loginWithWebId` use case (so no
 caller can skip it). The discovered OIDC issuer passes the same
@@ -69,7 +69,7 @@ caller can skip it). The discovered OIDC issuer passes the same
 ## Pod discovery
 
 `discoverAccount(session)` returns a
-[SolidAccount](../src/domain/account.ts) `{ webId, name?, podUrl?, oidcIssuer? }`:
+[SolidAccount](../packages/domain/src/account.ts) `{ webId, name?, podUrl?, oidcIssuer? }`:
 
 - `podUrl` — first result of `StorageGateway.discoverStorages`: the
   profile's `pim:storage` (`http://www.w3.org/ns/pim/space#storage`)
@@ -79,7 +79,7 @@ caller can skip it). The discovered OIDC issuer passes the same
 - `oidcIssuer` — the profile's `solid:oidcIssuer`; informational, so a
   failed lookup does not fail discovery.
 - `name` — the profile's `foaf:name` (`profileNameOf` in
-  [domain/account.ts](../src/domain/account.ts)), read from the WebID
+  [domain/account.ts](../packages/domain/src/account.ts)), read from the WebID
   document; also informational. When present, the masthead's "Logged in
   as" and the connection screen show it instead of the WebID, as a link
   to the WebID.

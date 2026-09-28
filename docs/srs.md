@@ -1,13 +1,13 @@
 # Spaced repetition (SM-2)
 
 How Solid Memo schedules cards. Implemented entirely in the domain layer
-([sm2.ts](../src/domain/sm2.ts), [scheduling.ts](../src/domain/scheduling.ts))
+([sm2.ts](../packages/domain/src/sm2.ts), [scheduling.ts](../packages/domain/src/scheduling.ts))
 as pure functions.
 
 ## Prompts and directions
 
 A session asks *prompts*: a card seen from one side (`Prompt` in
-[deck.ts](../src/domain/deck.ts)). A deck's direction decides which
+[deck.ts](../packages/domain/src/deck.ts)). A deck's direction decides which
 prompts its cards make — front→back, back→front, or both (a
 *bidirectional* deck, two prompts per card). Each prompt is scheduled on
 its own: knowing "Sweden → Stockholm" says nothing about knowing
@@ -73,7 +73,7 @@ for 0–1 and Hard for 2–3, but each button must record one value: Again
 records 1 (0 and 1 schedule identically) and Hard records **3**, the lowest
 passing grade — recording 2 would make Hard a lapse, indistinguishable from
 Again. So on the minimal scale only Again repeats in the session
-([answerScale.ts](../src/domain/answerScale.ts)).
+([answerScale.ts](../packages/domain/src/answerScale.ts)).
 
 ## Study days and the queue
 
@@ -103,7 +103,7 @@ it.
 
 ## Study sessions
 
-A deck offers one session, **Study** ([StudyContainer](../src/ui/StudyContainer.tsx)):
+A deck offers one session, **Study** ([StudyContainer](../apps/web/src/ui/StudyContainer.tsx)):
 today's due prompts plus new ones up to the daily new-card budget, the
 new ones spread evenly among the due (`interleave`) rather than queued
 after them, so a deck with a backlog still introduces something new
@@ -118,7 +118,7 @@ random position (`requeueCard`) — never as the very next card, unless it is
 the only card left, in which case it simply repeats until it passes. The
 "Card x of y" counter grows with each repeat. Each answer runs the
 `recordReview` use case
-([useCases.ts](../src/application/useCases.ts)): load the card's stored
+([useCases.ts](../packages/application/src/useCases.ts)): load the card's stored
 state (or start from the initial SM-2 state), apply the transition, compute
 the next due day, persist to `reviews/<deckId>.ttl`, and return the new
 state. A failed save keeps the card in place with an error; the queue only
@@ -157,7 +157,7 @@ the `sm:previous*` triples) of the state from **before the study day's first
 review** — a second review the same day keeps that snapshot instead of
 replacing it (`snapshotBeforeReview`).
 
-`resetStudyDay` (pure, in [scheduling.ts](../src/domain/scheduling.ts)) then
+`resetStudyDay` (pure, in [scheduling.ts](../packages/domain/src/scheduling.ts)) then
 decides, per card reviewed today:
 
 | Card | Reset does |

@@ -1,69 +1,78 @@
 # Boundaries
 
-Import rules between layers. These are the load-bearing walls of the
+Import rules between packages. These are the load-bearing walls of the
 codebase; a change that violates them is wrong even if it works.
-
-## Rules
-
-| Package / module | Allowed in | Forbidden everywhere else |
-|---|---|---|
-| `@inrupt/solid-client`, `@inrupt/solid-client-authn-browser` | `src/infrastructure/solid/` only | UI, application, domain |
-| `@tanstack/react-query` | `src/ui/` and `src/main.tsx` | application, domain, infrastructure |
-| `preact` | `src/ui/`, `src/main.tsx` | application, domain, infrastructure |
-| `@fontsource/*`, `@fontsource-variable/*` | `src/style.css` | any TypeScript module |
-| `n3` | `tooling/` (build-time parsing, index, generators, the Turtle formatter) | `src/` — the app reads RDF through `@inrupt/solid-client` |
-| `rdf-validate-shacl` | `src/infrastructure/shacl/engine.ts` only (loaded lazily); `tooling/` through that module | everywhere else |
-| `@rdfjs/types` (types only) | `src/infrastructure/shacl/`, `src/test/` | domain, application, UI |
-| Anything (imports at all) | — | `src/domain/` imports nothing except sibling domain modules |
-
-Additional rules:
-
-- UI components never import ports or infrastructure. They receive `UseCases`
-  as a prop.
-- Application imports domain types and nothing else.
-- Infrastructure may import domain types (to map onto them) and application
-  ports (to implement them) — never UI. `src/infrastructure/solid/` may
-  import `src/infrastructure/shacl/` (descriptors and the registry, which
-  are vendor-free data); `@inrupt/solid-client` is also allowed in
-  `src/infrastructure/shacl/` (it parses the shape documents).
-- `tooling/` may import `src/domain/` and `src/infrastructure/shacl/`
-  (both Node-safe); nothing in `src/` imports `tooling/`.
-- Modules reachable from `vite.config.ts` (`tooling/` and
-  `src/infrastructure/shacl/`) spell out `.ts` on relative imports: a
-  future Vite loads the config with Node's own loader, which needs them.
-- Generated files (`*.generated.ts`, `src/domain/shapes/generated.ts`)
-  are never edited by hand: change `vocab/` or `shapes/` and run
-  `npm run generate` ([shapes.md](shapes.md)).
-- `src/main.tsx` is the only module that imports across all layers.
-
-```mermaid
-graph LR
-    subgraph allowed
-        A["ui → application"] --- B["application → domain"] --- C["infrastructure → ports + domain"]
-    end
-    subgraph forbidden
-        X["ui → @inrupt/*"] --- Y["application → @tanstack/*"] --- Z["domain → anything"]
-    end
-```
 
 ## Enforcement
 
-Currently by convention, verified with:
+`npm run check:boundaries` ([checkBoundaries.ts](../scripts/checkBoundaries.ts),
+run by `npm run check` and in CI) reads every import of every workspace
+package and fails on:
 
-```sh
-grep -rn "@inrupt" src --include="*.ts" --include="*.tsx" | grep -v infrastructure | grep -v src/test/
-grep -rn "@tanstack" src | grep -vE "src/(ui|main)"
-grep -rn "from \"n3\"" src
-grep -rn "rdf-validate-shacl" src | grep -v infrastructure/shacl/engine
-```
+- a relative import that leaves its package;
+- an import of a workspace package its layer may not use (the table
+  below), or from a file that may not use it;
+- an import of any package its `package.json` does not declare — npm
+  hoists every dependency to the root, so an undeclared import would
+  otherwise resolve and pass the type check;
+- a node-only import (`node:*`, `n3`, `@solid-memo/turtle`, any
+  package's `tooling/` or `node/` entry) in code that runs in the
+  browser.
 
-All must return nothing (test files mirror their subject's layer and follow
-the same rules). Lint enforcement (`eslint-plugin-boundaries` or
-`import/no-restricted-paths`) is planned but not yet configured.
+Test files follow the same rules as their subject; they and the vitest
+configs may also use the shared test tooling of the root `package.json`.
+
+## Layers
+
+| Package | May import | Only from |
+|---|---|---|
+| `turtle` | — | |
+| `vocab` | `turtle` | `tooling/` (node-only) |
+| `domain` | `vocab` | |
+| `application` | `domain`, `vocab` | |
+| `shacl` | `domain`, `vocab`, `turtle` | `turtle`: `node/` only |
+| `solid` | `application`, `domain`, `vocab`, `shacl` | |
+| `browser` | `application` | |
+| `deck-library` | `vocab`, `shacl`, `turtle` | |
+| `web` | `application`, `domain`, `vocab`, `solid`, `browser`, `deck-library` | `solid`, `browser`: `src/main.tsx` only; `deck-library`: `vite.config.ts` only |
+| `e2e-pod` | `application`, `domain`, `vocab`, `solid` | |
+
+Browser code: `src/` of `domain`, `application`, `shacl`, `solid`,
+`browser` and `web`.
+
+## Vendor libraries
+
+Each is a dependency of exactly one package (and so, by the check, used
+nowhere else):
+
+| Library | Package | Notes |
+|---|---|---|
+| `@inrupt/solid-client`, `@inrupt/solid-client-authn-browser` | `solid` | `shacl` also uses `@inrupt/solid-client` to parse shape documents |
+| `@tanstack/react-query`, `preact` | `web` | UI and `main.tsx` |
+| `@fontsource/*`, `@fontsource-variable/*` | `web` | `src/style.css` only |
+| `rdf-validate-shacl` | `shacl` | `src/engine.ts` only, loaded lazily |
+| `n3` | `turtle`, and the node tooling of `shacl` and `deck-library` | never in the browser |
+| `@solid/community-server` | `e2e-pod` | the local pod the end-to-end tests run against |
+
+## Further rules
+
+- UI components never import ports or adapters. They receive `UseCases`
+  as a prop.
+- Generated files (`packages/vocab/src/*.generated.ts`) are never edited
+  by hand: change `packages/vocab/vocab/` or `packages/vocab/shapes/`
+  and run `npm run generate` ([shapes.md](shapes.md)).
+- Modules reachable from `vite.config.ts` spell out `.ts` on relative
+  imports: Vite can load the config with Node's own loader, which needs
+  them. Imports between packages go through `exports` and carry no
+  extension.
+- `apps/web/src/main.tsx` is the only module that wires the layers
+  together.
 
 ## Adding a dependency
 
-1. Decide which single layer it belongs to.
-2. If it performs I/O, wrap it behind a port in `src/application/ports.ts`
-   and implement the port in `src/infrastructure/`.
-3. Add the confinement rule to the table above.
+1. Decide which single package it belongs to, and add it to that
+   package's `package.json` (`npm install <lib> -w @solid-memo/<package>`).
+2. If it performs I/O, wrap it behind a port in
+   `packages/application/src/ports.ts` and implement the port in an
+   adapter package.
+3. Add it to the vendor table above.

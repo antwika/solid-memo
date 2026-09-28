@@ -33,7 +33,7 @@ flowchart LR
 - The [format update](migrations.md#the-pod-migration) runs the same
   check on its updated copy before switching over: a copy with any
   violation is deleted and the user's instance is left as it was.
-- [shaclShapeValidator.ts](../src/infrastructure/shacl/shaclShapeValidator.ts)
+- [shaclShapeValidator.ts](../packages/solid/src/shaclShapeValidator.ts)
   fetches the document, converts it to an RDF/JS dataset
   (`toRdfJsDataset`) and, for every subject, picks the shape by class
   and stored version exactly as the mappers do (`pickShape`). A subject
@@ -41,12 +41,12 @@ flowchart LR
   does not know: skipped, reported) or `untyped` (no Solid Memo class:
   listed so strays are visible). A document that does not exist is
   `missing`, which is normal, not a problem.
-- The shapes are fetched from the site's own `shapes/` folder
+- The shapes are fetched from the site's own `packages/vocab/shapes/` folder
   (`new URL("shapes/", document.baseURI)`, like the deck library), not
   bundled: they are published anyway, the dev server serves the
   repository's folder, and the document the browser checks against is
   the one CI validated. Each shape document is fetched once per session.
-- The SHACL engine ([engine.ts](../src/infrastructure/shacl/engine.ts),
+- The SHACL engine ([engine.ts](../packages/shacl/src/engine.ts),
   the only module that imports `rdf-validate-shacl`) is loaded with a
   dynamic import, so the library is a separate chunk fetched only when a
   validation is asked for. It validates one focus node against one node
@@ -55,16 +55,16 @@ flowchart LR
 ## Profiles: DCAT-AP and SKOS
 
 Besides Solid Memo's own shapes, data is held to two published
-profiles, vendored verbatim under [vendor/](../vendor/README.md)
-(pinned by commit and sha256 in `vendor/manifest.json`, which a test
+profiles, vendored verbatim under [packages/vocab/vendor/README.md](../packages/vocab/vendor/README.md)
+(pinned by commit and sha256 in `packages/vocab/vendor/manifest.json`, which a test
 checks) and published with the site at `/vendor/`:
 
 | Profile | Shapes | Applies to |
 |---|---|---|
 | `dcat-ap` | DCAT-AP 3.0.1 (SEMIC) | catalogues, decks and deck releases, distributions, agents |
-| `skos` | SkoHub `skos.shacl.ttl` + `skos.bestPractice.shacl.ttl` | the concept schemes under `vocab/` |
+| `skos` | SkoHub `skos.shacl.ttl` + `skos.bestPractice.shacl.ttl` | the concept schemes under `packages/vocab/vocab/` |
 
-- [profiles.ts](../src/infrastructure/shacl/profiles.ts) names each
+- [profiles.ts](../packages/shacl/src/profiles.ts) names each
   profile's files. Their shapes pick their own targets
   (`sh:targetClass`), so a profile checks a whole graph with the
   engine's `validate`, not one subject with `validateNode`.
@@ -74,14 +74,14 @@ checks) and published with the site at `/vendor/`:
 - DCAT-AP's class checks (`dcat:theme` must be a `skos:Concept`,
   `dcterms:language` a `dcterms:LinguisticSystem`, …) look for the
   value's type in the data graph, so the reference data in
-  [vocab/external.ttl](../vocab/external.ttl) (the EU authority-table
+  [packages/vocab/vocab/external.ttl](../packages/vocab/vocab/external.ttl) (the EU authority-table
   entries and media types Solid Memo uses) is loaded next to the data
   being checked. Add a term there before data uses it.
-- At build time `validateProfile` ([tooling/shacl.ts](../tooling/shacl.ts))
+- At build time `validateProfile` ([packages/shacl/node/shacl.ts](../packages/shacl/node/shacl.ts))
   fails on any violation about a subject of the document. Warnings (a
   profile's recommendations) fail too for Solid Memo's own concept
   schemes, which are held to SKOS best practice.
-- Fixtures under `tooling/fixtures/profile/<profile>/{valid,invalid}/`
+- Fixtures under `packages/vocab/fixtures/profile/<profile>/{valid,invalid}/`
   pin every property DCAT-AP makes mandatory on the classes Solid Memo
   writes: title and description on a catalogue, dataset and dataset
   series, a publisher on a catalogue, an access URL on a distribution,
@@ -123,7 +123,7 @@ Every repository write (a deck, its agents and distribution, the
 catalogue, cards, review states, preferences, the instance record) is
 checked before it is saved: the subjects the write touches against their
 shapes, and — in a document with DCAT subjects — against DCAT-AP
-(`checkSubjects` in [shaclShapeValidator.ts](../src/infrastructure/shacl/shaclShapeValidator.ts),
+(`checkSubjects` in [shaclShapeValidator.ts](../packages/solid/src/shaclShapeValidator.ts),
 wired into the repositories as `checkWrite` in `main.tsx`). A write that
 would not conform is refused with every problem named, and nothing is
 saved. Only what the write touches is checked, so a document with an
@@ -131,7 +131,7 @@ old problem elsewhere can still be written to.
 
 ## Repair
 
-`planRepair` ([domain/repair.ts](../src/domain/repair.ts)) turns a
+`planRepair` ([domain/repair.ts](../packages/domain/src/repair.ts)) turns a
 report into repairs for the problems with one safe answer, written in
 the subject's own stored format:
 
@@ -145,7 +145,7 @@ the subject's own stored format:
 
 Every other problem is listed with its document linked, to be fixed
 there or removed (after a confirmation). `applyRepairs`
-([solidRepairRepository.ts](../src/infrastructure/solid/solidRepairRepository.ts))
+([solidRepairRepository.ts](../packages/solid/src/solidRepairRepository.ts))
 reads each document once, applies its repairs, writes it once, and the
 instance is checked again.
 

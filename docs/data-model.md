@@ -1,17 +1,17 @@
 # Data model in the pod
 
 Where Solid Memo stores data in a user's pod and how it finds it again.
-Implemented in `src/infrastructure/solid/` (vocabulary in
-[vocab.ts](../src/infrastructure/solid/vocab.ts), discovery in
-[typeIndex.ts](../src/infrastructure/solid/typeIndex.ts)).
+Implemented in `packages/solid/src/` (vocabulary in
+[vocab.ts](../packages/solid/src/vocab.ts), discovery in
+[typeIndex.ts](../packages/solid/src/typeIndex.ts)).
 
 ## Vocabulary and shapes
 
 Solid Memo mints its own terms under `https://solid-memo.com/vocab/v1#`
 (prefix `sm:` below) — no existing RDF vocabulary covers spaced repetition.
-The terms are defined in [`vocab/v1.ttl`](../vocab/v1.ttl) ([vocab.md](vocab.md));
+The terms are defined in [`packages/vocab/vocab/v1.ttl`](../packages/vocab/vocab/v1.ttl) ([vocab.md](vocab.md));
 what a valid subject of each class looks like, version by version, is a
-SHACL shape under [`shapes/`](../shapes/) ([shapes.md](shapes.md)). Both
+SHACL shape under [`packages/vocab/shapes/`](../packages/vocab/shapes/) ([shapes.md](shapes.md)). Both
 are published with the site, and the app's constants, record types and
 descriptors are generated from them. Readers ignore unknown triples and
 writers never delete triples they don't understand.

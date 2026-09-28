@@ -8,11 +8,12 @@ also runs SPARQL-based constraints (SkoHub's SKOS best practice has
 some), so a disagreement between the engines, or a constraint the
 browser's engine cannot run, fails CI (see docs/validation.md):
 
-- DCAT-AP 3 over the built library: dist/decks/index.ttl and every
-  release dist/decks/<name>/<n>.ttl, each with the index and the
-  reference data (vocab/external.ttl, vocab/topics.ttl) beside it;
+- DCAT-AP 3 over the built library: apps/web/dist/decks/index.ttl and
+  every release apps/web/dist/decks/<name>/<n>.ttl, each with the index
+  and the reference data (vocab/external.ttl, vocab/topics.ttl of the
+  vocab package) beside it;
 - DCAT-AP 3 over a pod catalog document as the app writes it (the
-  format-3 fixture tooling/fixtures/deck/v3/valid/pod.ttl);
+  format-3 fixture packages/vocab/fixtures/deck/v3/valid/pod.ttl);
 - SkoHub's SKOS shapes, best practice included, over vocab/v1.ttl and
   vocab/topics.ttl, where warnings fail too.
 
@@ -32,6 +33,7 @@ from pyshacl import validate
 from rdflib import Graph
 
 ROOT = Path(__file__).resolve().parent.parent
+VOCAB = ROOT / "packages" / "vocab"
 SITE = "https://solid-memo.com/"
 
 
@@ -44,8 +46,8 @@ def graph(*documents: tuple[Path, str]) -> Graph:
 
 
 def site(path: str) -> tuple[Path, str]:
-    """A file of the repository, as the site publishes it."""
-    return ROOT / path, SITE + path
+    """A file of the vocab package, as the site publishes it."""
+    return VOCAB / path, SITE + path
 
 
 def check(label: str, data: Graph, shapes: Graph, *, warnings_fail: bool) -> bool:
@@ -64,9 +66,9 @@ def check(label: str, data: Graph, shapes: Graph, *, warnings_fail: bool) -> boo
 
 
 def main() -> int:
-    dist = ROOT / "dist" / "decks"
+    dist = ROOT / "apps" / "web" / "dist" / "decks"
     if not (dist / "index.ttl").exists():
-        print("dist/decks/index.ttl is missing: run `npm run build` first.")
+        print("apps/web/dist/decks/index.ttl is missing: run `npm run build` first.")
         return 1
     dcat_ap = graph(site("vendor/dcat-ap/3.0.1/dcat-ap-SHACL.ttl"))
     skos = graph(site("vendor/skohub/skos.shacl.ttl"), site("vendor/skohub/skos.bestPractice.shacl.ttl"))
@@ -78,7 +80,7 @@ def main() -> int:
         name = release.relative_to(dist).as_posix()
         data = graph((release, f"{SITE}decks/{name}"), index, *reference)
         results.append(check(f"decks/{name} (DCAT-AP)", data, dcat_ap, warnings_fail=False))
-    pod = (ROOT / "tooling/fixtures/deck/v3/valid/pod.ttl", "https://pod.example/solid-memo/main/catalog.ttl")
+    pod = (VOCAB / "fixtures/deck/v3/valid/pod.ttl", "https://pod.example/solid-memo/main/catalog.ttl")
     results.append(check("a pod catalog document (DCAT-AP)", graph(pod, *reference), dcat_ap, warnings_fail=False))
     for vocab in ("vocab/v1.ttl", "vocab/topics.ttl"):
         results.append(check(f"{vocab} (SKOS, best practice)", graph(site(vocab)), skos, warnings_fail=True))
