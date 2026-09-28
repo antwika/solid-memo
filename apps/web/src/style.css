@@ -1145,7 +1145,11 @@ td.clickable:first-child a {
   text-decoration: underline;
 }
 
-.card-table td:last-child {
+.card-table td {
+  overflow-wrap: anywhere;
+}
+
+.card-table td.actions {
   width: 1%;
   white-space: nowrap;
 }
