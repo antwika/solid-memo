@@ -5,7 +5,6 @@ import {
   getStringNoLocale,
   getThing,
   removeThing,
-  saveSolidDatasetAt,
   setThing,
   type SolidDataset,
   type Thing,
@@ -13,7 +12,7 @@ import {
 import type { RepairRepository } from "@solid-memo/application/ports";
 import { defaultDeckDescription } from "@solid-memo/domain/dcat";
 import type { Repair, RepairKind } from "@solid-memo/domain/repair";
-import { getSolidDatasetOrNull } from "./datasets";
+import { getSolidDatasetOrNull, saveDataset } from "./datasets";
 import { DCTERMS, SM } from "./vocab";
 
 const FOAF_NAME = "http://xmlns.com/foaf/0.1/name";
@@ -44,7 +43,7 @@ export function createSolidRepairRepository({
         const repaired = repairs
           .filter((r) => r.documentUrl === documentUrl)
           .reduce<SolidDataset>((current, repair) => applyRepair(current, repair), dataset);
-        await saveSolidDatasetAt(documentUrl, repaired, { fetch });
+        await saveDataset(documentUrl, repaired, fetch);
       }
     },
   };

@@ -30,7 +30,10 @@ vi.mock("@inrupt/solid-client", async (importOriginal) => {
     deleteSolidDataset: vi.fn(),
   };
 });
-vi.mock("./datasets");
+vi.mock("./datasets", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./datasets")>()),
+  getSolidDatasetOrNull: vi.fn(),
+}));
 
 const INSTANCE = "https://pod.example/solid-memo/a/";
 const FOAF_NAME = "http://xmlns.com/foaf/0.1/name";

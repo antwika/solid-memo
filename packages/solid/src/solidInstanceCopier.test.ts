@@ -34,7 +34,10 @@ vi.mock("@inrupt/solid-client", async (importOriginal) => {
     saveSolidDatasetAt: vi.fn(),
   };
 });
-vi.mock("./datasets");
+vi.mock("./datasets", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./datasets")>()),
+  getSolidDatasetOrNull: vi.fn(),
+}));
 
 const FROM = "https://pod.example/solid-memo/main/";
 const TO = "https://pod.example/solid-memo/main-0f3a/";
@@ -162,14 +165,98 @@ describe("copyAccessControl", () => {
   });
 });
 
-describe("fingerprint", () => {
-  it("is the ETag, else Last-Modified, else a hash of the content", async () => {
-    await expect(copier(fetchOf({ [FROM]: { headers: { ETag: '"v1"' } } })).fingerprint(FROM)).resolves.toBe('"v1"');
+describe("the version a copy was made from", () => {
+  /** A fetch answering from a table, recording each request's method and headers. */
+  function recordingFetch(responses: Record<string, { status?: number; headers?: Record<string, string>; body?: string }>) {
+    const requests: { url: string; method: string; headers: Headers }[] = [];
+    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push({ url: String(input), method: init?.method ?? "GET", headers: new Headers(init?.headers) });
+      const response = responses[String(input)] ?? { status: 404 };
+      return new Response(response.body ?? null, { status: response.status ?? 200, headers: response.headers });
+    }) as unknown as typeof globalThis.fetch;
+    return { fetch, requests };
+  }
+
+  it("is taken from the response the copy was made from, and checked with If-None-Match and the same Accept", async () => {
+    const source = recordingFetch({
+      [`${FROM}catalog.ttl`]: { headers: { "Content-Type": "text/turtle", ETag: '"v1-text/turtle"' } },
+    });
+    vi.mocked(getSolidDataset).mockImplementation((async (url: string, options: { fetch: typeof fetch }) => {
+      await options.fetch(url, { headers: { Accept: "text/turtle" } });
+      return mockSolidDatasetFrom(url);
+    }) as never);
+    const version = await copier(source.fetch).copyResource(`${FROM}catalog.ttl`, `${TO}catalog.ttl`, MOVE);
+
+    const now = (status: number, etag?: string) =>
+      recordingFetch({ [`${FROM}catalog.ttl`]: { status, headers: etag === undefined ? {} : { ETag: etag } } });
+    const unchanged = now(304);
+    await expect(copier(unchanged.fetch).isUnchanged(`${FROM}catalog.ttl`, version)).resolves.toBe(true);
+    expect(unchanged.requests[0]!.method).toBe("HEAD");
+    expect(unchanged.requests[0]!.headers.get("If-None-Match")).toBe('"v1-text/turtle"');
+    expect(unchanged.requests[0]!.headers.get("Accept")).toBe("text/turtle");
+    // A pod that ignores the condition answers 200, with the ETag it has now.
+    await expect(copier(now(200, '"v1-text/turtle"').fetch).isUnchanged(`${FROM}catalog.ttl`, version)).resolves.toBe(true);
+    await expect(copier(now(200, '"v2-text/turtle"').fetch).isUnchanged(`${FROM}catalog.ttl`, version)).resolves.toBe(false);
+    await expect(copier(now(404).fetch).isUnchanged(`${FROM}catalog.ttl`, version)).resolves.toBe(false);
+  });
+
+  it("falls back to Last-Modified (If-Modified-Since), then to a hash of the body", async () => {
+    const date = "Mon, 28 Sep 2026 10:00:00 GMT";
+    vi.mocked(getFile).mockImplementation((async (url: string, options: { fetch: typeof fetch }) => {
+      await options.fetch(url);
+      return new Blob(["png"]);
+    }) as never);
+    const dated = await copier(recordingFetch({ [`${FROM}a.png`]: { headers: { "Last-Modified": date } } }).fetch).copyResource(
+      `${FROM}a.png`,
+      `${TO}a.png`,
+      MOVE,
+    );
+    const check = recordingFetch({ [`${FROM}a.png`]: { status: 304 } });
+    await expect(copier(check.fetch).isUnchanged(`${FROM}a.png`, dated)).resolves.toBe(true);
+    expect(check.requests[0]!.headers.get("If-Modified-Since")).toBe(date);
     await expect(
-      copier(fetchOf({ [FROM]: { headers: { "Last-Modified": "Mon, 28 Sep 2026 10:00:00 GMT" } } })).fingerprint(FROM),
-    ).resolves.toBe("Mon, 28 Sep 2026 10:00:00 GMT");
-    const hash = await copier(fetchOf({ [FROM]: { body: "abc" } })).fingerprint(FROM);
-    expect(hash).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+      copier(recordingFetch({ [`${FROM}a.png`]: { headers: { "Last-Modified": date } } }).fetch).isUnchanged(`${FROM}a.png`, dated),
+    ).resolves.toBe(true);
+    await expect(
+      copier(recordingFetch({ [`${FROM}a.png`]: { headers: { "Last-Modified": "Tue, 29 Sep 2026 10:00:00 GMT" } } }).fetch).isUnchanged(
+        `${FROM}a.png`,
+        dated,
+      ),
+    ).resolves.toBe(false);
+
+    const hashed = await copier(recordingFetch({ [`${FROM}b.png`]: { body: "abc" } }).fetch).copyResource(`${FROM}b.png`, `${TO}b.png`, MOVE);
+    expect(JSON.parse(hashed).sha256).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    await expect(copier(recordingFetch({ [`${FROM}b.png`]: { body: "abc" } }).fetch).isUnchanged(`${FROM}b.png`, hashed)).resolves.toBe(true);
+    await expect(copier(recordingFetch({ [`${FROM}b.png`]: { body: "abd" } }).fetch).isUnchanged(`${FROM}b.png`, hashed)).resolves.toBe(false);
+    await expect(copier(recordingFetch({}).fetch).isUnchanged(`${FROM}b.png`, hashed)).resolves.toBe(false);
+  });
+
+  it("of a container is what it lists, read with a HEAD", async () => {
+    const source = recordingFetch({ [`${FROM}decks/`]: { headers: { ETag: '"c1"' } } });
+    const version = await copier(source.fetch).copyResource(`${FROM}decks/`, `${TO}decks/`, MOVE);
+    expect(source.requests[0]).toMatchObject({ url: `${FROM}decks/`, method: "HEAD" });
+    expect(JSON.parse(version)).toMatchObject({ etag: '"c1"', accept: "text/turtle" });
+  });
+
+  it("makes a copy only where nothing is yet: If-None-Match: *", async () => {
+    vi.mocked(getFile).mockResolvedValue(new Blob(["png"]) as never);
+    const target = recordingFetch({ [`${TO}a.png`]: { status: 201 } });
+    vi.mocked(overwriteFile).mockImplementation((async (url: string, _file: Blob, options: { fetch: typeof fetch }) => {
+      await options.fetch(url, { method: "PUT" });
+      await options.fetch(url, { method: "HEAD" });
+      await options.fetch(url);
+    }) as never);
+    await copier(target.fetch).copyResource(`${FROM}a.png`, `${TO}a.png`, MOVE);
+    const put = target.requests.find((r) => r.method === "PUT")!;
+    expect(put.headers.get("If-None-Match")).toBe("*");
+    expect(target.requests.find((r) => r.url === `${TO}a.png` && r.method === "HEAD")!.headers.has("If-None-Match")).toBe(false);
+
+    vi.mocked(overwriteFile).mockRejectedValueOnce(Object.assign(new Error("412"), { statusCode: 412 }));
+    await expect(copier(target.fetch).copyResource(`${FROM}a.png`, `${TO}a.png`, MOVE)).rejects.toThrow(
+      `${TO}a.png was created elsewhere`,
+    );
+    vi.mocked(overwriteFile).mockRejectedValueOnce(new Error("offline"));
+    await expect(copier(target.fetch).copyResource(`${FROM}a.png`, `${TO}a.png`, MOVE)).rejects.toThrow("offline");
   });
 });
 

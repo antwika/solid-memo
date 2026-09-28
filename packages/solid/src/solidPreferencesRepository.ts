@@ -1,13 +1,12 @@
 import {
   createSolidDataset,
   getThing,
-  saveSolidDatasetAt,
   setThing,
 } from "@inrupt/solid-client";
 import type { PreferencesRepository } from "@solid-memo/application/ports";
 import { preferencesUrlOf } from "@solid-memo/domain/instanceLayout";
 import type { StoredPreferences } from "@solid-memo/domain/preferences";
-import { getSolidDatasetOrNull } from "./datasets";
+import { getSolidDatasetOrNull, saveDataset } from "./datasets";
 import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import { toPreferences, toPreferencesThing } from "./mappers/preferencesMapper";
 
@@ -43,7 +42,7 @@ export function createSolidPreferencesRepository({
         toPreferencesThing(url, preferences, getThing(dataset, url)),
       );
       await checkWrite(updated, [url]);
-      await saveSolidDatasetAt(documentUrl, updated, { fetch });
+      await saveDataset(documentUrl, updated, fetch);
     },
   };
 }

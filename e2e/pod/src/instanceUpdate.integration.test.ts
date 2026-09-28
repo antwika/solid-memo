@@ -46,6 +46,10 @@ interface Pod {
 interface Recorded {
   method: string;
   url: string;
+  ifMatch: string | null;
+  ifNoneMatch: string | null;
+  /** The pod's answer, once it came. */
+  status?: number;
 }
 
 /** A user's pod in a fresh folder of the server: a profile, a private type index and a format-1/2 instance. */
@@ -115,14 +119,19 @@ function app(pod: Pod, options: { failOn?: (request: Recorded) => boolean; onReq
   const attempts: Recorded[] = [];
   const attemptingFetch: typeof fetch = async (input, init) => {
     const request = input instanceof Request ? input : undefined;
-    const recorded = {
+    const headers = new Headers(init?.headers ?? request?.headers);
+    const recorded: Recorded = {
       method: (init?.method ?? request?.method ?? "GET").toUpperCase(),
       url: request?.url ?? String(input),
+      ifMatch: headers.get("If-Match"),
+      ifNoneMatch: headers.get("If-None-Match"),
     };
     attempts.push(recorded);
     await options.onRequest?.(recorded);
     if (options.failOn?.(recorded)) return new Response("injected failure", { status: 500 });
-    return writeFence.fetch(input, init);
+    const response = await writeFence.fetch(input, init);
+    recorded.status = response.status;
+    return response;
   };
   const shapesFetch: typeof fetch = async (input) => {
     const path = new URL(String(input)).pathname.slice(1);
@@ -230,6 +239,17 @@ describe.skipIf(SERVER === undefined)("the format update on a real Solid server"
     const checked = attempts.slice(lastCopyWrite, firstIndexWrite).filter((request) => request.method === "GET").map((r) => r.url);
     expect(checked).toEqual(expect.arrayContaining([`${target}meta.ttl`, `${target}catalog.ttl`, `${target}decks/deck-1.ttl`]));
 
+    // Every write was conditional: a creation only where nothing was
+    // (If-None-Match: *), an edit only of the version read (If-Match).
+    for (const write of writes) {
+      if (write.method === "PUT") expect(write.ifNoneMatch, `${write.method} ${write.url}`).toBe("*");
+      if (write.method === "PATCH") expect(write.ifMatch, `${write.method} ${write.url}`).toMatch(/^"/);
+    }
+    // And the check that nothing changed asked the pod about each version copied, which said 304.
+    const verified = attempts.filter((r) => r.method === "HEAD" && r.ifNoneMatch !== null && r.ifNoneMatch !== "*");
+    expect(verified.length).toBeGreaterThan(0);
+    expect(verified.every((r) => r.status === 304 && under(pod.source)(r))).toBe(true);
+
     // The type index now names the copy, and the original is gone from it.
     const indexAfter = await registeredContainers(pod);
     expect(indexBefore).toContain(pod.source);
@@ -328,4 +348,54 @@ describe.skipIf(SERVER === undefined)("the format update on a real Solid server"
     expect(await registeredContainers(pod)).toBe(indexBefore);
     expect(await triples(`${pod.source}decks/deck-1.ttl`)).toContain("studied in another tab");
   }, 60_000);
+
+  it("refuses a copy where something appeared meanwhile, and leaves no trace", async () => {
+    const pod = await seedPod();
+    const before = await snapshot(pod.source);
+    const indexBefore = await registeredContainers(pod);
+    let squatted = "";
+    const { useCases, session } = app(pod, {
+      onRequest: async (request) => {
+        const target = /^(.*\/solid-memo\/main-[0-9a-f-]{36}\/)catalog\.ttl$/.exec(request.url)?.[1];
+        if (squatted !== "" || target === undefined || request.method !== "PUT") return;
+        squatted = `${target}catalog.ttl`;
+        await fetch(squatted, { method: "PUT", headers: { "content-type": "text/turtle" }, body: "<#x> <#y> <#z> ." });
+      },
+    });
+    const outcome = await useCases.updateInstance(session, pod.instance);
+    expect(outcome).toMatchObject({ ok: false, step: "copy", cleanedUp: true });
+    expect((outcome as { error: string }).error).toBe(
+      `${squatted} was created elsewhere (in another tab or app?) while Solid Memo was about to create it, so nothing was saved. Reload and try again.`,
+    );
+    expect(await snapshot(pod.source)).toEqual(before);
+    expect(await registeredContainers(pod)).toBe(indexBefore);
+  });
+
+  it("never overwrites a change made since the document was read: the save fails, the change stays", async () => {
+    const pod = await seedPod();
+    let interfered = false;
+    const { useCases } = app(pod, {
+      onRequest: async (request) => {
+        if (interfered || request.method !== "PATCH" || request.url !== `${pod.source}preferences.ttl`) return;
+        interfered = true;
+        // Another tab saves the preferences first.
+        const response = await fetch(`${pod.source}preferences.ttl`, {
+          method: "PATCH",
+          headers: { "content-type": "text/n3" },
+          body: `@prefix solid: <http://www.w3.org/ns/solid/terms#>. _:p a solid:InsertDeletePatch; solid:inserts { <#it> <https://solid-memo.com/vocab/v1#note> "saved in another tab" . }.`,
+        });
+        expect(response.ok).toBe(true);
+      },
+    });
+    const preferences = await useCases.getPreferences(pod.source);
+    await expect(useCases.savePreferences(pod.source, { ...preferences, newCardsPerDay: 7 })).rejects.toThrow(
+      `${pod.source}preferences.ttl was changed elsewhere (in another tab or app?) since Solid Memo read it, so nothing was saved.`,
+    );
+    const stored = await triples(`${pod.source}preferences.ttl`);
+    expect(stored).toContain("saved in another tab");
+    expect(stored).not.toContain('"7"');
+    // Read again, the save goes through.
+    await useCases.savePreferences(pod.source, { ...preferences, newCardsPerDay: 7 });
+    expect(await triples(`${pod.source}preferences.ttl`)).toMatch(/newCardsPerDay> "?7/);
+  });
 });

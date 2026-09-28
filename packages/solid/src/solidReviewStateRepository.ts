@@ -3,12 +3,11 @@ import {
   getThing,
   getThingAll,
   removeThing,
-  saveSolidDatasetAt,
   setThing,
 } from "@inrupt/solid-client";
 import type { ReviewStateRepository } from "@solid-memo/application/ports";
 import type { ReviewState } from "@solid-memo/domain/review";
-import { getSolidDatasetOrNull } from "./datasets";
+import { getSolidDatasetOrNull, saveDataset } from "./datasets";
 import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import {
   reviewSubjectUrl,
@@ -65,7 +64,7 @@ export function createSolidReviewStateRepository({
         ),
       );
       await checkWrite(updated, [reviewSubjectUrl(deck.reviewsDocumentUrl, state)]);
-      await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
+      await saveDataset(deck.reviewsDocumentUrl, updated, fetch);
     },
 
     async applyReviewChanges(deck, { save, remove }): Promise<void> {
@@ -95,7 +94,7 @@ export function createSolidReviewStateRepository({
         updated,
         save.map((state) => reviewSubjectUrl(deck.reviewsDocumentUrl, state)),
       );
-      await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
+      await saveDataset(deck.reviewsDocumentUrl, updated, fetch);
     },
   };
 }

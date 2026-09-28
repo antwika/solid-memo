@@ -76,7 +76,7 @@ flowchart TD
     access --> copy["3 copy: every resource, rebased<br/>(RDF: IRIs rewritten; other files<br/>byte for byte) and its own ACL"]
     copy --> upgrade["4 upgrade: the copy in place,<br/>with dcterms:replaces the original"]
     upgrade --> validate["5 validate: validateInstance(copy)<br/>must conform"]
-    validate --> verify["6 verify: the original's listing<br/>and fingerprints unchanged"]
+    validate --> verify["6 verify: the original's listing unchanged,<br/>each copied version still current (304)"]
     verify --> switch["7 switch: both type indexes<br/>point at the copy"]
     switch --> done["The updated instance opens;<br/>the original is the backup"]
     stage & access & copy & upgrade & validate & verify & switch -->|error| undo["Revert indexes switched so far,<br/>delete the copy, show the error"]
@@ -104,7 +104,9 @@ flowchart TD
   verify step catches them.
 - **A copy, named with a UUID.** `…/solid-memo/main/` is copied to
   `…/solid-memo/main-<uuid>/` (`stagingUrlOf`). The target must not
-  exist (`ensureAbsent`), so nothing is ever overwritten.
+  exist (`ensureAbsent`), and every document of the copy is created with
+  `If-None-Match: *`, so nothing is ever overwritten: had something
+  appeared there meanwhile, the pod answers 412 and the run stops.
 - **Access control first.** The instance container's own ACL document
   (WAC `.acl` or ACP `.acr`, found through `Link: rel="acl"`) is copied
   with its IRIs rebased before any data, so the copy is never more open
@@ -128,13 +130,19 @@ flowchart TD
   `validateInstance` ([validation.md](validation.md)); a single violation
   stops the run. The invalid-data policy does not apply here: an update
   never produces data that needs a repair.
-- **Nothing changed meanwhile.** The original is listed again and each
-  resource's fingerprint (ETag, else Last-Modified, else a SHA-256 of the
-  body) compared with the one taken when it was copied. A review saved
-  in another tab during the copy stops the run, so no study is lost.
+- **Nothing changed meanwhile.** Each resource's version is taken from
+  the very response it was copied from: its ETag (with the request's
+  `Accept`, since an ETag belongs to one representation), else its
+  Last-Modified, else a SHA-256 of the body. The original is listed
+  again, and the pod is asked of each resource whether it is still that
+  version — a HEAD with `If-None-Match: <ETag>` (or `If-Modified-Since`),
+  which answers 304 when it is. A review saved in another tab during the
+  copy stops the run, so no study is lost.
 - **One commit point.** `switchInstance` rewrites the `sm:Instance`
   registration (and the `dcat:Catalog` one, adding it if missing) in
-  each type index that registers the original, one save per index. If a
+  each type index that registers the original, one save per index, each
+  with `If-Match`: an index another app changed since it was read is
+  not overwritten (412), and the switch is undone. If a
   later index fails, the ones already switched are switched back. Until
   this step nothing is visible to the user or to other apps.
 - **Failure leaves nothing behind.** Any error deletes the copy and
@@ -162,6 +170,13 @@ and checks that:
   (ACLs included) what it was, after the update and after a restore;
 - every write goes to the copy, but for the type index, which is
   written last, after the whole copy was read back and validated;
+- every write is conditional (each PUT `If-None-Match: *`, each PATCH
+  `If-Match`), and the check that nothing changed got a 304 for every
+  version it asked about;
+- a document that appears where the copy is about to create one stops
+  the update (412), leaving no trace;
+- a save of a document changed in another tab since it was read fails
+  (412) and keeps the other tab's change; read again, it goes through;
 - the copy is updated and conforms, keeps the unknown file byte for
   byte, and has its ACLs rebased;
 - a write to the original from the same tab during the update is

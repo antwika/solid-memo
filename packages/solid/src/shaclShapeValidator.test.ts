@@ -15,7 +15,10 @@ import type { ShapeEngine } from "@solid-memo/shacl/engine";
 import { createShaclShapeValidator } from "./shaclShapeValidator";
 import type { ShapeLoader } from "@solid-memo/shacl/shapeLoader";
 
-vi.mock("./datasets");
+vi.mock("./datasets", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./datasets")>()),
+  getSolidDatasetOrNull: vi.fn(),
+}));
 
 const DOC = "https://pod.example/solid-memo/a/catalog.ttl";
 

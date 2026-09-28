@@ -20,7 +20,10 @@ vi.mock("@inrupt/solid-client", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@inrupt/solid-client")>();
   return { ...actual, saveSolidDatasetAt: vi.fn() };
 });
-vi.mock("./datasets");
+vi.mock("./datasets", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./datasets")>()),
+  getSolidDatasetOrNull: vi.fn(),
+}));
 
 const CATALOG = "https://pod.example/solid-memo/a/catalog.ttl";
 const REVIEWS = "https://pod.example/solid-memo/a/reviews/deck-1.ttl";

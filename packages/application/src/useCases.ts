@@ -549,11 +549,10 @@ export function createUseCases({
         finished("access");
         await instanceCopier.copyAccessControl(source, target, move);
         finished("copy");
-        const fingerprints = new Map<string, string>();
+        const versions = new Map<string, string>();
         for (const resource of resources) {
           const copy = rebaseIri(resource, source, target);
-          fingerprints.set(resource, await instanceCopier.fingerprint(resource));
-          await instanceCopier.copyResource(resource, copy, move);
+          versions.set(resource, await instanceCopier.copyResource(resource, copy, move));
           await instanceCopier.copyAccessControl(resource, copy, move);
           finished();
         }
@@ -575,7 +574,7 @@ export function createUseCases({
           throw new Error("The instance changed while it was being copied (in another tab or app?); try again.");
         }
         for (const resource of resources) {
-          if ((await instanceCopier.fingerprint(resource)) !== fingerprints.get(resource)) {
+          if (!(await instanceCopier.isUnchanged(resource, versions.get(resource)!))) {
             throw new Error(`<${resource}> changed while it was being copied (in another tab or app?); try again.`);
           }
         }
