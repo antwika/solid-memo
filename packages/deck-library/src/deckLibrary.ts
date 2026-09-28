@@ -42,7 +42,9 @@ import { DECK_LIBRARY_ROOT } from "./root.ts";
  * and against DCAT-AP (with the index and the reference data beside
  * them); a broken one fails the build. A source, decks/<name>.ttl, is
  * validated as its next release would be; one with changes not yet
- * released is a warning, not an error: it is released by hand.
+ * released is a warning, not an error: it is released by hand. The dev
+ * server also publishes that next release, as a preview, so a deck can be
+ * explored before it is released; the build publishes releases only.
  */
 
 const DCAT = "http://www.w3.org/ns/dcat#";
@@ -311,15 +313,19 @@ export async function validateLibrary(
   await validateProfile(`decks/${INDEX_FILE}`, indexQuads, validators.dcatAp, validators.reference);
 }
 
-/** A deck's releases, with what its source would be released as next. */
-function withNextRelease(releases: readonly DeckRelease[], source: DeckSource): DeckRelease[] {
+function sorted(releases: readonly DeckRelease[]): DeckRelease[] {
+  return [...releases].sort((a, b) => a.deck.localeCompare(b.deck) || a.version - b.version);
+}
+
+/**
+ * What a source would be released as next, marked as a preview: the dev
+ * server publishes it so an unreleased deck can be browsed and imported
+ * before it is frozen. The build never does.
+ */
+function previewOf(releases: readonly DeckRelease[], source: DeckSource, issued: string): DeckRelease {
   const version = releases.filter((r) => r.deck === source.deck).length + 1;
-  const next = {
-    deck: source.deck,
-    version,
-    turtle: releaseText(source.deck, source.turtle, { version, issued: "2000-01-01T00:00:00Z" }),
-  };
-  return [...releases, next].sort((a, b) => a.deck.localeCompare(b.deck) || a.version - b.version);
+  const notes = `Preview of ${SOURCES_DIR}/${source.deck}.ttl, not released: shown by the dev server only.`;
+  return { deck: source.deck, version, turtle: releaseText(source.deck, source.turtle, { version, issued, notes }) };
 }
 
 /**
@@ -340,12 +346,13 @@ export async function validateWithRelease(
  * and validated, the index built from them, and a warning for every
  * source not yet released as it is. A source is validated as its next
  * release would be, so a broken source fails the build before anyone
- * releases it.
+ * releases it; that next release is returned as a preview.
  */
 export async function readDeckLibrary(
   root: string,
   validators: LibraryValidators,
-): Promise<{ releases: DeckRelease[]; index: string; warnings: string[] }> {
+  now: () => Date = () => new Date(),
+): Promise<{ releases: DeckRelease[]; index: string; warnings: string[]; previews: DeckRelease[] }> {
   const [sources, releases, lock] = await Promise.all([
     readSources(root),
     readReleases(root),
@@ -355,27 +362,32 @@ export async function readDeckLibrary(
   const index = buildIndex(releases);
   await validateLibrary(releases, index, validators);
   const warnings: string[] = [];
+  const previews: DeckRelease[] = [];
+  const preview = async (source: DeckSource, warning: string) => {
+    const next = previewOf(releases, source, now().toISOString());
+    const candidate = sorted([...releases, next]);
+    await validateLibrary(candidate, buildIndex(candidate), validators);
+    previews.push(next);
+    warnings.push(warning);
+  };
   for (const source of sources) {
     const released = releases.filter((r) => r.deck === source.deck);
     const latest = released[released.length - 1];
     if (latest === undefined) {
-      const candidate = withNextRelease(releases, source);
-      await validateLibrary(candidate, buildIndex(candidate), validators);
-      warnings.push(`${SOURCES_DIR}/${source.deck}.ttl is not released yet: npm run deck:release -- ${source.deck}`);
+      await preview(source, `${SOURCES_DIR}/${source.deck}.ttl is not released yet: npm run deck:release -- ${source.deck}`);
       continue;
     }
     const url = releaseUrlOf(source.deck, latest.version);
     const entry = lock.releases.find((e) => e.deck === source.deck && e.version === latest.version)!;
     const again = releaseText(source.deck, source.turtle, { version: latest.version, issued: entry.issued });
     if (contentOf(again, url).join("\n") !== contentOf(latest.turtle, url).join("\n")) {
-      const candidate = withNextRelease(releases, source);
-      await validateLibrary(candidate, buildIndex(candidate), validators);
-      warnings.push(
+      await preview(
+        source,
         `${SOURCES_DIR}/${source.deck}.ttl has changed since release ${latest.version}: npm run deck:release -- ${source.deck} --notes "What changed."`,
       );
     }
   }
-  return { releases, index, warnings };
+  return { releases, index, warnings, previews };
 }
 
 /** Every published file of the library: path under the library folder → content. */
@@ -402,10 +414,13 @@ export function deckLibraryPlugin({
   validators?: () => Promise<LibraryValidators>;
 } = {}): Plugin {
   let validators: Promise<LibraryValidators> | undefined;
-  const library = async () => {
+  /** The published files; with previews (the dev server), each unreleased source as its next release too. */
+  const library = async ({ previews }: { previews: boolean }) => {
     const read = await readDeckLibrary(root, await (validators ??= loadLibraryValidators()));
     for (const warning of read.warnings) warn(warning);
-    return publishedFiles(read.releases, read.index);
+    if (!previews || read.previews.length === 0) return publishedFiles(read.releases, read.index);
+    const all = sorted([...read.releases, ...read.previews]);
+    return publishedFiles(all, buildIndex(all));
   };
   return {
     name: "solid-memo:deck-library",
@@ -416,7 +431,7 @@ export function deckLibraryPlugin({
         const prefix = `/${publicPath}/`;
         if (!path.startsWith(prefix)) return next();
         try {
-          const body = (await library()).get(path.slice(prefix.length));
+          const body = (await library({ previews: true })).get(path.slice(prefix.length));
           if (body === undefined) return next();
           res.setHeader("Content-Type", TURTLE);
           res.end(body);
@@ -427,7 +442,7 @@ export function deckLibraryPlugin({
     },
 
     async generateBundle() {
-      for (const [path, source] of await library()) {
+      for (const [path, source] of await library({ previews: false })) {
         this.emitFile({ type: "asset", fileName: `${publicPath}/${path}`, source });
       }
     },

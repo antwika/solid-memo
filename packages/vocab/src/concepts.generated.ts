@@ -106,5 +106,10 @@ export const TOPICS = {
       definition: "Elements, compounds and their reactions.",
       broader: "https://solid-memo.com/vocab/topics#science",
     },
+    {
+      iri: "https://solid-memo.com/vocab/topics#art",
+      label: "Art",
+      definition: "Paintings, artists and the history of art.",
+    },
   ],
 } as const satisfies ConceptScheme;
