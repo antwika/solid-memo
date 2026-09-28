@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
-    "test:pod": "SOLID_SERVER_URL=${SOLID_SERVER_URL:-http://localhost:3999/} vitest run",
+    "test:pod": "vitest run",
     "pod": "community-solid-server -p 3999 -l warn"
   },
   "dependencies": {

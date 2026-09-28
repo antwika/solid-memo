@@ -187,9 +187,9 @@ and checks that:
 - a change made to an already copied document by another tab makes the
   update give up at the verify step, leaving no trace.
 
-Start a server that lets anyone read and write first:
-`npm run pod` (a Community Solid Server in memory), or set
-`SOLID_SERVER_URL`. Without a server, `npm test` skips it.
+The tests start a Community Solid Server in memory themselves; set
+`SOLID_SERVER_URL` to use another server that lets anyone read and
+write. `npm test` does not run them.
 
 ### The backup
 

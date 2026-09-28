@@ -11,16 +11,16 @@ package's own tests cover its own code — `npm test` fails below that.
 npm test          # every package's tests, with coverage thresholds (turbo)
 npm run check     # the same, plus typecheck, drift, formatting, boundaries
 npx vitest        # watch mode, inside one package's folder
-npm run pod       # start a Community Solid Server on :3999, in memory
-npm run test:pod  # the end-to-end tests, against that server
+npm run test:pod  # the end-to-end tests, against a Solid server they start
+npm run pod       # a Community Solid Server on :3999, in memory, to poke at by hand
 ```
 
-`npm run test:pod` runs `e2e/pod/` against the Solid server at
-`SOLID_SERVER_URL` (default `http://localhost:3999/`), which must let
-anyone read and write, as `npm run pod` does (a Community Solid Server,
-a dependency of that package). Those tests are skipped when
-`SOLID_SERVER_URL` is unset. CI runs them in a job of their own, with
-the server started on the runner
+`npm run test:pod` runs `e2e/pod/`. Its global setup
+([globalSetup.ts](../e2e/pod/globalSetup.ts)) starts a Community Solid
+Server (a dependency of that package) in memory on a free port, and
+stops it after; set `SOLID_SERVER_URL` to run against a server of your
+own instead, which must let anyone read and write (as `npm run pod`
+does). CI runs them in a job of their own
 ([migrations.md](migrations.md#proof-on-a-real-server)).
 
 The published library and vocabulary are also cross-checked by pySHACL

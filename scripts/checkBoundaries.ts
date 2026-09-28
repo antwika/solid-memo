@@ -53,7 +53,7 @@ const NODE_ONLY = [/^node:/, /^n3$/, /^@solid-memo\/turtle(\/|$)/, /^@solid-memo
 
 const SHARED_TEST_TOOLING = new Set(Object.keys(JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).devDependencies));
 const isTestFile = (path: string) =>
-  /\.test\.tsx?$/.test(path) || /(^|\/)(testing|test)\//.test(path) || /^vitest\.config\.ts$/.test(path);
+  /\.test\.tsx?$/.test(path) || /(^|\/)(testing|test)\//.test(path) || /^(vitest\.config|globalSetup)\.ts$/.test(path);
 
 const IMPORT = /(?:\bfrom\s*|\bimport\s*\(\s*|^import\s+|\bvi\.mock\(\s*)["']([^"'\s]+)["']/gm;
 
