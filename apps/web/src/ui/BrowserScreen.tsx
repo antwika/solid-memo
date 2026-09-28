@@ -200,7 +200,7 @@ export function BrowserScreen({
                       {card.back}
                     </a>
                   </td>
-                  <td>
+                  <td class="actions">
                     <button
                       class="danger icon"
                       aria-label="Remove"
