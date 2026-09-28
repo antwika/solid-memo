@@ -1,0 +1,135 @@
+import { useEffect, useState } from "preact/hooks";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { UseCases } from "@solid-memo/application/useCases";
+import type { Deck, Prompt } from "@solid-memo/domain/deck";
+import type { Instance } from "@solid-memo/domain/instance";
+import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
+import type { ReviewQuality } from "@solid-memo/domain/review";
+import {
+  interleave,
+  repeatsInSession,
+  requeueCard,
+} from "@solid-memo/domain/scheduling";
+import { errorMessage } from "./errorMessage";
+import { Loading } from "./Loading";
+import { StudyScreen } from "./StudyScreen";
+import { deckHref } from "./router";
+
+/**
+ * Owns one study session. The queue is fetched once when the session
+ * starts and then walked in order; answering a card badly puts it back
+ * into the remainder (never as the very next card unless it is the only
+ * one left). The session covers today's due prompts and the new ones
+ * within the daily budget, the new spread among the due. The deck's
+ * cached queue is dropped when the session ends, however it is left.
+ */
+export function StudyContainer({
+  useCases,
+  instance,
+  deck,
+  onExit,
+  random = Math.random,
+}: {
+  useCases: UseCases;
+  instance: Instance;
+  deck: Deck;
+  onExit: () => void;
+  /** Uniform [0, 1) source deciding where a failed card comes back. */
+  random?: () => number;
+}) {
+  const queryClient = useQueryClient();
+
+  const queueQuery = useQuery({
+    queryKey: ["studyQueue", deck.url],
+    queryFn: () => useCases.getStudyQueue(instance.url, deck, new Date()),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: "always",
+  });
+
+  const preferencesQuery = useQuery({
+    queryKey: ["preferences", instance.url],
+    queryFn: () => useCases.getPreferences(instance.url),
+  });
+  const answerScale =
+    preferencesQuery.data?.answerScale ?? DEFAULT_PREFERENCES.answerScale;
+
+  const [session, setSession] = useState<{
+    prompts: Prompt[];
+    position: number;
+  } | null>(null);
+  useEffect(() => {
+    if (session !== null || queueQuery.data === undefined) return;
+    const { due, newPrompts } = queueQuery.data;
+    setSession({ prompts: interleave(due, newPrompts), position: 0 });
+  }, [session, queueQuery.data]);
+
+  const answerMutation = useMutation({
+    mutationFn: (args: { prompt: Prompt; quality: ReviewQuality }) =>
+      useCases.recordReview(
+        instance.url,
+        deck,
+        args.prompt,
+        args.quality,
+        new Date(),
+      ),
+    onSuccess: (state, { prompt, quality }) => {
+      queryClient.setQueryData(
+        ["reviews", deck.reviewsDocumentUrl, state.cardId, state.direction],
+        state,
+      );
+      setSession((current) => {
+        const next = current!.position + 1;
+        if (!repeatsInSession(quality)) {
+          return { prompts: current!.prompts, position: next };
+        }
+        const done = current!.prompts.slice(0, next);
+        const remaining = current!.prompts.slice(next);
+        return {
+          prompts: [...done, ...requeueCard(remaining, prompt, random)],
+          position: next,
+        };
+      });
+    },
+  });
+
+  useEffect(
+    () => () => {
+      queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
+    },
+    [queryClient, deck.url],
+  );
+
+  async function handleExit() {
+    await queryClient.invalidateQueries({
+      queryKey: ["reviews", deck.reviewsDocumentUrl],
+    });
+    onExit();
+  }
+
+  if (queueQuery.error) {
+    return <p class="error">{errorMessage(queueQuery.error)}</p>;
+  }
+  if (session === null) {
+    return <Loading label="Preparing your study session…" />;
+  }
+
+  const { prompts, position } = session;
+  const prompt = position < prompts.length ? prompts[position] : null;
+  return (
+    <StudyScreen
+      deckName={deck.name}
+      deckHref={deckHref(instance.url, deck.url)}
+      prompt={prompt}
+      position={position + 1}
+      total={prompts.length}
+      answerScale={answerScale}
+      busy={answerMutation.isPending}
+      error={errorMessage(answerMutation.error)}
+      onAnswer={(quality) =>
+        answerMutation.mutate({ prompt: prompt!, quality })
+      }
+      onExit={() => void handleExit()}
+    />
+  );
+}

@@ -3,15 +3,15 @@
 How Solid Memo tells old data from new, and how it brings a pod up to
 the format the current app writes. The formats are the
 [shapes](shapes.md); the steps between them are the migration modules
-in [domain/shapes/migrations](../src/domain/shapes/migrations/); the
-plan is in [domain/migration.ts](../src/domain/migration.ts); the notice
-the user sees in [ui/MigrationContainer.tsx](../src/ui/MigrationContainer.tsx).
+in [domain/shapes/migrations](../packages/domain/src/shapes/migrations/); the
+plan is in [domain/migration.ts](../packages/domain/src/migration.ts); the notice
+the user sees in [ui/MigrationContainer.tsx](../apps/web/src/ui/MigrationContainer.tsx).
 
 ## Versions
 
 Every subject Solid Memo writes carries `sm:formatVersion` (a missing one
 means 1, the format that predates the field). `LATEST_VERSION` in the
-generated [shapes module](../src/domain/shapes/generated.ts) is what the
+generated [shapes module](../packages/vocab/src/types.generated.ts) is what the
 app writes today; `DECK_FORMAT_VERSION` and friends are aliases of it.
 
 | Class | 1 | 2 | Why the version moved |
@@ -95,7 +95,7 @@ flowchart TD
   the document count.
 - **The original is read-only while the update runs.** Every adapter
   talks to the pod through one fetch wrapped by the write fence
-  ([writeFence.ts](../src/infrastructure/solid/writeFence.ts)).
+  ([writeFence.ts](../packages/solid/src/writeFence.ts)).
   `updateInstance` holds the original's container from its first step
   until it returns, and while it is held any request under it other than
   GET, HEAD or OPTIONS is refused before it leaves the browser — whether
@@ -154,7 +154,7 @@ flowchart TD
 
 `npm run test:pod` runs the update — the app's own use cases and Solid
 adapters, wired as in `main.tsx` — against a real Solid server, recording
-every HTTP request ([instanceUpdate.integration.test.ts](../src/integration/instanceUpdate.integration.test.ts)).
+every HTTP request ([instanceUpdate.integration.test.ts](../e2e/pod/src/instanceUpdate.integration.test.ts)).
 It seeds an old-format instance with an unknown file and shared access,
 and checks that:
 
@@ -173,7 +173,7 @@ and checks that:
   update give up at the verify step, leaving no trace.
 
 Start a server that lets anyone read and write first:
-`npx @solid/community-server -p 3999` (in memory), or set
+`npm run pod` (a Community Solid Server in memory), or set
 `SOLID_SERVER_URL`. Without a server, `npm test` skips it.
 
 ### The backup
@@ -197,8 +197,8 @@ release it came from (`prov:wasDerivedFrom <…/decks/name/n.ttl>`; a deck
 imported before releases came from what became release 1). When the
 library publishes a newer release, the deck page offers to bring the
 copy up to it (`planLibraryUpgrade` in
-[domain/libraryUpgrade.ts](../src/domain/libraryUpgrade.ts), shown by
-[ui/LibraryUpgradeContainer.tsx](../src/ui/LibraryUpgradeContainer.tsx)).
+[domain/libraryUpgrade.ts](../packages/domain/src/libraryUpgrade.ts), shown by
+[ui/LibraryUpgradeContainer.tsx](../apps/web/src/ui/LibraryUpgradeContainer.tsx)).
 
 The plan compares three sets of cards by fragment id — the release the
 copy came from, the current release, and the copy — so the library's
@@ -228,11 +228,11 @@ release. Review history of every other card is kept.
    new terms to the [vocabulary](vocab.md).
 2. `npm run generate`: the new record type, descriptor and
    `LATEST_VERSION` appear.
-3. Add `src/domain/shapes/migrations/<class>/<N>-to-<N+1>.ts` and register
+3. Add `packages/domain/src/shapes/migrations/<class>/<N>-to-<N+1>.ts` and register
    it in `migrations/index.ts`.
-4. Adjust `<class>FromRecord` / `<class>ToRecord` in `src/domain/` if the
+4. Adjust `<class>FromRecord` / `<class>ToRecord` in `packages/domain/src/` if the
    model changed, and the writers that build the record.
-5. Add fixtures under `tooling/fixtures/<class>/v<N+1>/` and the
+5. Add fixtures under `packages/vocab/fixtures/<class>/v<N+1>/` and the
    conformance fixture; document the version in the table above.
 
 The chain test, the conformance test, the drift check and the plan and

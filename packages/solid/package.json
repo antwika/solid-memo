@@ -1,0 +1,25 @@
+{
+  "name": "@solid-memo/solid",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@inrupt/solid-client": "^4.0.0",
+    "@inrupt/solid-client-authn-browser": "^5.0.0",
+    "@solid-memo/application": "*",
+    "@solid-memo/domain": "*",
+    "@solid-memo/shacl": "*",
+    "@solid-memo/vocab": "*"
+  },
+  "devDependencies": {
+    "@rdfjs/types": "^2.0.1",
+    "happy-dom": "^20.14.5"
+  }
+}

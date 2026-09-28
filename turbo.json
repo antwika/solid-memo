@@ -1,0 +1,42 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "typecheck": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../tsconfig.base.json"
+      ]
+    },
+    "test": {
+      "outputs": [
+        "coverage/**"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../vitest.shared.ts"
+      ]
+    },
+    "build": {
+      "dependsOn": [
+        "^generate:check"
+      ],
+      "outputs": [
+        "dist/**"
+      ],
+      "env": [
+        "GITHUB_SHA"
+      ]
+    },
+    "generate:check": {},
+    "format:turtle": {
+      "cache": false
+    },
+    "format:turtle:check": {},
+    "test:pod": {
+      "cache": false,
+      "env": [
+        "SOLID_SERVER_URL"
+      ]
+    }
+  }
+}

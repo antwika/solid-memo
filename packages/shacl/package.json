@@ -1,0 +1,25 @@
+{
+  "name": "@solid-memo/shacl",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./node/*": "./node/*.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@inrupt/solid-client": "^4.0.0",
+    "@solid-memo/domain": "*",
+    "@solid-memo/turtle": "*",
+    "@solid-memo/vocab": "*",
+    "n3": "^2.0.0",
+    "rdf-validate-shacl": "^0.6.5"
+  },
+  "devDependencies": {
+    "@rdfjs/types": "^2.0.1"
+  }
+}

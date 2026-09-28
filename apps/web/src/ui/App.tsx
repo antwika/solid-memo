@@ -1,0 +1,178 @@
+import { useEffect, useState } from "preact/hooks";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { UseCases } from "@solid-memo/application/useCases";
+import { POD_PROVIDERS } from "@solid-memo/domain/podProvider";
+import type { Session } from "@solid-memo/domain/session";
+import illustrationUrl from "../assets/illustration.svg";
+import { errorMessage } from "./errorMessage";
+import { ExternalLink } from "./ExternalLink";
+import { Footer } from "./Footer";
+import { Loading } from "./Loading";
+import { OnboardingFlow } from "./onboarding/OnboardingFlow";
+import { PodConnectionScreen } from "./onboarding/PodConnectionScreen";
+import { Workspace } from "./Workspace";
+
+/** The app in whichever state it is in, above the site-wide footer. */
+export function App({ useCases }: { useCases: UseCases }) {
+  return (
+    <>
+      <AppContent useCases={useCases} />
+      <Footer />
+    </>
+  );
+}
+
+function AppContent({ useCases }: { useCases: UseCases }) {
+  const queryClient = useQueryClient();
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const established = await useCases.restoreSession();
+        if (established !== null) {
+          setSession(established.session);
+          setConnecting(established.origin === "login");
+        }
+      } catch (e) {
+        setAuthError(errorMessage(e));
+      } finally {
+        setCheckingSession(false);
+      }
+    })();
+  }, [useCases]);
+
+  useEffect(() => {
+    return useCases.onSessionExpired(() => {
+      setSession(null);
+      setConnecting(false);
+      setReturning(true);
+      setAuthError("Your session has expired. Please log in again.");
+      queryClient.clear();
+    });
+  }, [useCases, queryClient]);
+
+  const accountQuery = useQuery({
+    queryKey: ["account", session?.webId],
+    queryFn: () => useCases.discoverAccount(session!),
+    enabled: session !== null && connecting,
+    retry: false,
+  });
+
+  async function startLogin(login: () => Promise<void>) {
+    setAuthError(null);
+    setBusy(true);
+    try {
+      await login();
+    } catch (e) {
+      setAuthError(errorMessage(e));
+      setBusy(false);
+    }
+  }
+
+  async function handleLogout() {
+    await useCases.logout();
+    setSession(null);
+    setConnecting(false);
+    setReturning(true);
+    setAuthError(null);
+    queryClient.clear();
+  }
+
+  if (checkingSession) {
+    return (
+      <main>
+        <Loading label="Restoring session…" />
+      </main>
+    );
+  }
+
+  if (!session) {
+    return (
+      <main class="landing">
+        <img
+          class="hero"
+          src={illustrationUrl}
+          alt="Solid Memo illustration"
+          width={640}
+          height={427}
+        />
+        <p class="tagline">
+          Spaced-repetition flashcards that live in your own Solid Pod.
+        </p>
+        <OnboardingFlow
+          providers={POD_PROVIDERS}
+          busy={busy}
+          returning={returning}
+          onLogin={(webId) =>
+            void startLogin(() => useCases.loginWithWebId(webId))
+          }
+          onLoginWithProvider={(provider) =>
+            void startLogin(() =>
+              useCases.loginWithProvider(provider.oidcIssuer),
+            )
+          }
+        />
+        {authError && <p class="error">{authError}</p>}
+      </main>
+    );
+  }
+
+  if (connecting) {
+    return (
+      <main class="landing">
+        <img
+          class="hero"
+          src={illustrationUrl}
+          alt="Solid Memo illustration"
+          width={640}
+          height={427}
+        />
+        <PodConnectionScreen
+          account={accountQuery.data}
+          busy={accountQuery.isFetching}
+          error={errorMessage(accountQuery.error)}
+          onRetry={() => void accountQuery.refetch()}
+          onContinue={() => setConnecting(false)}
+          onLogout={handleLogout}
+        />
+      </main>
+    );
+  }
+
+  return (
+    <main>
+      <header class="masthead">
+        <a class="brand" href="#/">
+          <img
+            class="logo"
+            src={illustrationUrl}
+            alt="Solid Memo — back to start"
+            width={60}
+            height={40}
+          />
+        </a>
+        <div class="masthead-title">
+          <h1>
+            <a class="wordmark" href="#/">
+              Solid Memo
+            </a>
+          </h1>
+          <p class="session-line">
+            Logged in as{" "}
+            <ExternalLink url={session.webId}>
+              {accountQuery.data?.name}
+            </ExternalLink>
+          </p>
+        </div>
+        <button onClick={handleLogout}>Log out</button>
+      </header>
+      <Workspace useCases={useCases} session={session} />
+    </main>
+  );
+}

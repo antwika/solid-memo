@@ -10,7 +10,7 @@ deployed automatically by CI.
 
 ```mermaid
 flowchart LR
-    push["push to main"] --> test["npm test"] --> build["npm run build"] --> pages["deploy dist/ to GitHub Pages"]
+    push["push to main"] --> test["npm test"] --> build["npm run build"] --> pages["deploy apps/web/dist/ to GitHub Pages"]
 ```
 
 A red test run or build never deploys. The workflow enables Pages for
@@ -50,6 +50,6 @@ Nothing in the app changes: the same build serves from any origin.
 
 ## Manual publish (any static web space)
 
-`npm run build`, then upload the **contents** of `dist/` to the web
+`npm run build`, then upload the **contents** of `apps/web/dist/` to the web
 root (or any subfolder) via SFTP or a file manager. Verify a build
 locally with `npm run preview`.

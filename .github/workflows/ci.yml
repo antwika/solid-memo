@@ -20,10 +20,15 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ github.sha }}
+          restore-keys: turbo-
       - run: npm ci
-      - run: npm run generate:check
-      - run: npm run format:turtle:check
-      - run: npm test
+      # Every package: typecheck, tests at 100% coverage, generated code and
+      # Turtle formatting in step with their sources; then the boundaries.
+      - run: npm run check
       - run: npm run build
       # The published library and vocabulary, checked again by an
       # independent SHACL engine (pySHACL), SPARQL constraints included.
@@ -34,3 +39,27 @@ jobs:
           cache-dependency-path: scripts/requirements-ci.txt
       - run: pip install -r scripts/requirements-ci.txt
       - run: python scripts/shacl_crosscheck.py
+
+  # The app's use cases and Solid adapters against a real Solid server: a
+  # Community Solid Server in memory, on this runner (docs/testing.md).
+  pod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Start a Community Solid Server
+        run: |
+          npm run pod > css.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:3999/ && exit 0
+            sleep 1
+          done
+          cat css.log
+          exit 1
+      - run: npm run test:pod
+      - if: failure()
+        run: cat css.log

@@ -8,7 +8,7 @@ no existing vocabulary covers spaced repetition.
 
 ## Source of truth
 
-[`vocab/v1.ttl`](../vocab/v1.ttl) is an RDFS/OWL ontology: the
+[`packages/vocab/vocab/v1.ttl`](../packages/vocab/vocab/v1.ttl) is an RDFS/OWL ontology: the
 `owl:Ontology` subject carries `owl:versionInfo` and a `skos:changeNote`
 per release, and every term is an `owl:Class`, `owl:DatatypeProperty`
 (literal-valued, with an `xsd:` range) or `owl:ObjectProperty`
@@ -18,12 +18,12 @@ has one class, `rdfs:range`, `rdfs:isDefinedBy` and a
 
 ```mermaid
 flowchart LR
-    ttl["vocab/v1.ttl"] -->|npm run generate| ts["src/infrastructure/solid/vocab.generated.ts<br/>SM constants"]
+    ttl["vocab/v1.ttl"] -->|npm run generate| ts["src/vocab.generated.ts<br/>SM constants"]
     ttl -->|npm run build| dist["dist/vocab/v1.ttl<br/>dist/vocab/v1/index.html"]
     ts --> app["mappers, tooling"]
 ```
 
-`SM` in [vocab.ts](../src/infrastructure/solid/vocab.ts) is a re-export
+`SM` in [vocab.ts](../packages/solid/src/vocab.ts) is a re-export
 of the generated constants; the external vocabularies there (Solid, PIM,
 Dublin Core, RDF, RDFS, FOAF) are not ours to publish and stay
 hand-written. The generator copies each term's comment and history note
@@ -36,9 +36,9 @@ string, so other applications can look up what it means:
 
 | Scheme | Where | Concepts | Used by |
 |---|---|---|---|
-| `sm:StudyDirections` | `vocab/v1.ttl` | `sm:frontToBack`, `sm:backToFront`, `sm:bidirectional` | `sm:studyDirection` on a deck |
-| `sm:InvalidDataPolicies` | `vocab/v1.ttl` | `sm:blockInstance` (default), `sm:blockSubject`, `sm:warnOnly` | `sm:invalidDataPolicy` in preferences |
-| Topics (`https://solid-memo.com/vocab/topics`) | [`vocab/topics.ttl`](../vocab/topics.ttl) | languages (swedish), geography, computing, science (chemistry) | `dcat:theme` on a deck, next to the EU data theme `EDUC` |
+| `sm:StudyDirections` | `packages/vocab/vocab/v1.ttl` | `sm:frontToBack`, `sm:backToFront`, `sm:bidirectional` | `sm:studyDirection` on a deck |
+| `sm:InvalidDataPolicies` | `packages/vocab/vocab/v1.ttl` | `sm:blockInstance` (default), `sm:blockSubject`, `sm:warnOnly` | `sm:invalidDataPolicy` in preferences |
+| Topics (`https://solid-memo.com/vocab/topics`) | [`packages/vocab/vocab/topics.ttl`](../packages/vocab/vocab/topics.ttl) | languages (swedish), geography, computing, science (chemistry) | `dcat:theme` on a deck, next to the EU data theme `EDUC` |
 
 - Every scheme has a `dcterms:title` and a `skos:definition`; every
   concept an English `skos:prefLabel` and `skos:definition` and its
@@ -49,9 +49,9 @@ string, so other applications can look up what it means:
   string as its `skos:notation` (`sm:frontToBack` is `"front-to-back"`),
   so the mapping between them is data.
 - `npm run generate` renders every scheme into
-  `src/domain/concepts.generated.ts` (`STUDY_DIRECTIONS`,
+  `packages/vocab/src/concepts.generated.ts` (`STUDY_DIRECTIONS`,
   `INVALID_DATA_POLICIES`, `TOPICS`), which the app lists and labels
-  from; [concepts.ts](../src/domain/concepts.ts) looks concepts up by
+  from; [concepts.ts](../packages/domain/src/concepts.ts) looks concepts up by
   IRI or notation. The topics scheme's IRI lands on an HTML page
   (`vocab/topics/`), as the vocabulary's does.
 - Concepts are only ever added. One that should go is deprecated
@@ -83,14 +83,14 @@ string, so other applications can look up what it means:
 A file without an extension would be served by the static host as
 `application/octet-stream`, which is why the Turtle has one and the
 namespace IRI lands on a page instead. Both are emitted by the
-`turtleDirectoryPlugin` in [tooling/publishTurtle.ts](../tooling/publishTurtle.ts),
+`turtleDirectoryPlugin` in [packages/vocab/tooling/publishTurtle.ts](../packages/vocab/tooling/publishTurtle.ts),
 which also serves them in dev.
 
 ## Adding a term
 
-1. Add it to `vocab/v1.ttl` with every annotation; bump the version and
+1. Add it to `packages/vocab/vocab/v1.ttl` with every annotation; bump the version and
    the change note.
 2. `npm run generate` (CI runs `npm run generate:check` and fails on
-   drift; the drift test in `tooling/generate.test.ts` does too).
+   drift; the drift test in `packages/vocab/tooling/generate.test.ts` does too).
 3. Use it in a [shape](shapes.md) — the fixture test checks that every
    `sm:` predicate a shape uses is declared here.

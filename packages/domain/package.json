@@ -1,0 +1,17 @@
+{
+  "name": "@solid-memo/domain",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./shapes/migrations": "./src/shapes/migrations/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@solid-memo/vocab": "*"
+  }
+}

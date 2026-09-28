@@ -2,7 +2,7 @@
 
 Login, session restore, and logout against a Solid identity provider using
 Solid-OIDC. All authentication code lives in
-[src/infrastructure/solid/solidSessionGateway.ts](../src/infrastructure/solid/solidSessionGateway.ts),
+[packages/solid/src/solidSessionGateway.ts](../packages/solid/src/solidSessionGateway.ts),
 behind the `SessionGateway` port.
 
 ## Login flow
@@ -58,7 +58,7 @@ onboarding step only for the former.
 ## Authenticated requests
 
 Repositories receive `fetch` by injection. The composition root injects
-[authFetch](../src/infrastructure/solid/authFetch.ts), a lazy wrapper that
+[authFetch](../packages/solid/src/authFetch.ts), a lazy wrapper that
 delegates to the current default session's fetch at call time — never a
 reference captured before login.
 

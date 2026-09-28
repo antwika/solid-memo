@@ -2,7 +2,7 @@
 
 What a valid Solid Memo subject looks like, version by version, as
 SHACL; and how those shapes drive the code. One shape file per class per
-format version under [`shapes/`](../shapes/), published with the site.
+format version under [`packages/vocab/shapes/`](../packages/vocab/shapes/), published with the site.
 
 ## Files and IRIs
 
@@ -27,11 +27,11 @@ share the same named property shapes.
   same class, so targeting would make every subject fail one of them.
   The shape is chosen by `(rdf:type, sm:formatVersion)` — absent = 1 —
   and the context (pod or library) by `pickShape` in
-  [registry.ts](../src/infrastructure/shacl/registry.ts), the same way
+  [registry.ts](../packages/shacl/src/registry.ts), the same way
   at build time, in tests and in the browser. Every node shape carries
   `sh:class` and `sh:nodeKind sh:IRI` instead. The class is Solid
   Memo's own or, for the standard classes it writes, DCAT's or FOAF's
-  (`CLASS_NAMESPACES` in [tooling/shapes.ts](../tooling/shapes.ts)).
+  (`CLASS_NAMESPACES` in [packages/vocab/tooling/shapes.ts](../packages/vocab/tooling/shapes.ts)).
 - **Further types are stated.** A subject that is also, say, a
   `dcat:Dataset` says so with `sh:property [ sh:path rdf:type ;
   sh:hasValue dcat:Dataset ]`; the shape is still picked by its
@@ -82,16 +82,16 @@ Why each version moved is in [migrations.md](migrations.md).
 
 ```mermaid
 flowchart LR
-    shapes["shapes/*/v*.ttl"] -->|npm run generate| types["src/domain/shapes/generated.ts<br/>CardV2, DeckRecord, LATEST_VERSION…"]
-    shapes -->|npm run generate| desc["src/infrastructure/shacl/shapes.generated.ts<br/>CARD_V2, SHAPES, ALL_SHAPES"]
-    types --> migrations["domain/shapes/migrations<br/>record → next record"]
-    types --> records["domain/*Record.ts<br/>record ↔ model"]
-    desc --> rw["infrastructure/solid/records.ts<br/>Thing ↔ record"]
-    desc --> pick["infrastructure/shacl/registry.ts<br/>pickShape"]
+    shapes["shapes/*/v*.ttl"] -->|npm run generate| types["src/types.generated.ts<br/>CardV2, DeckRecord, LATEST_VERSION…"]
+    shapes -->|npm run generate| desc["src/descriptors.generated.ts<br/>CARD_V2, SHAPES, ALL_SHAPES"]
+    types --> migrations["domain: shapes/migrations<br/>record → next record"]
+    types --> records["domain: *Record.ts<br/>record ↔ model"]
+    desc --> rw["solid: records.ts<br/>Thing ↔ record"]
+    desc --> pick["shacl: registry.ts<br/>pickShape"]
     shapes -->|build, tests, browser| shacl["rdf-validate-shacl"]
 ```
 
-[tooling/shapes.ts](../tooling/shapes.ts) reads, from every node shape
+[packages/vocab/tooling/shapes.ts](../packages/vocab/tooling/shapes.ts) reads, from every node shape
 with an `sh:name` (`"CardV2"`, `"LibraryDeckV1"`), the properties it
 lists: `sh:path`, `sh:datatype` or `sh:nodeKind sh:IRI`, `sh:minCount`,
 `sh:maxCount`, `sh:in` and an optional `sh:name` for the field. Anything
@@ -116,12 +116,12 @@ only.
 types) are the envelope, not fields: the generic writer stamps them from
 the descriptor. Generated files hold
 only types and `as const` data, are committed, and are checked for
-drift by CI (`npm run generate:check`) and by `tooling/generate.test.ts`.
+drift by CI (`npm run generate:check`) and by `packages/vocab/tooling/generate.test.ts`.
 
 ## Reading and writing
 
 Every mapper is the same three steps (see
-[records.ts](../src/infrastructure/solid/records.ts)):
+[records.ts](../packages/solid/src/records.ts)):
 
 1. `readVersioned(thing, "card")` — the class is checked, the stored
    version read (absent = 1), and the subject read with the descriptor
@@ -140,14 +140,14 @@ subject in place (only the shape's predicates are replaced, so foreign
 triples survive), adds the class once and stamps the version. Every
 subject this app writes is therefore stamped and conforms to the latest
 shape — the conformance test in
-[conformance.test.ts](../src/infrastructure/shacl/conformance.test.ts)
+[conformance.test.ts](../packages/solid/src/conformance.test.ts)
 proves it for every version and every migration step.
 
 ## Where the shapes are checked
 
-- **Build**: every file in `decks/` is validated as a library document
+- **Build**: every file in `packages/deck-library/decks/` is validated as a library document
   (`npm run build` fails with the violations; see [deck-library.md](deck-library.md)).
-- **Tests**: the fixtures in `tooling/fixtures/<class>/v<N>/{valid,invalid}/`
+- **Tests**: the fixtures in `packages/vocab/fixtures/<class>/v<N>/{valid,invalid}/`
   pass and fail as expected; the conformance test above; every library
   deck passes.
 - **Browser**: the developer tool described in [validation.md](validation.md).
