@@ -168,6 +168,37 @@ describe("BrowserContainer", () => {
     expect(await screen.findByText("direction refused")).toBeInTheDocument();
   });
 
+  it("describes the deck and refreshes every deck list, showing an error when refused", async () => {
+    const useCases = makeUseCasesFake();
+    const { queryClient } = renderContainer(useCases);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Describe deck" }));
+    fireEvent.input(screen.getByLabelText("Description"), { target: { value: "Kanji." } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+
+    await waitFor(() => {
+      expect(useCases.describeDeck).toHaveBeenCalledWith(deck, { description: "Kanji.", topics: [], keywords: [] });
+    });
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
+    });
+  });
+
+  it("shows a describe error", async () => {
+    renderContainer(
+      makeUseCasesFake({
+        describeDeck: vi.fn(async () => {
+          throw new Error("A deck needs a description.");
+        }),
+      }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Describe deck" }));
+    fireEvent.input(screen.getByLabelText("Description"), { target: { value: "x" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(await screen.findByText("A deck needs a description.")).toBeInTheDocument();
+  });
+
   it("shows a rename error", async () => {
     renderContainer(
       makeUseCasesFake({

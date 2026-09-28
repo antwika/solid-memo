@@ -79,6 +79,34 @@ describe("ValidationScreen", () => {
     ]);
   });
 
+  it("shows DCAT-AP results as such, on Solid Memo subjects and others", () => {
+    render(
+      <ValidationScreen
+        report={{
+          instanceUrl: INSTANCE,
+          violationCount: 1,
+          conforms: false,
+          documents: [
+            {
+              url: `${INSTANCE}catalog.ttl`,
+              status: "checked",
+              subjects: [
+                {
+                  url: "https://creativecommons.org/publicdomain/zero/1.0/",
+                  status: "profiled",
+                  violations: [{ message: "Class constraint failed.", severity: "violation", constraint: "Class", profile: "dcat-ap" }],
+                },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("1 violation in 1 document.");
+    expect(screen.getByRole("listitem")).toHaveTextContent("not a Solid Memo subject; DCAT-AP says:");
+    expect(screen.getAllByRole("row")[1]).toHaveTextContent("DCAT-AP: Class constraint failed.");
+  });
+
   it("says so when everything conforms", () => {
     render(
       <ValidationScreen

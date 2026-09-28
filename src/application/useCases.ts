@@ -1,4 +1,15 @@
 import { profileNameOf, type SolidAccount } from "../domain/account";
+import { defaultCatalogDescription, type Catalog } from "../domain/catalog";
+import { withAbout, type DeckAbout } from "../domain/deckAbout";
+import { isCopyOf } from "../domain/library";
+import { planRepair, type Repair, type RepairPlan } from "../domain/repair";
+import {
+  rebaseIri,
+  stagingUrlOf,
+  type UpdateOutcome,
+  type UpdateProgress,
+  type UpdateStep,
+} from "../domain/instanceUpdate";
 import {
   validateCardContent,
   type Card,
@@ -20,7 +31,6 @@ import {
 } from "../domain/libraryUpgrade";
 import {
   isDeckOutdated,
-  isInstanceOutdated,
   isOutdated,
   isPreferencesOutdated,
   isReviewStateOutdated,
@@ -29,9 +39,8 @@ import {
   upgradeDeck,
   upgradeReviewState,
   type MigrationPlan,
-  type MigrationResult,
 } from "../domain/migration";
-import { instanceDocumentUrls } from "../domain/instanceLayout";
+import { ensureTrailingSlash, instanceDocumentUrls } from "../domain/instanceLayout";
 import { summarize, type ValidationReport } from "../domain/validation";
 import {
   DEFAULT_PREFERENCES,
@@ -64,6 +73,10 @@ import type {
   StorageGateway,
   WebIdDocumentRepository,
   ShapeValidator,
+  RepairRepository,
+  InstanceCopier,
+  UpdateJournal,
+  WriteFence,
 } from "./ports";
 
 export interface UseCases {
@@ -86,6 +99,10 @@ export interface UseCases {
    * Solid Memo's shapes (docs/validation.md). Reads only.
    */
   validateInstance(instanceUrl: string): Promise<ValidationReport>;
+  /** What the app can repair of what a check found, and what it leaves to the user. */
+  planRepair(report: ValidationReport): RepairPlan;
+  /** Apply repairs (the planned ones, or removals the user chose). */
+  applyRepairs(repairs: readonly Repair[]): Promise<void>;
   listStorages(session: Session): Promise<Storage[]>;
   addManualStorage(url: string): Promise<Storage>;
   listInstances(session: Session): Promise<Instance[]>;
@@ -113,6 +130,8 @@ export interface UseCases {
    * front→back state waits, unused, while the deck is studied back→front.
    */
   setDeckDirection(deck: Deck, direction: DeckDirection): Promise<Deck>;
+  /** Replace what a deck says about itself: its description, topics and keywords. */
+  describeDeck(deck: Deck, about: DeckAbout): Promise<Deck>;
   removeDeck(deck: Deck): Promise<void>;
   /** The ready-made decks the app offers for import. */
   listLibraryDecks(): Promise<LibraryDeck[]>;
@@ -121,13 +140,16 @@ export interface UseCases {
   /** A library deck's cards, to look through before importing it. */
   listLibraryCards(deck: LibraryDeck): Promise<LibraryCard[]>;
   /**
-   * Whether the library now publishes an imported deck in a newer format
-   * this app can bring the copy up to, and what that would change. Null
-   * for a deck not from the library, or when there is nothing (safe) to
-   * offer. Reads the library document; writes nothing.
+   * What upgrading an imported deck to its library deck's current
+   * release would do; null for a deck not from the library, or when
+   * there is nothing (safe) to offer. Reads the library's index and the
+   * two releases, and the copy's cards; writes nothing.
    */
   planLibraryUpgrade(deck: Deck): Promise<LibraryUpgradePlan | null>;
-  /** Apply a planned upgrade: one write of the deck's catalog entry. */
+  /**
+   * Apply a planned upgrade: one write of the cards, one of the review
+   * states of cards it removes, one of the deck's catalog entry.
+   */
   applyLibraryUpgrade(deck: Deck, plan: LibraryUpgradePlan): Promise<Deck>;
   listCards(deck: Deck): Promise<Card[]>;
   /**
@@ -150,7 +172,28 @@ export interface UseCases {
    * an edit made since the plan is never overwritten). Resolves to what
    * was migrated. Only ever run after the user has agreed to the plan.
    */
-  migrateInstance(instanceUrl: string): Promise<MigrationResult>;
+  /**
+   * Bring the instance up to this app's formats without writing it
+   * (docs/migrations.md): copy it into a new sibling container, update
+   * and validate the copy, check the original did not change meanwhile,
+   * then switch the type index registrations over. The original stays as
+   * the backup; a failure before the switch deletes the copy.
+   */
+  updateInstance(
+    session: Session,
+    instance: Instance,
+    onProgress?: (progress: UpdateProgress) => void,
+  ): Promise<UpdateOutcome>;
+  /** The partial copy an update cut off half-way left behind; null when none. */
+  findInterruptedUpdate(instance: Instance): Promise<string | null>;
+  /** Delete the partial copy an interrupted update left behind. */
+  removeInterruptedUpdate(instance: Instance): Promise<void>;
+  /** The instance an update replaced, kept as a backup; null when there is none (any more). */
+  readBackup(instance: Instance): Promise<{ url: string; replacedAt?: string } | null>;
+  /** Switch back to the backup, then delete the updated instance. Returns the backup. */
+  restoreBackup(session: Session, instance: Instance): Promise<Instance>;
+  /** Delete the backup, and forget it. */
+  deleteBackup(instance: Instance): Promise<void>;
   /** Stored preferences overlaid on the defaults. */
   getPreferences(instanceUrl: string): Promise<StudyPreferences>;
   savePreferences(
@@ -194,7 +237,20 @@ export interface Dependencies {
   preferencesRepository: PreferencesRepository;
   reviewStateRepository: ReviewStateRepository;
   shapeValidator: ShapeValidator;
+  repairRepository: RepairRepository;
+  instanceCopier: InstanceCopier;
+  /** A note of updates in progress; by default none is kept. */
+  updateJournal?: UpdateJournal;
+  /** The clock; injected for tests. */
+  now?: () => Date;
+  /** Fresh identifiers (the UUID of an update's copy); injected for tests. */
+  newId?: () => string;
+  /** Keeps the instance an update copies read-only while it runs. */
+  writeFence?: WriteFence;
 }
+
+const NO_JOURNAL: UpdateJournal = { begin: () => undefined, end: () => undefined, staging: () => null };
+const NO_FENCE: WriteFence = { hold: () => () => undefined };
 
 export function createUseCases({
   sessionGateway,
@@ -207,6 +263,12 @@ export function createUseCases({
   preferencesRepository,
   reviewStateRepository,
   shapeValidator,
+  repairRepository,
+  instanceCopier,
+  updateJournal = NO_JOURNAL,
+  now = () => new Date(),
+  newId = () => crypto.randomUUID(),
+  writeFence = NO_FENCE,
 }: Dependencies): UseCases {
   /** Normalized card content, or a throw naming what is missing. */
   function validContent(content: CardContent): CardContent {
@@ -230,6 +292,66 @@ export function createUseCases({
     return read;
   }
 
+
+  /**
+   * A new catalogue for an instance: published by the session's owner,
+   * named as their profile names them (the WebID when it does not say).
+   */
+  /**
+   * Bring an instance's documents up to this app's formats, in place: its
+   * meta document (saying what it replaces, for an updated copy), its
+   * preferences, every deck's entry, cards and review states, and last
+   * its catalogue (written when missing), one write per document. Only ever
+   * run on the copy an update makes (see updateInstance).
+   */
+  async function upgradeInPlace(
+    session: Session,
+    instanceUrl: string,
+    replacing: { replaces: string; replacedAt: string },
+  ): Promise<void> {
+    const meta = await instanceRepository.readMeta(instanceUrl);
+    if (meta !== null) await instanceRepository.saveMeta(instanceUrl, { ...meta, ...replacing });
+    const stored = await preferencesRepository.getPreferences(instanceUrl);
+    if (stored !== null && isPreferencesOutdated(stored)) {
+      await preferencesRepository.savePreferences(instanceUrl, stored.preferences);
+    }
+    for (const deck of await deckRepository.listDecks(instanceUrl)) {
+      if (isDeckOutdated(deck)) await deckRepository.saveDeck(upgradeDeck(deck));
+      const cards = (await deckRepository.listCards(deck)).filter(isOutdated);
+      if (cards.length > 0) await deckRepository.saveCards(deck, cards.map(upgradeCard));
+      const reviews = (await reviewStateRepository.listReviewStates(deck)).filter(isReviewStateOutdated);
+      if (reviews.length > 0) {
+        await reviewStateRepository.applyReviewChanges(deck, {
+          save: reviews.map(upgradeReviewState),
+          remove: [],
+        });
+      }
+    }
+    // Last: the catalogue lists the decks as DCAT datasets, which they are only once updated.
+    if ((await deckRepository.readCatalog(instanceUrl)) === null) {
+      await deckRepository.saveCatalog(instanceUrl, await catalogOf(session, meta?.name ?? instanceUrl));
+    }
+  }
+
+  async function validateInstance(instanceUrl: string): Promise<ValidationReport> {
+    const decks = await deckRepository.listDecks(instanceUrl);
+    const documents = await Promise.all(
+      instanceDocumentUrls(instanceUrl, decks).map((url) => shapeValidator.validateDocument(url)),
+    );
+    return summarize(instanceUrl, documents);
+  }
+
+  async function catalogOf(session: Session, title: string): Promise<Catalog> {
+    const name = await webIdDocumentRepository
+      .fetchWebIdDocument(session.webId)
+      .then((document) => profileNameOf(document, session.webId))
+      .catch(() => undefined);
+    return {
+      title,
+      description: defaultCatalogDescription(title),
+      publisher: { webId: session.webId, name: name ?? session.webId },
+    };
+  }
   return {
     restoreSession() {
       return sessionGateway.restore();
@@ -266,15 +388,13 @@ export function createUseCases({
       ]);
       return { webId: session.webId, name, podUrl: storages[0]?.url, oidcIssuer };
     },
-    async validateInstance(instanceUrl) {
-      const decks = await deckRepository.listDecks(instanceUrl);
-      const documents = await Promise.all(
-        instanceDocumentUrls(instanceUrl, decks).map((url) =>
-          shapeValidator.validateDocument(url),
-        ),
-      );
-      return summarize(instanceUrl, documents);
+    planRepair(report) {
+      return planRepair(report);
     },
+    applyRepairs(repairs) {
+      return repairRepository.applyRepairs(repairs);
+    },
+    validateInstance,
     viewWebIdDocument(session) {
       return webIdDocumentRepository.fetchWebIdDocument(session.webId);
     },
@@ -290,13 +410,15 @@ export function createUseCases({
     getRegistrationOptions(session) {
       return instanceRepository.getRegistrationOptions(session.webId);
     },
-    createInstance(session, { containerUrl, name, registrationTarget }) {
-      return instanceRepository.createInstance({
+    async createInstance(session, { containerUrl, name, registrationTarget }) {
+      const instance = await instanceRepository.createInstance({
         webId: session.webId,
         containerUrl: containerUrl.trim(),
         name: name.trim(),
         registrationTarget,
       });
+      await deckRepository.saveCatalog(instance.url, await catalogOf(session, instance.name));
+      return instance;
     },
     attachInstanceByUrl(session, instanceUrl, registrationTarget) {
       return instanceRepository.attachInstance({
@@ -323,6 +445,9 @@ export function createUseCases({
     setDeckDirection(deck, direction) {
       return deckRepository.saveDeck({ ...deck, direction });
     },
+    async describeDeck(deck, about) {
+      return deckRepository.saveDeck(withAbout(deck, about));
+    },
     removeDeck(deck) {
       return deckRepository.removeDeck(deck);
     },
@@ -338,10 +463,33 @@ export function createUseCases({
     },
     async planLibraryUpgrade(deck) {
       if (deck.sourceUrl === undefined) return null;
-      const source = await deckLibrary.fetchLibraryDeck(deck.sourceUrl);
-      return planLibraryUpgrade(deck, source);
+      const series = (await deckLibrary.listLibraryDecks()).find((libraryDeck) =>
+        isCopyOf(deck, libraryDeck),
+      );
+      if (series === undefined) return null;
+      const [from, to, cards] = await Promise.all([
+        deckLibrary.fetchLibraryDeck(deck.sourceUrl),
+        deckLibrary.fetchLibraryDeck(series.url),
+        deckRepository.listCards(deck),
+      ]);
+      return planLibraryUpgrade({ deck, cards, from, to, releases: series.releases });
     },
-    applyLibraryUpgrade(deck, plan) {
+    async applyLibraryUpgrade(deck, plan) {
+      await deckRepository.applyCardChanges(deck, {
+        save: [...plan.add, ...plan.change],
+        remove: plan.remove.map((card) => card.id),
+      });
+      if (plan.remove.length > 0) {
+        await reviewStateRepository.applyReviewChanges(deck, {
+          save: [],
+          remove: plan.remove.flatMap((card) =>
+            (["front-to-back", "back-to-front"] as const).map((direction) => ({
+              cardId: card.id,
+              direction,
+            })),
+          ),
+        });
+      }
       return deckRepository.saveDeck(applyLibraryUpgrade(deck, plan));
     },
     listCards(deck) {
@@ -357,9 +505,10 @@ export function createUseCases({
       return deckRepository.removeCard(deck, card);
     },
     async planMigration(instanceUrl) {
-      const [instance, preferences, decks] = await Promise.all([
+      const [instance, preferences, catalog, decks] = await Promise.all([
         instanceRepository.readMeta(instanceUrl),
         preferencesRepository.getPreferences(instanceUrl),
+        deckRepository.readCatalog(instanceUrl),
         deckRepository.listDecks(instanceUrl),
       ]);
       const entries = await Promise.all(
@@ -371,48 +520,138 @@ export function createUseCases({
           return { deck, cards, reviews };
         }),
       );
-      return planMigration({ instance, preferences, entries });
+      return planMigration({ instance, preferences, catalog, entries });
     },
-    async migrateInstance(instanceUrl) {
-      const migrated: MigrationResult = {
-        deckCount: 0,
-        cardCount: 0,
-        reviewCount: 0,
-        preferencesMigrated: false,
-        instanceMigrated: false,
+    async updateInstance(session, instance, onProgress = () => undefined) {
+      const source = ensureTrailingSlash(instance.url);
+      const target = stagingUrlOf(source, newId());
+      const move = { from: source, to: target };
+      let step: UpdateStep = "stage";
+      let done = 0;
+      let total = 0;
+      let created = false;
+      // The original is read-only from here until the update is over: a
+      // write aimed at it by mistake fails instead of changing it.
+      const release = writeFence.hold(source);
+      const finished = (next?: UpdateStep) => {
+        done += 1;
+        if (next !== undefined) step = next;
+        onProgress({ step, done, total });
       };
-      const meta = await instanceRepository.readMeta(instanceUrl);
-      if (meta !== null && isInstanceOutdated(meta)) {
-        await instanceRepository.saveMeta(instanceUrl, meta);
-        migrated.instanceMigrated = true;
-      }
-      const stored = await preferencesRepository.getPreferences(instanceUrl);
-      if (stored !== null && isPreferencesOutdated(stored)) {
-        await preferencesRepository.savePreferences(instanceUrl, stored.preferences);
-        migrated.preferencesMigrated = true;
-      }
-      for (const deck of await deckRepository.listDecks(instanceUrl)) {
-        if (isDeckOutdated(deck)) {
-          await deckRepository.saveDeck(upgradeDeck(deck));
-          migrated.deckCount += 1;
+      try {
+        onProgress({ step, done, total });
+        const resources = await instanceCopier.listResources(source);
+        total = resources.length + 6;
+        await instanceCopier.ensureAbsent(target);
+        updateJournal.begin(source, target);
+        await instanceCopier.createContainer(target);
+        created = true;
+        finished("access");
+        await instanceCopier.copyAccessControl(source, target, move);
+        finished("copy");
+        const fingerprints = new Map<string, string>();
+        for (const resource of resources) {
+          const copy = rebaseIri(resource, source, target);
+          fingerprints.set(resource, await instanceCopier.fingerprint(resource));
+          await instanceCopier.copyResource(resource, copy, move);
+          await instanceCopier.copyAccessControl(resource, copy, move);
+          finished();
         }
-        const cards = (await deckRepository.listCards(deck)).filter(isOutdated);
-        if (cards.length > 0) {
-          await deckRepository.saveCards(deck, cards.map(upgradeCard));
-          migrated.cardCount += cards.length;
+        step = "upgrade";
+        onProgress({ step, done, total });
+        await upgradeInPlace(session, target, { replaces: source, replacedAt: now().toISOString() });
+        finished("validate");
+        const report = await validateInstance(target);
+        if (!report.conforms) {
+          throw new Error(
+            `The updated copy does not conform to Solid Memo's shapes (${report.violationCount} ${
+              report.violationCount === 1 ? "violation" : "violations"
+            }); your data is left as it was.`,
+          );
         }
-        const reviews = (await reviewStateRepository.listReviewStates(deck)).filter(
-          isReviewStateOutdated,
-        );
-        if (reviews.length > 0) {
-          await reviewStateRepository.applyReviewChanges(deck, {
-            save: reviews.map(upgradeReviewState),
-            remove: [],
-          });
-          migrated.reviewCount += reviews.length;
+        finished("verify");
+        const listedAgain = await instanceCopier.listResources(source);
+        if (listedAgain.join("\n") !== resources.join("\n")) {
+          throw new Error("The instance changed while it was being copied (in another tab or app?); try again.");
         }
+        for (const resource of resources) {
+          if ((await instanceCopier.fingerprint(resource)) !== fingerprints.get(resource)) {
+            throw new Error(`<${resource}> changed while it was being copied (in another tab or app?); try again.`);
+          }
+        }
+        finished("switch");
+        await instanceRepository.switchInstance({ webId: session.webId, from: source, to: target, title: instance.name });
+        finished();
+        updateJournal.end(source);
+        return { ok: true, instanceUrl: target, backupUrl: source };
+      } catch (error) {
+        let cleanedUp = !created;
+        if (created) {
+          cleanedUp = await instanceCopier.deleteRecursively(target).then(
+            () => true,
+            () => false,
+          );
+        }
+        if (cleanedUp) updateJournal.end(source);
+        return {
+          ok: false,
+          step,
+          error: error instanceof Error ? error.message : String(error),
+          cleanedUp,
+          ...(cleanedUp ? {} : { leftoverUrl: target }),
+        };
+      } finally {
+        release();
       }
-      return migrated;
+    },
+    async findInterruptedUpdate(instance) {
+      const staging = updateJournal.staging(ensureTrailingSlash(instance.url));
+      if (staging === null) return null;
+      const gone = await instanceCopier.ensureAbsent(staging).then(
+        () => true,
+        () => false,
+      );
+      if (gone) updateJournal.end(ensureTrailingSlash(instance.url));
+      return gone ? null : staging;
+    },
+    async removeInterruptedUpdate(instance) {
+      const source = ensureTrailingSlash(instance.url);
+      const staging = updateJournal.staging(source);
+      if (staging !== null) await instanceCopier.deleteRecursively(staging);
+      updateJournal.end(source);
+    },
+    async readBackup(instance) {
+      const meta = await instanceRepository.readMeta(instance.url);
+      if (meta?.replaces === undefined) return null;
+      const gone = await instanceCopier.ensureAbsent(meta.replaces).then(
+        () => true,
+        () => false,
+      );
+      if (gone) {
+        const { replaces: _replaces, replacedAt: _replacedAt, ...rest } = meta;
+        await instanceRepository.saveMeta(instance.url, rest);
+        return null;
+      }
+      return { url: meta.replaces, ...(meta.replacedAt === undefined ? {} : { replacedAt: meta.replacedAt }) };
+    },
+    async restoreBackup(session, instance) {
+      const meta = await instanceRepository.readMeta(instance.url);
+      if (meta?.replaces === undefined) throw new Error(`${instance.name} has no backup to restore.`);
+      await instanceRepository.switchInstance({
+        webId: session.webId,
+        from: instance.url,
+        to: meta.replaces,
+        title: instance.name,
+      });
+      await instanceCopier.deleteRecursively(instance.url);
+      return { url: meta.replaces, name: instance.name };
+    },
+    async deleteBackup(instance) {
+      const meta = await instanceRepository.readMeta(instance.url);
+      if (meta?.replaces === undefined) return;
+      await instanceCopier.deleteRecursively(meta.replaces);
+      const { replaces: _replaces, replacedAt: _replacedAt, ...rest } = meta;
+      await instanceRepository.saveMeta(instance.url, rest);
     },
     getPreferences,
     savePreferences(instanceUrl, preferences) {

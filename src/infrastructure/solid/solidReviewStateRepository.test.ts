@@ -55,9 +55,10 @@ function reviewsDataset() {
   );
 }
 
-function makeRepository() {
+function makeRepository(checkWrite?: Parameters<typeof createSolidReviewStateRepository>[0]["checkWrite"]) {
   return createSolidReviewStateRepository({
     fetch: vi.fn() as unknown as typeof globalThis.fetch,
+    ...(checkWrite === undefined ? {} : { checkWrite }),
   });
 }
 
@@ -176,6 +177,20 @@ describe("applyReviewChanges", () => {
       toReviewState(getThing(dataset, `${deck.reviewsDocumentUrl}#card-1`)!),
     ).toEqual(restored);
     expect(getThing(dataset, `${deck.reviewsDocumentUrl}#card-2`)).toBeNull();
+  });
+
+  it("checks the states it saves, and saves nothing when the check refuses", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(twoStates());
+    const checkWrite = vi.fn(async () => {
+      throw new Error("does not conform");
+    });
+    await expect(
+      makeRepository(checkWrite).applyReviewChanges(deck, { save: [state], remove: [] }),
+    ).rejects.toThrow("does not conform");
+    expect(checkWrite).toHaveBeenCalledWith(expect.anything(), [`${deck.reviewsDocumentUrl}#card-1`]);
+    await expect(makeRepository(checkWrite).saveReviewState(deck, state)).rejects.toThrow("does not conform");
+    expect(checkWrite).toHaveBeenLastCalledWith(expect.anything(), [`${deck.reviewsDocumentUrl}#card-1`]);
+    expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });
 
   it("does nothing when the reviews document does not exist", async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { datasetFromTurtle } from "../../test/turtle";
-import { createEngine } from "./engine";
+import type { Literal, Quad } from "@rdfjs/types";
+import { createEngine, mapIris } from "./engine";
 
 const SHAPES = `
 @prefix sh:  <http://www.w3.org/ns/shacl#> .
@@ -112,5 +113,61 @@ describe("createEngine", () => {
     const good = await datasetFromTurtle(`<#a> <https://example.com/ns#name> "Ann" .`, DATA_URL);
     expect(await e.validateNode(bad, `${DATA_URL}#a`, `${SHAPES_URL}#shape`)).toHaveLength(2);
     expect(await e.validateNode(good, `${DATA_URL}#a`, `${SHAPES_URL}#shape`)).toEqual([]);
+  });
+
+  it("checks a whole graph against shapes that pick their own targets, sorted by focus node", async () => {
+    const targeted = await datasetFromTurtle(
+      `@prefix sh: <http://www.w3.org/ns/shacl#> .
+       @prefix ex: <https://example.com/ns#> .
+       <#person> a sh:NodeShape ; sh:targetClass ex:Person ;
+           sh:property [ sh:path ex:name ; sh:minCount 1 ] .`,
+      SHAPES_URL,
+    );
+    const e = createEngine(targeted);
+    const data = await datasetFromTurtle(
+      `@prefix ex: <https://example.com/ns#> .
+       <#b> a ex:Person . <#a> a ex:Person . <#c> a ex:Person ; ex:name "Cy" .`,
+      DATA_URL,
+    );
+    expect(await e.validate(data)).toEqual([
+      {
+        focusNode: `${DATA_URL}#a`,
+        path: "https://example.com/ns#name",
+        message: "Less than 1 values",
+        severity: "violation",
+        constraint: "MinCount",
+      },
+      {
+        focusNode: `${DATA_URL}#b`,
+        path: "https://example.com/ns#name",
+        message: "Less than 1 values",
+        severity: "violation",
+        constraint: "MinCount",
+      },
+    ]);
+    const good = await datasetFromTurtle(`<#a> a <https://example.com/ns#Person> ; <https://example.com/ns#name> "Ann" .`, DATA_URL);
+    expect(await e.validate(good)).toEqual([]);
+  });
+});
+
+describe("mapIris", () => {
+  it("maps every IRI, in any position, and leaves literals and blank nodes as they are", async () => {
+    const data = await datasetFromTurtle(
+      `<#a> <#p> <#b>, "x", _:n . _:n <https://example.com/ns#q> "1"^^<https://example.com/ns#type> .`,
+      DATA_URL,
+    );
+    const moved = mapIris(data, (iri) => iri.replace("https://example.com/", "https://moved.example/"));
+    const triples = [...(moved as Iterable<Quad>)].map((q) => [q.subject.value, q.predicate.value, q.object.value]);
+    expect(triples).toEqual(
+      expect.arrayContaining([
+        ["https://moved.example/data.ttl#a", "https://moved.example/data.ttl#p", "https://moved.example/data.ttl#b"],
+        ["https://moved.example/data.ttl#a", "https://moved.example/data.ttl#p", "x"],
+      ]),
+    );
+    const typed = [...(moved as Iterable<Quad>)].find((q) => q.object.value === "1")!;
+    expect(typed.subject.termType).toBe("BlankNode");
+    expect(typed.predicate.value).toBe("https://moved.example/ns#q");
+    expect((typed.object as Literal).datatype.value).toBe("https://example.com/ns#type");
+    expect(moved.size).toBe(4);
   });
 });

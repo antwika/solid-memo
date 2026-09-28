@@ -4,6 +4,8 @@ import {
   cardContentFromRecord,
   cardFromRecord,
   cardToRecord,
+  deckAgents,
+  deckDistribution,
   deckFromRecord,
   deckToRecord,
   libraryDeckFromRecord,
@@ -30,25 +32,40 @@ const deck: Deck = {
   sourceUrl: "https://solid-memo.com/decks/capitals.ttl",
 };
 
+const SM = "https://solid-memo.com/vocab/v1#";
+const TOPIC = "https://solid-memo.com/vocab/topics#geography";
+const ANTON = `${CATALOG}#agent-anton-wiklund`;
+const byAgent = (agent: string) => (agent === ANTON ? "Anton Wiklund" : agent);
+
 describe("deck records", () => {
-  it("round-trip a deck with every field", () => {
-    const record = deckToRecord(deck);
+  it("round-trip a deck with every field, its creators as agents", () => {
+    const full: Deck = {
+      ...deck,
+      formatVersion: 3,
+      sourceUrl: "https://solid-memo.com/decks/capitals/1.ttl",
+      themes: [TOPIC],
+      keywords: ["capitals"],
+    };
+    const record = deckToRecord(full);
     expect(record).toEqual({
       title: "Capitals",
+      description: deck.description,
       created: deck.createdAt,
       modified: deck.modifiedAt,
-      creator: ["Anton Wiklund"],
+      creator: [ANTON],
       license: deck.license,
-      description: deck.description,
-      direction: "bidirectional",
+      studyDirection: `${SM}bidirectional`,
+      theme: [TOPIC],
+      keyword: ["capitals"],
+      distribution: [`${deck.url}-cards`],
       cardsDocument: CARDS,
       reviewsDocument: REVIEWS,
-      source: deck.sourceUrl,
+      source: full.sourceUrl,
     });
-    expect(deckFromRecord(deck.url, 2, record)).toEqual(deck);
+    expect(deckFromRecord(deck.url, 3, record, byAgent)).toEqual(full);
   });
 
-  it("leave out what a deck does not have, and keep the stored version", () => {
+  it("give a deck without a description the default one, and leave out what it does not have", () => {
     const bare: Deck = {
       id: "deck-1",
       url: `${CATALOG}#deck-1`,
@@ -63,12 +80,37 @@ describe("deck records", () => {
     const record = deckToRecord(bare);
     expect(record).toEqual({
       title: "Own",
+      description: "Flashcards: Own.",
       creator: [],
-      direction: "front-to-back",
+      studyDirection: `${SM}frontToBack`,
+      theme: [],
+      keyword: [],
+      distribution: [`${bare.url}-cards`],
       cardsDocument: CARDS,
       reviewsDocument: REVIEWS,
     });
-    expect(deckFromRecord(bare.url, 1, record)).toEqual(bare);
+    expect(deckFromRecord(bare.url, 1, record, byAgent)).toEqual({
+      ...bare,
+      description: "Flashcards: Own.",
+    });
+  });
+
+  it("name the agents beside a deck, one per author, and its cards document as its distribution", () => {
+    const withTwo: Deck = { ...deck, authors: ["Anton Wiklund", "A friend <friend@example.com>", "Anton Wiklund"] };
+    expect(deckAgents(withTwo)).toEqual([
+      { url: ANTON, record: { name: "Anton Wiklund" } },
+      {
+        url: `${CATALOG}#agent-a-friend-friend-example-com`,
+        record: { name: "A friend", mbox: "mailto:friend@example.com" },
+      },
+    ]);
+    expect(deckDistribution(deck)).toEqual({
+      url: `${deck.url}-cards`,
+      record: {
+        accessUrl: CARDS,
+        mediaType: "https://www.iana.org/assignments/media-types/text/turtle",
+      },
+    });
   });
 });
 
@@ -121,40 +163,59 @@ describe("card records", () => {
 });
 
 describe("library deck records", () => {
-  it("build the deck's content around its cards", () => {
+  const RELEASE = "https://solid-memo.com/decks/capitals/1.ttl";
+  const release = {
+    title: "Capitals",
+    description: "From Wikipedia.",
+    creator: [ANTON],
+    publisher: "https://solid-memo.com/decks/index.ttl#solid-memo",
+    studyDirection: `${SM}frontToBack` as const,
+    theme: ["http://publications.europa.eu/resource/authority/data-theme/EDUC", TOPIC],
+    keyword: ["capitals"],
+    language: [],
+    version: "1",
+    inSeries: "https://solid-memo.com/decks/index.ttl#capitals",
+    isVersionOf: "https://solid-memo.com/decks/index.ttl#capitals",
+    distribution: [`${RELEASE}#turtle`],
+    wasDerivedFrom: [],
+  };
+
+  it("build a release's content around its cards", () => {
     const cards = [{ id: "se", front: "Sweden", back: "Stockholm", formatVersion: 1 }];
-    expect(
-      libraryDeckFromRecord(
-        "https://solid-memo.com/decks/capitals.ttl",
-        1,
-        { title: "Capitals", creator: ["Anton"], direction: "front-to-back", source: [] },
-        cards,
-      ),
-    ).toEqual({
-      url: "https://solid-memo.com/decks/capitals.ttl",
+    expect(libraryDeckFromRecord(RELEASE, 3, release, cards, byAgent)).toEqual({
+      url: RELEASE,
       name: "Capitals",
-      formatVersion: 1,
-      authors: ["Anton"],
+      formatVersion: 3,
+      authors: ["Anton Wiklund"],
+      description: "From Wikipedia.",
       direction: "front-to-back",
+      version: "1",
+      seriesUrl: "https://solid-memo.com/decks/index.ttl#capitals",
+      themes: release.theme,
+      keywords: ["capitals"],
       cards,
     });
+  });
+
+  it("carry the licence, version notes and modification time when stated", () => {
     expect(
       libraryDeckFromRecord(
-        "https://solid-memo.com/decks/capitals.ttl",
-        2,
+        RELEASE,
+        3,
         {
-          title: "Capitals",
-          creator: [],
+          ...release,
           license: "https://creativecommons.org/publicdomain/zero/1.0/",
-          description: "From Wikipedia.",
-          direction: "bidirectional",
-          source: ["https://en.wikipedia.org/"],
+          versionNotes: "Added Norway.",
+          modified: "2026-09-27T20:12:13.000Z",
+          studyDirection: `${SM}bidirectional`,
         },
         [],
+        byAgent,
       ),
     ).toMatchObject({
       license: "https://creativecommons.org/publicdomain/zero/1.0/",
-      description: "From Wikipedia.",
+      versionNotes: "Added Norway.",
+      modifiedAt: "2026-09-27T20:12:13.000Z",
       direction: "bidirectional",
     });
   });

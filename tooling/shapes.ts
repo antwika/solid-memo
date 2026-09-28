@@ -4,6 +4,7 @@ import {
   localName,
   objectsOf,
   parseTurtle,
+  RDF_TYPE,
   subjectsOfType,
   type TurtleFile,
 } from "./rdf.ts";
@@ -21,6 +22,17 @@ const SH = "http://www.w3.org/ns/shacl#";
 const XSD = "http://www.w3.org/2001/XMLSchema#";
 const RDFS_COMMENT = "http://www.w3.org/2000/01/rdf-schema#comment";
 
+/**
+ * The vocabularies a shape's sh:class may come from: Solid Memo's own,
+ * and the standard ones whose classes it writes (DCAT catalogues,
+ * datasets and distributions; FOAF agents).
+ */
+export const CLASS_NAMESPACES = [
+  SM_NS,
+  "http://www.w3.org/ns/dcat#",
+  "http://xmlns.com/foaf/0.1/",
+];
+
 export type TermKind =
   | "string"
   | "integer"
@@ -28,7 +40,8 @@ export type TermKind =
   | "dateTime"
   | "boolean"
   | "iri"
-  | "enum";
+  | "enum"
+  | "iriEnum";
 export type Cardinality = "one" | "optional" | "many";
 export type ShapeContext = "pod" | "library" | "any";
 
@@ -47,6 +60,10 @@ export interface ShapeModel {
   shape: string;
   version: number;
   targetClass: string;
+  /** Further rdf:types a conforming subject has (sh:hasValue on rdf:type). */
+  additionalTypes: string[];
+  /** Predicates a conforming subject never has (sh:maxCount 0). */
+  absent: string[];
   shapeIri: string;
   /** Path under shapes/, e.g. "deck/v2.ttl". */
   shapeDocument: string;
@@ -106,13 +123,18 @@ function parseShapeFile(file: TurtleFile): ShapeModel[] {
         fail(`"${name}" does not match the file's version ${fileVersion}.`);
       }
       const targetClass = objectsOf(quads, iri, `${SH}class`)[0];
-      if (targetClass === undefined || !targetClass.value.startsWith(SM_NS)) {
-        fail(`"${name}" needs an sh:class in the Solid Memo vocabulary.`);
+      if (
+        targetClass === undefined ||
+        !CLASS_NAMESPACES.some((ns) => targetClass.value.startsWith(ns))
+      ) {
+        fail(`"${name}" needs an sh:class in the Solid Memo, DCAT or FOAF vocabulary.`);
       }
       const fragment = localName(iri);
       const context: ShapeContext =
         fragment === "inPod" ? "pod" : fragment === "inLibrary" ? "library" : "any";
       const fields: ShapeField[] = [];
+      const additionalTypes: string[] = [];
+      const absent: string[] = [];
       let versionAsserted = false;
       for (const property of objectsOf(quads, iri, `${SH}property`)) {
         const field = parseProperty(quads, property.value, version, fail);
@@ -120,7 +142,14 @@ function parseShapeFile(file: TurtleFile): ShapeModel[] {
           versionAsserted = true;
           continue;
         }
-        if (field === null) continue;
+        if ("type" in field) {
+          additionalTypes.push(field.type);
+          continue;
+        }
+        if ("absent" in field) {
+          absent.push(field.absent);
+          continue;
+        }
         if (fields.some((f) => f.name === field.name)) {
           fail(`"${name}" has two fields named "${field.name}".`);
         }
@@ -132,6 +161,8 @@ function parseShapeFile(file: TurtleFile): ShapeModel[] {
         shape: lowerFirst(parsed![1]),
         version,
         targetClass: targetClass!.value,
+        additionalTypes,
+        absent,
         shapeIri: iri,
         shapeDocument: file.path,
         context,
@@ -142,16 +173,18 @@ function parseShapeFile(file: TurtleFile): ShapeModel[] {
 }
 
 /**
- * A property shape as a field: null for a validation-only one
- * (sh:maxCount 0), "formatVersion" for the version assertion (checked,
- * not a field).
+ * A property shape as a field: `{ absent }` for a predicate the subject
+ * must not have (sh:maxCount 0), which the writer removes;
+ * "formatVersion" for the version assertion (checked, not a field); and
+ * `{ type }` for an rdf:type the subject must also have (sh:hasValue),
+ * which the writer adds.
  */
 function parseProperty(
   quads: readonly Quad[],
   shape: string,
   version: number,
   fail: (message: string) => never,
-): ShapeField | "formatVersion" | null {
+): ShapeField | "formatVersion" | { type: string } | { absent: string } {
   const of = (predicate: string) => objectsOf(quads, shape, `${SH}${predicate}`);
   const path = of("path")[0];
   if (path === undefined || path.termType !== "NamedNode") {
@@ -176,7 +209,14 @@ function parseProperty(
     }
     return "formatVersion";
   }
-  if (maxCount === 0) return null;
+  if (predicate === RDF_TYPE) {
+    const type = of("hasValue")[0];
+    if (type === undefined || type.termType !== "NamedNode") {
+      fail(`<${shape}> constrains rdf:type without an sh:hasValue class.`);
+    }
+    return { type: type!.value };
+  }
+  if (maxCount === 0) return { absent: predicate };
   const datatype = of("datatype")[0]?.value;
   const nodeKind = of("nodeKind")[0]?.value;
   let kind: TermKind | undefined;
@@ -185,8 +225,11 @@ function parseProperty(
   if (kind === undefined) {
     fail(`<${shape}> has no supported sh:datatype or sh:nodeKind sh:IRI.`);
   }
-  if (values !== undefined && kind !== "string") {
-    fail(`<${shape}> uses sh:in, which is only supported for xsd:string.`);
+  if (values !== undefined && kind !== "string" && kind !== "iri") {
+    fail(`<${shape}> uses sh:in, which is only supported for xsd:string and IRIs.`);
+  }
+  if (values !== undefined && values.some((v) => (v.termType === "NamedNode") !== (kind === "iri"))) {
+    fail(`<${shape}> lists sh:in values of another kind than the field's.`);
   }
   const name = of("name")[0]?.value ?? localName(predicate);
   const cardinality: Cardinality =
@@ -197,7 +240,7 @@ function parseProperty(
   return {
     name,
     predicate,
-    kind: values === undefined ? kind! : "enum",
+    kind: values === undefined ? kind! : kind === "iri" ? "iriEnum" : "enum",
     cardinality,
     ...(values === undefined ? {} : { values: values.map((v) => v.value) }),
   };
@@ -205,7 +248,7 @@ function parseProperty(
 
 function tsType(field: ShapeField): string {
   const scalar =
-    field.kind === "enum"
+    field.kind === "enum" || field.kind === "iriEnum"
       ? field.values!.map((v) => JSON.stringify(v)).join(" | ")
       : field.kind === "integer" || field.kind === "decimal"
         ? "number"
@@ -213,7 +256,7 @@ function tsType(field: ShapeField): string {
           ? "boolean"
           : "string";
   return field.cardinality === "many"
-    ? field.kind === "enum"
+    ? field.kind === "enum" || field.kind === "iriEnum"
       ? `readonly (${scalar})[]`
       : `readonly ${scalar}[]`
     : scalar;
@@ -306,6 +349,8 @@ export function renderDescriptors(models: readonly ShapeModel[]): string {
     lines.push(`  shape: ${JSON.stringify(model.shape)},`);
     lines.push(`  version: ${model.version},`);
     lines.push(`  targetClass: ${JSON.stringify(model.targetClass)},`);
+    lines.push(`  additionalTypes: ${JSON.stringify(model.additionalTypes)},`);
+    lines.push(`  absent: ${JSON.stringify(model.absent)},`);
     lines.push(`  shapeIri: ${JSON.stringify(model.shapeIri)},`);
     lines.push(`  shapeDocument: ${JSON.stringify(model.shapeDocument)},`);
     lines.push(`  context: ${JSON.stringify(model.context)},`);

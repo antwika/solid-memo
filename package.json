@@ -9,8 +9,10 @@
     "preview": "vite preview",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:pod": "SOLID_SERVER_URL=${SOLID_SERVER_URL:-http://localhost:3999/} vitest run src/integration --coverage.enabled=false",
     "generate": "node -e \"import('./tooling/generate.ts').then((m) => m.run(process))\"",
     "generate:check": "node -e \"import('./tooling/generate.ts').then((m) => m.run(process))\" -- --check",
+    "deck:release": "node -e \"import('./tooling/deckRelease.ts').then((m) => m.run(process))\" --",
     "format:turtle": "node -e \"import('./tooling/formatTurtle.ts').then((m) => m.run(process))\"",
     "format:turtle:check": "node -e \"import('./tooling/formatTurtle.ts').then((m) => m.run(process))\" -- --check"
   },

@@ -111,6 +111,28 @@ ${PREFIXES}<> a ex:Thing ; ex:name "A \\"quoted\\" name", "B"@en ; ex:count 2 ; 
     ).toThrow("a comment does not directly precede a subject and would be lost; move it or format by hand.");
   });
 
+  it("abbreviates rdf:type to `a` as a predicate only", () => {
+    const turtle = `@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+<#p> a sh:PropertyShape ; sh:path rdf:type .`;
+    expect(formatTurtle(turtle, BASE)).toBe(`@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:  <http://www.w3.org/ns/shacl#> .
+
+<#p>
+    a sh:PropertyShape ;
+    sh:path rdf:type .
+`);
+  });
+
+  it("writes IRIs under a folder relative to it when asked", () => {
+    const turtle = `<https://example.com/lib/index.ttl> <https://example.com/ns#has> <https://example.com/lib/a/1.ttl>, <https://example.com/lib/index.ttl#b>, <https://other.example/x> .`;
+    expect(formatTurtle(turtle, "https://example.com/lib/index.ttl", { relativeTo: "https://example.com/lib/" })).toBe(`<>
+    <https://example.com/ns#has> <a/1.ttl> ,
+                                 <#b> ,
+                                 <https://other.example/x> .
+`);
+  });
+
   it("is idempotent, and handles a document without prefixes", () => {
     const once = formatTurtle(`<#a> <https://example.com/ns#name> "a" .`, BASE);
     expect(once).toBe(`<#a>\n    <https://example.com/ns#name> "a" .\n`);

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
 import type { Instance } from "../domain/instance";
-import type { LibraryDeck } from "../domain/library";
+import { isCopyOf, type LibraryDeck } from "../domain/library";
 import { errorMessage } from "./errorMessage";
 import { LibraryDeckScreen } from "./LibraryDeckScreen";
 import { libraryDeckHref } from "./router";
@@ -32,9 +32,7 @@ export function LibraryDeckContainer({
     queryKey: ["decks", instance.url],
     queryFn: () => useCases.listDecks(instance.url),
   });
-  const imported = (decksQuery.data ?? []).some(
-    (podDeck) => podDeck.sourceUrl === deck.url,
-  );
+  const imported = (decksQuery.data ?? []).some((podDeck) => isCopyOf(podDeck, deck));
 
   const importMutation = useMutation({
     mutationFn: () => useCases.importLibraryDeck(instance.url, deck),
@@ -49,7 +47,7 @@ export function LibraryDeckContainer({
   return (
     <LibraryDeckScreen
       deck={deck}
-      deckHref={libraryDeckHref(instance.url, deck.url)}
+      deckHref={libraryDeckHref(instance.url, deck.seriesUrl)}
       imported={imported}
       busy={importMutation.isPending}
       error={errorMessage(importMutation.error)}

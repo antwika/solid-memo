@@ -18,6 +18,11 @@ import { isHttpUrl } from "./webId";
  * ways, each direction with review state of its own. A format-1 reader
  * would study a bidirectional deck one way and mistake the other way's
  * review state for stray subjects, which is why the version moved.
+ *
+ * Deck format 3 makes a deck a DCAT dataset: the direction is a SKOS
+ * concept (`sm:studyDirection`), a description is required, creators
+ * are foaf:Agent nodes, and topics and keywords may be stated. A
+ * format-2 reader would find no `sm:direction` and drop the deck.
  */
 export const DECK_FORMAT_VERSION: number = LATEST_VERSION.deck;
 export const CARD_FORMAT_VERSION: number = LATEST_VERSION.card;
@@ -118,8 +123,15 @@ export interface Deck {
    * for content taken from elsewhere, where it came from.
    */
   description?: string;
-  /** URL of the library deck this one was imported from, if it was. */
+  /** URL of the library release this one was imported from, if it was. */
   sourceUrl?: string;
+  /**
+   * What the deck is about: dcat:theme concepts, Solid Memo's topics
+   * and the EU data themes. Absent when none is stated.
+   */
+  themes?: string[];
+  /** Free-text keywords (dcat:keyword). Absent when none is stated. */
+  keywords?: string[];
 }
 
 /** What is on a card: its editable content, without identity. */

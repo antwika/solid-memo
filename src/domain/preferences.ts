@@ -1,10 +1,12 @@
 import type { AnswerScale } from "./answerScale";
+import { DEFAULT_INVALID_DATA_POLICY, type InvalidDataPolicy } from "./invalidDataPolicy";
 import { LATEST_VERSION } from "./shapes/generated";
 
 /**
  * Format version written on every preferences document this app saves.
- * Format 2 states every field; format 1 is whatever the unversioned era
- * wrote, each missing field meaning its default.
+ * Format 3 adds the invalid data policy; format 2 states every field;
+ * format 1 is whatever the unversioned era wrote, each missing field
+ * meaning its default.
  */
 export const PREFERENCES_FORMAT_VERSION: number = LATEST_VERSION.preferences;
 
@@ -25,6 +27,8 @@ export interface StudyPreferences {
    * document) that ordinary study has no use for.
    */
   developerMode: boolean;
+  /** What the app does when data in the instance does not conform to its shapes. */
+  invalidDataPolicy: InvalidDataPolicy;
 }
 
 /** Preferences as a pod holds them, with the format they are stored in. */
@@ -39,4 +43,5 @@ export const DEFAULT_PREFERENCES: StudyPreferences = {
   dayBoundaryHour: 4,
   answerScale: "sm2",
   developerMode: false,
+  invalidDataPolicy: DEFAULT_INVALID_DATA_POLICY,
 };

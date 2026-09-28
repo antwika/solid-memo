@@ -75,6 +75,7 @@ describe("PreferencesContainer", () => {
       dayBoundaryHour: 4,
       answerScale: "sm2",
       developerMode: false,
+      invalidDataPolicy: "block-instance" as const,
     });
   });
 

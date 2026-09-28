@@ -15,7 +15,9 @@ export type TermKind =
   | "dateTime"
   | "boolean"
   | "iri"
-  | "enum";
+  | "enum"
+  /** An IRI from a fixed list (sh:in over IRIs): a concept of a SKOS scheme. */
+  | "iriEnum";
 
 /** "one" = exactly one; "optional" = at most one; "many" = any number. */
 export type Cardinality = "one" | "optional" | "many";
@@ -27,7 +29,7 @@ export interface FieldDescriptor {
   predicate: string;
   kind: TermKind;
   cardinality: Cardinality;
-  /** kind "enum" only: the allowed literals, in shape order. */
+  /** kind "enum" and "iriEnum" only: the allowed literals or IRIs, in shape order. */
   values?: readonly string[];
 }
 
@@ -37,8 +39,12 @@ export type ShapeContext = "pod" | "library" | "any";
 export interface ShapeDescriptor<T = unknown> {
   shape: ShapeName;
   version: number;
-  /** The rdf:type a conforming subject has. */
+  /** The rdf:type a conforming subject has, by which its shape is picked. */
   targetClass: string;
+  /** Further rdf:types a conforming subject has, which the writer adds. */
+  additionalTypes: readonly string[];
+  /** Predicates a conforming subject never has, which the writer removes. */
+  absent: readonly string[];
   /** Absolute IRI of the sh:NodeShape. */
   shapeIri: string;
   /** Path of the shape document under the published shapes/ folder. */

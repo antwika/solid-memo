@@ -1,34 +1,63 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
-import { LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
+import type { Card } from "../domain/deck";
+import type { LibraryUpgradePlan } from "../domain/libraryUpgrade";
+import { describeChanges, LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
 
-function renderNotice(
-  overrides: Partial<Parameters<typeof LibraryUpgradeNotice>[0]> = {},
-) {
-  const props = {
-    deckName: "Capitals",
-    plan: { fromVersion: 1, toVersion: 2, direction: "bidirectional" as const },
-    busy: false,
-    error: null,
-    onUpgrade: vi.fn(),
-    ...overrides,
-  };
+const card = (id: string): Card => ({ id, url: `https://pod.example/d.ttl#${id}`, front: id, back: id, createdAt: "", formatVersion: 2 });
+const libraryCard = (id: string) => ({ id, front: id, back: id, formatVersion: 1 });
+const plan: LibraryUpgradePlan = {
+  fromVersion: "1",
+  toVersion: "3",
+  releaseUrl: "https://solid-memo.com/decks/capitals/3.ttl",
+  notes: [
+    { version: "2", notes: "Added Norway." },
+    { version: "3", notes: "Fixed Sweden." },
+  ],
+  add: [libraryCard("no")],
+  change: [libraryCard("se"), libraryCard("dk")],
+  remove: [card("is")],
+  kept: [card("fi")],
+};
+
+function renderNotice(overrides: Partial<Parameters<typeof LibraryUpgradeNotice>[0]> = {}) {
+  const props = { deckName: "Capitals", plan, busy: false, error: null, onUpgrade: vi.fn(), ...overrides };
   const view = render(<LibraryUpgradeNotice {...props} />);
   return { ...view, props };
 }
 
-describe("LibraryUpgradeNotice", () => {
-  it("says what the library changed and what an update would do, then waits", () => {
-    const { props } = renderNotice();
-    const region = screen.getByRole("region", { name: "Newer library version" });
-    expect(region).toHaveTextContent(
-      "Capitals came from the library, which now publishes it in deck format 2; your copy is format 1.",
+describe("describeChanges", () => {
+  it("names what the update does, in a list", () => {
+    expect(describeChanges(plan)).toBe("adds 1 card, changes 2 cards and removes 1 card");
+    expect(describeChanges({ ...plan, add: [], change: [], remove: [], direction: "bidirectional" })).toBe(
+      "studies it both ways",
     );
-    expect(region).toHaveTextContent("sets its study direction to Both ways");
-    expect(props.onUpgrade).not.toHaveBeenCalled();
+  });
+});
 
-    fireEvent.click(screen.getByRole("button", { name: "Update from the library" }));
+describe("LibraryUpgradeNotice", () => {
+  it("says what the new release changed and what an update would do, then waits", () => {
+    const { props } = renderNotice();
+    const region = screen.getByRole("region", { name: "Newer library release" });
+    expect(region).toHaveTextContent(
+      "Capitals came from release 1; release 3 is out. Updating adds 1 card, changes 2 cards and removes 1 card. Your review history is kept, but for the cards removed. 1 card you changed is left as you have it.",
+    );
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
+      "Release 2: Added Norway.",
+      "Release 3: Fixed Sweden.",
+    ]);
+    expect(props.onUpgrade).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Update to release 3" }));
     expect(props.onUpgrade).toHaveBeenCalledOnce();
+  });
+
+  it("says nothing of removals, kept cards or notes when there are none, and counts kept cards", () => {
+    renderNotice({ plan: { ...plan, remove: [], kept: [card("a"), card("b")], notes: [] } });
+    const region = screen.getByRole("region", { name: "Newer library release" });
+    expect(region).toHaveTextContent("Your review history is kept. 2 cards you changed are left as you have them.");
+    expect(screen.queryByRole("list")).toBeNull();
+    renderNotice({ plan: { ...plan, remove: [], kept: [] } });
+    expect(screen.getAllByRole("region")[1]).toHaveTextContent(/Your review history is kept\.Release 2/);
   });
 
   it("shows progress and errors", () => {

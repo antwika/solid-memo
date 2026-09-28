@@ -5,7 +5,8 @@ import { readTurtleTree, type TurtleFile } from "./rdf.ts";
 
 /**
  * The house style for the repository's hand-written Turtle (decks/,
- * shapes/, vocab/, tooling/fixtures/): `@base` first, prefixes aligned in
+ * shapes/, vocab/, tooling/fixtures/; releases/ are frozen and
+ * vendor/ is not ours, so neither is ever reformatted): `@base` first, prefixes aligned in
  * one block, every subject on a line of its own, one predicate per line
  * indented four spaces, further objects aligned under the first, and a
  * blank line between subjects. Lists and blank nodes stay inline.
@@ -31,8 +32,14 @@ interface SubjectBlock {
 /**
  * The document reformatted. `fallbackBase` resolves relative IRIs when
  * the document declares no `@base`; it never appears in the output.
+ * With `relativeTo`, IRIs under that folder are written relative to it
+ * (the library index, which works wherever the site is hosted).
  */
-export function formatTurtle(source: string, fallbackBase: string): string {
+export function formatTurtle(
+  source: string,
+  fallbackBase: string,
+  { relativeTo }: { relativeTo?: string } = {},
+): string {
   const lines = source.split("\n");
   let base = fallbackBase;
   let declaresBase = false;
@@ -71,6 +78,9 @@ export function formatTurtle(source: string, fallbackBase: string): string {
     }
     if (value === base) return "<>";
     if (value.startsWith(`${base}#`)) return `<#${value.slice(base.length + 1)}>`;
+    if (relativeTo !== undefined && value.startsWith(relativeTo)) {
+      return `<${value.slice(relativeTo.length)}>`;
+    }
     return `<${value}>`;
   };
 
@@ -86,7 +96,7 @@ export function formatTurtle(source: string, fallbackBase: string): string {
   };
 
   const term = (t: Term): string => {
-    if (t.termType === "NamedNode") return t.value === `${RDF}type` ? "a" : iri(t.value);
+    if (t.termType === "NamedNode") return iri(t.value);
     if (t.termType === "Literal") {
       const text = JSON.stringify(t.value);
       if (t.language !== "") return `${text}@${t.language}`;
@@ -108,7 +118,8 @@ export function formatTurtle(source: string, fallbackBase: string): string {
   const predicateGroups = (qs: Quad[]): [string, string[]][] => {
     const groups: [string, string[]][] = [];
     for (const quad of qs) {
-      const predicate = term(quad.predicate);
+      // `a` abbreviates rdf:type as a predicate only; elsewhere it is an IRI.
+      const predicate = quad.predicate.value === `${RDF}type` ? "a" : term(quad.predicate);
       const last = groups[groups.length - 1];
       if (last !== undefined && last[0] === predicate) last[1].push(term(quad.object));
       else groups.push([predicate, [term(quad.object)]]);

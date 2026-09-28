@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Plugin } from "vite";
 import { readTurtleTree } from "./rdf.ts";
+import { parseConceptSchemes, renderSchemePage } from "./concepts.ts";
 import { parseVocab, renderVocabPage } from "./vocab.ts";
 
 /**
@@ -28,6 +29,21 @@ export function vocabPage(root = "."): PublishedPage {
     contentType: "text/html; charset=utf-8",
     body: async () =>
       renderVocabPage(parseVocab(await readFile(join(root, "vocab/v1.ttl"), "utf8"))),
+  };
+}
+
+/** The HTML page the topics scheme's IRI lands on (see docs/vocab.md). */
+export function topicsPage(root = "."): PublishedPage {
+  return {
+    path: "topics/index.html",
+    contentType: "text/html; charset=utf-8",
+    body: async () => {
+      const [scheme] = parseConceptSchemes(
+        await readFile(join(root, "vocab/topics.ttl"), "utf8"),
+        "https://solid-memo.com/vocab/topics",
+      );
+      return renderSchemePage(scheme, "../topics.ttl");
+    },
   };
 }
 

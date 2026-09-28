@@ -2,6 +2,7 @@ import type {
   DocumentReport,
   SubjectReport,
   ValidationReport,
+  Violation,
 } from "../domain/validation";
 import { ExternalLink } from "./ExternalLink";
 
@@ -20,7 +21,7 @@ export function summaryOf(report: ValidationReport): string {
   const failing = checked.filter((d) =>
     d.subjects.some(
       (s) =>
-        s.status === "checked" &&
+        (s.status === "checked" || s.status === "profiled") &&
         s.violations.some((v) => v.severity === "violation"),
     ),
   ).length;
@@ -75,6 +76,13 @@ function SubjectView({ subject }: { subject: SubjectReport }) {
           this app knows (up to {subject.latest}); skipped.
         </>
       );
+    case "profiled":
+      return (
+        <>
+          {name} — not a Solid Memo subject; DCAT-AP says:
+          <ViolationTable violations={subject.violations} />
+        </>
+      );
     case "checked":
       if (subject.violations.length === 0) {
         return (
@@ -86,33 +94,43 @@ function SubjectView({ subject }: { subject: SubjectReport }) {
       return (
         <>
           {name} — {subject.shape} format {subject.version}:
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Severity</th>
-                <th scope="col">Property</th>
-                <th scope="col">Message</th>
-                <th scope="col">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subject.violations.map((violation, index) => (
-                <tr key={index}>
-                  <td>{violation.severity}</td>
-                  <td>
-                    {violation.path === undefined ? (
-                      "(the subject)"
-                    ) : (
-                      <ExternalLink url={violation.path} />
-                    )}
-                  </td>
-                  <td>{violation.message}</td>
-                  <td>{violation.value ?? ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ViolationTable violations={subject.violations} />
         </>
       );
   }
+}
+
+/** One row per result; a DCAT-AP result says so before its message. */
+function ViolationTable({ violations }: { violations: Violation[] }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Severity</th>
+          <th scope="col">Property</th>
+          <th scope="col">Message</th>
+          <th scope="col">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {violations.map((violation, index) => (
+          <tr key={index}>
+            <td>{violation.severity}</td>
+            <td>
+              {violation.path === undefined ? (
+                "(the subject)"
+              ) : (
+                <ExternalLink url={violation.path} />
+              )}
+            </td>
+            <td>
+              {violation.profile === "dcat-ap" && "DCAT-AP: "}
+              {violation.message}
+            </td>
+            <td>{violation.value ?? ""}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }

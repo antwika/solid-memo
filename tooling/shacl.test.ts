@@ -1,7 +1,16 @@
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { loadEngine, loadShapesGraph, validateTurtleDocument } from "./shacl.ts";
+import {
+  loadEngine,
+  loadProfileEngine,
+  loadReferenceData,
+  loadShapesGraph,
+  validateProfile,
+  validateTurtleDocument,
+} from "./shacl.ts";
 import { parseTurtle, readTurtleTree } from "./rdf.ts";
-import { readDeckFiles } from "./deckLibrary";
+import { loadValidators, readDeckLibrary } from "./deckLibrary";
 
 const ROOT = `${process.cwd()}/`;
 const SM = "https://solid-memo.com/vocab/v1#";
@@ -27,6 +36,19 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "preferences/v1/invalid/bad-answer-scale.ttl": { path: `${SM}answerScale`, message: "The answer scale is sm2 or minimal." },
   "preferences/v2/invalid/missing-developer-mode.ttl": { path: `${SM}developerMode`, message: "Less than 1 values" },
   "preferences/v2/invalid/hour-out-of-range.ttl": { path: `${SM}dayBoundaryHour`, message: "The day boundary is an hour of the day, 0 to 23." },
+  "preferences/v3/invalid/missing-policy.ttl": { path: `${SM}invalidDataPolicy`, message: "Preferences state what to do with invalid data" },
+  "preferences/v3/invalid/unknown-policy.ttl": { path: `${SM}invalidDataPolicy`, message: "Preferences state what to do with invalid data" },
+  "deck/v3/invalid/pod-with-old-direction.ttl": { path: `${SM}direction`, message: "Format 3 states the study direction with solid-memo:studyDirection" },
+  "deck/v3/invalid/pod-without-description.ttl": { path: `${DC}description`, message: "A format-3 deck has a description" },
+  "deck/v3/invalid/unknown-direction.ttl": { path: `${SM}studyDirection`, message: "A format-3 deck states its study direction" },
+  "deck/v3/invalid/library-without-series.ttl": { path: "http://www.w3.org/ns/dcat#inSeries", message: "A release belongs to its deck's series." },
+  "deck/v3/invalid/library-without-education-theme.ttl": { path: "http://www.w3.org/ns/dcat#theme", message: "A library deck has the EU data theme EDUC" },
+  "deck/v3/invalid/library-with-source.ttl": { path: `${DC}source`, message: "A format-3 deck names what it is drawn from with prov:wasDerivedFrom" },
+  "deck/v3/invalid/library-bad-version.ttl": { path: "http://www.w3.org/ns/dcat#version", message: "A release states its version: 1, 2, …" },
+  "deck-series/v1/invalid/library-without-current-version.ttl": { path: "http://www.w3.org/ns/dcat#hasCurrentVersion", message: "A deck series names its current release." },
+  "catalog/v1/invalid/without-publisher.ttl": { path: `${DC}publisher`, message: "A catalogue names its publisher" },
+  "agent/v1/invalid/without-name.ttl": { path: "http://xmlns.com/foaf/0.1/name", message: "An agent has a name." },
+  "agent/v1/invalid/mbox-not-mailto.ttl": { path: "http://xmlns.com/foaf/0.1/mbox", message: "An agent's mailbox is a mailto: IRI." },
 };
 
 const contextOf = (path: string) =>
@@ -34,7 +56,9 @@ const contextOf = (path: string) =>
 
 describe("the shapes over the fixtures", async () => {
   const engine = await loadEngine(ROOT);
-  const fixtures = await readTurtleTree(`${ROOT}tooling/fixtures`);
+  const fixtures = (await readTurtleTree(`${ROOT}tooling/fixtures`)).filter(
+    (f) => !f.path.startsWith("profile/"),
+  );
   const base = (path: string) => `https://pod.example/${path}`;
 
   it("accept every valid fixture", async () => {
@@ -90,24 +114,171 @@ describe("the shapes over the fixtures", async () => {
   });
 });
 
-describe("the shapes over the deck library", async () => {
-  const engine = await loadEngine(ROOT);
-
-  it("accept every published deck", async () => {
-    const decks = await readDeckFiles(`${ROOT}decks`);
-    expect(decks.length).toBeGreaterThan(0);
-    for (const { file, turtle } of decks) {
-      await expect(
-        validateTurtleDocument(file, parseTurtle(turtle, `https://solid-memo.com/decks/${file}`), engine, "library"),
-        file,
-      ).resolves.toBeUndefined();
-    }
-  }, 60_000);
+describe("the deck library", () => {
+  it("is valid and released as it is: every release, the index and every source", async () => {
+    const { releases, warnings } = await readDeckLibrary(ROOT, await loadValidators(ROOT));
+    expect(releases.length).toBeGreaterThan(0);
+    expect(warnings).toEqual([]);
+  }, 120_000);
 });
 
 describe("loadShapesGraph", () => {
   it("merges every shape file into one graph", async () => {
     const graph = await loadShapesGraph(ROOT);
     expect(graph.size).toBeGreaterThan(500);
+  });
+});
+
+const DCAT = "http://www.w3.org/ns/dcat#";
+const FOAF = "http://xmlns.com/foaf/0.1/";
+const SKOS = "http://www.w3.org/2004/02/skos/core#";
+
+/**
+ * What each invalid profile fixture must be rejected for: every property
+ * DCAT-AP 3.0.1 makes mandatory on the classes Solid Memo writes, and
+ * the class checks its values must pass.
+ */
+const PROFILE_EXPECTED: Record<string, { path: string; message: string }> = {
+  "dcat-ap/invalid/agent-without-name.ttl": { path: `${FOAF}name`, message: "Less than 1 values" },
+  "dcat-ap/invalid/catalog-without-publisher.ttl": { path: `${DC}publisher`, message: "Less than 1 values" },
+  "dcat-ap/invalid/dataset-without-description.ttl": { path: `${DC}description`, message: "Less than 1 values" },
+  "dcat-ap/invalid/distribution-without-access-url.ttl": { path: `${DCAT}accessURL`, message: "Less than 1 values" },
+  "dcat-ap/invalid/language-not-described.ttl": { path: `${DC}language`, message: "Class constraint failed." },
+  "dcat-ap/invalid/series-without-title.ttl": { path: `${DC}title`, message: "Less than 1 values" },
+  "dcat-ap/invalid/source-not-a-dataset.ttl": { path: `${DC}source`, message: "Class constraint failed." },
+  "dcat-ap/invalid/theme-not-a-concept.ttl": { path: `${DCAT}theme`, message: "Class constraint failed." },
+  "skos/invalid/concept-without-label.ttl": { path: `${SKOS}prefLabel`, message: "S14: A resource has no more than one value" },
+  "skos/invalid/scheme-without-title.ttl": { path: `${DC}title`, message: "Concept Scheme has no dct:title with a language tag!" },
+  "skos/invalid/two-labels-in-one-language.ttl": { path: `${SKOS}prefLabel`, message: 'Language "en" has been used by 2 values' },
+};
+
+describe("the vendored profiles over their fixtures", async () => {
+  const reference = await loadReferenceData(ROOT);
+  const engines = {
+    "dcat-ap": await loadProfileEngine(ROOT, "dcat-ap"),
+    skos: await loadProfileEngine(ROOT, "skos"),
+  };
+  const fixtures = await readTurtleTree(`${ROOT}tooling/fixtures/profile`);
+  const profileOf = (path: string) => (path.startsWith("skos/") ? "skos" : "dcat-ap");
+  // Solid Memo's own concept schemes are held to SKOS best practice too.
+  const minimumOf = (path: string) => (profileOf(path) === "skos" ? "warning" : "violation");
+  const check = (path: string, turtle: string) =>
+    validateProfile(
+      path,
+      parseTurtle(turtle, `https://pod.example/${path}`),
+      engines[profileOf(path)],
+      reference,
+      minimumOf(path),
+    );
+
+  it("accept every valid fixture", async () => {
+    const valid = fixtures.filter((f) => f.path.includes("/valid/"));
+    expect(valid.map((f) => f.path)).toEqual(["dcat-ap/valid/library.ttl", "skos/valid/scheme.ttl"]);
+    for (const { path, turtle } of valid) {
+      await expect(check(path, turtle), path).resolves.toBeUndefined();
+    }
+  });
+
+  it("reject every invalid fixture for the expected reason", async () => {
+    const invalid = fixtures.filter((f) => f.path.includes("/invalid/"));
+    expect(invalid.map((f) => f.path).sort()).toEqual(Object.keys(PROFILE_EXPECTED).sort());
+    for (const { path, turtle } of invalid) {
+      const expected = PROFILE_EXPECTED[path];
+      await expect(check(path, turtle), path).rejects.toThrow(`${path}:\n  <`);
+      await expect(check(path, turtle), path).rejects.toThrow(
+        ` (${expected.path}): ${expected.message}`,
+      );
+    }
+  });
+
+  it("let a profile's warnings pass unless asked to fail on them", async () => {
+    const { path, turtle } = fixtures.find((f) => f.path === "skos/invalid/scheme-without-title.ttl")!;
+    await expect(
+      validateProfile(path, parseTurtle(turtle, `https://pod.example/${path}`), engines.skos, reference),
+    ).resolves.toBeUndefined();
+  });
+
+  it("report only results about the document's own subjects", async () => {
+    const quads = parseTurtle(`<#x> <${DC}title> "x" .`, "https://pod.example/x.ttl");
+    const unlabelled = parseTurtle(`<#y> a <${FOAF}Agent> .`, "https://pod.example/y.ttl");
+    await expect(
+      validateProfile("x.ttl", quads, engines["dcat-ap"], unlabelled),
+    ).resolves.toBeUndefined();
+  });
+
+  it("name a result on the subject itself without a path", async () => {
+    const quads = parseTurtle(`<#x> <${DC}title> "x" .`, "https://pod.example/x.ttl");
+    const engine = {
+      validateNode: async () => [],
+      validate: async () => [
+        {
+          focusNode: "https://pod.example/x.ttl#x",
+          message: "Not allowed.",
+          severity: "violation" as const,
+          constraint: "Not",
+        },
+      ],
+    };
+    await expect(validateProfile("x.ttl", quads, engine, [])).rejects.toThrow(
+      "x.ttl:\n  <https://pod.example/x.ttl#x>: Not allowed.",
+    );
+  });
+
+  it("accept the valid format-3 decks, catalogue and series, which Solid Memo writes", async () => {
+    const fixture = async (path: string) => {
+      const { turtle } = (await readTurtleTree(`${ROOT}tooling/fixtures`)).find((f) => f.path === path)!;
+      return parseTurtle(turtle, `https://pod.example/${path}`);
+    };
+    const index = await fixture("deck-series/v1/valid/library-index.ttl");
+    await expect(
+      validateProfile("pod", await fixture("deck/v3/valid/pod.ttl"), engines["dcat-ap"], reference),
+    ).resolves.toBeUndefined();
+    await expect(
+      validateProfile("release", await fixture("deck/v3/valid/library-release.ttl"), engines["dcat-ap"], [...reference, ...index]),
+    ).resolves.toBeUndefined();
+    await expect(
+      validateProfile("series", index, engines["dcat-ap"], reference),
+    ).resolves.toBeUndefined();
+  });
+
+  it("accept the reference data under both profiles", async () => {
+    await expect(
+      validateProfile("vocab/external.ttl", reference, engines["dcat-ap"], []),
+    ).resolves.toBeUndefined();
+    await expect(
+      validateProfile("vocab/external.ttl", reference, engines.skos, [], "warning"),
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe("vocab/", async () => {
+  it("holds every concept scheme to SKOS, best practice included", async () => {
+    const engine = await loadProfileEngine(ROOT, "skos");
+    for (const { path, turtle } of await readTurtleTree(`${ROOT}vocab`)) {
+      await expect(
+        validateProfile(
+          `vocab/${path}`,
+          parseTurtle(turtle, `https://solid-memo.com/vocab/${path}`),
+          engine,
+          [],
+          "warning",
+        ),
+      ).resolves.toBeUndefined();
+    }
+  });
+});
+
+describe("vendor/", async () => {
+  const manifest = JSON.parse(await readFile(`${ROOT}vendor/manifest.json`, "utf8")) as {
+    files: { path: string; sha256: string }[];
+  };
+
+  it("holds every vendored file byte for byte as its manifest entry records", async () => {
+    const onDisk = (await readTurtleTree(`${ROOT}vendor`)).map((f) => f.path);
+    expect(manifest.files.map((f) => f.path).sort()).toEqual(onDisk);
+    for (const { path, sha256 } of manifest.files) {
+      const bytes = await readFile(`${ROOT}vendor/${path}`);
+      expect(createHash("sha256").update(bytes).digest("hex"), path).toBe(sha256);
+    }
   });
 });

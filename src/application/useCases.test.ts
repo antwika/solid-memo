@@ -9,6 +9,8 @@ import type {
   StorageGateway,
   WebIdDocumentRepository,
   ShapeValidator,
+  RepairRepository,
+  InstanceCopier,
 } from "./ports";
 import { createUseCases } from "./useCases";
 import { DECK_FORMAT_VERSION, type Card, type Deck } from "../domain/deck";
@@ -16,9 +18,11 @@ import type { Instance } from "../domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "../domain/library";
 import { DEFAULT_PREFERENCES } from "../domain/preferences";
 import type { ReviewState } from "../domain/review";
+import type { Catalog } from "../domain/catalog";
 import type { Session } from "../domain/session";
 import type { Storage } from "../domain/storage";
 import type { WebIdDocument } from "../domain/webIdDocument";
+import { firstRelease } from "../test/libraryDeck";
 
 const session: Session = { webId: "https://alice.example/profile/card#me" };
 const document: WebIdDocument = {
@@ -26,6 +30,11 @@ const document: WebIdDocument = {
   subjects: [],
 };
 const storage: Storage = { url: "https://alice.example/", source: "profile" };
+const catalog: Catalog = {
+  title: "Main",
+  description: "My decks.",
+  publisher: { webId: session.webId, name: "Alice" },
+};
 const instance: Instance = {
   url: "https://alice.example/solid-memo/main/",
   name: "Main",
@@ -51,6 +60,7 @@ const card: Card = {
 };
 const libraryDeck: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
+  ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
   name: "Capitals",
   cardCount: 1,
   authors: ["Anton Wiklund"],
@@ -65,6 +75,10 @@ const libraryContent: LibraryDeckContent = {
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
   direction: "front-to-back",
+  version: "1",
+  seriesUrl: "https://solid-memo.com/decks/index.ttl#capitals",
+  themes: [],
+  keywords: [],
   cards: [{ id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 }],
 };
 
@@ -95,9 +109,13 @@ function makeDeps() {
     deleteInstance: vi.fn(async () => undefined),
     readMeta: vi.fn(async () => null),
     saveMeta: vi.fn(async () => undefined),
+    registerCatalog: vi.fn(async () => undefined),
+    switchInstance: vi.fn(async () => undefined),
   };
   const deckRepository: DeckRepository = {
     listDecks: vi.fn(async () => [deck]),
+    readCatalog: vi.fn(async () => catalog),
+    saveCatalog: vi.fn(async () => undefined),
     createDeck: vi.fn(async () => deck),
     renameDeck: vi.fn(async () => deck),
     saveDeck: vi.fn(async (saved) => saved),
@@ -107,6 +125,7 @@ function makeDeps() {
     updateCard: vi.fn(async () => card),
     removeCard: vi.fn(async () => undefined),
     saveCards: vi.fn(async () => undefined),
+    applyCardChanges: vi.fn(async () => undefined),
     importDeck: vi.fn(async () => deck),
   };
   const deckLibrary: DeckLibrary = {
@@ -130,6 +149,19 @@ function makeDeps() {
       subjects: [],
     })),
   };
+  const repairRepository: RepairRepository = {
+    applyRepairs: vi.fn(async () => undefined),
+  };
+  const instanceCopier: InstanceCopier = {
+    listResources: vi.fn(async () => [`${instance.url}decks/`, `${instance.url}meta.ttl`]),
+    ensureAbsent: vi.fn(async () => undefined),
+    createContainer: vi.fn(async () => undefined),
+    copyAccessControl: vi.fn(async () => false),
+    copyResource: vi.fn(async () => undefined),
+    fingerprint: vi.fn(async (url: string) => `etag of ${url}`),
+    deleteRecursively: vi.fn(async () => undefined),
+  };
+  const updateJournal = { begin: vi.fn(), end: vi.fn(), staging: vi.fn((): string | null => null) };
   return {
     sessionGateway,
     webIdDocumentRepository,
@@ -140,6 +172,11 @@ function makeDeps() {
     preferencesRepository,
     reviewStateRepository,
     shapeValidator,
+    repairRepository,
+    instanceCopier,
+    updateJournal,
+    now: () => new Date("2026-09-28T10:00:00.000Z"),
+    newId: () => "0f3a",
   };
 }
 
@@ -346,6 +383,16 @@ describe("createUseCases", () => {
     ).toHaveBeenCalledWith(session.webId);
   });
 
+  it("describeDeck saves the deck's description, topics and keywords, refusing an empty description", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await useCases.describeDeck(deck, { description: " Kanji. ", topics: [], keywords: ["kanji"] });
+    expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({ ...deck, description: "Kanji.", keywords: ["kanji"] });
+    await expect(useCases.describeDeck(deck, { description: "", topics: [], keywords: [] })).rejects.toThrow(
+      "A deck needs a description.",
+    );
+  });
+
   it("createInstance trims inputs and passes the WebID", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
@@ -359,6 +406,11 @@ describe("createUseCases", () => {
       containerUrl: "https://alice.example/solid-memo/main/",
       name: "Main",
       registrationTarget: "private",
+    });
+    expect(deps.deckRepository.saveCatalog).toHaveBeenCalledWith(instance.url, {
+      title: instance.name,
+      description: `Flashcard decks of the Solid Memo instance ${instance.name}.`,
+      publisher: { webId: session.webId, name: session.webId },
     });
   });
 
@@ -485,26 +537,20 @@ describe("createUseCases", () => {
       lastReviewedAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
     });
-    const nothingMigrated = {
-      deckCount: 0,
-      cardCount: 0,
-      reviewCount: 0,
-      preferencesMigrated: false,
-      instanceMigrated: false,
-    };
 
     it("planMigration reads every document and writes nothing", async () => {
       const deps = makeDeps();
       vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue({
         name: "Main",
         createdAt: "2026-09-21T10:00:00.000Z",
-        formatVersion: 1,
+        formatVersion: 2,
       });
       vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
         preferences: DEFAULT_PREFERENCES,
         formatVersion: 1,
       });
       vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
+      vi.mocked(deps.deckRepository.readCatalog).mockResolvedValue(null);
       vi.mocked(deps.deckRepository.listCards).mockImplementation(async (d) =>
         d === deck ? [old("a"), current("b"), old("c")] : [current("d")],
       );
@@ -514,6 +560,7 @@ describe("createUseCases", () => {
       const useCases = createUseCases(deps);
 
       await expect(useCases.planMigration(instance.url)).resolves.toEqual({
+        catalogMissing: true,
         decks: [
           { deck, deckOutdated: false, cardCount: 2, reviewCount: 0 },
           { deck: other, deckOutdated: false, cardCount: 0, reviewCount: 1 },
@@ -534,120 +581,384 @@ describe("createUseCases", () => {
       expect(deps.instanceRepository.saveMeta).not.toHaveBeenCalled();
     });
 
-    it("migrateInstance rewrites the instance record and the preferences first, in place", async () => {
+    const COPY = "https://alice.example/solid-memo/main-0f3a/";
+
+    it("updateInstance copies the instance, updates and checks the copy, then switches over, reporting its progress", async () => {
       const deps = makeDeps();
-      const meta = { name: "Main", createdAt: "2026-09-21T10:00:00.000Z", formatVersion: 0 };
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
+      const progress: string[] = [];
+      const outcome = await createUseCases(deps).updateInstance(session, instance, (p) =>
+        progress.push(`${p.step} ${p.done}/${p.total}`),
+      );
+      expect(outcome).toEqual({ ok: true, instanceUrl: COPY, backupUrl: instance.url });
+      const move = { from: instance.url, to: COPY };
+      expect(deps.instanceCopier.ensureAbsent).toHaveBeenCalledWith(COPY);
+      expect(deps.instanceCopier.createContainer).toHaveBeenCalledWith(COPY);
+      expect(vi.mocked(deps.instanceCopier.copyResource).mock.calls).toEqual([
+        [`${instance.url}decks/`, `${COPY}decks/`, move],
+        [`${instance.url}meta.ttl`, `${COPY}meta.ttl`, move],
+      ]);
+      expect(vi.mocked(deps.instanceCopier.copyAccessControl).mock.calls.map((c) => c.slice(0, 2))).toEqual([
+        [instance.url, COPY],
+        [`${instance.url}decks/`, `${COPY}decks/`],
+        [`${instance.url}meta.ttl`, `${COPY}meta.ttl`],
+      ]);
+      expect(deps.shapeValidator.validateDocument).toHaveBeenCalledWith(`${COPY}meta.ttl`);
+      expect(deps.instanceRepository.switchInstance).toHaveBeenCalledWith({
+        webId: session.webId,
+        from: instance.url,
+        to: COPY,
+        title: instance.name,
+      });
+      expect(deps.updateJournal.begin).toHaveBeenCalledWith(instance.url, COPY);
+      expect(deps.updateJournal.end).toHaveBeenCalledWith(instance.url);
+      expect(deps.instanceCopier.deleteRecursively).not.toHaveBeenCalled();
+      expect(progress).toEqual([
+        "stage 0/0",
+        "access 1/8",
+        "copy 2/8",
+        "copy 3/8",
+        "copy 4/8",
+        "upgrade 4/8",
+        "validate 5/8",
+        "verify 6/8",
+        "switch 7/8",
+        "switch 8/8",
+      ]);
+    });
+
+    it("updateInstance writes only to the copy: its record says what it replaces, its preferences and decks are updated", async () => {
+      const deps = makeDeps();
+      const meta = { name: "Main", createdAt: "2026-09-21T10:00:00.000Z", formatVersion: 1 };
       vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue(meta);
       vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
         preferences: { ...DEFAULT_PREFERENCES, newCardsPerDay: 7 },
         formatVersion: 1,
       });
-      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
-      const useCases = createUseCases(deps);
-
-      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
-        ...nothingMigrated,
-        preferencesMigrated: true,
-        instanceMigrated: true,
-      });
-      expect(deps.instanceRepository.saveMeta).toHaveBeenCalledExactlyOnceWith(instance.url, meta);
-      expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledExactlyOnceWith(
-        instance.url,
-        { ...DEFAULT_PREFERENCES, newCardsPerDay: 7 },
+      const oldEntry: Deck = { ...other, formatVersion: 1 };
+      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, oldEntry]);
+      vi.mocked(deps.deckRepository.listCards).mockImplementation(async (d) =>
+        d === oldEntry ? [old("d")] : [old("a"), current("b")],
       );
-    });
-
-    it("migrateInstance restamps outdated review states in one write per deck", async () => {
-      const deps = makeDeps();
-      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
       vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
         oldReview("a"),
         { ...oldReview("b"), formatVersion: 2 },
       ]);
-      const useCases = createUseCases(deps);
-
-      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
-        ...nothingMigrated,
-        reviewCount: 1,
+      await createUseCases(deps).updateInstance(session, instance);
+      expect(deps.instanceRepository.readMeta).toHaveBeenCalledWith(COPY);
+      expect(deps.instanceRepository.saveMeta).toHaveBeenCalledExactlyOnceWith(COPY, {
+        ...meta,
+        replaces: instance.url,
+        replacedAt: "2026-09-28T10:00:00.000Z",
       });
-      expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledExactlyOnceWith(
-        deck,
-        { save: [{ ...oldReview("a"), formatVersion: 2 }], remove: [] },
+      expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledExactlyOnceWith(COPY, {
+        ...DEFAULT_PREFERENCES,
+        newCardsPerDay: 7,
+      });
+      expect(deps.deckRepository.saveDeck).toHaveBeenCalledExactlyOnceWith({ ...oldEntry, formatVersion: DECK_FORMAT_VERSION });
+      expect(deps.deckRepository.saveCards).toHaveBeenNthCalledWith(1, deck, [current("a")]);
+      expect(deps.deckRepository.saveCards).toHaveBeenNthCalledWith(2, oldEntry, [current("d")]);
+      expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledWith(deck, {
+        save: [{ ...oldReview("a"), formatVersion: 2 }],
+        remove: [],
+      });
+      expect(deps.deckRepository.saveCatalog).not.toHaveBeenCalled();
+    });
+
+    it("updateInstance gives a copy without a catalogue one, published by the owner, leaving its registration to the switch", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.deckRepository.readCatalog).mockResolvedValue(null);
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
+      vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue({
+        name: "Main",
+        createdAt: "2026-09-21T10:00:00.000Z",
+        formatVersion: 2,
+      });
+      vi.mocked(deps.webIdDocumentRepository.fetchWebIdDocument).mockResolvedValue({
+        url: document.url,
+        subjects: [
+          {
+            url: session.webId,
+            properties: [{ predicate: "http://xmlns.com/foaf/0.1/name", values: [{ type: "literal", value: "Alice" }] }],
+          },
+        ],
+      } as WebIdDocument);
+      await createUseCases(deps).updateInstance(session, instance);
+      expect(deps.deckRepository.saveCatalog).toHaveBeenCalledExactlyOnceWith(COPY, {
+        title: "Main",
+        description: "Flashcard decks of the Solid Memo instance Main.",
+        publisher: { webId: session.webId, name: "Alice" },
+      });
+      expect(deps.instanceRepository.registerCatalog).not.toHaveBeenCalled();
+      // Written after every deck is updated: it lists them as DCAT datasets, which older entries are not.
+      expect(vi.mocked(deps.deckRepository.saveCatalog).mock.invocationCallOrder[0]).toBeGreaterThan(
+        Math.max(...vi.mocked(deps.reviewStateRepository.listReviewStates).mock.invocationCallOrder),
       );
     });
 
-    it("migrateInstance rewrites an outdated deck entry, then its cards", async () => {
+    it("updateInstance names a catalogue after the copy's URL and its publisher after the WebID when nothing says more", async () => {
       const deps = makeDeps();
-      const oldEntry: Deck = { ...other, formatVersion: 1 };
-      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, oldEntry]);
-      vi.mocked(deps.deckRepository.listCards).mockImplementation(async (d) =>
-        d === oldEntry ? [old("d")] : [current("b")],
-      );
-      const useCases = createUseCases(deps);
-
-      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
-        ...nothingMigrated,
-        deckCount: 1,
-        cardCount: 1,
+      vi.mocked(deps.deckRepository.readCatalog).mockResolvedValue(null);
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
+      vi.mocked(deps.webIdDocumentRepository.fetchWebIdDocument).mockRejectedValue(new Error("offline"));
+      await createUseCases(deps).updateInstance(session, instance);
+      expect(deps.deckRepository.saveCatalog).toHaveBeenCalledExactlyOnceWith(COPY, {
+        title: COPY,
+        description: `Flashcard decks of the Solid Memo instance ${COPY}.`,
+        publisher: { webId: session.webId, name: session.webId },
       });
-      expect(deps.deckRepository.saveDeck).toHaveBeenCalledExactlyOnceWith({
-        ...oldEntry,
-        formatVersion: DECK_FORMAT_VERSION,
-      });
-      expect(deps.deckRepository.saveCards).toHaveBeenCalledExactlyOnceWith(
-        oldEntry,
-        [current("d")],
-      );
     });
 
-    it("migrateInstance rewrites the outdated cards of each deck in one write per deck", async () => {
+    it.each([
+      ["stage", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.instanceCopier.listResources).mockRejectedValueOnce(new Error("boom")), false],
+      ["stage", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.instanceCopier.ensureAbsent).mockRejectedValueOnce(new Error("boom")), false],
+      ["access", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.instanceCopier.copyAccessControl).mockRejectedValueOnce(new Error("boom")), true],
+      ["copy", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.instanceCopier.copyResource).mockRejectedValueOnce(new Error("boom")), true],
+      ["upgrade", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.deckRepository.listDecks).mockRejectedValueOnce(new Error("boom")), true],
+      ["switch", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.instanceRepository.switchInstance).mockRejectedValueOnce(new Error("boom")), true],
+    ] as const)("updateInstance failing at %s leaves the original as it was and removes the copy", async (step, fail, copied) => {
       const deps = makeDeps();
-      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
-      vi.mocked(deps.deckRepository.listCards).mockImplementation(async (d) =>
-        d === deck ? [old("a"), current("b"), old("c")] : [old("d")],
-      );
-      const useCases = createUseCases(deps);
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
+      fail(deps);
+      const outcome = await createUseCases(deps).updateInstance(session, instance);
+      expect(outcome).toEqual({ ok: false, step, error: "boom", cleanedUp: true });
+      expect(deps.instanceCopier.deleteRecursively).toHaveBeenCalledTimes(copied ? 1 : 0);
+      if (copied) expect(deps.instanceCopier.deleteRecursively).toHaveBeenCalledWith(COPY);
+      expect(deps.instanceRepository.saveMeta).not.toHaveBeenCalledWith(instance.url, expect.anything());
+      expect(deps.updateJournal.end).toHaveBeenCalledWith(instance.url);
+    });
 
-      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual({
-        ...nothingMigrated,
-        cardCount: 3,
+    it("updateInstance refuses a copy that does not conform, naming how many violations", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
+      const violation = { message: "x", severity: "violation" as const, constraint: "MinCount" };
+      vi.mocked(deps.shapeValidator.validateDocument).mockImplementation(async (url) => ({
+        url,
+        status: "checked" as const,
+        subjects: [{ url: `${url}#x`, status: "checked" as const, shape: "deck" as const, version: 3, violations: [violation] }],
+      }));
+      const outcome = await createUseCases(deps).updateInstance(session, instance);
+      expect(outcome).toMatchObject({ ok: false, step: "validate", cleanedUp: true });
+      expect((outcome as { error: string }).error).toMatch(/^The updated copy does not conform to Solid Memo's shapes \(\d+ violations\)/);
+      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([]);
+      vi.mocked(deps.shapeValidator.validateDocument).mockImplementation(async (url) =>
+        url.endsWith("meta.ttl")
+          ? { url, status: "checked" as const, subjects: [{ url: `${url}#it`, status: "checked" as const, shape: "instance" as const, version: 2, violations: [violation] }] }
+          : { url, status: "missing" as const, subjects: [] },
+      );
+      expect(await createUseCases(deps).updateInstance(session, instance)).toMatchObject({
+        error: "The updated copy does not conform to Solid Memo's shapes (1 violation); your data is left as it was.",
       });
-      expect(deps.deckRepository.saveDeck).not.toHaveBeenCalled();
-      expect(deps.deckRepository.saveCards).toHaveBeenCalledTimes(2);
-      expect(deps.deckRepository.saveCards).toHaveBeenNthCalledWith(1, deck, [
-        current("a"),
-        current("c"),
-      ]);
-      expect(deps.deckRepository.saveCards).toHaveBeenNthCalledWith(2, other, [
-        current("d"),
-      ]);
     });
 
-    it("migrateInstance leaves decks without outdated cards untouched", async () => {
+    it("updateInstance refuses to switch when the original changed while it was copied", async () => {
       const deps = makeDeps();
-      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
-      const useCases = createUseCases(deps);
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
+      vi.mocked(deps.instanceCopier.fingerprint).mockResolvedValueOnce("v1").mockResolvedValueOnce("v1").mockResolvedValueOnce("v2");
+      expect(await createUseCases(deps).updateInstance(session, instance)).toEqual({
+        ok: false,
+        step: "verify",
+        error: `<${instance.url}decks/> changed while it was being copied (in another tab or app?); try again.`,
+        cleanedUp: true,
+      });
+      const more = makeDeps();
+      vi.mocked(more.deckRepository.listCards).mockResolvedValue([]);
+      vi.mocked(more.instanceCopier.listResources)
+        .mockResolvedValueOnce([`${instance.url}meta.ttl`])
+        .mockResolvedValueOnce([`${instance.url}meta.ttl`, `${instance.url}new.ttl`]);
+      expect(await createUseCases(more).updateInstance(session, instance)).toMatchObject({
+        step: "verify",
+        error: "The instance changed while it was being copied (in another tab or app?); try again.",
+      });
+      expect(more.instanceRepository.switchInstance).not.toHaveBeenCalled();
+    });
 
-      await expect(useCases.migrateInstance(instance.url)).resolves.toEqual(
-        nothingMigrated,
+    it("updateInstance names the copy it could not remove, and remembers it", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.instanceCopier.copyResource).mockRejectedValueOnce("offline");
+      vi.mocked(deps.instanceCopier.deleteRecursively).mockRejectedValueOnce(new Error("still offline"));
+      expect(await createUseCases(deps).updateInstance(session, instance)).toEqual({
+        ok: false,
+        step: "copy",
+        error: "offline",
+        cleanedUp: false,
+        leftoverUrl: COPY,
+      });
+      expect(deps.updateJournal.end).not.toHaveBeenCalled();
+    });
+
+    it("updateInstance names its copy with a random UUID, dates the switch now, and runs without a journal", async () => {
+      const { updateJournal: _j, now: _n, newId: _i, ...deps } = makeDeps();
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
+      vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue({
+        name: "Main",
+        createdAt: "2026-09-21T10:00:00.000Z",
+        formatVersion: 1,
+      });
+      const outcome = await createUseCases(deps).updateInstance(session, instance);
+      expect(outcome).toMatchObject({ ok: true });
+      expect((outcome as { instanceUrl: string }).instanceUrl).toMatch(
+        /^https:\/\/alice\.example\/solid-memo\/main-[0-9a-f-]{36}\/$/,
       );
-      expect(deps.deckRepository.saveCards).not.toHaveBeenCalled();
+      const saved = vi.mocked(deps.instanceRepository.saveMeta).mock.calls[0]![1];
+      expect(Date.parse(saved.replacedAt!)).not.toBeNaN();
+      await expect(createUseCases(deps).findInterruptedUpdate(instance)).resolves.toBeNull();
     });
 
-    it("migrateInstance stops at the first failed deck", async () => {
+    it("updateInstance holds the original read-only for the whole run, whether it succeeds or fails", async () => {
+      const release = vi.fn();
+      const writeFence = { hold: vi.fn(() => release) };
+      const deps = { ...makeDeps(), writeFence };
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
+      vi.mocked(deps.instanceCopier.listResources).mockImplementation(async () => {
+        expect(writeFence.hold).toHaveBeenCalledWith(instance.url);
+        return [];
+      });
+      vi.mocked(deps.instanceRepository.switchInstance).mockImplementation(async () => {
+        expect(release).not.toHaveBeenCalled();
+      });
+      await createUseCases(deps).updateInstance(session, instance);
+      expect(release).toHaveBeenCalledOnce();
+      vi.mocked(deps.instanceCopier.copyAccessControl).mockRejectedValueOnce(new Error("boom"));
+      await createUseCases(deps).updateInstance(session, instance);
+      expect(release).toHaveBeenCalledTimes(2);
+    });
+
+    it("updateInstance writes only to the copy and, at the end, the type index", async () => {
       const deps = makeDeps();
-      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
+      vi.mocked(deps.deckRepository.listDecks).mockImplementation(async (url) =>
+        url === COPY ? [{ ...deck, url: `${COPY}catalog.ttl#deck-1`, formatVersion: 1 }] : [deck],
+      );
       vi.mocked(deps.deckRepository.listCards).mockResolvedValue([old("a")]);
-      vi.mocked(deps.deckRepository.saveCards).mockRejectedValueOnce(
-        new Error("write refused"),
-      );
-      const useCases = createUseCases(deps);
-
-      await expect(useCases.migrateInstance(instance.url)).rejects.toThrow(
-        "write refused",
-      );
-      expect(deps.deckRepository.saveCards).toHaveBeenCalledTimes(1);
+      vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([oldReview("a")]);
+      vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue({
+        name: "Main",
+        createdAt: "2026-09-21T10:00:00.000Z",
+        formatVersion: 1,
+      });
+      vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
+        preferences: DEFAULT_PREFERENCES,
+        formatVersion: 1,
+      });
+      await createUseCases(deps).updateInstance(session, instance);
+      const writes: { name: string; order: number; urls: string[] }[] = [];
+      const record = (name: string, fn: unknown, urlsOf: (args: never[]) => (string | undefined)[]) => {
+        const mock = vi.mocked(fn as (...args: never[]) => unknown).mock;
+        mock.calls.forEach((args, i) =>
+          writes.push({ name, order: mock.invocationCallOrder[i]!, urls: urlsOf(args as never[]).filter((u) => u !== undefined) }),
+        );
+      };
+      const d = deps;
+      record("saveMeta", d.instanceRepository.saveMeta, ([url]) => [url]);
+      record("saveCatalog", d.deckRepository.saveCatalog, ([url]) => [url]);
+      record("savePreferences", d.preferencesRepository.savePreferences, ([url]) => [url]);
+      record("saveDeck", d.deckRepository.saveDeck, ([deckArg]) => [(deckArg as Deck).url]);
+      record("saveCards", d.deckRepository.saveCards, ([deckArg]) => [(deckArg as Deck).url]);
+      record("applyReviewChanges", d.reviewStateRepository.applyReviewChanges, ([deckArg]) => [(deckArg as Deck).url]);
+      record("createContainer", d.instanceCopier.createContainer, ([url]) => [url]);
+      record("copyResource", d.instanceCopier.copyResource, ([, to]) => [to]);
+      record("copyAccessControl", d.instanceCopier.copyAccessControl, ([, to]) => [to]);
+      record("deleteRecursively", d.instanceCopier.deleteRecursively, ([url]) => [url]);
+      record("switchInstance", d.instanceRepository.switchInstance, () => []);
+      expect(writes.map((w) => w.name)).toEqual(expect.arrayContaining(["saveMeta", "saveDeck", "saveCards", "applyReviewChanges"]));
+      for (const write of writes) for (const url of write.urls) expect(url.startsWith(COPY)).toBe(true);
+      const last = writes.reduce((a, b) => (a.order > b.order ? a : b));
+      expect(last.name).toBe("switchInstance");
+      expect(d.repairRepository.applyRepairs).not.toHaveBeenCalled();
+      expect(d.instanceRepository.registerCatalog).not.toHaveBeenCalled();
     });
+
+    it("findInterruptedUpdate names a copy an interrupted update left, and forgets one that is gone", async () => {
+      const deps = makeDeps();
+      const useCases = createUseCases(deps);
+      await expect(useCases.findInterruptedUpdate(instance)).resolves.toBeNull();
+      deps.updateJournal.staging.mockReturnValue(COPY);
+      vi.mocked(deps.instanceCopier.ensureAbsent).mockRejectedValueOnce(new Error("exists"));
+      await expect(useCases.findInterruptedUpdate(instance)).resolves.toBe(COPY);
+      await expect(useCases.findInterruptedUpdate(instance)).resolves.toBeNull();
+      expect(deps.updateJournal.end).toHaveBeenCalledWith(instance.url);
+    });
+
+    it("removeInterruptedUpdate deletes the copy it remembers, then forgets it", async () => {
+      const deps = makeDeps();
+      await createUseCases(deps).removeInterruptedUpdate(instance);
+      expect(deps.instanceCopier.deleteRecursively).not.toHaveBeenCalled();
+      deps.updateJournal.staging.mockReturnValue(COPY);
+      await createUseCases(deps).removeInterruptedUpdate(instance);
+      expect(deps.instanceCopier.deleteRecursively).toHaveBeenCalledWith(COPY);
+      expect(deps.updateJournal.end).toHaveBeenCalledWith(instance.url);
+    });
+
+    describe("the backup", () => {
+      const updated: Instance = { url: COPY, name: "Main" };
+      const meta = {
+        name: "Main",
+        createdAt: "2026-09-21T10:00:00.000Z",
+        formatVersion: 2,
+        replaces: instance.url,
+        replacedAt: "2026-09-28T10:00:00.000Z",
+      };
+
+      it("is read from what the instance replaces, and forgotten once it is gone", async () => {
+        const deps = makeDeps();
+        const useCases = createUseCases(deps);
+        await expect(useCases.readBackup(updated)).resolves.toBeNull();
+        vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue(meta);
+        vi.mocked(deps.instanceCopier.ensureAbsent).mockRejectedValueOnce(new Error("exists"));
+        await expect(useCases.readBackup(updated)).resolves.toEqual({ url: instance.url, replacedAt: meta.replacedAt });
+        const { replacedAt: _r, ...undated } = meta;
+        vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue(undated);
+        vi.mocked(deps.instanceCopier.ensureAbsent).mockRejectedValueOnce(new Error("exists"));
+        await expect(useCases.readBackup(updated)).resolves.toEqual({ url: instance.url });
+        await expect(useCases.readBackup(updated)).resolves.toBeNull();
+        expect(deps.instanceRepository.saveMeta).toHaveBeenCalledWith(COPY, {
+          name: "Main",
+          createdAt: meta.createdAt,
+          formatVersion: 2,
+        });
+      });
+
+      it("is restored by switching back to it, then deleting the updated instance", async () => {
+        const deps = makeDeps();
+        vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue(meta);
+        await expect(createUseCases(deps).restoreBackup(session, updated)).resolves.toEqual(instance);
+        expect(deps.instanceRepository.switchInstance).toHaveBeenCalledWith({
+          webId: session.webId,
+          from: COPY,
+          to: instance.url,
+          title: "Main",
+        });
+        expect(deps.instanceCopier.deleteRecursively).toHaveBeenCalledWith(COPY);
+        vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue(null);
+        await expect(createUseCases(deps).restoreBackup(session, updated)).rejects.toThrow("Main has no backup to restore.");
+      });
+
+      it("is deleted, then forgotten; with none, nothing happens", async () => {
+        const deps = makeDeps();
+        await createUseCases(deps).deleteBackup(updated);
+        expect(deps.instanceCopier.deleteRecursively).not.toHaveBeenCalled();
+        vi.mocked(deps.instanceRepository.readMeta).mockResolvedValue(meta);
+        await createUseCases(deps).deleteBackup(updated);
+        expect(deps.instanceCopier.deleteRecursively).toHaveBeenCalledWith(instance.url);
+        expect(deps.instanceRepository.saveMeta).toHaveBeenCalledWith(COPY, {
+          name: "Main",
+          createdAt: meta.createdAt,
+          formatVersion: 2,
+        });
+      });
+    });
+  });
+
+  it("planRepair plans from a report, and applyRepairs hands the repairs to the repository", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    expect(useCases.planRepair({ instanceUrl: instance.url, documents: [], violationCount: 0, conforms: true })).toEqual({
+      repairs: [],
+      unrepairable: [],
+    });
+    const repairs = [{ kind: "describe-deck" as const, documentUrl: "d", subjectUrl: "d#x", version: 3 }];
+    await useCases.applyRepairs(repairs);
+    expect(deps.repairRepository.applyRepairs).toHaveBeenCalledWith(repairs);
   });
 
   it("validateInstance checks every document of the instance", async () => {
@@ -698,46 +1009,68 @@ describe("createUseCases", () => {
     expect(deps.deckRepository.importDeck).not.toHaveBeenCalled();
   });
 
-  it("planLibraryUpgrade reads the library document of an imported deck and writes nothing", async () => {
+  it("planLibraryUpgrade compares the release a copy came from with the deck's current one, and writes nothing", async () => {
     const deps = makeDeps();
-    vi.mocked(deps.deckLibrary.fetchLibraryDeck).mockResolvedValue({
-      ...libraryContent,
-      formatVersion: 2,
-      direction: "bidirectional",
+    const copy: Deck = { ...deck, sourceUrl: libraryDeck.url };
+    const current: LibraryDeck = { ...libraryDeck, url: "https://solid-memo.com/decks/capitals/2.ttl", version: "2" };
+    vi.mocked(deps.deckLibrary.listLibraryDecks).mockResolvedValue([
+      { ...libraryDeck, seriesUrl: "https://solid-memo.com/decks/index.ttl#rivers", url: "https://solid-memo.com/decks/rivers/1.ttl" },
+      current,
+    ]);
+    vi.mocked(deps.deckLibrary.fetchLibraryDeck).mockImplementation(async (url) =>
+      url === current.url
+        ? { ...libraryContent, url, version: "2", cards: [...libraryContent.cards, { id: "norway", front: "Norway", back: "Oslo", formatVersion: 1 }] }
+        : libraryContent,
+    );
+    vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
+    await expect(createUseCases(deps).planLibraryUpgrade(copy)).resolves.toMatchObject({
+      fromVersion: "1",
+      toVersion: "2",
+      add: [{ id: "norway" }],
     });
-    const useCases = createUseCases(deps);
-    const copy: Deck = { ...deck, formatVersion: 1, sourceUrl: libraryDeck.url };
-
-    await expect(useCases.planLibraryUpgrade(copy)).resolves.toEqual({
-      fromVersion: 1,
-      toVersion: 2,
-      direction: "bidirectional",
-    });
-    expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(libraryDeck.url);
+    expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(copy.sourceUrl);
+    expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(current.url);
     expect(deps.deckRepository.saveDeck).not.toHaveBeenCalled();
   });
 
-  it("planLibraryUpgrade offers nothing for a home-made deck, without reading the library", async () => {
+  it("planLibraryUpgrade offers nothing for a home-made deck, or one whose deck the library no longer has", async () => {
     const deps = makeDeps();
     await expect(createUseCases(deps).planLibraryUpgrade(deck)).resolves.toBeNull();
+    const stray: Deck = { ...deck, sourceUrl: "https://solid-memo.com/decks/gone/1.ttl" };
+    await expect(createUseCases(deps).planLibraryUpgrade(stray)).resolves.toBeNull();
     expect(deps.deckLibrary.fetchLibraryDeck).not.toHaveBeenCalled();
   });
 
-  it("applyLibraryUpgrade writes the deck as the plan says", async () => {
+  it("applyLibraryUpgrade writes the cards, drops the removed cards' review states, and moves the deck to the release", async () => {
     const deps = makeDeps();
-    const copy: Deck = { ...deck, formatVersion: 1, sourceUrl: libraryDeck.url };
-    await expect(
-      createUseCases(deps).applyLibraryUpgrade(copy, {
-        fromVersion: 1,
-        toVersion: 2,
-        direction: "bidirectional",
-      }),
-    ).resolves.toEqual({ ...copy, direction: "bidirectional", formatVersion: 2 });
-    expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({
+    const copy: Deck = { ...deck, sourceUrl: libraryDeck.url };
+    const plan = {
+      fromVersion: "1",
+      toVersion: "2",
+      releaseUrl: "https://solid-memo.com/decks/capitals/2.ttl",
+      notes: [],
+      add: [{ id: "norway", front: "Norway", back: "Oslo", formatVersion: 1 }],
+      change: [{ id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 }],
+      remove: [card],
+      kept: [],
+    };
+    await expect(createUseCases(deps).applyLibraryUpgrade(copy, plan)).resolves.toEqual({
       ...copy,
-      direction: "bidirectional",
-      formatVersion: 2,
+      sourceUrl: plan.releaseUrl,
     });
+    expect(deps.deckRepository.applyCardChanges).toHaveBeenCalledWith(copy, {
+      save: [...plan.add, ...plan.change],
+      remove: [card.id],
+    });
+    expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledWith(copy, {
+      save: [],
+      remove: [
+        { cardId: card.id, direction: "front-to-back" },
+        { cardId: card.id, direction: "back-to-front" },
+      ],
+    });
+    await createUseCases(deps).applyLibraryUpgrade(copy, { ...plan, remove: [] });
+    expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledOnce();
   });
 
   it("importLibraryDeck fetches the deck's content and imports it", async () => {
@@ -764,6 +1097,7 @@ describe("createUseCases", () => {
       dayBoundaryHour: 4,
       answerScale: "sm2",
       developerMode: false,
+      invalidDataPolicy: "block-instance" as const,
     });
   });
 
@@ -807,6 +1141,7 @@ describe("createUseCases", () => {
       dayBoundaryHour: 0,
       answerScale: "minimal" as const,
       developerMode: true,
+      invalidDataPolicy: "block-instance" as const,
     };
     vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
       preferences: stored,
@@ -827,6 +1162,7 @@ describe("createUseCases", () => {
       dayBoundaryHour: 0,
       answerScale: "minimal" as const,
       developerMode: true,
+      invalidDataPolicy: "block-instance" as const,
     };
     await useCases.savePreferences(instance.url, preferences);
     expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledWith(
@@ -1070,6 +1406,7 @@ describe("createUseCases", () => {
           dayBoundaryHour: 0,
           answerScale: "sm2",
           developerMode: false,
+          invalidDataPolicy: "block-instance" as const,
         },
         formatVersion: 2,
       });

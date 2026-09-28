@@ -11,6 +11,7 @@ const FULL = {
   dayBoundaryHour: 2,
   answerScale: "minimal" as const,
   developerMode: true,
+  invalidDataPolicy: "block-instance" as const,
 };
 
 describe("toPreferences", () => {
@@ -40,6 +41,7 @@ describe("toPreferences", () => {
         dayBoundaryHour: 4,
         answerScale: "sm2",
         developerMode: false,
+        invalidDataPolicy: "block-instance" as const,
       },
       formatVersion: 1,
     });
@@ -50,6 +52,7 @@ describe("toPreferences", () => {
       dayBoundaryHour: 4,
       answerScale: "sm2",
       developerMode: false,
+      invalidDataPolicy: "block-instance" as const,
     });
   });
 
@@ -68,8 +71,8 @@ describe("toPreferences", () => {
 describe("toPreferencesThing", () => {
   it("writes the current format, in place when the subject exists", () => {
     const fresh = toPreferencesThing(SUBJECT, FULL, null);
-    expect(getInteger(fresh, SM.formatVersion)).toBe(2);
-    expect(toPreferences(fresh)).toEqual({ preferences: FULL, formatVersion: 2 });
+    expect(getInteger(fresh, SM.formatVersion)).toBe(3);
+    expect(toPreferences(fresh)).toEqual({ preferences: FULL, formatVersion: 3 });
     const existing = buildThing(createThing({ url: SUBJECT }))
       .addInteger(SM.newCardsPerDay, 99)
       .addStringNoLocale("https://other.example/#note", "kept")

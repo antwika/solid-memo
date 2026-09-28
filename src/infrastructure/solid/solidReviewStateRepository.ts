@@ -9,6 +9,7 @@ import {
 import type { ReviewStateRepository } from "../../application/ports";
 import type { ReviewState } from "../../domain/review";
 import { getSolidDatasetOrNull } from "./datasets";
+import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import {
   reviewSubjectUrl,
   toReviewState,
@@ -17,10 +18,13 @@ import {
 
 export interface SolidReviewStateRepositoryDeps {
   fetch: typeof globalThis.fetch;
+  /** Checks what is about to be written; see writeCheck.ts. */
+  checkWrite?: WriteCheck;
 }
 
 export function createSolidReviewStateRepository({
   fetch,
+  checkWrite = noWriteCheck,
 }: SolidReviewStateRepositoryDeps): ReviewStateRepository {
   return {
     async listReviewStates(deck): Promise<ReviewState[]> {
@@ -60,6 +64,7 @@ export function createSolidReviewStateRepository({
           getThing(dataset, reviewSubjectUrl(deck.reviewsDocumentUrl, state)),
         ),
       );
+      await checkWrite(updated, [reviewSubjectUrl(deck.reviewsDocumentUrl, state)]);
       await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
     },
 
@@ -86,6 +91,10 @@ export function createSolidReviewStateRepository({
           reviewSubjectUrl(deck.reviewsDocumentUrl, key),
         );
       }
+      await checkWrite(
+        updated,
+        save.map((state) => reviewSubjectUrl(deck.reviewsDocumentUrl, state)),
+      );
       await saveSolidDatasetAt(deck.reviewsDocumentUrl, updated, { fetch });
     },
   };

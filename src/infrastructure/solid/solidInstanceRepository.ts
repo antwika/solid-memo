@@ -1,9 +1,7 @@
 import {
   createSolidDataset,
   deleteContainer,
-  deleteFile,
   deleteSolidDataset,
-  getContainedResourceUrlAll,
   getSolidDataset,
   getThing,
   saveSolidDatasetAt,
@@ -15,19 +13,23 @@ import {
   type Instance,
   type InstanceMeta,
 } from "../../domain/instance";
-import { metaUrlOf } from "../../domain/instanceLayout";
+import { catalogNodeUrlOf, metaUrlOf } from "../../domain/instanceLayout";
+import { deleteContainerRecursively } from "./containers";
 import { getSolidDatasetOrNull } from "./datasets";
+import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import {
   toInstance,
   toInstanceMeta,
   toInstanceMetaThing,
 } from "./mappers/instanceMapper";
 import {
+  addCatalogRegistration,
   addInstanceRegistration,
   ensureTypeIndex,
   locateTypeIndexes,
   readInstanceRegistrations,
   removeInstanceRegistrations,
+  switchInstanceRegistrations,
   type InstanceRegistration,
 } from "./typeIndex";
 import { ensureTrailingSlash, lastPathSegment } from "./urls";
@@ -36,12 +38,15 @@ export interface SolidInstanceRepositoryDeps {
   fetch: typeof globalThis.fetch;
   now: () => Date;
   randomId: () => string;
+  /** Checks what is about to be written; see writeCheck.ts. */
+  checkWrite?: WriteCheck;
 }
 
 export function createSolidInstanceRepository({
   fetch,
   now,
   randomId,
+  checkWrite = noWriteCheck,
 }: SolidInstanceRepositoryDeps): InstanceRepository {
   return {
     async listInstances(webId): Promise<Instance[]> {
@@ -78,6 +83,7 @@ export function createSolidInstanceRepository({
         metaUrl,
         { name, createdAt: now().toISOString(), formatVersion: INSTANCE_FORMAT_VERSION },
         fetch,
+        checkWrite,
       );
       try {
         const indexUrl = await ensureTypeIndex(
@@ -89,6 +95,11 @@ export function createSolidInstanceRepository({
         await addInstanceRegistration(
           indexUrl,
           { id: `sm-inst-${randomId()}`, containerUrl: url, title: name },
+          fetch,
+        );
+        await addCatalogRegistration(
+          indexUrl,
+          { id: `sm-cat-${randomId()}`, catalogUrl: catalogNodeUrlOf(url), title: name },
           fetch,
         );
       } catch (error) {
@@ -122,6 +133,45 @@ export function createSolidInstanceRepository({
       return { url, name };
     },
 
+    async registerCatalog({ webId, instanceUrl, title }) {
+      const url = ensureTrailingSlash(instanceUrl);
+      const locations = await locateTypeIndexes(webId, fetch);
+      for (const indexUrl of [locations.privateIndexUrl, locations.publicIndexUrl]) {
+        if (indexUrl === null) continue;
+        const registrations = await readRegistrationsSafely(indexUrl, fetch);
+        if (!registrations.some((r) => ensureTrailingSlash(r.containerUrl) === url)) continue;
+        await addCatalogRegistration(
+          indexUrl,
+          { id: `sm-cat-${randomId()}`, catalogUrl: catalogNodeUrlOf(url), title },
+          fetch,
+        );
+      }
+    },
+
+    async switchInstance({ webId, from, to, title }) {
+      const { privateIndexUrl, publicIndexUrl } = await locateTypeIndexes(webId, fetch);
+      const catalogId = `sm-cat-${randomId()}`;
+      const switched: string[] = [];
+      try {
+        for (const indexUrl of [privateIndexUrl, publicIndexUrl]) {
+          if (indexUrl === null) continue;
+          if (await switchInstanceRegistrations(indexUrl, { from, to, title, catalogId }, fetch)) {
+            switched.push(indexUrl);
+          }
+        }
+      } catch (error) {
+        for (const indexUrl of switched) {
+          await switchInstanceRegistrations(indexUrl, { from: to, to: from, title, catalogId }, fetch).catch(
+            () => undefined,
+          );
+        }
+        throw error;
+      }
+      if (switched.length === 0) {
+        throw new Error(`<${from}> is registered in no type index; there is nothing to switch.`);
+      }
+    },
+
     async readMeta(instanceUrl): Promise<InstanceMeta | null> {
       const metaUrl = metaUrlOf(instanceUrl);
       const dataset = await getSolidDatasetOrNull(metaUrl, fetch);
@@ -138,11 +188,9 @@ export function createSolidInstanceRepository({
       if (dataset === null || existing === null) {
         throw new Error(`<${instanceUrl}> has no meta document to update.`);
       }
-      await saveSolidDatasetAt(
-        metaUrl,
-        setThing(dataset, toInstanceMetaThing(url, meta, existing)),
-        { fetch },
-      );
+      const updated = setThing(dataset, toInstanceMetaThing(url, meta, existing));
+      await checkWrite(updated, [url]);
+      await saveSolidDatasetAt(metaUrl, updated, { fetch });
     },
 
     async deleteInstance({ webId, instance }) {
@@ -160,34 +208,6 @@ export function createSolidInstanceRepository({
   };
 }
 
-/**
- * Delete a container and everything below it. Solid only deletes empty
- * containers, so children go first; the instance's meta.ttl goes last so
- * a partly deleted instance still attaches by URL. A container that is
- * already gone counts as deleted.
- */
-async function deleteContainerRecursively(
-  containerUrl: string,
-  fetch: typeof globalThis.fetch,
-): Promise<void> {
-  const container = await getSolidDatasetOrNull(containerUrl, fetch);
-  if (container === null) return;
-  const children = getContainedResourceUrlAll(container).sort(
-    (a, b) => Number(isMetaDocument(a)) - Number(isMetaDocument(b)),
-  );
-  for (const child of children) {
-    if (child.endsWith("/")) {
-      await deleteContainerRecursively(child, fetch);
-    } else {
-      await deleteFile(child, { fetch });
-    }
-  }
-  await deleteContainer(containerUrl, { fetch });
-}
-
-function isMetaDocument(url: string): boolean {
-  return url.endsWith("/meta.ttl");
-}
 
 async function readRegistrationsSafely(
   indexUrl: string,
@@ -204,11 +224,13 @@ async function saveMetaDocument(
   metaUrl: string,
   meta: InstanceMeta,
   fetch: typeof globalThis.fetch,
+  checkWrite: WriteCheck,
 ): Promise<void> {
   const dataset = setThing(
     createSolidDataset(),
     toInstanceMetaThing(`${metaUrl}#it`, meta, null),
   );
+  await checkWrite(dataset, [`${metaUrl}#it`]);
   await saveSolidDatasetAt(metaUrl, dataset, { fetch });
 }
 

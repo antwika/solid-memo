@@ -1,9 +1,9 @@
-import type { Thing, ThingPersisted } from "@inrupt/solid-client";
+import { asUrl, type Thing, type ThingPersisted } from "@inrupt/solid-client";
 import type { Instance, InstanceMeta } from "../../../domain/instance";
 import { ensureTrailingSlash } from "../../../domain/instanceLayout";
 import { instanceMetaFromRecord, instanceMetaToRecord } from "../../../domain/instanceRecord";
 import { migrate } from "../../../domain/shapes/migrations";
-import { INSTANCE_V1 } from "../../shacl/shapes.generated";
+import { INSTANCE_V2 } from "../../shacl/shapes.generated";
 import { readVersioned, recordThing } from "../records";
 import type { InstanceRegistration } from "../typeIndex";
 import { lastPathSegment } from "../urls";
@@ -24,7 +24,7 @@ export function toInstance(registration: InstanceRegistration): Instance {
 export function toInstanceMeta(thing: Thing): InstanceMeta | null {
   const read = readVersioned(thing, "instance");
   if (read === null) return null;
-  return instanceMetaFromRecord(read.storedVersion, migrate("instance", read.record));
+  return instanceMetaFromRecord(read.storedVersion, migrate("instance", read.record, { subject: asUrl(thing) }));
 }
 
 /** The meta subject as this app writes it, in place when it exists. */
@@ -33,5 +33,5 @@ export function toInstanceMetaThing(
   meta: InstanceMeta,
   existing: ThingPersisted | null,
 ): ThingPersisted {
-  return recordThing(url, INSTANCE_V1, instanceMetaToRecord(meta), existing);
+  return recordThing(url, INSTANCE_V2, instanceMetaToRecord(meta), existing);
 }

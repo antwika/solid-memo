@@ -5,7 +5,10 @@ import {
   type ThingBuilder,
   type ThingPersisted,
 } from "@inrupt/solid-client";
-import { fragmentIdOf, toCard, toDeck } from "./deckMapper";
+import { mockSolidDatasetFrom, setThing } from "@inrupt/solid-client";
+import { getThing, getUrlAll, getStringNoLocale } from "@inrupt/solid-client";
+import { fragmentIdOf, toCard, toCatalog, toDeck, toDecks, withCatalog, withDeck, withoutDeck } from "./deckMapper";
+import type { Deck } from "../../../domain/deck";
 import { DCTERMS, RDF, SM } from "../vocab";
 
 const CATALOG = "https://pod.example/solid-memo/a/catalog.ttl";
@@ -46,6 +49,7 @@ describe("toDeck", () => {
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
+      description: "Flashcards: Kanji N5.",
     });
   });
 
@@ -68,8 +72,40 @@ describe("toDeck", () => {
       authors: ["Anton Wiklund", "A friend"],
       license: "https://creativecommons.org/publicdomain/zero/1.0/",
       description: "Capitals, from Wikipedia.",
-      sourceUrl: "https://solid-memo.com/decks/capitals.ttl",
+      sourceUrl: "https://solid-memo.com/decks/capitals/1.ttl",
     });
+  });
+
+  it("names a format-3 deck's creators from the agents beside it, or by IRI when there is none", () => {
+    const deck = deckThing((t) =>
+      t
+        .addIri(RDF.type, SM.Deck)
+        .addStringNoLocale(DCTERMS.title, "Capitals")
+        .addStringNoLocale(DCTERMS.description, "Capitals.")
+        .addIri(SM.studyDirection, SM.backToFront)
+        .addIri(DCTERMS.creator, `${CATALOG}#agent-anton`)
+        .addIri(DCTERMS.creator, `${CATALOG}#agent-gone`)
+        .addIri("http://www.w3.org/ns/dcat#theme", "https://solid-memo.com/vocab/topics#geography")
+        .addStringNoLocale("http://www.w3.org/ns/dcat#keyword", "capitals")
+        .addIri(SM.cardsDocument, CARDS_DOC)
+        .addIri(SM.reviewsDocument, REVIEWS_DOC)
+        .addInteger(SM.formatVersion, 3),
+    );
+    const agent = buildThing(createThing({ url: `${CATALOG}#agent-anton` }))
+      .addIri(RDF.type, "http://xmlns.com/foaf/0.1/Agent")
+      .addStringNoLocale("http://xmlns.com/foaf/0.1/name", "Anton")
+      .addIri("http://xmlns.com/foaf/0.1/mbox", "mailto:anton@example.com")
+      .build();
+    const catalog = setThing(setThing(mockSolidDatasetFrom(CATALOG), deck), agent);
+    expect(toDecks(catalog)).toEqual([
+      expect.objectContaining({
+        direction: "back-to-front",
+        authors: ["Anton <anton@example.com>", `${CATALOG}#agent-gone`],
+        themes: ["https://solid-memo.com/vocab/topics#geography"],
+        keywords: ["capitals"],
+        formatVersion: 3,
+      }),
+    ]);
   });
 
   it("reads a newer format version with the latest shape it knows, keeping the stored version", () => {
@@ -77,7 +113,8 @@ describe("toDeck", () => {
       t
         .addIri(RDF.type, SM.Deck)
         .addStringNoLocale(DCTERMS.title, "Future")
-        .addStringNoLocale(SM.direction, "back-to-front")
+        .addStringNoLocale(DCTERMS.description, "From the future.")
+        .addIri(SM.studyDirection, SM.backToFront)
         .addIri(SM.cardsDocument, CARDS_DOC)
         .addIri(SM.reviewsDocument, REVIEWS_DOC)
         .addInteger(SM.formatVersion, 7),
@@ -271,5 +308,61 @@ describe("toCard", () => {
         ),
       ),
     ).toBeNull();
+  });
+});
+
+describe("the catalogue node", () => {
+  const catalog = {
+    title: "Main",
+    description: "My decks.",
+    publisher: { webId: "https://alice.example/profile/card#me", name: "Alice" },
+  };
+  const deck: Deck = {
+    id: "deck-1",
+    url: `${CATALOG}#deck-1`,
+    name: "Capitals",
+    cardsDocumentUrl: CARDS_DOC,
+    reviewsDocumentUrl: REVIEWS_DOC,
+    createdAt: "",
+    formatVersion: 3,
+    direction: "front-to-back",
+    authors: [],
+  };
+  const DATASET = "http://www.w3.org/ns/dcat#dataset";
+
+  it("is written with the document's decks as datasets and its publisher described beside it, and read back", () => {
+    const written = withCatalog(withDeck(mockSolidDatasetFrom(CATALOG), deck), CATALOG, catalog);
+    const node = getThing(written, `${CATALOG}#catalog`)!;
+    expect(getUrlAll(node, DATASET)).toEqual([deck.url]);
+    expect(getStringNoLocale(getThing(written, catalog.publisher.webId)!, "http://xmlns.com/foaf/0.1/name")).toBe("Alice");
+    expect(toCatalog(written, CATALOG)).toEqual(catalog);
+  });
+
+  it("keeps listing exactly the decks as they are added and removed", () => {
+    let dataset = withCatalog(mockSolidDatasetFrom(CATALOG), CATALOG, catalog);
+    expect(getUrlAll(getThing(dataset, `${CATALOG}#catalog`)!, DATASET)).toEqual([]);
+    const other = { ...deck, id: "deck-2", url: `${CATALOG}#deck-2` };
+    dataset = withDeck(withDeck(dataset, deck), other);
+    expect(getUrlAll(getThing(dataset, `${CATALOG}#catalog`)!, DATASET)).toEqual([deck.url, other.url]);
+    dataset = withoutDeck(dataset, deck);
+    expect(getUrlAll(getThing(dataset, `${CATALOG}#catalog`)!, DATASET)).toEqual([other.url]);
+  });
+
+  it("names its publisher by the WebID when no agent node describes them", () => {
+    const written = withCatalog(mockSolidDatasetFrom(CATALOG), CATALOG, catalog);
+    const withoutAgent = setThing(
+      written,
+      buildThing(getThing(written, catalog.publisher.webId)!).removeAll(RDF.type).build(),
+    );
+    expect(toCatalog(withoutAgent, CATALOG)?.publisher.name).toBe(catalog.publisher.webId);
+  });
+
+  it("is absent from a document without one, or with one that does not fit its shape", () => {
+    expect(toCatalog(mockSolidDatasetFrom(CATALOG), CATALOG)).toBeNull();
+    const broken = setThing(
+      mockSolidDatasetFrom(CATALOG),
+      buildThing(createThing({ url: `${CATALOG}#catalog` })).addIri(RDF.type, "http://www.w3.org/ns/dcat#Catalog").build(),
+    );
+    expect(toCatalog(broken, CATALOG)).toBeNull();
   });
 });

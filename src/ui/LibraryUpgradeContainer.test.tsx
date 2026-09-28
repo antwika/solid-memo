@@ -25,9 +25,14 @@ const imported: Deck = {
   sourceUrl: "https://solid-memo.com/decks/capitals.ttl",
 };
 const plan: LibraryUpgradePlan = {
-  fromVersion: 1,
-  toVersion: 2,
-  direction: "bidirectional",
+  fromVersion: "1",
+  toVersion: "2",
+  releaseUrl: "https://solid-memo.com/decks/capitals/2.ttl",
+  notes: [],
+  add: [{ id: "no", front: "Norway", back: "Oslo", formatVersion: 1 }],
+  change: [],
+  remove: [],
+  kept: [],
 };
 
 function renderContainer(useCases: UseCases, deck: Deck = imported) {
@@ -79,21 +84,23 @@ describe("LibraryUpgradeContainer", () => {
       planLibraryUpgrade: vi.fn(async () => current),
       applyLibraryUpgrade: vi.fn(async (deck, applied) => {
         current = null;
-        return { ...deck, direction: applied.direction, formatVersion: 2 };
+        return { ...deck, sourceUrl: applied.releaseUrl };
       }),
     });
     const { invalidate, remove } = renderContainer(useCases);
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Update from the library" }),
+      await screen.findByRole("button", { name: "Update to release 2" }),
     );
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Updated from the library: now studied both ways.",
+      "Updated to release 2 from the library.",
     );
     expect(useCases.applyLibraryUpgrade).toHaveBeenCalledWith(imported, plan);
     expect(remove).toHaveBeenCalledWith({ queryKey: ["studyQueue", imported.url] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["cards", imported.cardsDocumentUrl] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["reviews", imported.reviewsDocumentUrl] });
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["migration", instance.url],
     });
@@ -110,11 +117,11 @@ describe("LibraryUpgradeContainer", () => {
       }),
     );
     fireEvent.click(
-      await screen.findByRole("button", { name: "Update from the library" }),
+      await screen.findByRole("button", { name: "Update to release 2" }),
     );
     expect(await screen.findByText("write refused")).toHaveClass("error");
     expect(
-      screen.getByRole("button", { name: "Update from the library" }),
+      screen.getByRole("button", { name: "Update to release 2" }),
     ).toBeEnabled();
   });
 });

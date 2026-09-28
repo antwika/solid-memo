@@ -1,0 +1,62 @@
+@base <https://solid-memo.com/vocab/topics> .
+
+@prefix topic:   <https://solid-memo.com/vocab/topics#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+# What decks are about: a SKOS concept scheme used with dcat:theme on
+# decks (next to the EU data theme EDUC) and declared as a theme
+# taxonomy of the catalogues. Concepts are only ever added; a concept
+# that should go is deprecated, never removed, since decks point at it.
+<>
+    a skos:ConceptScheme ;
+    dcterms:title "Solid Memo topics"@en ;
+    skos:definition "What a deck of flashcards is about."@en ;
+    skos:hasTopConcept topic:languages ,
+                       topic:geography ,
+                       topic:computing ,
+                       topic:science .
+
+topic:languages
+    a skos:Concept ;
+    skos:prefLabel "Languages"@en ;
+    skos:definition "Vocabulary and grammar of human languages."@en ;
+    skos:inScheme <> ;
+    skos:topConceptOf <> ;
+    skos:narrower topic:swedish .
+
+topic:swedish
+    a skos:Concept ;
+    skos:prefLabel "Swedish"@en ;
+    skos:definition "The Swedish language."@en ;
+    skos:inScheme <> ;
+    skos:broader topic:languages .
+
+topic:geography
+    a skos:Concept ;
+    skos:prefLabel "Geography"@en ;
+    skos:definition "Countries, capitals, flags and the places of the world."@en ;
+    skos:inScheme <> ;
+    skos:topConceptOf <> .
+
+topic:computing
+    a skos:Concept ;
+    skos:prefLabel "Computing"@en ;
+    skos:definition "Computers, software and the protocols of the web."@en ;
+    skos:inScheme <> ;
+    skos:topConceptOf <> .
+
+topic:science
+    a skos:Concept ;
+    skos:prefLabel "Science"@en ;
+    skos:definition "The natural sciences."@en ;
+    skos:inScheme <> ;
+    skos:topConceptOf <> ;
+    skos:narrower topic:chemistry .
+
+topic:chemistry
+    a skos:Concept ;
+    skos:prefLabel "Chemistry"@en ;
+    skos:definition "Elements, compounds and their reactions."@en ;
+    skos:inScheme <> ;
+    skos:broader topic:science .

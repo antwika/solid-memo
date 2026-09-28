@@ -26,6 +26,7 @@ describe("PreferencesScreen", () => {
         dayBoundaryHour: 2,
         answerScale: "minimal",
         developerMode: true,
+        invalidDataPolicy: "block-instance" as const,
       },
     });
     expect(screen.getByLabelText("New cards per day")).toHaveValue(10);
@@ -51,6 +52,7 @@ describe("PreferencesScreen", () => {
     expect(props.onSave).toHaveBeenCalledWith({
       ...DEFAULT_PREFERENCES,
       developerMode: true,
+      invalidDataPolicy: "block-instance" as const,
     });
   });
 
@@ -64,6 +66,22 @@ describe("PreferencesScreen", () => {
     expect(props.onSave).toHaveBeenCalledWith({
       ...DEFAULT_PREFERENCES,
       answerScale: "minimal",
+    });
+  });
+
+  it("offers what to do with invalid data, labelled from the vocabulary, and saves the choice", () => {
+    const { props, container } = renderScreen();
+    const group = screen.getByRole("group", { name: "When data does not conform" });
+    expect(group).toContainElement(screen.getByLabelText(/Block the instance/));
+    expect(screen.getByLabelText(/Block the instance/)).toBeChecked();
+    expect(group).toHaveTextContent("Any invalid data stops the app from using the instance until it is repaired.");
+
+    fireEvent.click(screen.getByLabelText(/Set invalid data aside/));
+    fireEvent.submit(container.querySelector("form")!);
+
+    expect(props.onSave).toHaveBeenCalledWith({
+      ...DEFAULT_PREFERENCES,
+      invalidDataPolicy: "block-subject",
     });
   });
 
@@ -85,6 +103,7 @@ describe("PreferencesScreen", () => {
       dayBoundaryHour: 0,
       answerScale: "sm2",
       developerMode: false,
+      invalidDataPolicy: "block-instance" as const,
     });
   });
 

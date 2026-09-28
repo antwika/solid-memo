@@ -1,0 +1,15 @@
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<#colours>
+    a skos:ConceptScheme ;
+    dcterms:title "Colours"@en ;
+    skos:hasTopConcept <#red> .
+
+<#red>
+    a skos:Concept ;
+    skos:prefLabel "Red"@en ,
+                   "Röd"@sv ;
+    skos:definition "The colour of blood."@en ;
+    skos:inScheme <#colours> ;
+    skos:topConceptOf <#colours> .

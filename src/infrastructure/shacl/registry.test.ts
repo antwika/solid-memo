@@ -41,7 +41,7 @@ describe("pickShape", () => {
       kind: "unknown-version",
       shape: "instance",
       version: 0,
-      latest: 1,
+      latest: 2,
     });
   });
 

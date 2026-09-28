@@ -16,9 +16,9 @@
     a owl:Ontology ;
     dcterms:title "Solid Memo vocabulary, v1" ;
     dcterms:description "Terms for spaced-repetition flashcards stored in a Solid pod: instances, decks, cards, SM-2 review state and study preferences." ;
-    owl:versionInfo "1.5" ;
+    owl:versionInfo "1.6" ;
     rdfs:seeAlso <https://solid-memo.com/vocab/v1.ttl> ;
-    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2)." .
+    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated." .
 
 #################### Classes ####################
 
@@ -94,7 +94,18 @@ solid-memo:direction
     rdfs:domain solid-memo:Deck ;
     rdfs:range xsd:string ;
     rdfs:isDefinedBy <> ;
-    skos:historyNote "Added in 1.5 for deck format 2." .
+    skos:historyNote "Added in 1.5 for deck format 2; deprecated in 1.6 for studyDirection." ;
+    owl:deprecated true ;
+    dcterms:isReplacedBy solid-memo:studyDirection .
+
+solid-memo:studyDirection
+    a owl:ObjectProperty ;
+    rdfs:label "study direction" ;
+    rdfs:comment "How the deck is studied: a concept of solid-memo:StudyDirections. Replaces the string-valued direction." ;
+    rdfs:domain solid-memo:Deck ;
+    rdfs:range skos:Concept ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6 for deck format 3." .
 
 solid-memo:cardCount
     a owl:DatatypeProperty ;
@@ -290,3 +301,94 @@ solid-memo:developerMode
     rdfs:range xsd:boolean ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.1." .
+
+solid-memo:invalidDataPolicy
+    a owl:ObjectProperty ;
+    rdfs:label "invalid data policy" ;
+    rdfs:comment "What the app does when data in the instance does not conform to its shapes: a concept of solid-memo:InvalidDataPolicies." ;
+    rdfs:domain solid-memo:Preferences ;
+    rdfs:range skos:Concept ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6 for preferences format 3." .
+
+#################### Concept schemes ####################
+
+solid-memo:StudyDirections
+    a skos:ConceptScheme ;
+    dcterms:title "Study directions"@en ;
+    skos:definition "The ways a deck can be studied."@en ;
+    skos:hasTopConcept solid-memo:frontToBack ,
+                       solid-memo:backToFront ,
+                       solid-memo:bidirectional ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6." .
+
+solid-memo:frontToBack
+    a skos:Concept ;
+    skos:prefLabel "Front to back"@en ;
+    skos:definition "Each card is shown by its front and answered with its back."@en ;
+    skos:notation "front-to-back" ;
+    skos:inScheme solid-memo:StudyDirections ;
+    skos:topConceptOf solid-memo:StudyDirections ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6." .
+
+solid-memo:backToFront
+    a skos:Concept ;
+    skos:prefLabel "Back to front"@en ;
+    skos:definition "Each card is shown by its back and answered with its front."@en ;
+    skos:notation "back-to-front" ;
+    skos:inScheme solid-memo:StudyDirections ;
+    skos:topConceptOf solid-memo:StudyDirections ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6." .
+
+solid-memo:bidirectional
+    a skos:Concept ;
+    skos:prefLabel "Both ways"@en ;
+    skos:definition "Each card is asked both ways, each way scheduled on its own."@en ;
+    skos:notation "bidirectional" ;
+    skos:inScheme solid-memo:StudyDirections ;
+    skos:topConceptOf solid-memo:StudyDirections ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6." .
+
+solid-memo:InvalidDataPolicies
+    a skos:ConceptScheme ;
+    dcterms:title "Invalid data policies"@en ;
+    skos:definition "What the app does when data in an instance does not conform to its shapes."@en ;
+    skos:hasTopConcept solid-memo:blockInstance ,
+                       solid-memo:blockSubject ,
+                       solid-memo:warnOnly ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6." .
+
+solid-memo:blockInstance
+    a skos:Concept ;
+    skos:prefLabel "Block the instance"@en ;
+    skos:definition "Any invalid data stops the app from using the instance until it is repaired. The default."@en ;
+    skos:notation "block-instance" ;
+    skos:inScheme solid-memo:InvalidDataPolicies ;
+    skos:topConceptOf solid-memo:InvalidDataPolicies ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6." .
+
+solid-memo:blockSubject
+    a skos:Concept ;
+    skos:prefLabel "Set invalid data aside"@en ;
+    skos:definition "Decks with invalid data are set aside until they are repaired; everything else keeps working."@en ;
+    skos:notation "block-subject" ;
+    skos:inScheme solid-memo:InvalidDataPolicies ;
+    skos:topConceptOf solid-memo:InvalidDataPolicies ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6." .
+
+solid-memo:warnOnly
+    a skos:Concept ;
+    skos:prefLabel "Warn only"@en ;
+    skos:definition "Invalid data is reported, and the app keeps working with it."@en ;
+    skos:notation "warn-only" ;
+    skos:inScheme solid-memo:InvalidDataPolicies ;
+    skos:topConceptOf solid-memo:InvalidDataPolicies ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.6." .

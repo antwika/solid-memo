@@ -38,9 +38,14 @@ type FieldValue = string | number | boolean | readonly string[];
 /** One field's value; undefined when absent, null when a required one is. */
 function readField(thing: Thing, field: FieldDescriptor): FieldValue | null | undefined {
   if (field.cardinality === "many") {
-    return field.kind === "iri"
-      ? getUrlAll(thing, field.predicate)
-      : getStringNoLocaleAll(thing, field.predicate);
+    switch (field.kind) {
+      case "iri":
+        return getUrlAll(thing, field.predicate);
+      case "iriEnum":
+        return getUrlAll(thing, field.predicate).filter((v) => field.values!.includes(v));
+      default:
+        return getStringNoLocaleAll(thing, field.predicate);
+    }
   }
   const value = readScalar(thing, field);
   if (value === null) return field.cardinality === "one" ? null : undefined;
@@ -65,6 +70,10 @@ function readScalar(thing: Thing, field: FieldDescriptor): string | number | boo
       return getDatetime(thing, field.predicate)?.toISOString() ?? null;
     case "iri":
       return getUrl(thing, field.predicate);
+    case "iriEnum": {
+      const value = getUrl(thing, field.predicate);
+      return value !== null && field.values!.includes(value) ? value : null;
+    }
   }
 }
 
@@ -109,13 +118,15 @@ export function readVersioned<S extends ShapeName>(
 /**
  * Write the record's fields onto the subject, replacing only the
  * predicates the shape owns: an absent optional field removes its
- * triple, anything the shape does not mention survives.
+ * triple, a predicate the shape forbids is removed, anything the shape
+ * does not mention survives.
  */
 export function applyRecord<T>(
   builder: ThingBuilder<ThingPersisted>,
   descriptor: ShapeDescriptor<T>,
   record: T,
 ): ThingBuilder<ThingPersisted> {
+  for (const predicate of descriptor.absent) builder.removeAll(predicate);
   for (const field of descriptor.fields) {
     builder.removeAll(field.predicate);
     const value = (record as Record<string, FieldValue | undefined>)[field.name];
@@ -150,6 +161,7 @@ function addValue(
       builder.addDatetime(field.predicate, new Date(value as string));
       break;
     case "iri":
+    case "iriEnum":
       builder.addIri(field.predicate, value as string);
       break;
   }
@@ -157,8 +169,9 @@ function addValue(
 
 /**
  * The subject as this app writes it: the existing subject (so unknown
- * triples survive) or a new one, typed once, with the record applied and
- * the shape's version stamped.
+ * triples survive) or a new one, typed once with its class and any
+ * further types its shape names, with the record applied and the
+ * shape's version stamped.
  */
 export function recordThing<T>(
   url: string,
@@ -168,8 +181,9 @@ export function recordThing<T>(
 ): ThingPersisted {
   const thing = existing ?? createThing({ url });
   const builder = buildThing(thing);
-  if (!getUrlAll(thing, RDF.type).includes(descriptor.targetClass)) {
-    builder.addIri(RDF.type, descriptor.targetClass);
+  const types = getUrlAll(thing, RDF.type);
+  for (const type of [descriptor.targetClass, ...descriptor.additionalTypes]) {
+    if (!types.includes(type)) builder.addIri(RDF.type, type);
   }
   return applyRecord(builder, descriptor, record)
     .setInteger(SM.formatVersion, descriptor.version)

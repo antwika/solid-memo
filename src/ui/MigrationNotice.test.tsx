@@ -2,12 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import {
   describeFormats,
-  describeMigrated,
   describeOutdated,
   MigrationNotice,
 } from "./MigrationNotice";
 import type { Deck } from "../domain/deck";
-import type { MigrationPlan, MigrationResult } from "../domain/migration";
+import type { MigrationPlan } from "../domain/migration";
 
 const deck: Deck = {
   id: "deck-1",
@@ -23,7 +22,7 @@ const deck: Deck = {
 const capitals: Deck = { ...deck, id: "deck-2", url: `${deck.url}2`, name: "Capitals" };
 const verbs: Deck = { ...deck, id: "deck-3", url: `${deck.url}3`, name: "Verbs" };
 
-const nothing = { preferencesOutdated: false, instanceOutdated: false };
+const nothing = { preferencesOutdated: false, instanceOutdated: false, catalogMissing: false };
 
 const plan: MigrationPlan = {
   decks: [
@@ -35,14 +34,6 @@ const plan: MigrationPlan = {
   cardCount: 255,
   reviewCount: 30,
   ...nothing,
-};
-
-const nothingMigrated: MigrationResult = {
-  deckCount: 0,
-  cardCount: 0,
-  reviewCount: 0,
-  preferencesMigrated: false,
-  instanceMigrated: false,
 };
 
 function renderNotice(
@@ -84,6 +75,7 @@ describe("describeOutdated", () => {
         reviewCount: 1,
         preferencesOutdated: true,
         instanceOutdated: true,
+        catalogMissing: false,
       }),
     ).toBe(
       "the instance record, your preferences, 1 card in one deck and 1 review state in one deck",
@@ -91,28 +83,33 @@ describe("describeOutdated", () => {
   });
 });
 
-describe("describeMigrated", () => {
-  it("names what was rewritten", () => {
-    expect(describeMigrated({ ...nothingMigrated, deckCount: 2, cardCount: 12 })).toBe(
-      "2 deck entries and 12 cards",
+describe("a missing catalogue", () => {
+  const catalogOnly: MigrationPlan = {
+    decks: [],
+    deckCount: 0,
+    cardCount: 0,
+    reviewCount: 0,
+    preferencesOutdated: false,
+    instanceOutdated: false,
+    catalogMissing: true,
+  };
+
+  it("is named in what is outdated, in the formats, on the list and on the button", () => {
+    expect(describeOutdated(catalogOnly)).toBe("the instance's catalogue");
+    expect(describeFormats(catalogOnly)).toBe(
+      "a catalogue of each instance's decks, which other apps read as a DCAT catalogue",
     );
-    expect(describeMigrated({ ...nothingMigrated, deckCount: 1 })).toBe("1 deck entry");
-    expect(
-      describeMigrated({
-        ...nothingMigrated,
-        cardCount: 3,
-        reviewCount: 1,
-        preferencesMigrated: true,
-        instanceMigrated: true,
-      }),
-    ).toBe("the instance record, your preferences, 3 cards and 1 review state");
+    renderNotice({ plan: catalogOnly });
+    expect(screen.getByRole("region")).toHaveTextContent("the instance's catalogue is stored in an older format.");
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Catalogue of the decks"]);
+    expect(screen.getByRole("button", { name: "Update the catalogue" })).toBeEnabled();
   });
 });
 
 describe("describeFormats", () => {
   it("names the formats the plan touches, with what each added", () => {
     expect(describeFormats(plan)).toBe(
-      "deck format 2, which adds a study direction, card format 2, which adds pictures on cards and review-state format 2, which keeps each study direction's state and the day's undo snapshot",
+      "deck format 3, which describes decks with the DCAT and SKOS standards and gives every deck a description, card format 2, which adds pictures on cards and review-state format 2, which keeps each study direction's state and the day's undo snapshot",
     );
     expect(
       describeFormats({
@@ -122,9 +119,10 @@ describe("describeFormats", () => {
         reviewCount: 0,
         preferencesOutdated: true,
         instanceOutdated: true,
+        catalogMissing: false,
       }),
     ).toBe(
-      "instance format 1 and preferences format 2, which records the answer scale and developer mode",
+      "instance format 2 and preferences format 3, which records the answer scale, developer mode and what to do with invalid data",
     );
   });
 });
@@ -136,7 +134,7 @@ describe("MigrationNotice", () => {
     expect(region).toHaveTextContent(
       "2 deck entries, 255 cards in 2 decks and 30 review states in one deck are stored in an older format.",
     );
-    expect(region).toHaveTextContent("Solid Memo now writes deck format 2");
+    expect(region).toHaveTextContent("Solid Memo now writes deck format 3");
     expect(region).toHaveTextContent("card format 2");
     expect(
       screen.getAllByRole("listitem").map((item) => item.textContent),
@@ -176,6 +174,7 @@ describe("MigrationNotice", () => {
         reviewCount: 2,
         preferencesOutdated: true,
         instanceOutdated: true,
+        catalogMissing: false,
       },
     });
     expect(
@@ -195,6 +194,7 @@ describe("MigrationNotice", () => {
         reviewCount: 0,
         preferencesOutdated: true,
         instanceOutdated: false,
+        catalogMissing: false,
       },
     });
     expect(screen.getByRole("region")).toHaveTextContent(

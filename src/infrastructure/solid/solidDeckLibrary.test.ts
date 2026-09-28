@@ -28,25 +28,17 @@ beforeEach(() => {
 });
 
 describe("listLibraryDecks", () => {
-  it("maps the index's deck entries, skipping anything else", async () => {
+  it("reads the decks the index's catalogue lists", async () => {
     const index = setThing(
-      setThing(
-        mockSolidDatasetFrom(INDEX),
-        buildThing(createThing({ url: DOC }))
-          .addIri(RDF.type, SM.Deck)
-          .addStringNoLocale(DCTERMS.title, "Capitals")
-          .addInteger(SM.cardCount, 2)
-          .build(),
-      ),
-      buildThing(createThing({ url: `${INDEX}#meta` }))
+      mockSolidDatasetFrom(INDEX),
+      buildThing(createThing({ url: INDEX }))
+        .addIri(RDF.type, "http://www.w3.org/ns/dcat#Catalog")
         .addStringNoLocale(DCTERMS.title, "The library")
         .build(),
     );
     vi.mocked(getSolidDataset).mockResolvedValue(index);
 
-    await expect(makeLibrary().listLibraryDecks()).resolves.toEqual([
-      { url: DOC, name: "Capitals", cardCount: 2, authors: [], direction: "front-to-back", sources: [] },
-    ]);
+    await expect(makeLibrary().listLibraryDecks()).resolves.toEqual([]);
     expect(getSolidDataset).toHaveBeenCalledWith(INDEX, { fetch });
   });
 
@@ -79,7 +71,12 @@ describe("fetchLibraryDeck", () => {
       name: "Capitals",
       formatVersion: 1,
       authors: [],
+      description: "Flashcards: Capitals.",
       direction: "front-to-back",
+      version: "1",
+      seriesUrl: expect.any(String),
+      themes: ["http://publications.europa.eu/resource/authority/data-theme/EDUC"],
+      keywords: [],
       cards: [
         { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
       ],

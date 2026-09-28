@@ -18,7 +18,7 @@ import {
 } from "@inrupt/solid-client";
 import { getSolidDatasetOrNull } from "./datasets";
 import { ensureTrailingSlash } from "./urls";
-import { DCTERMS, FOAF, PIM, RDF, RDFS, SM, SOLID } from "./vocab";
+import { DCAT, DCTERMS, FOAF, PIM, RDF, RDFS, SM, SOLID } from "./vocab";
 import {
   candidateStorageUrls,
   hasStorageLink,
@@ -273,9 +273,40 @@ export async function addInstanceRegistration(
 }
 
 /**
- * Remove every sm:Instance registration for a container from a type index
- * document. Matching ignores a missing trailing slash, as reading does.
- * Saves only when something was removed.
+ * Add a dcat:Catalog registration for an instance's catalogue to a type
+ * index document, so other applications find the decks as a DCAT
+ * catalogue; nothing when the index already registers it.
+ */
+export async function addCatalogRegistration(
+  indexUrl: string,
+  registration: { id: string; catalogUrl: string; title: string },
+  fetch: Fetch,
+): Promise<void> {
+  const dataset = await getSolidDataset(indexUrl, { fetch });
+  const registered = getThingAll(dataset).some(
+    (thing) =>
+      getUrlAll(thing, RDF.type).includes(SOLID.TypeRegistration) &&
+      getUrlAll(thing, SOLID.forClass).includes(DCAT.Catalog) &&
+      getUrlAll(thing, SOLID.instance).includes(registration.catalogUrl),
+  );
+  if (registered) return;
+  const updated = setThing(
+    dataset,
+    buildThing(createThing({ url: `${indexUrl}#${registration.id}` }))
+      .addIri(RDF.type, SOLID.TypeRegistration)
+      .addIri(SOLID.forClass, DCAT.Catalog)
+      .addIri(SOLID.instance, registration.catalogUrl)
+      .addStringNoLocale(DCTERMS.title, registration.title)
+      .build(),
+  );
+  await saveSolidDatasetAt(indexUrl, updated, { fetch });
+}
+
+/**
+ * Remove every registration of an instance from a type index document:
+ * its sm:Instance registration and the dcat:Catalog registration of any
+ * catalogue inside the container. Matching ignores a missing trailing
+ * slash, as reading does. Saves only when something was removed.
  */
 export async function removeInstanceRegistrations(
   indexUrl: string,
@@ -287,12 +318,17 @@ export async function removeInstanceRegistrations(
   let updated = dataset;
   for (const thing of getThingAll(dataset)) {
     if (!getUrlAll(thing, RDF.type).includes(SOLID.TypeRegistration)) continue;
-    if (!getUrlAll(thing, SOLID.forClass).includes(SM.Instance)) continue;
-    const registered = [
-      ...getUrlAll(thing, SOLID.instanceContainer),
-      ...getUrlAll(thing, SOLID.instance),
-    ].map(ensureTrailingSlash);
-    if (registered.includes(target)) {
+    const classes = getUrlAll(thing, SOLID.forClass);
+    if (classes.includes(SM.Instance)) {
+      const registered = [
+        ...getUrlAll(thing, SOLID.instanceContainer),
+        ...getUrlAll(thing, SOLID.instance),
+      ].map(ensureTrailingSlash);
+      if (registered.includes(target)) updated = removeThing(updated, thing);
+    } else if (
+      classes.includes(DCAT.Catalog) &&
+      getUrlAll(thing, SOLID.instance).some((url) => url.startsWith(target))
+    ) {
       updated = removeThing(updated, thing);
     }
   }
@@ -321,4 +357,61 @@ async function findStorageRoot(
     }
   }
   return new URL("/", resourceUrl).toString();
+}
+
+/**
+ * Point an instance's registrations in a type index document at another
+ * container, in one save: the sm:Instance registration's container (and
+ * title), and the dcat:Catalog registration's catalogue, which is added
+ * when missing. False, and nothing saved, when the index does not
+ * register the instance.
+ */
+export async function switchInstanceRegistrations(
+  indexUrl: string,
+  { from, to, title, catalogId }: { from: string; to: string; title: string; catalogId: string },
+  fetch: Fetch,
+): Promise<boolean> {
+  const dataset = await getSolidDataset(indexUrl, { fetch });
+  const source = ensureTrailingSlash(from);
+  const target = ensureTrailingSlash(to);
+  const catalogOf = (container: string) => `${container}catalog.ttl#catalog`;
+  let updated = dataset;
+  let switched = false;
+  let catalogSwitched = false;
+  for (const thing of getThingAll(dataset)) {
+    if (!getUrlAll(thing, RDF.type).includes(SOLID.TypeRegistration)) continue;
+    const classes = getUrlAll(thing, SOLID.forClass);
+    const registered = [
+      ...getUrlAll(thing, SOLID.instanceContainer),
+      ...getUrlAll(thing, SOLID.instance),
+    ];
+    if (classes.includes(SM.Instance) && registered.map(ensureTrailingSlash).includes(source)) {
+      updated = setThing(
+        updated,
+        buildThing(thing)
+          .removeAll(SOLID.instance)
+          .setIri(SOLID.instanceContainer, target)
+          .setStringNoLocale(DCTERMS.title, title)
+          .build(),
+      );
+      switched = true;
+    } else if (classes.includes(DCAT.Catalog) && registered.includes(catalogOf(source))) {
+      updated = setThing(updated, buildThing(thing).setIri(SOLID.instance, catalogOf(target)).build());
+      catalogSwitched = true;
+    }
+  }
+  if (!switched) return false;
+  if (!catalogSwitched) {
+    updated = setThing(
+      updated,
+      buildThing(createThing({ url: `${indexUrl}#${catalogId}` }))
+        .addIri(RDF.type, SOLID.TypeRegistration)
+        .addIri(SOLID.forClass, DCAT.Catalog)
+        .addIri(SOLID.instance, catalogOf(target))
+        .addStringNoLocale(DCTERMS.title, title)
+        .build(),
+    );
+  }
+  await saveSolidDatasetAt(indexUrl, updated, { fetch });
+  return true;
 }

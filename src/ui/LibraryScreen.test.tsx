@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { LibraryScreen } from "./LibraryScreen";
 import type { LibraryDeck } from "../domain/library";
+import { firstRelease } from "../test/libraryDeck";
 
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
+  ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
   name: "Capitals of the world",
   cardCount: 243,
   authors: ["Anton Wiklund"],
@@ -15,6 +17,7 @@ const capitals: LibraryDeck = {
 };
 const rivers: LibraryDeck = {
   url: "https://solid-memo.com/decks/rivers.ttl",
+  ...firstRelease("https://solid-memo.com/decks/rivers.ttl"),
   name: "Rivers",
   cardCount: 1,
   authors: [],
@@ -74,6 +77,38 @@ describe("LibraryScreen", () => {
     expect(screen.queryByText(/Anton Wiklund/)).toBeNull();
     expect(screen.queryByText(/from Wikipedia/)).toBeNull();
     expect(screen.queryByRole("link", { name: "CC0 1.0" })).toBeNull();
+  });
+
+  it("narrows the list to the chosen topics, broader ones included, and says how many are shown", () => {
+    const geography = { ...capitals, themes: ["https://solid-memo.com/vocab/topics#geography"] };
+    const swedish = { ...rivers, name: "Swedish nouns", themes: ["https://solid-memo.com/vocab/topics#swedish"] };
+    renderScreen({ decks: [geography, swedish] });
+    const topics = screen.getByRole("group", { name: "Topics" });
+    expect([...topics.querySelectorAll("label")].map((l) => l.textContent)).toEqual([
+      "Languages",
+      "Swedish",
+      "Geography",
+    ]);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Languages" }));
+    expect(screen.queryByRole("checkbox", { name: "Capitals of the world" })).toBeNull();
+    expect(screen.getByRole("checkbox", { name: "Swedish nouns" })).toBeInTheDocument();
+    expect(screen.getByText("1 of 2 decks")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Languages" }));
+    expect(screen.getByText("2 decks")).toBeInTheDocument();
+  });
+
+  it("offers no topics when no deck names one", () => {
+    renderScreen();
+    expect(screen.queryByRole("group", { name: "Topics" })).toBeNull();
+  });
+
+  it("searches names, descriptions and keywords, and says when nothing matches", () => {
+    renderScreen({ decks: [capitals, { ...rivers, keywords: ["water"] }] });
+    fireEvent.input(screen.getByLabelText("Search"), { target: { value: "WATER" } });
+    expect(screen.getByRole("checkbox", { name: "Rivers" })).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Capitals of the world" })).toBeNull();
+    fireEvent.input(screen.getByLabelText("Search"), { target: { value: "volcano" } });
+    expect(screen.getByText("No deck matches.")).toBeInTheDocument();
   });
 
   it("uses the singular for one deck", () => {

@@ -25,14 +25,18 @@ interface Thing {
   flag?: boolean;
   link?: string;
   mode?: "a" | "b";
+  concept?: string;
   tags: readonly string[];
   links: readonly string[];
+  concepts: readonly string[];
 }
 
 const THING: ShapeDescriptor<Thing> = {
   shape: "card",
   version: 1,
   targetClass: `${EX}Thing`,
+  additionalTypes: [`${EX}Extra`],
+  absent: [`${EX}gone`],
   shapeIri: `${EX}shape`,
   shapeDocument: "thing/v1.ttl",
   context: "any",
@@ -46,6 +50,8 @@ const THING: ShapeDescriptor<Thing> = {
     { name: "mode", predicate: `${EX}mode`, kind: "enum", cardinality: "optional", values: ["a", "b"] },
     { name: "tags", predicate: `${EX}tag`, kind: "string", cardinality: "many" },
     { name: "links", predicate: `${EX}links`, kind: "iri", cardinality: "many" },
+    { name: "concept", predicate: `${EX}concept`, kind: "iriEnum", cardinality: "optional", values: [`${EX}c1`, `${EX}c2`] },
+    { name: "concepts", predicate: `${EX}concepts`, kind: "iriEnum", cardinality: "many", values: [`${EX}c1`, `${EX}c2`] },
   ],
 };
 
@@ -57,39 +63,44 @@ const FULL: Thing = {
   flag: true,
   link: "https://example.com/a",
   mode: "b",
+  concept: `${EX}c2`,
   tags: ["x", "y"],
   links: ["https://example.com/b", "https://example.com/c"],
+  concepts: [`${EX}c1`, `${EX}c2`],
 };
 
 describe("recordThing and readRecord", () => {
   it("round-trip every kind and cardinality, typing the subject and stamping the version", () => {
     const thing = recordThing(URL_, THING, FULL, null);
-    expect(getUrlAll(thing, RDF.type)).toEqual([`${EX}Thing`]);
+    expect(getUrlAll(thing, RDF.type)).toEqual([`${EX}Thing`, `${EX}Extra`]);
     expect(getInteger(thing, SM.formatVersion)).toBe(1);
     expect(getDecimal(thing, `${EX}ratio`)).toBe(2.5);
     expect(readRecord(thing, THING)).toEqual(FULL);
   });
 
   it("leave out absent optional fields and read them back as absent", () => {
-    const thing = recordThing(URL_, THING, { name: "Ann", tags: [], links: [] }, null);
-    expect(readRecord(thing, THING)).toEqual({ name: "Ann", tags: [], links: [] });
+    const thing = recordThing(URL_, THING, { name: "Ann", tags: [], links: [], concepts: [] }, null);
+    expect(readRecord(thing, THING)).toEqual({ name: "Ann", tags: [], links: [], concepts: [] });
   });
 
-  it("edit the existing subject in place: owned predicates replaced, others kept, type not repeated", () => {
+  it("edit the existing subject in place: owned predicates replaced, forbidden ones removed, others kept, types not repeated", () => {
     const existing = buildThing(createThing({ url: URL_ }))
       .addIri(RDF.type, `${EX}Thing`)
+      .addIri(RDF.type, `${EX}Extra`)
+      .addStringNoLocale(`${EX}gone`, "stale")
       .addStringNoLocale(`${EX}name`, "Old")
       .addStringNoLocale(`${EX}tag`, "old")
       .addInteger(`${EX}count`, 9)
       .addStringNoLocale(`${EX}foreign`, "kept")
       .addInteger(SM.formatVersion, 0)
       .build();
-    const thing = recordThing(URL_, THING, { name: "New", tags: ["fresh"], links: [] }, existing);
-    expect(getUrlAll(thing, RDF.type)).toEqual([`${EX}Thing`]);
+    const thing = recordThing(URL_, THING, { name: "New", tags: ["fresh"], links: [], concepts: [] }, existing);
+    expect(getUrlAll(thing, RDF.type)).toEqual([`${EX}Thing`, `${EX}Extra`]);
     expect(getStringNoLocale(thing, `${EX}name`)).toBe("New");
     expect(getStringNoLocaleAll(thing, `${EX}tag`)).toEqual(["fresh"]);
     expect(getInteger(thing, `${EX}count`)).toBeNull();
     expect(getStringNoLocale(thing, `${EX}foreign`)).toBe("kept");
+    expect(getStringNoLocale(thing, `${EX}gone`)).toBeNull();
     expect(getInteger(thing, SM.formatVersion)).toBe(1);
   });
 });
@@ -105,11 +116,13 @@ describe("readRecord", () => {
       .addStringNoLocale(`${EX}name`, "Ann")
       .addStringNoLocale(`${EX}mode`, "z")
       .build();
-    expect(readRecord(thing, THING)).toEqual({ name: "Ann", tags: [], links: [] });
+    expect(readRecord(thing, THING)).toEqual({ name: "Ann", tags: [], links: [], concepts: [] });
     const required: ShapeDescriptor<{ mode: "a" }> = {
       shape: "card",
       version: 1,
       targetClass: `${EX}Thing`,
+      additionalTypes: [],
+      absent: [],
       shapeIri: `${EX}shape`,
       shapeDocument: "thing/v1.ttl",
       context: "any",
@@ -118,19 +131,34 @@ describe("readRecord", () => {
     expect(readRecord(thing, required)).toBeNull();
   });
 
+  it("treats a concept the shape does not list as absent", () => {
+    const thing = buildThing(createThing({ url: URL_ }))
+      .addStringNoLocale(`${EX}name`, "Ann")
+      .addIri(`${EX}concept`, `${EX}c9`)
+      .addIri(`${EX}concepts`, `${EX}c9`)
+      .addIri(`${EX}concepts`, `${EX}c1`)
+      .build();
+    expect(readRecord(thing, THING)).toEqual({ name: "Ann", tags: [], links: [], concepts: [`${EX}c1`] });
+    const required: ShapeDescriptor<{ concept: string }> = {
+      ...THING,
+      fields: [{ name: "concept", predicate: `${EX}concept`, kind: "iriEnum", cardinality: "one", values: [`${EX}c1`] }],
+    } as unknown as ShapeDescriptor<{ concept: string }>;
+    expect(readRecord(thing, required)).toBeNull();
+  });
+
   it("ignores a literal where an IRI is expected", () => {
     const thing = buildThing(createThing({ url: URL_ }))
       .addStringNoLocale(`${EX}name`, "Ann")
       .addStringNoLocale(`${EX}link`, "https://example.com/a")
       .build();
-    expect(readRecord(thing, THING)).toEqual({ name: "Ann", tags: [], links: [] });
+    expect(readRecord(thing, THING)).toEqual({ name: "Ann", tags: [], links: [], concepts: [] });
   });
 });
 
 describe("applyRecord", () => {
   it("adds nothing for undefined fields but still clears their old values", () => {
     const builder = buildThing(createThing({ url: URL_ })).addInteger(`${EX}count`, 9);
-    applyRecord(builder, THING, { name: "Ann", tags: [], links: [] });
+    applyRecord(builder, THING, { name: "Ann", tags: [], links: [], concepts: [] });
     expect(getInteger(builder.build(), `${EX}count`)).toBeNull();
   });
 });

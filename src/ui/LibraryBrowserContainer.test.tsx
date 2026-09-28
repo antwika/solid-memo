@@ -5,9 +5,11 @@ import { LibraryBrowserContainer } from "./LibraryBrowserContainer";
 import type { UseCases } from "../application/useCases";
 import type { LibraryDeck } from "../domain/library";
 import { makeUseCasesFake } from "../test/useCasesFake";
+import { firstRelease } from "../test/libraryDeck";
 
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
+  ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
   name: "Capitals",
   cardCount: 1,
   authors: [],

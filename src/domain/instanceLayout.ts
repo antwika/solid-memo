@@ -23,6 +23,11 @@ export function catalogUrlOf(instanceUrl: string): string {
   return `${ensureTrailingSlash(instanceUrl)}catalog.ttl`;
 }
 
+/** The instance's catalogue: the dcat:Catalog subject of its catalog document. */
+export function catalogNodeUrlOf(instanceUrl: string): string {
+  return `${catalogUrlOf(instanceUrl)}#catalog`;
+}
+
 /** Every document an instance may hold, given its decks: fixed ones first. */
 export function instanceDocumentUrls(instanceUrl: string, decks: readonly Deck[]): string[] {
   return [

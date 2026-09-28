@@ -47,6 +47,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     }),
     renameDeck: vi.fn(async (deck, name) => ({ ...deck, name })),
     setDeckDirection: vi.fn(async (deck, direction) => ({ ...deck, direction })),
+    describeDeck: vi.fn(async (deck, about) => ({ ...deck, ...about })),
     removeDeck: vi.fn(async () => undefined),
     listLibraryDecks: vi.fn(async () => []),
     importLibraryDeck: vi.fn(async () => {
@@ -56,8 +57,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     planLibraryUpgrade: vi.fn(async () => null),
     applyLibraryUpgrade: vi.fn(async (deck, plan) => ({
       ...deck,
-      direction: plan.direction,
-      formatVersion: plan.toVersion,
+      sourceUrl: plan.releaseUrl,
     })),
     listCards: vi.fn(async () => []),
     addCard: vi.fn(async () => {
@@ -67,6 +67,8 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       throw new Error("updateCard fake not configured");
     }),
     removeCard: vi.fn(async () => undefined),
+    planRepair: vi.fn(() => ({ repairs: [], unrepairable: [] })),
+    applyRepairs: vi.fn(async () => undefined),
     planMigration: vi.fn(async () => ({
       decks: [],
       deckCount: 0,
@@ -74,14 +76,18 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       reviewCount: 0,
       preferencesOutdated: false,
       instanceOutdated: false,
+      catalogMissing: false,
     })),
-    migrateInstance: vi.fn(async () => ({
-      deckCount: 0,
-      cardCount: 0,
-      reviewCount: 0,
-      preferencesMigrated: false,
-      instanceMigrated: false,
+    updateInstance: vi.fn(async (_session, instance) => ({
+      ok: true as const,
+      instanceUrl: `${instance.url.replace(/\/$/, "")}-new/`,
+      backupUrl: instance.url,
     })),
+    findInterruptedUpdate: vi.fn(async () => null),
+    removeInterruptedUpdate: vi.fn(async () => undefined),
+    readBackup: vi.fn(async () => null),
+    restoreBackup: vi.fn(async (_session, instance) => instance),
+    deleteBackup: vi.fn(async () => undefined),
     getPreferences: vi.fn(async () => DEFAULT_PREFERENCES),
     savePreferences: vi.fn(async () => undefined),
     getStudyQueue: vi.fn(async () => ({

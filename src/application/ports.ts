@@ -1,3 +1,5 @@
+import type { Catalog } from "../domain/catalog";
+import type { Repair } from "../domain/repair";
 import type { Card, CardContent, Deck } from "../domain/deck";
 import type {
   Instance,
@@ -84,6 +86,19 @@ export interface InstanceRepository {
    * container.
    */
   deleteInstance(args: { webId: string; instance: Instance }): Promise<void>;
+  /**
+   * Register the instance's catalogue (a dcat:Catalog) beside the
+   * instance in every type index that registers the instance, so other
+   * applications find its decks; nothing where it already is.
+   */
+  registerCatalog(args: { webId: string; instanceUrl: string; title: string }): Promise<void>;
+  /**
+   * Point every type index registration of the instance at another
+   * container (docs/migrations.md): all indexes or none — when a later
+   * index fails, the earlier ones are switched back before rethrowing.
+   * An instance registered in no index is an error.
+   */
+  switchInstance(args: { webId: string; from: string; to: string; title: string }): Promise<void>;
   /** What the instance's meta document says; null when there is none. */
   readMeta(instanceUrl: string): Promise<InstanceMeta | null>;
   /**
@@ -97,6 +112,10 @@ export interface InstanceRepository {
 /** Driven port: decks and their cards inside one instance. */
 export interface DeckRepository {
   listDecks(instanceUrl: string): Promise<Deck[]>;
+  /** The instance's catalogue (catalog.ttl#catalog); null when it has none yet. */
+  readCatalog(instanceUrl: string): Promise<Catalog | null>;
+  /** Write the instance's catalogue, listing every deck, creating the catalog document if need be. */
+  saveCatalog(instanceUrl: string, catalog: Catalog): Promise<void>;
   createDeck(instanceUrl: string, name: string): Promise<Deck>;
   /** Replaces the deck's name; cards and review state are untouched. */
   renameDeck(deck: Deck, name: string): Promise<Deck>;
@@ -130,6 +149,15 @@ export interface DeckRepository {
    * longer exists is skipped.
    */
   saveCards(deck: Deck, cards: Card[]): Promise<void>;
+  /**
+   * Write cards by fragment id, new or existing (an existing card keeps
+   * its creation time and triples this app does not know), and remove
+   * others, in one write of the cards document.
+   */
+  applyCardChanges(
+    deck: Deck,
+    changes: { save: (CardContent & { id: string })[]; remove: string[] },
+  ): Promise<void>;
 }
 
 /** Driven port: the app's read-only library of ready-made decks. */
@@ -176,6 +204,63 @@ export interface PreferencesRepository {
  */
 export interface ShapeValidator {
   validateDocument(url: string): Promise<DocumentReport>;
+}
+
+/** Where an update moves an instance: every IRI under `from` becomes one under `to`. */
+export interface ContainerMove {
+  from: string;
+  to: string;
+}
+
+/**
+ * Driven port: copying an instance's container, for the format update
+ * that never writes the original (docs/migrations.md).
+ */
+export interface InstanceCopier {
+  /** Every resource below the container, depth first; containers end with a slash. */
+  listResources(containerUrl: string): Promise<string[]>;
+  /** Throws unless nothing is at the URL yet. */
+  ensureAbsent(url: string): Promise<void>;
+  createContainer(url: string): Promise<void>;
+  /**
+   * Copy a resource's own access control (WAC .acl or ACP .acr),
+   * rebased; false when it has none of its own (it inherits).
+   */
+  copyAccessControl(from: string, to: string, move: ContainerMove): Promise<boolean>;
+  /** Copy one resource: a container is created, RDF rebased, anything else byte for byte. */
+  copyResource(from: string, to: string, move: ContainerMove): Promise<void>;
+  /** What identifies a resource's content now: its ETag, else Last-Modified, else a hash of it. */
+  fingerprint(url: string): Promise<string>;
+  /** Delete a container and everything below it; one that is gone counts as deleted. */
+  deleteRecursively(url: string): Promise<void>;
+}
+
+/**
+ * Driven port: a note of an update in progress, kept where the app runs
+ * (the browser), so an update cut off half-way (a closed tab) can be
+ * found and its partial copy removed. Best effort: it may forget.
+ */
+export interface UpdateJournal {
+  begin(sourceUrl: string, stagingUrl: string): void;
+  end(sourceUrl: string): void;
+  /** The copy an unfinished update of the instance was making; null when none. */
+  staging(sourceUrl: string): string | null;
+}
+
+/**
+ * Driven port: makes a container read-only for a while. The format update
+ * holds the instance it copies, so nothing — neither the update nor
+ * anything else in this tab — writes to it until the update is over.
+ */
+export interface WriteFence {
+  /** Refuse every write under the container until the returned release is called. */
+  hold(containerUrl: string): () => void;
+}
+
+/** Driven port: repairs of what an instance check found (docs/validation.md). */
+export interface RepairRepository {
+  /** Apply the repairs, one read and one write per document. */
+  applyRepairs(repairs: readonly Repair[]): Promise<void>;
 }
 
 /** Driven port: discovery of storage roots in the user's pod(s). */

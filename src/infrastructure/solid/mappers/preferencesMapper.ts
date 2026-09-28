@@ -1,8 +1,8 @@
-import type { Thing, ThingPersisted } from "@inrupt/solid-client";
+import { asUrl, type Thing, type ThingPersisted } from "@inrupt/solid-client";
 import type { StoredPreferences, StudyPreferences } from "../../../domain/preferences";
 import { preferencesFromRecord, preferencesToRecord } from "../../../domain/preferencesRecord";
 import { migrate } from "../../../domain/shapes/migrations";
-import { PREFERENCES_V2 } from "../../shacl/shapes.generated";
+import { PREFERENCES_V3 } from "../../shacl/shapes.generated";
 import { readVersioned, recordThing } from "../records";
 
 /**
@@ -14,7 +14,7 @@ export function toPreferences(thing: Thing): StoredPreferences | null {
   const read = readVersioned(thing, "preferences");
   if (read === null) return null;
   return {
-    preferences: preferencesFromRecord(migrate("preferences", read.record)),
+    preferences: preferencesFromRecord(migrate("preferences", read.record, { subject: asUrl(thing) })),
     formatVersion: read.storedVersion,
   };
 }
@@ -25,5 +25,5 @@ export function toPreferencesThing(
   preferences: StudyPreferences,
   existing: ThingPersisted | null,
 ): ThingPersisted {
-  return recordThing(url, PREFERENCES_V2, preferencesToRecord(preferences), existing);
+  return recordThing(url, PREFERENCES_V3, preferencesToRecord(preferences), existing);
 }

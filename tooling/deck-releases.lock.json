@@ -1,0 +1,46 @@
+{
+  "releases": [
+    {
+      "deck": "capitals-of-the-world",
+      "version": 1,
+      "issued": "2026-09-28T17:02:13Z",
+      "sha256": "80a44d6be032f37a0c61cb6a4d12b771ccf97024f658378635ab94880a234e9a"
+    },
+    {
+      "deck": "http-status-codes",
+      "version": 1,
+      "issued": "2026-09-28T17:02:14Z",
+      "sha256": "8beecb8be2068d97ef62b510c579f2c7b21319d3e24685c936a8042a217914cb"
+    },
+    {
+      "deck": "periodic-table",
+      "version": 1,
+      "issued": "2026-09-28T17:02:14Z",
+      "sha256": "fcac1a51c6d931e5e6e1a6d0ad65aa7acb50cb6fbe30e9e176427355bfe0d018"
+    },
+    {
+      "deck": "swedish-adjectives",
+      "version": 1,
+      "issued": "2026-09-28T17:02:15Z",
+      "sha256": "72d439fec352db7b026319c991c2d0cc25da348b29f676397bbfcadc721dbe9d"
+    },
+    {
+      "deck": "swedish-nouns",
+      "version": 1,
+      "issued": "2026-09-28T17:02:16Z",
+      "sha256": "9ed4c639d6fc3eddf48c43d9f41f2debbfa64ba137b61838a9d570f0ec1fbb81"
+    },
+    {
+      "deck": "swedish-verbs",
+      "version": 1,
+      "issued": "2026-09-28T17:02:16Z",
+      "sha256": "4c2aa26b9a78b5c6df29a09b7c22ae5e656b7322663b28bc2386cd6e99409553"
+    },
+    {
+      "deck": "world-flags",
+      "version": 1,
+      "issued": "2026-09-28T17:02:14Z",
+      "sha256": "825f085fdcb139bf513270bfb4d8ca8c0b71085716d6d6e2b0c84fa6ebe25229"
+    }
+  ]
+}

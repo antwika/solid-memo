@@ -1,0 +1,10 @@
+@prefix dcat:    <http://www.w3.org/ns/dcat#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+<#deck>
+    a dcat:Dataset ;
+    dcterms:title "Capitals"@en ;
+    dcterms:description "Capitals of the world."@en ;
+    dcterms:language <http://publications.europa.eu/resource/authority/language/DEU> .

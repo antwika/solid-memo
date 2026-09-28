@@ -35,6 +35,7 @@ function renderScreen(
     busy: false,
     error: null,
     onRenameDeck: vi.fn(),
+    onDescribeDeck: vi.fn(),
     onChangeDirection: vi.fn(),
     onRemoveDeck: vi.fn(),
     onAddCard: vi.fn(),
@@ -48,6 +49,52 @@ function renderScreen(
 }
 
 describe("BrowserScreen deck editing", () => {
+  it("shows what the deck says about itself, and describes it anew", () => {
+    const { props } = renderScreen({
+      deck: {
+        ...deck,
+        description: "Kanji of the N5 level.",
+        themes: ["https://solid-memo.com/vocab/topics#languages"],
+        keywords: ["kanji", "JLPT"],
+      },
+    });
+    const about = screen.getByRole("region", { name: "About this deck" });
+    expect(about).toHaveTextContent("Kanji of the N5 level.");
+    expect(about).toHaveTextContent("Topics: Languages · Keywords: kanji, JLPT");
+
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(screen.getByLabelText("Description")).toHaveValue("Kanji of the N5 level.");
+    expect(screen.getByLabelText("Keywords")).toHaveValue("kanji, JLPT");
+    expect(screen.getByRole("checkbox", { name: "Languages" })).toBeChecked();
+    fireEvent.input(screen.getByLabelText("Description"), { target: { value: "The N5 kanji." } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Languages" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Science" }));
+    fireEvent.input(screen.getByLabelText("Keywords"), { target: { value: "kanji, , N5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+
+    expect(props.onDescribeDeck).toHaveBeenCalledWith({
+      description: "The N5 kanji.",
+      topics: ["https://solid-memo.com/vocab/topics#science"],
+      keywords: ["kanji", "N5"],
+    });
+    expect(screen.getByRole("button", { name: "Describe deck" })).toBeInTheDocument();
+  });
+
+  it("shows only what a deck states, and cancels describing", () => {
+    renderScreen({ deck: { ...deck, keywords: ["kanji"] } });
+    const about = screen.getByRole("region", { name: "About this deck" });
+    expect(about).toHaveTextContent(/^Keywords: kanjiDescribe deck$/);
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(screen.getByLabelText("Description")).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel describing" }));
+    expect(screen.queryByLabelText("Description")).toBeNull();
+  });
+
+  it("shows topics alone, and nothing more for a deck that says nothing", () => {
+    renderScreen({ deck: { ...deck, themes: ["https://solid-memo.com/vocab/topics#geography"] } });
+    expect(screen.getByRole("region", { name: "About this deck" })).toHaveTextContent(/^Topics: GeographyDescribe deck$/);
+  });
+
   it("renames the deck, trimmed, and closes the form", () => {
     const { props } = renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));

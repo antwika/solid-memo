@@ -958,6 +958,22 @@ dl.facts .sources {
   gap: 0.6rem;
 }
 
+.library-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.library-topics legend {
+  width: 100%;
+}
+
+.library-topics label.checkbox-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .library-list {
   list-style: none;
   padding: 0;

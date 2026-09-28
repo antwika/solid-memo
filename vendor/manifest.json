@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "dcat-ap/3.0.1/dcat-ap-SHACL.ttl",
+      "source": "https://semiceu.github.io/DCAT-AP/releases/3.0.1/shacl/dcat-ap-SHACL.ttl",
+      "commit": "4470b8ea907b7eb9ec55ab22befd1ecd2210ff32",
+      "sha256": "990d3e42721de6a4be8cc338a7171559f195e62dea89c0b56531356b78cc026f",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "path": "skohub/skos.shacl.ttl",
+      "source": "https://raw.githubusercontent.com/skohub-io/skohub-shapes/main/skos.shacl.ttl",
+      "commit": "ce46984871b93cb129ce5b71c12e25dc0876de90",
+      "sha256": "13631288d6019290e0dbf1ff04b9ed1a0a13d8ffc84add0c7c7c89688459e470",
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "skohub/skos.bestPractice.shacl.ttl",
+      "source": "https://raw.githubusercontent.com/skohub-io/skohub-shapes/main/skos.bestPractice.shacl.ttl",
+      "commit": "ce46984871b93cb129ce5b71c12e25dc0876de90",
+      "sha256": "60fbe7eb9c86af5870e38e9ec262a93ad9aee410ec77b63d632c37370d3ac8fd",
+      "license": "Apache-2.0"
+    }
+  ]
+}

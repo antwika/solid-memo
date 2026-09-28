@@ -1,5 +1,11 @@
 import { useState } from "preact/hooks";
 import type { AnswerScale } from "../domain/answerScale";
+import { INVALID_DATA_POLICIES as POLICY_SCHEME } from "../domain/concepts.generated";
+import { conceptByNotation } from "../domain/concepts";
+import {
+  INVALID_DATA_POLICIES,
+  type InvalidDataPolicy,
+} from "../domain/invalidDataPolicy";
 import type { StudyPreferences } from "../domain/preferences";
 
 const ANSWER_SCALE_OPTIONS: {
@@ -18,6 +24,12 @@ const ANSWER_SCALE_OPTIONS: {
     hint: "Four buttons. Again repeats the card later in the session.",
   },
 ];
+
+/** Each policy with its label and meaning, from the vocabulary's concept scheme. */
+const POLICY_OPTIONS = INVALID_DATA_POLICIES.map((value) => {
+  const concept = conceptByNotation(POLICY_SCHEME, value)!;
+  return { value, label: concept.label, hint: concept.definition };
+});
 
 export function PreferencesScreen({
   preferences,
@@ -46,6 +58,9 @@ export function PreferencesScreen({
   const [developerMode, setDeveloperMode] = useState(
     preferences.developerMode,
   );
+  const [invalidDataPolicy, setInvalidDataPolicy] = useState<InvalidDataPolicy>(
+    preferences.invalidDataPolicy,
+  );
 
   function handleSubmit(event: Event) {
     event.preventDefault();
@@ -55,6 +70,7 @@ export function PreferencesScreen({
       dayBoundaryHour: Number(dayBoundaryHour),
       answerScale,
       developerMode,
+      invalidDataPolicy,
     });
   }
 
@@ -105,6 +121,23 @@ export function PreferencesScreen({
                 value={option.value}
                 checked={answerScale === option.value}
                 onChange={() => setAnswerScale(option.value)}
+                disabled={busy}
+              />
+              {option.label}
+              <span class="hint">{option.hint}</span>
+            </label>
+          ))}
+        </fieldset>
+        <fieldset>
+          <legend>When data does not conform</legend>
+          {POLICY_OPTIONS.map((option) => (
+            <label key={option.value} class="radio-option">
+              <input
+                type="radio"
+                name="invalid-data-policy"
+                value={option.value}
+                checked={invalidDataPolicy === option.value}
+                onChange={() => setInvalidDataPolicy(option.value)}
                 disabled={busy}
               />
               {option.label}

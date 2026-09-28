@@ -55,7 +55,7 @@ describe("main", () => {
     ]);
     const missing = fakeIo({ [OUTPUTS.vocab]: outputs[OUTPUTS.vocab] });
     expect(await main(["--check"], missing)).toBe(1);
-    expect(missing.logs).toHaveLength(2);
+    expect(missing.logs).toHaveLength(Object.keys(OUTPUTS).length - 1);
   });
 });
 

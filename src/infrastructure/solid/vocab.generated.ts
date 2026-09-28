@@ -1,6 +1,6 @@
 /* Generated from vocab/v1.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
-/** Solid Memo's own vocabulary, version 1.5 (see docs/vocab.md). */
+/** Solid Memo's own vocabulary, version 1.6 (see docs/vocab.md). */
 export const SM_NS = "https://solid-memo.com/vocab/v1#";
 
 export const SM = {
@@ -20,8 +20,10 @@ export const SM = {
   cardsDocument: `${SM_NS}cardsDocument`,
   /** The document holding the deck's review states, joined to its cards by fragment id. (Since 1.0.) */
   reviewsDocument: `${SM_NS}reviewsDocument`,
-  /** How the deck is studied: "front-to-back", "back-to-front" or "bidirectional" (every card asked both ways, each way scheduled on its own). Absent means front-to-back. (Added in 1.5 for deck format 2.) */
+  /** How the deck is studied: "front-to-back", "back-to-front" or "bidirectional" (every card asked both ways, each way scheduled on its own). Absent means front-to-back. (Added in 1.5 for deck format 2; deprecated in 1.6 for studyDirection.) @deprecated Use studyDirection. */
   direction: `${SM_NS}direction`,
+  /** How the deck is studied: a concept of solid-memo:StudyDirections. Replaces the string-valued direction. (Added in 1.6 for deck format 3.) */
+  studyDirection: `${SM_NS}studyDirection`,
   /** In the deck library's index only: how many cards a listed deck document holds. (Added in 1.4 for the library index.) */
   cardCount: `${SM_NS}cardCount`,
   /** Text on the front of the card. (Since 1.0.) */
@@ -64,4 +66,22 @@ export const SM = {
   answerScale: `${SM_NS}answerScale`,
   /** Whether the instance shows developer tools (the raw WebID document, shape validation). Absent means off. (Added in 1.1.) */
   developerMode: `${SM_NS}developerMode`,
+  /** What the app does when data in the instance does not conform to its shapes: a concept of solid-memo:InvalidDataPolicies. (Added in 1.6 for preferences format 3.) */
+  invalidDataPolicy: `${SM_NS}invalidDataPolicy`,
+  /** The ways a deck can be studied. (Added in 1.6.) */
+  StudyDirections: `${SM_NS}StudyDirections`,
+  /** Each card is shown by its front and answered with its back. (Added in 1.6.) */
+  frontToBack: `${SM_NS}frontToBack`,
+  /** Each card is shown by its back and answered with its front. (Added in 1.6.) */
+  backToFront: `${SM_NS}backToFront`,
+  /** Each card is asked both ways, each way scheduled on its own. (Added in 1.6.) */
+  bidirectional: `${SM_NS}bidirectional`,
+  /** What the app does when data in an instance does not conform to its shapes. (Added in 1.6.) */
+  InvalidDataPolicies: `${SM_NS}InvalidDataPolicies`,
+  /** Any invalid data stops the app from using the instance until it is repaired. The default. (Added in 1.6.) */
+  blockInstance: `${SM_NS}blockInstance`,
+  /** Decks with invalid data are set aside until they are repaired; everything else keeps working. (Added in 1.6.) */
+  blockSubject: `${SM_NS}blockSubject`,
+  /** Invalid data is reported, and the app keeps working with it. (Added in 1.6.) */
+  warnOnly: `${SM_NS}warnOnly`,
 } as const;

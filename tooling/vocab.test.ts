@@ -64,6 +64,43 @@ describe("parseVocab", () => {
   });
 });
 
+const SCHEMES = `
+sm:Colours a skos:ConceptScheme ; dcterms:title "Colours"@en ; skos:definition "Colours."@en ; skos:historyNote "Added in 1.1." .
+sm:red a skos:Concept ; skos:prefLabel "Red"@en ; skos:definition "Blood."@en ; skos:inScheme sm:Colours ; skos:historyNote "Added in 1.1." .
+sm:colour a owl:DatatypeProperty ; rdfs:label "colour" ; rdfs:comment "A colour." ; rdfs:range xsd:string ;
+  skos:historyNote "Since 1.0." ; owl:deprecated true ; dcterms:isReplacedBy sm:tint .
+sm:hue a owl:DatatypeProperty ; rdfs:label "hue" ; rdfs:comment "A hue." ; rdfs:range xsd:string ;
+  skos:historyNote "Since 1.0." ; owl:deprecated true .
+`;
+
+describe("parseVocab with concept schemes and deprecations", () => {
+  const vocab = parseVocab(`${HEAD}${ONTOLOGY}${SCHEMES}`);
+
+  it("reads a scheme's title and a concept's label, with their definitions", () => {
+    expect(vocab.terms.slice(0, 2)).toEqual([
+      { name: "Colours", iri: `${SM_NS}Colours`, kind: "scheme", label: "Colours", comment: "Colours.", history: "Added in 1.1." },
+      { name: "red", iri: `${SM_NS}red`, kind: "concept", label: "Red", comment: "Blood.", history: "Added in 1.1." },
+    ]);
+  });
+
+  it("marks deprecated terms, with what replaces them", () => {
+    expect(vocab.terms[2]).toMatchObject({ deprecated: true, replacedBy: `${SM_NS}tint` });
+    expect(vocab.terms[3]).toMatchObject({ deprecated: true });
+    expect(vocab.terms[3]).not.toHaveProperty("replacedBy");
+  });
+
+  it("carries deprecation into the constants and the page", () => {
+    const constants = renderVocabConstants(vocab);
+    expect(constants).toContain("/** A colour. (Since 1.0.) @deprecated Use tint. */");
+    expect(constants).toContain("/** A hue. (Since 1.0.) @deprecated */");
+    const page = renderVocabPage(vocab);
+    expect(page).toContain("<td>scheme</td>");
+    expect(page).toContain("<td>concept</td>");
+    expect(page).toContain("<td>property, range string, deprecated, use tint</td>");
+    expect(page).toContain("<td>property, range string, deprecated</td>");
+  });
+});
+
 describe("renderVocabConstants", () => {
   it("renders one constant per term with its comment and history", () => {
     expect(renderVocabConstants(parseVocab(`${HEAD}${ONTOLOGY}${TERMS}`))).toBe(

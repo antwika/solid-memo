@@ -18,6 +18,8 @@ import type { Storage } from "../domain/storage";
 import { makeUseCasesFake } from "../test/useCasesFake";
 import { routeToHash } from "./router";
 import { CARDS_PER_PAGE } from "./BrowserScreen";
+import { firstRelease } from "../test/libraryDeck";
+import { librarySeriesUrlOf } from "../domain/libraryLayout";
 
 const session: Session = { webId: "https://alice.example/profile/card#me" };
 const storageA: Storage = { url: "https://pod.example/", source: "profile" };
@@ -55,6 +57,162 @@ function renderWorkspace(useCases: UseCases) {
 describe("Workspace", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", window.location.pathname);
+  });
+
+  describe("the instance check", () => {
+    const deck: Deck = {
+      id: "deck-1",
+      url: `${instanceA.url}catalog.ttl#deck-1`,
+      name: "Kanji N5",
+      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
+      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 3,
+      authors: [],
+    };
+    const invalid = {
+      instanceUrl: instanceA.url,
+      violationCount: 1,
+      conforms: false,
+      documents: [
+        {
+          url: `${instanceA.url}catalog.ttl`,
+          status: "checked" as const,
+          subjects: [
+            {
+              url: deck.url,
+              status: "checked" as const,
+              shape: "deck" as const,
+              version: 3,
+              violations: [
+                { path: "http://purl.org/dc/terms/description", message: "Less than 1 values", severity: "violation" as const, constraint: "MinCount" },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const withPolicy = (invalidDataPolicy: "block-instance" | "block-subject" | "warn-only") =>
+      vi.fn(async () => ({ ...DEFAULT_PREFERENCES, invalidDataPolicy }));
+
+    it("waits for the check, then blocks an instance with invalid data until it is repaired", async () => {
+      const pending: ((report: typeof invalid) => void)[] = [];
+      const useCases = makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+        validateInstance: vi.fn(() => new Promise<typeof invalid>((r) => pending.push(r))),
+        planRepair: vi.fn(() => ({
+          repairs: [{ kind: "describe-deck" as const, documentUrl: `${instanceA.url}catalog.ttl`, subjectUrl: deck.url, version: 3 }],
+          unrepairable: [],
+        })),
+      });
+      renderWorkspace(useCases);
+      expect(await screen.findByText("Checking this instance's data…")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(pending.length).toBeGreaterThan(0);
+      });
+      pending.forEach((resolve) => resolve(invalid));
+      const notice = await screen.findByRole("region", { name: "Data check" });
+      expect(notice).toHaveTextContent("Solid Memo will not use this instance until it is repaired.");
+      expect(screen.queryByText("Kanji N5")).toBeNull();
+      const checks = vi.mocked(useCases.validateInstance).mock.calls.length;
+      fireEvent.click(within(notice).getByRole("button", { name: "Repair 1 problem" }));
+      await waitFor(() => {
+        expect(useCases.applyRepairs).toHaveBeenCalledOnce();
+      });
+      await waitFor(() => {
+        expect(vi.mocked(useCases.validateInstance).mock.calls.length).toBeGreaterThan(checks);
+      });
+      pending.forEach((resolve) => resolve(invalid));
+    });
+
+    it("keeps the preferences reachable while an instance is blocked", async () => {
+      window.history.replaceState(null, "", routeToHash({ screen: "preferences", instanceUrl: instanceA.url }));
+      renderWorkspace(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          validateInstance: vi.fn(async () => invalid),
+        }),
+      );
+      expect(await screen.findByRole("heading", { name: "Study preferences" })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "Data check" })).toBeInTheDocument();
+    });
+
+    it("sets aside the decks with invalid data, keeping the rest", async () => {
+      const other = { ...deck, id: "deck-2", url: `${instanceA.url}catalog.ttl#deck-2`, name: "Capitals", cardsDocumentUrl: `${instanceA.url}decks/deck-2.ttl`, reviewsDocumentUrl: `${instanceA.url}reviews/deck-2.ttl` };
+      renderWorkspace(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck, other]),
+          getPreferences: withPolicy("block-subject"),
+          validateInstance: vi.fn(async () => invalid),
+        }),
+      );
+      const notice = await screen.findByRole("region", { name: "Data check" });
+      await waitFor(() => {
+        expect(notice).toHaveTextContent("Kanji N5 is set aside until repaired; the rest keeps working.");
+      });
+      expect(await screen.findByText("Set aside: its data needs repair")).toBeInTheDocument();
+      expect(screen.getByText("Capitals")).toBeInTheDocument();
+    });
+
+    it("says a set-aside deck is set aside when it is opened", async () => {
+      window.history.replaceState(null, "", routeToHash({ screen: "browser", instanceUrl: instanceA.url, deckUrl: deck.url }));
+      renderWorkspace(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck]),
+          getPreferences: withPolicy("block-subject"),
+          validateInstance: vi.fn(async () => invalid),
+        }),
+      );
+      expect(await screen.findByText(/This deck is set aside/)).toBeInTheDocument();
+    });
+
+    it("only warns under the warn-only policy, and says so when nothing is set aside", async () => {
+      const policy = withPolicy("warn-only");
+      renderWorkspace(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck]),
+          getPreferences: policy,
+          validateInstance: vi.fn(async () => invalid),
+        }),
+      );
+      expect(await screen.findByRole("region", { name: "Data check" })).toHaveTextContent("Solid Memo keeps working with it.");
+      expect(await screen.findByText("Kanji N5")).toBeInTheDocument();
+    });
+
+    it("says the rest keeps working when invalid data belongs to no deck", async () => {
+      const elsewhere = { ...invalid, documents: [{ ...invalid.documents[0], subjects: [{ ...invalid.documents[0].subjects[0], url: `${instanceA.url}catalog.ttl#catalog` }] }] };
+      renderWorkspace(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck]),
+          getPreferences: withPolicy("block-subject"),
+          validateInstance: vi.fn(async () => elsewhere),
+        }),
+      );
+      const notice = await screen.findByRole("region", { name: "Data check" });
+      await waitFor(() => {
+        expect(notice).toHaveTextContent("The rest keeps working.");
+      });
+    });
+
+    it("goes on, with a warning, when the check itself fails", async () => {
+      renderWorkspace(
+        makeUseCases({
+          listInstances: vi.fn(async () => [instanceA]),
+          listDecks: vi.fn(async () => [deck]),
+          validateInstance: vi.fn(async () => {
+            throw new Error("shapes offline");
+          }),
+        }),
+      );
+      expect(await screen.findByText("Could not check this instance's data: shapes offline")).toBeInTheDocument();
+      expect(await screen.findByText("Kanji N5")).toBeInTheDocument();
+    });
   });
 
   it("shows a loading state while instances are being listed", () => {
@@ -328,6 +486,51 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens the updated instance at its new address once a format update switched over", async () => {
+    let instances = [instanceA];
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => instances),
+        planMigration: vi.fn(async () => ({
+          decks: [],
+          deckCount: 0,
+          cardCount: 0,
+          reviewCount: 0,
+          preferencesOutdated: true,
+          instanceOutdated: false,
+          catalogMissing: false,
+        })),
+        updateInstance: vi.fn(async () => {
+          instances = [instanceB];
+          return { ok: true as const, instanceUrl: instanceB.url, backupUrl: instanceA.url };
+        }),
+      }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Update preferences" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start the update" }));
+    expect(await screen.findByText("Deck set B")).toBeInTheDocument();
+  });
+
+  it("opens the previous version once its backup is restored from the preferences", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    let instances = [instanceA];
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => instances),
+        readBackup: vi.fn(async () => ({ url: instanceB.url })),
+        restoreBackup: vi.fn(async () => {
+          instances = [instanceB];
+          return instanceB;
+        }),
+      }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Preferences" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Restore previous version" }));
+    expect(await screen.findByRole("heading", { name: "Decks" })).toBeInTheDocument();
+    expect(screen.getByText("Deck set B")).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
   it("opens the preferences from home and navigates back", async () => {
     renderWorkspace(
       makeUseCases({ listInstances: vi.fn(async () => [instanceA]) }),
@@ -417,6 +620,7 @@ describe("Workspace", () => {
         listLibraryDecks: vi.fn(async () => [
           {
             url: deck.sourceUrl!,
+            ...firstRelease(deck.sourceUrl!),
             name: "Capitals",
             cardCount: 3,
             authors: [],
@@ -474,6 +678,7 @@ describe("Workspace", () => {
         listLibraryDecks: vi.fn(async () => [
           {
             url: libraryUrl,
+            ...firstRelease(libraryUrl),
             name: "Capitals",
             cardCount: 3,
             authors: ["Anton Wiklund"],
@@ -495,7 +700,7 @@ describe("Workspace", () => {
       routeToHash({
         screen: "libraryDeck",
         instanceUrl: instanceA.url,
-        libraryDeckUrl: libraryUrl,
+        libraryDeckUrl: librarySeriesUrlOf(libraryUrl),
       }),
     );
     expect(screen.getByText("Every capital.")).toBeInTheDocument();
@@ -532,7 +737,7 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listLibraryDecks: vi.fn(async () => [
-          { url: libraryUrl, name: "Capitals", cardCount: 11, authors: [], direction: "front-to-back" as const, sources: [] },
+          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 11, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => cards),
       }),
@@ -549,7 +754,7 @@ describe("Workspace", () => {
     const browse = {
       screen: "libraryBrowser",
       instanceUrl: instanceA.url,
-      libraryDeckUrl: libraryUrl,
+      libraryDeckUrl: librarySeriesUrlOf(libraryUrl),
     } as const;
     expect(window.location.hash).toBe(routeToHash(browse));
 
@@ -568,6 +773,37 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens a library deck's page from a link to one of its releases", async () => {
+    const release = "https://solid-memo.com/decks/capitals/1.ttl";
+    window.history.replaceState(
+      null,
+      "",
+      routeToHash({ screen: "libraryDeck", instanceUrl: instanceA.url, libraryDeckUrl: release }),
+    );
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listLibraryDecks: vi.fn(async () => [
+          {
+            url: "https://solid-memo.com/decks/capitals/2.ttl",
+            ...firstRelease(release),
+            releases: [
+              { url: release, version: "1" },
+              { url: "https://solid-memo.com/decks/capitals/2.ttl", version: "2" },
+            ],
+            name: "Capitals",
+            cardCount: 3,
+            authors: [],
+            direction: "front-to-back" as const,
+            sources: [],
+          },
+        ]),
+      }),
+    );
+
+    expect(await screen.findByRole("heading", { name: "Capitals" })).toBeInTheDocument();
+  });
+
   it("falls back to the library from a deep link to a deck it does not have", async () => {
     window.history.replaceState(
       null,
@@ -581,7 +817,17 @@ describe("Workspace", () => {
     renderWorkspace(
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
-        listLibraryDecks: vi.fn(async () => []),
+        listLibraryDecks: vi.fn(async () => [
+          {
+            url: "https://solid-memo.com/decks/capitals/1.ttl",
+            ...firstRelease("https://solid-memo.com/decks/capitals/1.ttl"),
+            name: "Capitals",
+            cardCount: 3,
+            authors: [],
+            direction: "front-to-back" as const,
+            sources: [],
+          },
+        ]),
       }),
     );
 
@@ -1267,7 +1513,6 @@ describe("Workspace", () => {
         "href",
         routeToHash({ screen: "preferences", instanceUrl: instanceA.url }),
       );
-      expect(useCases.validateInstance).not.toHaveBeenCalled();
     });
 
     it("turns on as soon as the setting is saved", async () => {
