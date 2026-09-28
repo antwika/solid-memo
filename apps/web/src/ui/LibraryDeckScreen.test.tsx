@@ -77,7 +77,8 @@ describe("LibraryDeckScreen", () => {
     });
     expect(fact("Topics")).toHaveTextContent("Languages, Geography");
     expect(fact("Keywords")).toHaveTextContent("capitals, countries");
-    expect(fact("Release")).toHaveTextContent(/^2 of .+ — Added Norway\.$/);
+    expect(fact("Release")).toHaveTextContent(/^Version 2, released .+$/);
+    expect(fact("Release notes")).toHaveTextContent(/^Added Norway\.$/);
   });
 
   it("uses the singular for one topic", () => {
@@ -188,7 +189,7 @@ describe("LibraryDeckScreen", () => {
     });
     expect(container.querySelector(".deck-description")).toBeNull();
     expect(container.querySelectorAll("dt")).toHaveLength(3);
-    expect(fact("Release")).toHaveTextContent(/^1$/);
+    expect(fact("Release")).toHaveTextContent(/^Version 1$/);
     expect(fact("Size")).toHaveTextContent("1 card");
     expect(fact("Studied")).toHaveTextContent("Front → back");
   });
