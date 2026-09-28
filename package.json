@@ -8,7 +8,7 @@
     "packages/*",
     "e2e/*"
   ],
-  "packageManager": "npm@11.17.0",
+  "packageManager": "npm@11.20.0",
   "scripts": {
     "dev": "npm run dev -w @solid-memo/web",
     "build": "turbo run build",
