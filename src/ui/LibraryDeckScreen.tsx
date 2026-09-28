@@ -1,5 +1,5 @@
 import { licenseLabel } from "../domain/license";
-import type { LibraryDeck, LibrarySource } from "../domain/library";
+import { topicLabels, type LibraryDeck, type LibrarySource } from "../domain/library";
 import { AuthorNames } from "./AuthorName";
 import { DIRECTION_LABELS } from "./direction";
 import { ExternalLink } from "./ExternalLink";
@@ -9,10 +9,12 @@ import { linkify } from "./linkify";
 import { cardCount } from "./studyCounts";
 
 /**
- * One library deck in full — its blurb, who made it and under what
- * terms, when it was made and last changed, and what it was compiled from — with a look at its cards
- * and an import button for this deck alone. Everything shown comes from
- * the library index, so any link in it goes through ExternalLink.
+ * One library deck in full — its blurb, what it is about, who made it
+ * and under what terms, when it was made and last changed, which
+ * release it is and what changed in it, and what it was compiled from —
+ * with a look at its cards and an import button for this deck alone.
+ * Everything shown comes from the library index, so any link in it goes
+ * through ExternalLink.
  */
 export function LibraryDeckScreen({
   deck,
@@ -35,6 +37,8 @@ export function LibraryDeckScreen({
   onBrowse: () => void;
   onImport: () => void;
 }) {
+  const topics = topicLabels(deck.themes);
+  const current = deck.releases.find((release) => release.url === deck.url);
   return (
     <section>
       <header>
@@ -57,6 +61,24 @@ export function LibraryDeckScreen({
           {DIRECTION_LABELS[deck.direction]}
           {deck.direction === "bidirectional" &&
             " — every card is asked both ways; change it after importing"}
+        </dd>
+        {topics.length > 0 && (
+          <>
+            <dt>{topics.length === 1 ? "Topic" : "Topics"}</dt>
+            <dd>{topics.join(", ")}</dd>
+          </>
+        )}
+        {deck.keywords.length > 0 && (
+          <>
+            <dt>Keywords</dt>
+            <dd>{deck.keywords.join(", ")}</dd>
+          </>
+        )}
+        <dt>Release</dt>
+        <dd>
+          {deck.version}
+          {current?.issued !== undefined && ` of ${formatDate(current.issued)}`}
+          {deck.versionNotes !== undefined && ` — ${deck.versionNotes}`}
         </dd>
         {deck.authors.length > 0 && (
           <>

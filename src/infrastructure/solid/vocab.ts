@@ -31,12 +31,17 @@ export const DCTERMS = {
   /** When a deck's content was last changed, when it says. */
   modified: "http://purl.org/dc/terms/modified",
   /**
-   * On an imported deck: the library document it was copied from. In the
-   * library index: the resources a deck was compiled from.
+   * Before deck format 3: on an imported deck, the library document it
+   * was copied from; in the library, the resources a deck was compiled
+   * from. Format 3 says prov:wasDerivedFrom for both.
    */
   source: "http://purl.org/dc/terms/source",
-  /** A deck's author (one triple per name). */
+  /** A deck's author: a foaf:Agent node (a "Name <email>" literal before deck format 3). */
   creator: "http://purl.org/dc/terms/creator",
+  /** Who publishes a catalogue or a library deck: a foaf:Agent. */
+  publisher: "http://purl.org/dc/terms/publisher",
+  /** When a library release was issued. */
+  issued: "http://purl.org/dc/terms/issued",
   /** The licence URL a deck's content is offered under. */
   license: "http://purl.org/dc/terms/license",
   /** A deck's blurb: what it covers, where its content came from. */
@@ -53,4 +58,23 @@ export const RDFS = {
 
 export const FOAF = {
   isPrimaryTopicOf: "http://xmlns.com/foaf/0.1/isPrimaryTopicOf",
+} as const;
+
+export const PROV = {
+  /** What a deck was drawn from: in a pod, the library release it was imported from. */
+  wasDerivedFrom: "http://www.w3.org/ns/prov#wasDerivedFrom",
+} as const;
+
+export const DCAT = {
+  /** A catalogue: an instance's catalog.ttl#catalog, the library index. */
+  Catalog: "http://www.w3.org/ns/dcat#Catalog",
+  /** A catalogue's datasets: in the library index, the decks' series. */
+  dataset: "http://www.w3.org/ns/dcat#dataset",
+  /** A release's version within its deck: "1", "2", … */
+  version: "http://www.w3.org/ns/dcat#version",
+} as const;
+
+export const ADMS = {
+  /** What changed in a release. */
+  versionNotes: "http://www.w3.org/ns/adms#versionNotes",
 } as const;

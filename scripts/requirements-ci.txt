@@ -1,0 +1,3 @@
+# The CI cross-check (scripts/shacl_crosscheck.py): an independent SHACL
+# engine, SPARQL-based constraints included.
+pyshacl==0.40.1

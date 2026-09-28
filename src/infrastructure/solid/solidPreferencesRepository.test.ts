@@ -11,6 +11,7 @@ import {
   setThing,
   type SolidDataset,
 } from "@inrupt/solid-client";
+import { DEFAULT_PREFERENCES } from "../../domain/preferences";
 import { createSolidPreferencesRepository } from "./solidPreferencesRepository";
 import { getSolidDatasetOrNull } from "./datasets";
 import { RDF, SM } from "./vocab";
@@ -25,9 +26,10 @@ vi.mock("./datasets");
 const INSTANCE = "https://pod.example/solid-memo/a/";
 const DOCUMENT = `${INSTANCE}preferences.ttl`;
 
-function makeRepository() {
+function makeRepository(checkWrite?: Parameters<typeof createSolidPreferencesRepository>[0]["checkWrite"]) {
   return createSolidPreferencesRepository({
     fetch: vi.fn() as unknown as typeof globalThis.fetch,
+    ...(checkWrite === undefined ? {} : { checkWrite }),
   });
 }
 
@@ -74,9 +76,22 @@ describe("getPreferences", () => {
         dayBoundaryHour: 3,
         answerScale: "minimal",
         developerMode: true,
+        invalidDataPolicy: "block-instance" as const,
       },
       formatVersion: 1,
     });
+  });
+});
+
+describe("savePreferences, checked", () => {
+  it("checks the preferences subject and saves nothing when the check refuses", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
+    const checkWrite = vi.fn(async () => {
+      throw new Error("does not conform");
+    });
+    await expect(makeRepository(checkWrite).savePreferences(INSTANCE, DEFAULT_PREFERENCES)).rejects.toThrow("does not conform");
+    expect(checkWrite).toHaveBeenCalledWith(expect.anything(), [`${DOCUMENT}#it`]);
+    expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });
 });
 
@@ -87,6 +102,7 @@ describe("savePreferences", () => {
     dayBoundaryHour: 3,
     answerScale: "minimal" as const,
     developerMode: true,
+    invalidDataPolicy: "block-instance" as const,
   };
 
   it("creates the document on first save", async () => {
@@ -102,7 +118,7 @@ describe("savePreferences", () => {
     expect(getInteger(thing, SM.dayBoundaryHour)).toBe(3);
     expect(getStringNoLocale(thing, SM.answerScale)).toBe("minimal");
     expect(getBoolean(thing, SM.developerMode)).toBe(true);
-    expect(getInteger(thing, SM.formatVersion)).toBe(2);
+    expect(getInteger(thing, SM.formatVersion)).toBe(3);
   });
 
   it("rewrites the subject in place in an existing document, keeping foreign triples", async () => {
@@ -122,6 +138,6 @@ describe("savePreferences", () => {
     const thing = getThing(saved as SolidDataset, `${DOCUMENT}#it`)!;
     expect(getInteger(thing, SM.newCardsPerDay)).toBe(5);
     expect(getStringNoLocale(thing, "https://other.example/#note")).toBe("kept");
-    expect(getInteger(thing, SM.formatVersion)).toBe(2);
+    expect(getInteger(thing, SM.formatVersion)).toBe(3);
   });
 });

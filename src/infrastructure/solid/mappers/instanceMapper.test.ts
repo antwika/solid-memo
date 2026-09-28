@@ -30,13 +30,13 @@ describe("toInstance", () => {
 });
 
 const META = "https://pod.example/solid-memo/main/meta.ttl#it";
-const meta = { name: "Main", createdAt: "2026-09-21T10:00:00.000Z", formatVersion: 1 };
+const meta = { name: "Main", createdAt: "2026-09-21T10:00:00.000Z", formatVersion: 2 };
 
 describe("toInstanceMeta and toInstanceMetaThing", () => {
   it("round-trip the meta subject", () => {
     const thing = toInstanceMetaThing(META, meta, null);
     expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Main");
-    expect(getInteger(thing, SM.formatVersion)).toBe(1);
+    expect(getInteger(thing, SM.formatVersion)).toBe(2);
     expect(toInstanceMeta(thing)).toEqual(meta);
   });
 
@@ -46,7 +46,12 @@ describe("toInstanceMeta and toInstanceMetaThing", () => {
       .addStringNoLocale(DCTERMS.title, "Main")
       .addDatetime(DCTERMS.created, new Date(meta.createdAt))
       .build();
-    expect(toInstanceMeta(thing)).toEqual(meta);
+    expect(toInstanceMeta(thing)).toEqual({ ...meta, formatVersion: 1 });
+  });
+
+  it("round-trips what an updated copy says it replaces", () => {
+    const updated = { ...meta, replaces: "https://pod.example/solid-memo/main/", replacedAt: "2026-09-28T10:00:00.000Z" };
+    expect(toInstanceMeta(toInstanceMetaThing(META, updated, null))).toEqual(updated);
   });
 
   it("is null for a subject that does not fit", () => {

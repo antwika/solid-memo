@@ -5,23 +5,39 @@
 @prefix prov:       <http://www.w3.org/ns/prov#> .
 @prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcat:       <http://www.w3.org/ns/dcat#> .
+@prefix foaf:       <http://xmlns.com/foaf/0.1/> .
+@prefix topic:      <https://solid-memo.com/vocab/topics#> .
 
 <>
-    a solid-memo:Deck ;
+    a solid-memo:Deck ,
+      dcat:Dataset ;
     dcterms:title "Swedish verbs: the 1000 most common" ;
-    dcterms:creator "Anton Wiklund <antonwiklund91@gmail.com>" ;
+    dcterms:creator <#anton-wiklund> ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
     dcterms:description "The 1000 most frequent Swedish verbs, ranked by how often they appear in novels, newspapers and web forums. English on the front, Swedish on the back. Frequencies from Språkbanken's Flex, word classes from SALDO, translations from Folkets lexikon." ;
-    dcterms:source <https://sprakbanken.se/resurser/flex> ,
-                   <https://spraakbanken.gu.se/resurser/saldom> ,
-                   <https://folkets-lexikon.csc.kth.se/folkets/> ;
     prov:wasDerivedFrom <https://sprakbanken.se/resurser/flex> ,
                         <https://spraakbanken.gu.se/resurser/saldom> ,
                         <https://folkets-lexikon.csc.kth.se/folkets/> ;
     prov:wasGeneratedBy <#generation> ;
     dcterms:created "2026-09-23T21:20:07.000Z"^^xsd:dateTime ;
-    solid-memo:direction "front-to-back" ;
-    solid-memo:formatVersion 2 .
+    dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
+               topic:swedish ;
+    dcat:keyword "Swedish" ,
+                 "verbs" ,
+                 "vocabulary" ;
+    dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
+                     <http://publications.europa.eu/resource/authority/language/SWE> ;
+    solid-memo:studyDirection solid-memo:frontToBack ;
+    solid-memo:formatVersion 3 .
+
+<#anton-wiklund>
+    a foaf:Agent ;
+    foaf:name "Anton Wiklund" ;
+    foaf:mbox <mailto:antonwiklund91@gmail.com> .
+
+<https://creativecommons.org/licenses/by-sa/4.0/>
+    a dcterms:LicenseDocument .
 
 # How this deck was produced (W3C PROV-O). Re-run the command below to regenerate it.
 <#generation>

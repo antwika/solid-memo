@@ -1,3 +1,4 @@
+import type { Catalog } from "./catalog";
 import {
   CARD_FORMAT_VERSION,
   DECK_FORMAT_VERSION,
@@ -81,12 +82,18 @@ export interface MigrationPlan {
   reviewCount: number;
   preferencesOutdated: boolean;
   instanceOutdated: boolean;
+  /**
+   * The instance has no catalogue (a dcat:Catalog of its decks, since
+   * deck format 3): the update describes it as one and registers it.
+   */
+  catalogMissing: boolean;
 }
 
 /** Plan the migration of an instance from everything it holds. */
 export function planMigration(input: {
   instance: InstanceMeta | null;
   preferences: StoredPreferences | null;
+  catalog: Catalog | null;
   entries: { deck: Deck; cards: Card[]; reviews: ReviewState[] }[];
 }): MigrationPlan {
   const decks = input.entries
@@ -108,19 +115,16 @@ export function planMigration(input: {
     preferencesOutdated:
       input.preferences !== null && isPreferencesOutdated(input.preferences),
     instanceOutdated: input.instance !== null && isInstanceOutdated(input.instance),
+    catalogMissing: input.catalog === null,
   };
 }
 
 /** True when nothing is outdated. */
 export function isPlanEmpty(plan: MigrationPlan): boolean {
-  return plan.decks.length === 0 && !plan.preferencesOutdated && !plan.instanceOutdated;
-}
-
-/** What a migration did. */
-export interface MigrationResult {
-  deckCount: number;
-  cardCount: number;
-  reviewCount: number;
-  preferencesMigrated: boolean;
-  instanceMigrated: boolean;
+  return (
+    plan.decks.length === 0 &&
+    !plan.preferencesOutdated &&
+    !plan.instanceOutdated &&
+    !plan.catalogMissing
+  );
 }

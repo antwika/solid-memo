@@ -1,0 +1,12 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix dcterms:    <http://purl.org/dc/terms/> .
+@prefix dcat:       <http://www.w3.org/ns/dcat#> .
+@prefix foaf:       <http://xmlns.com/foaf/0.1/> .
+@prefix adms:       <http://www.w3.org/ns/adms#> .
+@prefix prov:       <http://www.w3.org/ns/prov#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<#agent-anton>
+    a foaf:Agent ;
+    foaf:name "Anton" ;
+    foaf:mbox <https://example.com/anton> .

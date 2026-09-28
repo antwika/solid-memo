@@ -449,6 +449,11 @@ def write_deck(path: Path, *, title: str, description: str, creator: str | None,
         """The sources as a Turtle object list, continuation lines aligned under the first."""
         return (" ,\n" + " " * (5 + len(predicate))).join(SOURCES)
 
+    def aligned(predicate: str, objects: list[str]) -> str:
+        """An object list in the house style: one object per line, aligned under the first."""
+        return (" ,\n" + " " * (5 + len(predicate))).join(objects)
+
+    word_class = path.stem.split("-")[-1]
     out: list[str] = [
         f"@base <https://solid-memo.com/decks/{deck_slug}> .",
         "",
@@ -457,22 +462,52 @@ def write_deck(path: Path, *, title: str, description: str, creator: str | None,
         "@prefix prov:       <http://www.w3.org/ns/prov#> .",
         "@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .",
         "@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .",
+        "@prefix dcat:       <http://www.w3.org/ns/dcat#> .",
+        "@prefix foaf:       <http://xmlns.com/foaf/0.1/> .",
+        "@prefix topic:      <https://solid-memo.com/vocab/topics#> .",
         "",
         "<>",
-        "    a solid-memo:Deck ;",
+        "    a solid-memo:Deck ,",
+        "      dcat:Dataset ;",
         f"    dcterms:title {ttl_str(title)} ;",
     ]
+    creator_name, creator_email = None, None
     if creator:
-        out.append(f"    dcterms:creator {ttl_str(creator)} ;")
+        match = re.fullmatch(r"\s*(.*?)\s*<([^\s<>@]+@[^\s<>@]+)>\s*", creator)
+        creator_name, creator_email = (match.group(1), match.group(2)) if match else (creator.strip(), None)
+        out.append(f"    dcterms:creator <#{slug(creator_name)}> ;")
     out += [
         "    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;",
         f"    dcterms:description {ttl_str(description)} ;",
-        f"    dcterms:source {objects('dcterms:source')} ;",
         f"    prov:wasDerivedFrom {objects('prov:wasDerivedFrom')} ;",
         "    prov:wasGeneratedBy <#generation> ;",
         f'    dcterms:created "{created}"^^xsd:dateTime ;',
-        '    solid-memo:direction "front-to-back" ;',
-        "    solid-memo:formatVersion 2 .",
+        "    dcat:theme "
+        + aligned("dcat:theme", ["<http://publications.europa.eu/resource/authority/data-theme/EDUC>", "topic:swedish"])
+        + " ;",
+        "    dcat:keyword " + aligned("dcat:keyword", ['"Swedish"', ttl_str(word_class), '"vocabulary"']) + " ;",
+        "    dcterms:language "
+        + aligned(
+            "dcterms:language",
+            [
+                "<http://publications.europa.eu/resource/authority/language/ENG>",
+                "<http://publications.europa.eu/resource/authority/language/SWE>",
+            ],
+        )
+        + " ;",
+        "    solid-memo:studyDirection solid-memo:frontToBack ;",
+        "    solid-memo:formatVersion 3 .",
+        "",
+    ]
+    if creator_name is not None:
+        out += [f"<#{slug(creator_name)}>", "    a foaf:Agent ;"]
+        out.append(f"    foaf:name {ttl_str(creator_name)}" + (" ;" if creator_email else " ."))
+        if creator_email:
+            out.append(f"    foaf:mbox <mailto:{creator_email}> .")
+        out.append("")
+    out += [
+        "<https://creativecommons.org/licenses/by-sa/4.0/>",
+        "    a dcterms:LicenseDocument .",
         "",
         "# How this deck was produced (W3C PROV-O). Re-run the command below to regenerate it.",
         "<#generation>",

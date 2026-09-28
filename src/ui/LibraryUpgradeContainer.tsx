@@ -3,16 +3,15 @@ import type { UseCases } from "../application/useCases";
 import type { Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { LibraryUpgradePlan } from "../domain/libraryUpgrade";
-import { DIRECTION_LABELS } from "./direction";
 import { errorMessage } from "./errorMessage";
 import { LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
 
 /**
- * Checks whether the library now publishes an imported deck in a newer
- * format the app can apply and, when it does, shows the offer. Only decks
- * with a library source are checked (one read of the library document,
- * kept for the session); a failed check shows nothing, since the deck
- * works as it is. Home-made decks render nothing at all.
+ * Checks whether the library has a newer release of an imported deck
+ * and, when it does, shows the offer. Only decks with a library source
+ * are checked (the index and two releases read once, kept for the
+ * session); a failed check shows nothing, since the deck works as it is.
+ * Home-made decks render nothing at all.
  */
 export function LibraryUpgradeContainer({
   useCases,
@@ -38,6 +37,8 @@ export function LibraryUpgradeContainer({
     onSuccess: async () => {
       queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      await queryClient.invalidateQueries({ queryKey: ["cards", deck.cardsDocumentUrl] });
+      await queryClient.invalidateQueries({ queryKey: ["reviews", deck.reviewsDocumentUrl] });
       await queryClient.invalidateQueries({
         queryKey: ["migration", instance.url],
       });
@@ -51,8 +52,7 @@ export function LibraryUpgradeContainer({
   if (plan === undefined || plan === null) {
     return upgradeMutation.isSuccess ? (
       <p class="hint" role="status">
-        Updated from the library: now studied{" "}
-        {DIRECTION_LABELS[upgradeMutation.data.direction].toLowerCase()}.
+        Updated to release {upgradeMutation.variables.toVersion} from the library.
       </p>
     ) : null;
   }

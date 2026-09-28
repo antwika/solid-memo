@@ -1,5 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { checkEveryConceptInAScheme, parseConceptSchemes, renderConcepts } from "./concepts.ts";
 import { readTurtleTree, type TurtleFile } from "./rdf.ts";
 import { parseShapes, renderDescriptors, renderDomainTypes } from "./shapes.ts";
 import { parseVocab, renderVocabConstants } from "./vocab.ts";
@@ -16,7 +17,14 @@ export const OUTPUTS = {
   vocab: "src/infrastructure/solid/vocab.generated.ts",
   types: "src/domain/shapes/generated.ts",
   descriptors: "src/infrastructure/shacl/shapes.generated.ts",
+  concepts: "src/domain/concepts.generated.ts",
 } as const;
+
+/** The documents holding Solid Memo's concept schemes, with their base IRIs. */
+const CONCEPT_SOURCES = [
+  { path: "vocab/v1.ttl", baseIri: "https://solid-memo.com/vocab/v1" },
+  { path: "vocab/topics.ttl", baseIri: "https://solid-memo.com/vocab/topics" },
+] as const;
 
 export interface GenerateIo {
   readFile(path: string): Promise<string>;
@@ -38,10 +46,24 @@ export function defaultIo(root: string): GenerateIo {
 export async function render(io: GenerateIo): Promise<Record<string, string>> {
   const vocab = parseVocab(await io.readFile("vocab/v1.ttl"));
   const shapes = parseShapes(await io.readTurtleTree("shapes"));
+  const conceptDocuments = await Promise.all(
+    CONCEPT_SOURCES.map(async ({ path, baseIri }) => ({
+      turtle: await io.readFile(path),
+      baseIri,
+    })),
+  );
+  const schemes = conceptDocuments.flatMap(({ turtle, baseIri }) =>
+    parseConceptSchemes(turtle, baseIri),
+  );
+  checkEveryConceptInAScheme(conceptDocuments, schemes);
   return {
     [OUTPUTS.vocab]: renderVocabConstants(vocab),
     [OUTPUTS.types]: renderDomainTypes(shapes),
     [OUTPUTS.descriptors]: renderDescriptors(shapes),
+    [OUTPUTS.concepts]: renderConcepts(
+      CONCEPT_SOURCES.map((source) => source.path),
+      schemes,
+    ),
   };
 }
 

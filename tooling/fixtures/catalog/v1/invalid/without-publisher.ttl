@@ -1,0 +1,21 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix dcterms:    <http://purl.org/dc/terms/> .
+@prefix dcat:       <http://www.w3.org/ns/dcat#> .
+@prefix foaf:       <http://xmlns.com/foaf/0.1/> .
+@prefix adms:       <http://www.w3.org/ns/adms#> .
+@prefix prov:       <http://www.w3.org/ns/prov#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<#catalog>
+    a dcat:Catalog ;
+    dcterms:title "Main" ;
+    dcterms:description "My decks." ;
+    dcat:themeTaxonomy <https://solid-memo.com/vocab/topics> ;
+    dcat:dataset <#deck-1> .
+
+<https://pod.example/profile/card#me>
+    a foaf:Agent ;
+    foaf:name "Anton" .
+
+<https://solid-memo.com/decks/capitals/1.ttl>
+    a dcat:Dataset .

@@ -7,6 +7,7 @@ import type { Deck } from "../domain/deck";
 import type { Instance } from "../domain/instance";
 import type { LibraryDeck } from "../domain/library";
 import { makeUseCasesFake } from "../test/useCasesFake";
+import { firstRelease } from "../test/libraryDeck";
 
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
@@ -15,6 +16,7 @@ const instance: Instance = {
 
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
+  ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
   name: "Capitals",
   cardCount: 2,
   authors: ["Anton Wiklund"],
@@ -24,6 +26,7 @@ const capitals: LibraryDeck = {
 };
 const rivers: LibraryDeck = {
   url: "https://solid-memo.com/decks/rivers.ttl",
+  ...firstRelease("https://solid-memo.com/decks/rivers.ttl"),
   name: "Rivers",
   cardCount: 1,
   authors: [],
@@ -78,7 +81,7 @@ describe("LibraryContainer", () => {
     );
     expect(screen.getByRole("link", { name: "Capitals" })).toHaveAttribute(
       "href",
-      `#/library-deck?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.url)}`,
+      `#/library-deck?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.seriesUrl)}`,
     );
   });
 

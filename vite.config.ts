@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { defineConfig } from "vitest/config";
 import preact from "@preact/preset-vite";
 import { deckLibraryPlugin } from "./tooling/deckLibrary.ts";
-import { turtleDirectoryPlugin, vocabPage } from "./tooling/publishTurtle.ts";
+import { topicsPage, turtleDirectoryPlugin, vocabPage } from "./tooling/publishTurtle.ts";
 
 /**
  * The commit being built, shown as the site's version in the footer. Read
@@ -28,8 +28,9 @@ export default defineConfig({
   plugins: [
     preact(),
     deckLibraryPlugin(),
-    turtleDirectoryPlugin({ dir: "vocab", pages: [vocabPage()] }),
+    turtleDirectoryPlugin({ dir: "vocab", pages: [vocabPage(), topicsPage()] }),
     turtleDirectoryPlugin({ dir: "shapes" }),
+    turtleDirectoryPlugin({ dir: "vendor" }),
   ],
   resolve: {
     alias: {

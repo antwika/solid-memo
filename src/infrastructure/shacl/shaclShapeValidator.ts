@@ -1,11 +1,20 @@
-import { asUrl, getThingAll, getUrlAll, toRdfJsDataset } from "@inrupt/solid-client";
-import type { DatasetCore } from "@rdfjs/types";
+import {
+  asUrl,
+  getThing,
+  getThingAll,
+  getUrlAll,
+  toRdfJsDataset,
+  type SolidDataset,
+} from "@inrupt/solid-client";
+import type { DatasetCore, Quad } from "@rdfjs/types";
 import type { ShapeValidator } from "../../application/ports";
-import type { DocumentReport, SubjectReport } from "../../domain/validation";
+import type { DocumentReport, SubjectReport, Violation } from "../../domain/validation";
 import { getSolidDatasetOrNull } from "../solid/datasets";
 import { storedVersionOf } from "../solid/records";
+import type { WriteCheck } from "../solid/writeCheck";
 import { RDF } from "../solid/vocab";
 import type { ShapeEngine } from "./engine";
+import { coreOnly } from "./profiles";
 import { pickShape } from "./registry";
 import type { ShapeDescriptor } from "./shapeDescriptor";
 import { createShapeLoader, type ShapeLoader } from "./shapeLoader";
@@ -21,15 +30,28 @@ export interface ShaclShapeValidatorDeps {
    * library ships in its own chunk and is fetched only when a validation
    * is asked for.
    */
-  loadEngine?: () => Promise<{ createEngine(shapes: DatasetCore): ShapeEngine }>;
+  loadEngine?: () => Promise<{
+    createEngine(shapes: DatasetCore): ShapeEngine;
+    mergeDatasets(...parts: Iterable<Quad>[]): DatasetCore;
+  }>;
   loader?: ShapeLoader;
 }
+
+/** The classes the DCAT-AP profile has something to say about. */
+const PROFILED_CLASSES = [
+  "http://www.w3.org/ns/dcat#Catalog",
+  "http://www.w3.org/ns/dcat#Dataset",
+  "http://www.w3.org/ns/dcat#Distribution",
+  "http://xmlns.com/foaf/0.1/Agent",
+];
 
 /**
  * The ShapeValidator port over the SHACL engine: every subject of a
  * document with a Solid Memo class is checked against the shape of its
  * class and stored version, chosen exactly as the app chooses it when
- * reading (registry.pickShape).
+ * reading (registry.pickShape); a document with DCAT or FOAF subjects is
+ * also checked against the DCAT-AP profile, with the reference data
+ * beside it (see docs/validation.md).
  */
 export function createShaclShapeValidator({
   fetch,
@@ -37,7 +59,7 @@ export function createShaclShapeValidator({
   shapesBaseUrl,
   loadEngine = () => import("./engine"),
   loader = createShapeLoader({ fetch: shapesFetch, shapesBaseUrl }),
-}: ShaclShapeValidatorDeps): ShapeValidator {
+}: ShaclShapeValidatorDeps): ShapeValidator & { checkSubjects: WriteCheck } {
   const engines = new Map<string, Promise<ShapeEngine>>();
 
   function engineFor(descriptor: ShapeDescriptor): Promise<ShapeEngine> {
@@ -51,7 +73,72 @@ export function createShaclShapeValidator({
     return engine;
   }
 
+  let profileEngine: Promise<{ engine: ShapeEngine; reference: DatasetCore[] }> | undefined;
+  function dcatAp() {
+    profileEngine ??= Promise.all([
+      loadEngine(),
+      loader.loadProfile("dcat-ap"),
+      loader.loadReferenceData(),
+    ]).then(([{ createEngine, mergeDatasets }, shapes, reference]) => ({
+      engine: createEngine(mergeDatasets(coreOnly(shapes.flatMap((d) => [...(d as Iterable<Quad>)])))),
+      reference,
+    }));
+    return profileEngine;
+  }
+
+  /** The DCAT-AP violations of each subject of the document, by subject. */
+  async function profileViolations(data: DatasetCore): Promise<Map<string, Violation[]>> {
+    const [{ engine, reference }, { mergeDatasets }] = await Promise.all([dcatAp(), loadEngine()]);
+    const subjects = new Set([...(data as Iterable<Quad>)].map((q) => q.subject.value));
+    const bySubject = new Map<string, Violation[]>();
+    for (const { focusNode, ...violation } of await engine.validate(
+      mergeDatasets(data as Iterable<Quad>, ...(reference as Iterable<Quad>[])),
+    )) {
+      if (violation.severity !== "violation" || !subjects.has(focusNode)) continue;
+      bySubject.set(focusNode, [...(bySubject.get(focusNode) ?? []), { ...violation, profile: "dcat-ap" }]);
+    }
+    return bySubject;
+  }
+
+  /** Every result about a subject: its own shape's, and DCAT-AP's for a profiled document. */
+  async function subjectViolations(dataset: SolidDataset, subjects: readonly string[]): Promise<string[]> {
+    const data = toRdfJsDataset(dataset);
+    const problems: string[] = [];
+    const describe = (subject: string, v: Violation) =>
+      `<${subject}>${v.path === undefined ? "" : ` (${v.path})`}: ${v.profile === "dcat-ap" ? "DCAT-AP: " : ""}${v.message}`;
+    for (const subject of subjects) {
+      const thing = getThing(dataset, subject);
+      if (thing === null) continue;
+      const pick = pickShape(getUrlAll(thing, RDF.type), storedVersionOf(thing), "pod");
+      if (pick.kind !== "shape") continue;
+      const engine = await engineFor(pick.descriptor);
+      for (const v of await engine.validateNode(data, subject, pick.descriptor.shapeIri)) {
+        if (v.severity === "violation") problems.push(describe(subject, v));
+      }
+    }
+    const profiled = subjects.some((subject) => {
+      const thing = getThing(dataset, subject);
+      return thing !== null && getUrlAll(thing, RDF.type).some((type) => PROFILED_CLASSES.includes(type));
+    });
+    if (profiled) {
+      for (const [subject, violations] of await profileViolations(data)) {
+        if (!subjects.includes(subject)) continue;
+        problems.push(...violations.map((v) => describe(subject, v)));
+      }
+    }
+    return problems;
+  }
+
   return {
+    async checkSubjects(dataset, subjects) {
+      const problems = await subjectViolations(dataset, subjects);
+      if (problems.length > 0) {
+        throw new Error(
+          `Solid Memo did not save data that does not conform to its shapes:\n  ${problems.join("\n  ")}`,
+        );
+      }
+    },
+
     async validateDocument(url): Promise<DocumentReport> {
       const dataset = await getSolidDatasetOrNull(url, fetch);
       if (dataset === null) return { url, status: "missing", subjects: [] };
@@ -83,6 +170,19 @@ export function createShaclShapeValidator({
           version: pick.descriptor.version,
           violations: await engine.validateNode(data, subject, pick.descriptor.shapeIri),
         });
+      }
+      const profiled = getThingAll(dataset).some((thing) =>
+        getUrlAll(thing, RDF.type).some((type) => PROFILED_CLASSES.includes(type)),
+      );
+      if (profiled) {
+        for (const [subject, violations] of await profileViolations(data)) {
+          const index = subjects.findIndex((s) => s.url === subject);
+          const report = subjects[index];
+          // Every subject already has a report: newer data is left alone,
+          // an untyped subject becomes a profiled one.
+          if (report?.status === "checked") report.violations.push(...violations);
+          else if (report?.status === "untyped") subjects[index] = { url: subject, status: "profiled", violations };
+        }
       }
       return { url, status: "checked", subjects };
     },

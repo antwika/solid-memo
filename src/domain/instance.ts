@@ -16,6 +16,13 @@ export interface InstanceMeta {
   /** ISO dateTime. */
   createdAt: string;
   formatVersion: number;
+  /**
+   * For an instance made by a format update: the container it replaced,
+   * kept in the pod as a backup until the user restores or deletes it.
+   */
+  replaces?: string;
+  /** When it replaced that container (ISO dateTime). */
+  replacedAt?: string;
 }
 
 /** Which type index an instance is (or will be) registered in. */

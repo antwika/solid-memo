@@ -30,7 +30,7 @@ export function toReviewState(thing: Thing): ReviewState | null {
   return reviewStateFromRecord(
     reviewKeyOf(fragmentIdOf(asUrl(thing))),
     read.storedVersion,
-    migrate("reviewState", read.record),
+    migrate("reviewState", read.record, { subject: asUrl(thing) }),
   );
 }
 

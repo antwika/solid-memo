@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/preact";
 import { LibraryDeckScreen } from "./LibraryDeckScreen";
 import { licenseLabel } from "../domain/license";
 import type { LibraryDeck } from "../domain/library";
+import { firstRelease } from "../test/libraryDeck";
 
 const CC0 = "https://creativecommons.org/publicdomain/zero/1.0/";
 const BY_SA = "https://creativecommons.org/licenses/by-sa/4.0/";
@@ -11,6 +12,7 @@ const WIKIDATA = "https://www.wikidata.org/wiki/Property:P36";
 
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
+  ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
   name: "Capitals of the world",
   cardCount: 243,
   authors: ["Anton Wiklund"],
@@ -54,6 +56,35 @@ function fact(term: string): HTMLElement {
 }
 
 describe("LibraryDeckScreen", () => {
+  it("says what the deck is about, its keywords, and which release it is", () => {
+    renderScreen({
+      deck: {
+        ...capitals,
+        url: "https://solid-memo.com/decks/capitals/2.ttl",
+        version: "2",
+        versionNotes: "Added Norway.",
+        releases: [
+          { url: "https://solid-memo.com/decks/capitals/1.ttl", version: "1" },
+          { url: "https://solid-memo.com/decks/capitals/2.ttl", version: "2", issued: "2026-09-28T10:00:00Z" },
+        ],
+        themes: [
+          "http://publications.europa.eu/resource/authority/data-theme/EDUC",
+          "https://solid-memo.com/vocab/topics#geography",
+          "https://solid-memo.com/vocab/topics#languages",
+        ],
+        keywords: ["capitals", "countries"],
+      },
+    });
+    expect(fact("Topics")).toHaveTextContent("Languages, Geography");
+    expect(fact("Keywords")).toHaveTextContent("capitals, countries");
+    expect(fact("Release")).toHaveTextContent(/^2 of .+ — Added Norway\.$/);
+  });
+
+  it("uses the singular for one topic", () => {
+    renderScreen({ deck: { ...capitals, themes: ["https://solid-memo.com/vocab/topics#geography"] } });
+    expect(fact("Topic")).toHaveTextContent("Geography");
+  });
+
   it("shows the deck in full under a linked heading", () => {
     renderScreen();
     expect(
@@ -147,6 +178,7 @@ describe("LibraryDeckScreen", () => {
     const { container } = renderScreen({
       deck: {
         url: capitals.url,
+        ...firstRelease(capitals.url),
         name: "Rivers",
         cardCount: 1,
         authors: [],
@@ -155,7 +187,8 @@ describe("LibraryDeckScreen", () => {
       },
     });
     expect(container.querySelector(".deck-description")).toBeNull();
-    expect(container.querySelectorAll("dt")).toHaveLength(2);
+    expect(container.querySelectorAll("dt")).toHaveLength(3);
+    expect(fact("Release")).toHaveTextContent(/^1$/);
     expect(fact("Size")).toHaveTextContent("1 card");
     expect(fact("Studied")).toHaveTextContent("Front → back");
   });

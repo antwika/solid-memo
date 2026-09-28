@@ -32,7 +32,7 @@ full URLs, carried URL-encoded in hash query parameters.
 | `#/decks?instance=…` | deck list (home) |
 | `#/new-deck?instance=…` | deck creator |
 | `#/library?instance=…` | [deck library](deck-library.md): ready-made decks to import into the instance |
-| `#/library-deck?instance=…&deck=…` | one library deck's page — its description, authors, licence, creation date and sources, with an import button for that deck alone (an unknown deck falls back to the library) |
+| `#/library-deck?instance=…&deck=…` | one library deck's page — its description, topics, keywords, release, authors, licence, dates and sources, with an import button for that deck alone. `deck` is the deck's series (`…/decks/index.ttl#name`); a release's URL finds it too, and an unknown deck falls back to the library |
 | `#/library-browse?instance=…&deck=…[&page=n]` | a library deck's cards, read-only, paged like the Browser (paging *replaces* the history entry) |
 | `#/deck?instance=…&deck=…` | deck detail |
 | `#/browse?instance=…&deck=…[&page=n]` | Browser — the one place a deck and its cards are edited. Cards are paged; `page` (1-based) is omitted for the first page. Paging *replaces* the history entry, so Back leaves the Browser rather than walking every page, while opening a card *pushes*, so Back from a card returns to the same page. |

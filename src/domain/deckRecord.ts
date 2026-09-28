@@ -1,16 +1,27 @@
+import { agentToRecord, agentUrlOf } from "./agentRecord";
+import { directionOfConcept, conceptOfDirection } from "./concepts";
+import { defaultDeckDescription, distributionUrlOf, TURTLE_MEDIA_TYPE } from "./dcat";
 import type { Card, CardContent, Deck } from "./deck";
 import type { LibraryCard, LibraryDeckContent } from "./library";
-import type { CardV2, DeckV2, LibraryDeckV2 } from "./shapes/generated";
+import type { AgentV1, CardV2, DeckV3, DistributionV1, LibraryDeckV3 } from "./shapes/generated";
 import { fragmentIdOf } from "./subjectUrl";
 
 /**
  * Decks and cards between their latest shape records and the domain
  * models (see docs/shapes.md). Reading takes the version the pod stored,
  * which the model keeps for the migration plan; writing always produces
- * the latest record.
+ * the latest record. A deck's creators are agent nodes in the record and
+ * "Name <email>" strings in the model: `authorOf` names an agent.
  */
 
-export function deckFromRecord(url: string, storedVersion: number, data: DeckV2): Deck {
+export type AuthorOf = (agentUrl: string) => string;
+
+export function deckFromRecord(
+  url: string,
+  storedVersion: number,
+  data: DeckV3,
+  authorOf: AuthorOf,
+): Deck {
   return {
     id: fragmentIdOf(url),
     url,
@@ -20,26 +31,48 @@ export function deckFromRecord(url: string, storedVersion: number, data: DeckV2)
     createdAt: data.created ?? "",
     ...(data.modified === undefined ? {} : { modifiedAt: data.modified }),
     formatVersion: storedVersion,
-    direction: data.direction,
-    authors: [...data.creator],
+    direction: directionOfConcept(data.studyDirection)!,
+    authors: data.creator.map(authorOf),
     ...(data.license === undefined ? {} : { license: data.license }),
-    ...(data.description === undefined ? {} : { description: data.description }),
+    description: data.description,
     ...(data.source === undefined ? {} : { sourceUrl: data.source }),
+    ...(data.theme.length === 0 ? {} : { themes: [...data.theme] }),
+    ...(data.keyword.length === 0 ? {} : { keywords: [...data.keyword] }),
   };
 }
 
-export function deckToRecord(deck: Deck): DeckV2 {
+export function deckToRecord(deck: Deck): DeckV3 {
   return {
     title: deck.name,
+    description: deck.description ?? defaultDeckDescription(deck.name),
     ...(deck.createdAt === "" ? {} : { created: deck.createdAt }),
     ...(deck.modifiedAt === undefined ? {} : { modified: deck.modifiedAt }),
-    creator: deck.authors,
+    creator: deck.authors.map((author) => agentUrlOf(deck.url, author)),
     ...(deck.license === undefined ? {} : { license: deck.license }),
-    ...(deck.description === undefined ? {} : { description: deck.description }),
-    direction: deck.direction,
+    studyDirection: conceptOfDirection(deck.direction),
+    theme: deck.themes ?? [],
+    keyword: deck.keywords ?? [],
+    distribution: [distributionUrlOf(deck.url)],
     cardsDocument: deck.cardsDocumentUrl,
     reviewsDocument: deck.reviewsDocumentUrl,
     ...(deck.sourceUrl === undefined ? {} : { source: deck.sourceUrl }),
+  };
+}
+
+/** The agent nodes a deck's record names as its creators, one per author. */
+export function deckAgents(deck: Deck): { url: string; record: AgentV1 }[] {
+  const agents = new Map<string, AgentV1>();
+  for (const author of deck.authors) {
+    agents.set(agentUrlOf(deck.url, author), agentToRecord(author));
+  }
+  return [...agents].map(([url, record]) => ({ url, record }));
+}
+
+/** The deck's distribution: its cards document, in Turtle. */
+export function deckDistribution(deck: Deck): { url: string; record: DistributionV1 } {
+  return {
+    url: distributionUrlOf(deck.url),
+    record: { accessUrl: deck.cardsDocumentUrl, mediaType: TURTLE_MEDIA_TYPE },
   };
 }
 
@@ -86,17 +119,24 @@ export function cardToRecord(content: CardContent, createdAt: string): CardV2 {
 export function libraryDeckFromRecord(
   url: string,
   storedVersion: number,
-  data: LibraryDeckV2,
+  data: LibraryDeckV3,
   cards: LibraryCard[],
+  authorOf: AuthorOf,
 ): LibraryDeckContent {
   return {
     url,
     name: data.title,
     formatVersion: storedVersion,
-    authors: [...data.creator],
+    authors: data.creator.map(authorOf),
     ...(data.license === undefined ? {} : { license: data.license }),
-    ...(data.description === undefined ? {} : { description: data.description }),
-    direction: data.direction,
+    description: data.description,
+    direction: directionOfConcept(data.studyDirection)!,
+    version: data.version,
+    seriesUrl: data.inSeries,
+    ...(data.versionNotes === undefined ? {} : { versionNotes: data.versionNotes }),
+    ...(data.modified === undefined ? {} : { modifiedAt: data.modified }),
+    themes: [...data.theme],
+    keywords: [...data.keyword],
     cards,
   };
 }

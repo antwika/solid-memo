@@ -11,56 +11,92 @@ import {
   type SolidDataset,
   type Thing,
 } from "@inrupt/solid-client";
-import {
-  DEFAULT_DECK_DIRECTION,
-  isDeckDirection,
-  type DeckDirection,
-} from "../../../domain/deck";
+import { directionOfConcept } from "../../../domain/concepts";
+import { agentUrlOf } from "../../../domain/agentRecord";
 import { cardContentFromRecord, libraryDeckFromRecord } from "../../../domain/deckRecord";
-import type { LibraryCard, LibraryDeck, LibrarySource } from "../../../domain/library";
+import type {
+  LibraryCard,
+  LibraryDeck,
+  LibraryRelease,
+  LibrarySource,
+} from "../../../domain/library";
 import { LATEST_VERSION } from "../../../domain/shapes/generated";
 import { migrate } from "../../../domain/shapes/migrations";
 import { fragmentIdOf } from "../../../domain/subjectUrl";
 import { readVersioned, storedVersionOf } from "../records";
-import { DCTERMS, RDF, SM } from "../vocab";
+import { agentNamesOf } from "./deckMapper";
+import { ADMS, DCAT, DCTERMS, RDF, SM } from "../vocab";
 
 /**
- * Map an index subject to a LibraryDeck; null when the subject is not a
- * listed deck. The subject is the deck document itself (the index lists
- * `<file.ttl> a sm:Deck`), so its URL is where the deck is fetched from.
- * The deck's sources are described by their own subjects in the same
- * index, which is why the index is passed along. The index is a listing,
- * not a shape: it is read field by field, leniently.
+ * Every deck the library's index lists (see docs/deck-library.md): the
+ * catalogue's datasets are the decks' series, each described by its
+ * current release, which the index carries in full but for its cards.
+ * A series or release that does not fit its shape is left out. The
+ * index is a document of relative IRIs, so every URL here is where it
+ * can be fetched from.
  */
-export function toLibraryDeck(
-  thing: Thing,
+export function toLibraryDecks(index: SolidDataset): LibraryDeck[] {
+  const catalog = getThingAll(index).find((thing) =>
+    getUrlAll(thing, RDF.type).includes(DCAT.Catalog),
+  );
+  if (catalog === undefined) return [];
+  const names = agentNamesOf(index);
+  return getUrlAll(catalog, DCAT.dataset)
+    .map((seriesUrl) => toLibraryDeck(index, seriesUrl, names))
+    .filter((deck): deck is LibraryDeck => deck !== null);
+}
+
+function toLibraryDeck(
   index: SolidDataset,
+  seriesUrl: string,
+  names: ReadonlyMap<string, string>,
 ): LibraryDeck | null {
-  if (!getUrlAll(thing, RDF.type).includes(SM.Deck)) return null;
-  const url = asUrl(thing);
-  const license = getUrl(thing, DCTERMS.license);
-  const description = getStringNoLocale(thing, DCTERMS.description);
-  const createdAt = getDatetime(thing, DCTERMS.created)?.toISOString();
-  const modifiedAt = getDatetime(thing, DCTERMS.modified)?.toISOString();
+  const seriesThing = getThing(index, seriesUrl);
+  const series = seriesThing === null ? null : readVersioned(seriesThing, "libraryDeckSeries");
+  if (series === null) return null;
+  const { hasCurrentVersion, hasVersion } = migrate("libraryDeckSeries", series.record, { subject: seriesUrl });
+  const currentThing = getThing(index, hasCurrentVersion);
+  const current = currentThing === null ? null : readVersioned(currentThing, "libraryDeck");
+  if (current === null) return null;
+  const release = migrate("libraryDeck", current.record, { subject: hasCurrentVersion });
+  const createdAt = release.created;
+  const modifiedAt = release.modified;
   return {
-    url,
-    name: getStringNoLocale(thing, DCTERMS.title) ?? url,
-    cardCount: getInteger(thing, SM.cardCount) ?? 0,
-    authors: getStringNoLocaleAll(thing, DCTERMS.creator),
-    ...(license === null ? {} : { license }),
-    ...(description === null ? {} : { description }),
-    direction: toDeckDirection(getStringNoLocale(thing, SM.direction)),
+    url: hasCurrentVersion,
+    seriesUrl,
+    version: release.version,
+    ...(release.versionNotes === undefined ? {} : { versionNotes: release.versionNotes }),
+    releases: hasVersion
+      .map((url) => toLibraryRelease(index, url))
+      .sort((a, b) => Number(a.version) - Number(b.version)),
+    name: release.title,
+    cardCount: getInteger(currentThing!, SM.cardCount) ?? 0,
+    authors: release.creator.map((agent) => names.get(agent) ?? agent),
+    ...(release.license === undefined ? {} : { license: release.license }),
+    description: release.description,
+    direction: directionOfConcept(release.studyDirection)!,
     ...(createdAt === undefined ? {} : { createdAt }),
     ...(modifiedAt === undefined ? {} : { modifiedAt }),
-    sources: getUrlAll(thing, DCTERMS.source).map((sourceUrl) =>
+    themes: [...release.theme],
+    keywords: [...release.keyword],
+    sources: release.wasDerivedFrom.map((sourceUrl) =>
       toLibrarySource(sourceUrl, getThing(index, sourceUrl)),
     ),
   };
 }
 
-/** A listed direction; absent or unknown means front→back. */
-function toDeckDirection(value: string | null): DeckDirection {
-  return value !== null && isDeckDirection(value) ? value : DEFAULT_DECK_DIRECTION;
+/** A release by URL, with what the index says about it (maybe nothing). */
+function toLibraryRelease(index: SolidDataset, url: string): LibraryRelease {
+  const thing = getThing(index, url);
+  if (thing === null) return { url, version: "?" };
+  const issued = getDatetime(thing, DCTERMS.issued);
+  const notes = getStringNoLocale(thing, ADMS.versionNotes);
+  return {
+    url,
+    version: getStringNoLocale(thing, DCAT.version) ?? "?",
+    ...(issued === null ? {} : { issued: issued.toISOString() }),
+    ...(notes === null ? {} : { notes }),
+  };
 }
 
 /** A source by URL, plus whatever the index says about it (maybe nothing). */
@@ -105,11 +141,17 @@ export function toLibraryDeckContent(
   const cards = things
     .map((thing) => toLibraryCard(url, thing))
     .filter((card): card is LibraryCard => card !== null);
+  const subject = asUrl(deck!);
+  const names = agentNamesOf(dataset);
+  if (read.record.version !== 3) {
+    for (const author of read.record.data.creator) names.set(agentUrlOf(subject, author), author);
+  }
   return libraryDeckFromRecord(
     url,
     read.storedVersion,
-    migrate("libraryDeck", read.record),
+    migrate("libraryDeck", read.record, { subject }),
     cards,
+    (agent) => names.get(agent) ?? agent,
   );
 }
 
@@ -125,7 +167,7 @@ function toLibraryCard(url: string, thing: Thing): LibraryCard | null {
   }
   const read = readVersioned(thing, "card");
   if (read === null) return null;
-  const content = cardContentFromRecord(migrate("card", read.record));
+  const content = cardContentFromRecord(migrate("card", read.record, { subject: asUrl(thing) }));
   if (content === null) return null;
   return { id: fragmentIdOf(asUrl(thing)), ...content, formatVersion };
 }

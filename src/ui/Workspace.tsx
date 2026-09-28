@@ -1,8 +1,11 @@
 import { useEffect } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
-import { cardLabel } from "../domain/deck";
+import { cardLabel, type Deck } from "../domain/deck";
+import { DEFAULT_INVALID_DATA_POLICY } from "../domain/invalidDataPolicy";
+import { setAsideDecks } from "../domain/validation";
 import type { Instance, RegistrationTarget } from "../domain/instance";
+import type { LibraryDeck } from "../domain/library";
 import type { Session } from "../domain/session";
 import { Breadcrumbs, breadcrumbsFor } from "./Breadcrumbs";
 import { BrowserContainer } from "./BrowserContainer";
@@ -15,6 +18,8 @@ import { errorMessage } from "./errorMessage";
 import { InstanceBar } from "./InstanceBar";
 import { InstanceCreator } from "./InstanceCreator";
 import { InstancePicker } from "./InstancePicker";
+import { BackupContainer } from "./BackupContainer";
+import { DataCheckNotice } from "./DataCheckNotice";
 import { LibraryBrowserContainer } from "./LibraryBrowserContainer";
 import { LibraryContainer } from "./LibraryContainer";
 import { LibraryDeckContainer } from "./LibraryDeckContainer";
@@ -131,13 +136,17 @@ export function Workspace({
     queryFn: () => useCases.listLibraryDecks(),
     enabled: needsLibraryDeck,
   });
+  // A library deck's page is addressed by its series, which outlives
+  // releases; an address of one of its releases still finds it.
+  const isAddressed = (d: LibraryDeck) =>
+    d.seriesUrl === libraryDeckUrl || d.releases.some((r) => r.url === libraryDeckUrl);
   const activeLibraryDeck = needsLibraryDeck
-    ? (libraryQuery.data?.find((d) => d.url === libraryDeckUrl) ?? null)
+    ? (libraryQuery.data?.find(isAddressed) ?? null)
     : null;
 
   useEffect(() => {
     if (!needsLibraryDeck || libraryQuery.data === undefined) return;
-    if (!libraryQuery.data.some((d) => d.url === libraryDeckUrl)) {
+    if (!libraryQuery.data.some(isAddressed)) {
       replace({ screen: "library", instanceUrl: instanceUrl! });
     }
   }, [needsLibraryDeck, libraryQuery.data, libraryDeckUrl, instanceUrl]);
@@ -148,6 +157,29 @@ export function Workspace({
     enabled: activeInstance !== null,
   });
   const developerMode = preferencesQuery.data?.developerMode === true;
+
+  // Every instance is checked against Solid Memo's shapes and DCAT-AP
+  // when it is opened (docs/validation.md); what happens with invalid
+  // data is the user's invalid data policy. Writes are checked as they
+  // are made, so the check runs again only after a repair or an update.
+  const checkQuery = useQuery({
+    queryKey: ["validation", instanceUrl],
+    queryFn: () => useCases.validateInstance(instanceUrl!),
+    enabled: activeInstance !== null,
+    staleTime: Infinity,
+  });
+  const policy = preferencesQuery.data?.invalidDataPolicy ?? DEFAULT_INVALID_DATA_POLICY;
+  const invalidReport =
+    checkQuery.data !== undefined && !checkQuery.data.conforms ? checkQuery.data : null;
+  const decksOfCheck = useQuery({
+    queryKey: ["decks", instanceUrl],
+    queryFn: () => useCases.listDecks(instanceUrl!),
+    enabled: invalidReport !== null && policy === "block-subject",
+  });
+  const isSetAside = (deck: Deck) =>
+    invalidReport !== null && policy === "block-subject" && setAsideDecks(invalidReport, [deck]).size > 0;
+  /** Screens that stay reachable whatever the data: where the policy is changed and the report read. */
+  const alwaysReachable = route?.screen === "preferences" || route?.screen === "validation";
 
   const storagesQuery = useQuery({
     queryKey: ["storages", webId],
@@ -318,6 +350,7 @@ export function Workspace({
           <DeckListContainer
             useCases={useCases}
             instance={activeInstance!}
+            isSetAside={isSetAside}
             onStudyDeck={(deck) =>
               navigate({
                 screen: "study",
@@ -472,6 +505,7 @@ export function Workspace({
         );
       case "preferences":
         return (
+          <>
           <PreferencesContainer
             useCases={useCases}
             instance={activeInstance!}
@@ -479,6 +513,13 @@ export function Workspace({
               navigate({ screen: "home", instanceUrl: instanceUrl! })
             }
           />
+          <BackupContainer
+            useCases={useCases}
+            session={session}
+            instance={activeInstance!}
+            onRestored={(restored) => replace({ screen: "home", instanceUrl: restored.url })}
+          />
+          </>
         );
       case "validation":
         if (developerMode) {
@@ -500,6 +541,18 @@ export function Workspace({
     }
   })();
 
+  const blocked =
+    activeInstance !== null && !alwaysReachable && policy === "block-instance" &&
+    (checkQuery.isPending || invalidReport !== null);
+  const deckSetAside = activeDeck !== null && isSetAside(activeDeck);
+  const shown = blocked ? (
+    invalidReport === null ? <Loading label="Checking this instance's data…" /> : null
+  ) : deckSetAside ? (
+    <p class="hint">This deck is set aside: its data does not conform. Repair it above to use it again.</p>
+  ) : (
+    screen
+  );
+
   return (
     <>
       {activeInstance !== null && (
@@ -511,7 +564,26 @@ export function Workspace({
               navigate({ screen: "preferences", instanceUrl: instanceUrl! })
             }
           />
-          <MigrationContainer useCases={useCases} instance={activeInstance} />
+          <MigrationContainer
+            useCases={useCases}
+            session={session}
+            instance={activeInstance}
+            onUpdated={(updated) => replace({ screen: "home", instanceUrl: updated.url })}
+          />
+          {checkQuery.error && (
+            <p class="warning">
+              Could not check this instance's data: {errorMessage(checkQuery.error)}
+            </p>
+          )}
+          {invalidReport !== null && (
+            <DataCheckNotice
+              useCases={useCases}
+              instance={activeInstance}
+              report={invalidReport}
+              policy={policy}
+              setAside={(decksOfCheck.data ?? []).filter(isSetAside).map((deck) => deck.name)}
+            />
+          )}
         </>
       )}
       <Breadcrumbs
@@ -521,7 +593,7 @@ export function Workspace({
           libraryDeck: activeLibraryDeck?.name ?? "",
         })}
       />
-      {screen}
+      {shown}
       {developerMode && activeInstance !== null && (
         <nav class="developer-tools" aria-label="Developer tools">
           <a href={validationHref(activeInstance.url)}>Validate this instance</a>

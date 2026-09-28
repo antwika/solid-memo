@@ -3,6 +3,11 @@ import { DEFAULT_PREFERENCES } from "../../preferences";
 import { LATEST_VERSION, type ShapeName } from "../generated";
 import { MIGRATIONS, migrate, stepFor } from "./index";
 
+const CONTEXT = { subject: "https://pod.example/x.ttl#it" };
+const SM = "https://solid-memo.com/vocab/v1#";
+const EDUC = "http://publications.europa.eu/resource/authority/data-theme/EDUC";
+const BLOCK = { invalidDataPolicy: `${SM}blockInstance` };
+
 const SHAPES = Object.keys(LATEST_VERSION) as ShapeName[];
 
 describe("the migration chain", () => {
@@ -18,35 +23,83 @@ describe("the migration chain", () => {
 
   it("never mutates its input", () => {
     for (const step of MIGRATIONS) {
-      const input = Object.freeze({ front: "a", back: "b", title: "t", creator: [], easeFactor: 1 });
-      expect(() => step.up(input)).not.toThrow();
+      const input = Object.freeze({
+        front: "a",
+        back: "b",
+        title: "t",
+        creator: Object.freeze(["Anton"]),
+        source: Object.freeze([]),
+        direction: "front-to-back",
+        easeFactor: 1,
+      });
+      expect(() => step.up(input, CONTEXT)).not.toThrow();
     }
   });
 
   it("names a gap in the chain", () => {
-    expect(() => stepFor("instance", 1)).toThrow("No migration from instance format 1.");
+    expect(() => stepFor("instance", 2)).toThrow("No migration from instance format 2.");
   });
 });
 
 describe("migrate", () => {
   it("returns a latest record untouched", () => {
     const data = { front: "Sweden", back: "Stockholm" };
-    expect(migrate("card", { version: 2, data })).toBe(data);
+    expect(migrate("card", { version: 2, data }, CONTEXT)).toBe(data);
   });
 
   it("walks a record up to the latest version", () => {
-    expect(migrate("card", { version: 1, data: { front: "Sweden", back: "Stockholm" } })).toEqual({
+    expect(migrate("card", { version: 1, data: { front: "Sweden", back: "Stockholm" } }, CONTEXT)).toEqual({
       front: "Sweden",
       back: "Stockholm",
     });
-    const deck = { title: "Own", creator: [], cardsDocument: "d", reviewsDocument: "r" };
-    expect(migrate("deck", { version: 1, data: deck })).toEqual({ ...deck, direction: "front-to-back" });
-    expect(migrate("libraryDeck", { version: 1, data: { title: "L", creator: [], source: [] } })).toEqual({
-      title: "L",
-      creator: [],
-      source: [],
-      direction: "front-to-back",
+    const deck = { title: "Own", creator: ["Anton"], cardsDocument: "d", reviewsDocument: "r" };
+    expect(migrate("deck", { version: 1, data: deck }, CONTEXT)).toEqual({
+      title: "Own",
+      description: "Flashcards: Own.",
+      creator: ["https://pod.example/x.ttl#agent-anton"],
+      studyDirection: `${SM}frontToBack`,
+      theme: [],
+      keyword: [],
+      distribution: ["https://pod.example/x.ttl#it-cards"],
+      cardsDocument: "d",
+      reviewsDocument: "r",
     });
+    expect(
+      migrate(
+        "deck",
+        { version: 2, data: { ...deck, description: "Mine.", direction: "bidirectional", source: "https://solid-memo.com/decks/capitals.ttl" } },
+        CONTEXT,
+      ),
+    ).toMatchObject({
+      description: "Mine.",
+      studyDirection: `${SM}bidirectional`,
+      source: "https://solid-memo.com/decks/capitals/1.ttl",
+    });
+    const LIBRARY = "https://solid-memo.com/decks/capitals.ttl";
+    expect(
+      migrate(
+        "libraryDeck",
+        { version: 1, data: { title: "L", description: "Capitals.", creator: [], source: ["https://en.wikipedia.org/"] } },
+        { subject: LIBRARY },
+      ),
+    ).toEqual({
+      title: "L",
+      description: "Capitals.",
+      creator: [],
+      publisher: "https://solid-memo.com/decks/index.ttl#solid-memo",
+      studyDirection: `${SM}frontToBack`,
+      theme: [EDUC],
+      keyword: [],
+      language: [],
+      version: "1",
+      inSeries: "https://solid-memo.com/decks/index.ttl#capitals",
+      isVersionOf: "https://solid-memo.com/decks/index.ttl#capitals",
+      distribution: [`${LIBRARY}#turtle`],
+      wasDerivedFrom: ["https://en.wikipedia.org/"],
+    });
+    expect(
+      migrate("libraryDeck", { version: 2, data: { title: "L", creator: [], direction: "back-to-front", source: [] } }, { subject: LIBRARY }),
+    ).toMatchObject({ description: "Flashcards: L.", studyDirection: `${SM}backToFront` });
     const review = {
       easeFactor: 2.5,
       intervalDays: 1,
@@ -55,7 +108,7 @@ describe("migrate", () => {
       firstReviewedAt: "2026-09-21T10:00:00.000Z",
       lastReviewedAt: "2026-09-21T10:00:00.000Z",
     };
-    expect(migrate("reviewState", { version: 1, data: review })).toEqual(review);
+    expect(migrate("reviewState", { version: 1, data: review }, CONTEXT)).toEqual(review);
     const snapshot = {
       previousEaseFactor: 2.4,
       previousIntervalDays: 1,
@@ -63,19 +116,21 @@ describe("migrate", () => {
       previousDue: "2026-09-21",
       previousLastReviewedAt: "2026-09-20T10:00:00.000Z",
     };
-    expect(migrate("reviewState", { version: 1, data: { ...review, ...snapshot } })).toEqual({
+    expect(migrate("reviewState", { version: 1, data: { ...review, ...snapshot } }, CONTEXT)).toEqual({
       ...review,
       ...snapshot,
     });
     expect(
-      migrate("reviewState", { version: 1, data: { ...review, previousDue: "2026-09-21" } }),
+      migrate("reviewState", { version: 1, data: { ...review, previousDue: "2026-09-21" } }, CONTEXT),
     ).toEqual(review);
-    expect(migrate("preferences", { version: 1, data: { newCardsPerDay: 5 } })).toEqual({
+    expect(migrate("preferences", { version: 1, data: { newCardsPerDay: 5 } }, CONTEXT)).toEqual({
       ...DEFAULT_PREFERENCES,
+      ...BLOCK,
       newCardsPerDay: 5,
     });
-    expect(migrate("preferences", { version: 1, data: { answerScale: "minimal", developerMode: true } })).toEqual({
+    expect(migrate("preferences", { version: 1, data: { answerScale: "minimal", developerMode: true } }, CONTEXT)).toEqual({
       ...DEFAULT_PREFERENCES,
+      ...BLOCK,
       answerScale: "minimal",
       developerMode: true,
     });

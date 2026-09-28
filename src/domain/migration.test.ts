@@ -116,13 +116,16 @@ describe("review states, preferences and the instance record", () => {
     const current = review("a", 3);
     expect(upgradeReviewState(current)).toBe(current);
     expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 1 })).toBe(true);
-    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 2 })).toBe(false);
+    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 2 })).toBe(true);
+    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 3 })).toBe(false);
     expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 0 })).toBe(true);
-    expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 1 })).toBe(false);
+    expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 1 })).toBe(true);
+    expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 2 })).toBe(false);
   });
 });
 
-const nothingElse = { instance: null, preferences: null };
+const catalog = { title: "Main", description: "Mine.", publisher: { webId: "https://a.example/#me", name: "A" } };
+const nothingElse = { instance: null, preferences: null, catalog };
 
 describe("planMigration", () => {
   it("lists the decks with an outdated entry, cards or review states, counting each", () => {
@@ -153,6 +156,7 @@ describe("planMigration", () => {
       reviewCount: 3,
       preferencesOutdated: false,
       instanceOutdated: false,
+      catalogMissing: false,
     });
   });
 
@@ -160,6 +164,7 @@ describe("planMigration", () => {
     const plan = planMigration({
       instance: { name: "Main", createdAt: "", formatVersion: 0 },
       preferences: { preferences: DEFAULT_PREFERENCES, formatVersion: 1 },
+      catalog,
       entries: [],
     });
     expect(plan).toMatchObject({ preferencesOutdated: true, instanceOutdated: true });
@@ -167,8 +172,9 @@ describe("planMigration", () => {
     expect(
       isPlanEmpty(
         planMigration({
-          instance: { name: "Main", createdAt: "", formatVersion: 1 },
-          preferences: { preferences: DEFAULT_PREFERENCES, formatVersion: 2 },
+          instance: { name: "Main", createdAt: "", formatVersion: 2 },
+          preferences: { preferences: DEFAULT_PREFERENCES, formatVersion: 3 },
+          catalog,
           entries: [],
         }),
       ),
@@ -187,8 +193,15 @@ describe("planMigration", () => {
       reviewCount: 0,
       preferencesOutdated: false,
       instanceOutdated: false,
+      catalogMissing: false,
     });
     expect(isPlanEmpty(plan)).toBe(true);
     expect(isPlanEmpty(planMigration({ ...nothingElse, entries: [] }))).toBe(true);
+  });
+
+  it("notices an instance without a catalogue", () => {
+    const plan = planMigration({ ...nothingElse, catalog: null, entries: [] });
+    expect(plan.catalogMissing).toBe(true);
+    expect(isPlanEmpty(plan)).toBe(false);
   });
 });

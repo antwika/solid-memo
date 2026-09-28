@@ -1,7 +1,7 @@
-import { getSolidDataset, getThingAll } from "@inrupt/solid-client";
+import { getSolidDataset } from "@inrupt/solid-client";
 import type { DeckLibrary } from "../../application/ports";
 import type { LibraryDeck } from "../../domain/library";
-import { toLibraryDeck, toLibraryDeckContent } from "./mappers/libraryMapper";
+import { toLibraryDeckContent, toLibraryDecks } from "./mappers/libraryMapper";
 
 export interface SolidDeckLibraryDeps {
   /**
@@ -25,10 +25,7 @@ export function createSolidDeckLibrary({
 }: SolidDeckLibraryDeps): DeckLibrary {
   return {
     async listLibraryDecks(): Promise<LibraryDeck[]> {
-      const index = await getSolidDataset(indexUrl, { fetch });
-      return getThingAll(index)
-        .map((thing) => toLibraryDeck(thing, index))
-        .filter((deck): deck is LibraryDeck => deck !== null);
+      return toLibraryDecks(await getSolidDataset(indexUrl, { fetch }));
     },
 
     async fetchLibraryDeck(url) {

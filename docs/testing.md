@@ -9,7 +9,19 @@ branches, functions, lines) — `npm test` fails below that.
 ```sh
 npm test        # run everything with coverage thresholds
 npm run test:watch
+npm run test:pod  # the format update against a real Solid server (below)
 ```
+
+`npm run test:pod` runs `src/integration/` against the Solid server at
+`SOLID_SERVER_URL` (default `http://localhost:3999/`), which must let
+anyone read and write: `npx @solid/community-server -p 3999` starts one
+in memory. Those tests are skipped when `SOLID_SERVER_URL` is unset, so
+`npm test` never needs a server
+([migrations.md](migrations.md#proof-on-a-real-server)).
+
+The published library and vocabulary are also cross-checked by pySHACL
+in CI, after the build (`python3 scripts/shacl_crosscheck.py`; see
+[validation.md](validation.md#the-ci-cross-check)).
 
 ## Coverage policy
 

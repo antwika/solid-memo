@@ -1,0 +1,48 @@
+@prefix dcat:    <http://www.w3.org/ns/dcat#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# A deck library in miniature: the catalog, one deck as a dataset series,
+# its one release and that release's Turtle distribution.
+<#catalog>
+    a dcat:Catalog ;
+    dcterms:title "Library"@en ;
+    dcterms:description "Decks to import."@en ;
+    dcterms:publisher <#publisher> ;
+    dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+    dcat:themeTaxonomy <http://publications.europa.eu/resource/authority/data-theme> ;
+    dcat:dataset <#capitals> .
+
+<#publisher>
+    a foaf:Agent ;
+    foaf:name "Solid Memo" .
+
+<#capitals>
+    a dcat:DatasetSeries ,
+      dcat:Dataset ;
+    dcterms:title "Capitals"@en ;
+    dcterms:description "Capitals of the world."@en ;
+    dcterms:publisher <#publisher> ;
+    dcat:hasVersion <#capitals-1> .
+
+<#capitals-1>
+    a dcat:Dataset ;
+    dcterms:title "Capitals"@en ;
+    dcterms:description "Capitals of the world."@en ;
+    dcterms:creator <#publisher> ;
+    dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+    dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ;
+    dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ;
+    dcat:inSeries <#capitals> ;
+    dcat:version "1" ;
+    dcat:distribution <#capitals-1-turtle> .
+
+<#capitals-1-turtle>
+    a dcat:Distribution ;
+    dcat:accessURL <https://pod.example/capitals/1.ttl> ;
+    dcat:mediaType <https://www.iana.org/assignments/media-types/text/turtle> ;
+    dcterms:format <http://publications.europa.eu/resource/authority/file-type/RDF_TURTLE> .
+
+<https://creativecommons.org/publicdomain/zero/1.0/>
+    a dcterms:LicenseDocument .

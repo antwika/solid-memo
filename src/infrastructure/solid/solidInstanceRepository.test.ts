@@ -17,11 +17,13 @@ import {
 } from "@inrupt/solid-client";
 import { createSolidInstanceRepository } from "./solidInstanceRepository";
 import {
+  addCatalogRegistration,
   addInstanceRegistration,
   ensureTypeIndex,
   locateTypeIndexes,
   readInstanceRegistrations,
   removeInstanceRegistrations,
+  switchInstanceRegistrations,
 } from "./typeIndex";
 import { DCTERMS, SM } from "./vocab";
 
@@ -62,6 +64,8 @@ beforeEach(() => {
   vi.mocked(ensureTypeIndex).mockReset();
   vi.mocked(readInstanceRegistrations).mockReset();
   vi.mocked(addInstanceRegistration).mockReset();
+  vi.mocked(addCatalogRegistration).mockReset();
+  vi.mocked(switchInstanceRegistrations).mockReset();
   vi.mocked(removeInstanceRegistrations).mockReset();
 });
 
@@ -114,6 +118,68 @@ describe("getRegistrationOptions", () => {
   });
 });
 
+describe("switchInstance", () => {
+  const COPY = "https://alice.example/solid-memo/main-0f3a/";
+  const args = { webId: WEBID, from: CONTAINER, to: COPY, title: "Main" };
+  const both = { privateIndexUrl: PRIVATE_INDEX, publicIndexUrl: PUBLIC_INDEX };
+
+  it("switches every index that registers the instance", async () => {
+    vi.mocked(locateTypeIndexes).mockResolvedValue(both);
+    vi.mocked(switchInstanceRegistrations).mockImplementation(async (url) => url === PRIVATE_INDEX);
+    await makeRepository().switchInstance(args);
+    expect(vi.mocked(switchInstanceRegistrations).mock.calls.map((c) => [c[0], c[1]])).toEqual([
+      [PRIVATE_INDEX, { from: CONTAINER, to: COPY, title: "Main", catalogId: "sm-cat-fixed-id" }],
+      [PUBLIC_INDEX, { from: CONTAINER, to: COPY, title: "Main", catalogId: "sm-cat-fixed-id" }],
+    ]);
+  });
+
+  it("switches the earlier indexes back when a later one fails, even if a switch back fails too", async () => {
+    vi.mocked(locateTypeIndexes).mockResolvedValue(both);
+    vi.mocked(switchInstanceRegistrations)
+      .mockResolvedValueOnce(true)
+      .mockRejectedValueOnce(new Error("public index refused"))
+      .mockRejectedValueOnce(new Error("revert refused"));
+    await expect(makeRepository().switchInstance(args)).rejects.toThrow("public index refused");
+    expect(vi.mocked(switchInstanceRegistrations).mock.calls[2]).toEqual([
+      PRIVATE_INDEX,
+      { from: COPY, to: CONTAINER, title: "Main", catalogId: "sm-cat-fixed-id" },
+      expect.anything(),
+    ]);
+  });
+
+  it("refuses an instance no index registers", async () => {
+    vi.mocked(locateTypeIndexes).mockResolvedValue({ privateIndexUrl: PRIVATE_INDEX, publicIndexUrl: null });
+    vi.mocked(switchInstanceRegistrations).mockResolvedValue(false);
+    await expect(makeRepository().switchInstance(args)).rejects.toThrow(
+      `<${CONTAINER}> is registered in no type index; there is nothing to switch.`,
+    );
+  });
+});
+
+describe("registerCatalog", () => {
+  it("registers the catalogue in each type index that registers the instance", async () => {
+    vi.mocked(locateTypeIndexes).mockResolvedValue({
+      privateIndexUrl: PRIVATE_INDEX,
+      publicIndexUrl: PUBLIC_INDEX,
+    });
+    vi.mocked(readInstanceRegistrations).mockImplementation(async (indexUrl) =>
+      indexUrl === PRIVATE_INDEX ? [{ containerUrl: "https://alice.example/solid-memo/main", title: "Main" }] : [],
+    );
+    await makeRepository().registerCatalog({ webId: WEBID, instanceUrl: CONTAINER, title: "Main" });
+    expect(addCatalogRegistration).toHaveBeenCalledExactlyOnceWith(
+      PRIVATE_INDEX,
+      { id: "sm-cat-fixed-id", catalogUrl: `${CONTAINER}catalog.ttl#catalog`, title: "Main" },
+      expect.anything(),
+    );
+  });
+
+  it("registers nothing without a type index", async () => {
+    vi.mocked(locateTypeIndexes).mockResolvedValue({ privateIndexUrl: null, publicIndexUrl: null });
+    await makeRepository().registerCatalog({ webId: WEBID, instanceUrl: CONTAINER, title: "Main" });
+    expect(addCatalogRegistration).not.toHaveBeenCalled();
+  });
+});
+
 describe("createInstance", () => {
   it("writes meta.ttl, registers the container, and returns the instance", async () => {
     vi.mocked(ensureTypeIndex).mockResolvedValue(PRIVATE_INDEX);
@@ -135,7 +201,7 @@ describe("createInstance", () => {
       `${CONTAINER}meta.ttl#it`,
     )!;
     expect(getStringNoLocale(meta, DCTERMS.title)).toBe("Main");
-    expect(getInteger(meta, SM.formatVersion)).toBe(1);
+    expect(getInteger(meta, SM.formatVersion)).toBe(2);
 
     expect(ensureTypeIndex).toHaveBeenCalledWith(
       "private",
@@ -146,6 +212,11 @@ describe("createInstance", () => {
     expect(addInstanceRegistration).toHaveBeenCalledWith(
       PRIVATE_INDEX,
       { id: "sm-inst-fixed-id", containerUrl: CONTAINER, title: "Main" },
+      expect.anything(),
+    );
+    expect(addCatalogRegistration).toHaveBeenCalledWith(
+      PRIVATE_INDEX,
+      { id: "sm-cat-fixed-id", catalogUrl: `${CONTAINER}catalog.ttl#catalog`, title: "Main" },
       expect.anything(),
     );
   });
@@ -425,7 +496,7 @@ describe("readMeta and saveMeta", () => {
     const thing = getThing(saved as SolidDataset, `${META}#it`)!;
     expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Renamed");
     expect(getStringNoLocale(thing, "https://other.example/#note")).toBe("kept");
-    expect(getInteger(thing, SM.formatVersion)).toBe(1);
+    expect(getInteger(thing, SM.formatVersion)).toBe(2);
   });
 
   it("refuses to save when the meta document or its subject is missing", async () => {

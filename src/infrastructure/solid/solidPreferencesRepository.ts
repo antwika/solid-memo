@@ -8,14 +8,18 @@ import type { PreferencesRepository } from "../../application/ports";
 import { preferencesUrlOf } from "../../domain/instanceLayout";
 import type { StoredPreferences } from "../../domain/preferences";
 import { getSolidDatasetOrNull } from "./datasets";
+import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import { toPreferences, toPreferencesThing } from "./mappers/preferencesMapper";
 
 export interface SolidPreferencesRepositoryDeps {
   fetch: typeof globalThis.fetch;
+  /** Checks what is about to be written; see writeCheck.ts. */
+  checkWrite?: WriteCheck;
 }
 
 export function createSolidPreferencesRepository({
   fetch,
+  checkWrite = noWriteCheck,
 }: SolidPreferencesRepositoryDeps): PreferencesRepository {
   return {
     async getPreferences(instanceUrl): Promise<StoredPreferences | null> {
@@ -38,6 +42,7 @@ export function createSolidPreferencesRepository({
         dataset,
         toPreferencesThing(url, preferences, getThing(dataset, url)),
       );
+      await checkWrite(updated, [url]);
       await saveSolidDatasetAt(documentUrl, updated, { fetch });
     },
   };

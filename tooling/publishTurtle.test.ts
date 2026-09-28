@@ -2,13 +2,23 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { turtleDirectoryPlugin, vocabPage, type PublishedPage } from "./publishTurtle.ts";
+import { topicsPage, turtleDirectoryPlugin, vocabPage, type PublishedPage } from "./publishTurtle.ts";
 
 describe("vocabPage", () => {
   it("renders the repository's vocabulary", async () => {
     const page = vocabPage(process.cwd());
     expect(page.path).toBe("v1/index.html");
     expect(await page.body()).toContain("<title>Solid Memo vocabulary, v1</title>");
+  });
+});
+
+describe("topicsPage", () => {
+  it("renders the repository's topics", async () => {
+    const page = topicsPage(process.cwd());
+    expect(page.path).toBe("topics/index.html");
+    const body = await page.body();
+    expect(body).toContain("<title>Solid Memo topics</title>");
+    expect(body).toContain('<tr id="swedish"><td><code>swedish</code></td><td>Swedish</td>');
   });
 });
 

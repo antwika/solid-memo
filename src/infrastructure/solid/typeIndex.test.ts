@@ -22,8 +22,10 @@ import {
   locateTypeIndexes,
   readInstanceRegistrations,
   removeInstanceRegistrations,
+  addCatalogRegistration,
+  switchInstanceRegistrations,
 } from "./typeIndex";
-import { DCTERMS, FOAF, PIM, RDF, RDFS, SM, SOLID } from "./vocab";
+import { DCAT, DCTERMS, FOAF, PIM, RDF, RDFS, SM, SOLID } from "./vocab";
 
 vi.mock("@inrupt/solid-client", async (importOriginal) => {
   const actual =
@@ -649,6 +651,22 @@ describe("removeInstanceRegistrations", () => {
     );
     dataset = setThing(
       dataset,
+      buildThing(createThing({ url: `${PRIVATE_INDEX}#cat-a` }))
+        .addIri(RDF.type, SOLID.TypeRegistration)
+        .addIri(SOLID.forClass, DCAT.Catalog)
+        .addIri(SOLID.instance, "https://alice.example/solid-memo/a/catalog.ttl#catalog")
+        .build(),
+    );
+    dataset = setThing(
+      dataset,
+      buildThing(createThing({ url: `${PRIVATE_INDEX}#cat-b` }))
+        .addIri(RDF.type, SOLID.TypeRegistration)
+        .addIri(SOLID.forClass, DCAT.Catalog)
+        .addIri(SOLID.instance, "https://alice.example/solid-memo/b/catalog.ttl#catalog")
+        .build(),
+    );
+    dataset = setThing(
+      dataset,
       buildThing(createThing({ url: PRIVATE_INDEX }))
         .addIri(RDF.type, SOLID.TypeIndex)
         .build(),
@@ -667,6 +685,7 @@ describe("removeInstanceRegistrations", () => {
     expect(remaining).toEqual([
       `${PRIVATE_INDEX}#b`,
       `${PRIVATE_INDEX}#other`,
+      `${PRIVATE_INDEX}#cat-b`,
       PRIVATE_INDEX,
     ]);
   });
@@ -685,6 +704,91 @@ describe("removeInstanceRegistrations", () => {
       noFetch,
     );
 
+    expect(saveSolidDatasetAt).not.toHaveBeenCalled();
+  });
+});
+
+describe("addCatalogRegistration", () => {
+  const CATALOG = "https://alice.example/solid-memo/a/catalog.ttl#catalog";
+
+  it("registers the catalogue as a dcat:Catalog instance", async () => {
+    mockDatasets({ [PRIVATE_INDEX]: mockSolidDatasetFrom(PRIVATE_INDEX) });
+    await addCatalogRegistration(PRIVATE_INDEX, { id: "sm-cat-1", catalogUrl: CATALOG, title: "Main" }, noFetch);
+    const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    expect(saveUrl).toBe(PRIVATE_INDEX);
+    const registration = getThing(saved as SolidDataset, `${PRIVATE_INDEX}#sm-cat-1`)!;
+    expect(getUrlAll(registration, RDF.type)).toEqual([SOLID.TypeRegistration]);
+    expect(getUrlAll(registration, SOLID.forClass)).toEqual([DCAT.Catalog]);
+    expect(getUrlAll(registration, SOLID.instance)).toEqual([CATALOG]);
+    expect(getStringNoLocale(registration, DCTERMS.title)).toBe("Main");
+  });
+
+  it("leaves an index that already registers the catalogue alone", async () => {
+    mockDatasets({
+      [PRIVATE_INDEX]: setThing(
+        mockSolidDatasetFrom(PRIVATE_INDEX),
+        buildThing(createThing({ url: `${PRIVATE_INDEX}#existing` }))
+          .addIri(RDF.type, SOLID.TypeRegistration)
+          .addIri(SOLID.forClass, DCAT.Catalog)
+          .addIri(SOLID.instance, CATALOG)
+          .build(),
+      ),
+    });
+    await addCatalogRegistration(PRIVATE_INDEX, { id: "sm-cat-1", catalogUrl: CATALOG, title: "Main" }, noFetch);
+    expect(saveSolidDatasetAt).not.toHaveBeenCalled();
+  });
+});
+
+describe("switchInstanceRegistrations", () => {
+  const MAIN = "https://alice.example/solid-memo/main/";
+  const COPY = "https://alice.example/solid-memo/main-0f3a/";
+  const args = { from: MAIN, to: COPY, title: "Main", catalogId: "sm-cat-new" };
+
+  function registration(id: string, forClass: string, predicate: string, url: string) {
+    return buildThing(createThing({ url: `${PRIVATE_INDEX}#${id}` }))
+      .addIri(RDF.type, SOLID.TypeRegistration)
+      .addIri(SOLID.forClass, forClass)
+      .addIri(predicate, url)
+      .addStringNoLocale(DCTERMS.title, "Old")
+      .build();
+  }
+
+  it("points the instance and catalogue registrations at the new container, in one save", async () => {
+    let dataset = setThing(mockSolidDatasetFrom(PRIVATE_INDEX), registration("inst", SM.Instance, SOLID.instance, "https://alice.example/solid-memo/main"));
+    dataset = setThing(dataset, registration("cat", DCAT.Catalog, SOLID.instance, `${MAIN}catalog.ttl#catalog`));
+    dataset = setThing(dataset, registration("other", SM.Instance, SOLID.instanceContainer, "https://alice.example/solid-memo/b/"));
+    dataset = setThing(dataset, buildThing(createThing({ url: `${PRIVATE_INDEX}#note` })).addStringNoLocale(DCTERMS.title, "x").build());
+    mockDatasets({ [PRIVATE_INDEX]: dataset });
+    await expect(switchInstanceRegistrations(PRIVATE_INDEX, args, noFetch)).resolves.toBe(true);
+    expect(saveSolidDatasetAt).toHaveBeenCalledOnce();
+    const saved = vi.mocked(saveSolidDatasetAt).mock.calls[0][1] as SolidDataset;
+    const instance = getThing(saved, `${PRIVATE_INDEX}#inst`)!;
+    expect(getUrlAll(instance, SOLID.instanceContainer)).toEqual([COPY]);
+    expect(getUrlAll(instance, SOLID.instance)).toEqual([]);
+    expect(getStringNoLocale(instance, DCTERMS.title)).toBe("Main");
+    expect(getUrlAll(getThing(saved, `${PRIVATE_INDEX}#cat`)!, SOLID.instance)).toEqual([`${COPY}catalog.ttl#catalog`]);
+    expect(getUrlAll(getThing(saved, `${PRIVATE_INDEX}#other`)!, SOLID.instanceContainer)).toEqual([
+      "https://alice.example/solid-memo/b/",
+    ]);
+    expect(getThing(saved, `${PRIVATE_INDEX}#sm-cat-new`)).toBeNull();
+  });
+
+  it("adds the catalogue registration when there is none", async () => {
+    mockDatasets({
+      [PRIVATE_INDEX]: setThing(mockSolidDatasetFrom(PRIVATE_INDEX), registration("inst", SM.Instance, SOLID.instanceContainer, MAIN)),
+    });
+    await switchInstanceRegistrations(PRIVATE_INDEX, args, noFetch);
+    const saved = vi.mocked(saveSolidDatasetAt).mock.calls[0][1] as SolidDataset;
+    const catalog = getThing(saved, `${PRIVATE_INDEX}#sm-cat-new`)!;
+    expect(getUrlAll(catalog, SOLID.forClass)).toEqual([DCAT.Catalog]);
+    expect(getUrlAll(catalog, SOLID.instance)).toEqual([`${COPY}catalog.ttl#catalog`]);
+  });
+
+  it("saves nothing in an index that does not register the instance", async () => {
+    mockDatasets({
+      [PRIVATE_INDEX]: setThing(mockSolidDatasetFrom(PRIVATE_INDEX), registration("cat", DCAT.Catalog, SOLID.instance, `${MAIN}catalog.ttl#catalog`)),
+    });
+    await expect(switchInstanceRegistrations(PRIVATE_INDEX, args, noFetch)).resolves.toBe(false);
     expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });
 });

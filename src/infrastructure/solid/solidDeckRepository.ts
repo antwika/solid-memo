@@ -1,11 +1,13 @@
 import {
   createSolidDataset,
   deleteSolidDataset,
+  getDatetime,
   getThing,
   getThingAll,
   removeThing,
   saveSolidDatasetAt,
   setThing,
+  type SolidDataset,
   type ThingPersisted,
 } from "@inrupt/solid-client";
 import type { DeckRepository } from "../../application/ports";
@@ -18,12 +20,22 @@ import {
   type Deck,
   type DeckDirection,
 } from "../../domain/deck";
-import { cardToRecord, deckToRecord } from "../../domain/deckRecord";
+import { cardToRecord } from "../../domain/deckRecord";
 import { catalogUrlOf, ensureTrailingSlash } from "../../domain/instanceLayout";
 import { documentUrlOf } from "../../domain/subjectUrl";
-import { CARD_V2, DECK_V2 } from "../shacl/shapes.generated";
+import { CARD_V2 } from "../shacl/shapes.generated";
 import { getSolidDatasetOrNull } from "./datasets";
-import { toCard, toDeck } from "./mappers/deckMapper";
+import { DCTERMS } from "./vocab";
+import {
+  deckSubjects,
+  toCard,
+  toCatalog,
+  toDecks,
+  withCatalog,
+  withDeck,
+  withoutDeck,
+} from "./mappers/deckMapper";
+import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import { reviewSubjectUrl } from "./mappers/reviewStateMapper";
 import { recordThing } from "./records";
 
@@ -31,21 +43,44 @@ export interface SolidDeckRepositoryDeps {
   fetch: typeof globalThis.fetch;
   now: () => Date;
   randomId: () => string;
+  /** Checks what is about to be written; see writeCheck.ts. */
+  checkWrite?: WriteCheck;
 }
 
 export function createSolidDeckRepository({
   fetch,
   now,
   randomId,
+  checkWrite = noWriteCheck,
 }: SolidDeckRepositoryDeps): DeckRepository {
+  /** Save a document once the subjects the write touched are checked. */
+  async function save(url: string, dataset: SolidDataset, subjects: readonly string[]): Promise<void> {
+    await checkWrite(dataset, subjects);
+    await saveSolidDatasetAt(url, dataset, { fetch });
+  }
+
   return {
     async listDecks(instanceUrl): Promise<Deck[]> {
       const catalogUrl = catalogUrlOf(instanceUrl);
       const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
       if (dataset === null) return [];
-      return getThingAll(dataset)
-        .map(toDeck)
-        .filter((deck): deck is Deck => deck !== null);
+      return toDecks(dataset);
+    },
+
+    async readCatalog(instanceUrl) {
+      const catalogUrl = catalogUrlOf(instanceUrl);
+      const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
+      return dataset === null ? null : toCatalog(dataset, catalogUrl);
+    },
+
+    async saveCatalog(instanceUrl, catalog) {
+      const catalogUrl = catalogUrlOf(instanceUrl);
+      const dataset =
+        (await getSolidDatasetOrNull(catalogUrl, fetch)) ?? createSolidDataset();
+      await save(catalogUrl, withCatalog(dataset, catalogUrl, catalog), [
+        `${catalogUrl}#catalog`,
+        catalog.publisher.webId,
+      ]);
     },
 
     createDeck(instanceUrl, name): Promise<Deck> {
@@ -58,7 +93,11 @@ export function createSolidDeckRepository({
       for (const card of content.cards) {
         cards = setThing(cards, cardThing(deck, card, null));
       }
-      await saveSolidDatasetAt(deck.cardsDocumentUrl, cards, { fetch });
+      await save(
+        deck.cardsDocumentUrl,
+        cards,
+        content.cards.map((card) => `${deck.cardsDocumentUrl}#${card.id}`),
+      );
       return registerDeck(deck);
     },
 
@@ -74,7 +113,7 @@ export function createSolidDeckRepository({
       const catalogUrl = documentUrlOf(deck.url);
       const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
       if (dataset === null) return;
-      await saveSolidDatasetAt(catalogUrl, removeThing(dataset, deck.url), {
+      await saveSolidDatasetAt(catalogUrl, withoutDeck(dataset, deck), {
         fetch,
       });
     },
@@ -103,7 +142,7 @@ export function createSolidDeckRepository({
         (await getSolidDatasetOrNull(deck.cardsDocumentUrl, fetch)) ??
         createSolidDataset();
       const updated = setThing(dataset, cardThing(deck, card, null));
-      await saveSolidDatasetAt(deck.cardsDocumentUrl, updated, { fetch });
+      await save(deck.cardsDocumentUrl, updated, [card.url]);
       return card;
     },
 
@@ -128,10 +167,10 @@ export function createSolidDeckRepository({
         ...content,
         formatVersion: CARD_FORMAT_VERSION,
       };
-      await saveSolidDatasetAt(
+      await save(
         deck.cardsDocumentUrl,
         setThing(dataset, cardThing(deck, updated, thing)),
-        { fetch },
+        [updated.url],
       );
       return updated;
     },
@@ -148,7 +187,24 @@ export function createSolidDeckRepository({
           ? current
           : setThing(current, cardThing(deck, card, thing));
       }, dataset);
-      await saveSolidDatasetAt(deck.cardsDocumentUrl, updated, { fetch });
+      await save(deck.cardsDocumentUrl, updated, cards.map((card) => card.url));
+    },
+
+    async applyCardChanges(deck, { save: saved, remove }): Promise<void> {
+      const dataset =
+        (await getSolidDatasetOrNull(deck.cardsDocumentUrl, fetch)) ?? createSolidDataset();
+      const urlOf = (id: string) => `${deck.cardsDocumentUrl}#${id}`;
+      let updated = dataset;
+      for (const card of saved) {
+        const existing = getThing(updated, urlOf(card.id));
+        const createdAt = existing === null ? undefined : getDatetime(existing, DCTERMS.created)?.toISOString();
+        updated = setThing(
+          updated,
+          cardThing(deck, { ...card, ...(createdAt === undefined ? {} : { createdAt }) }, existing),
+        );
+      }
+      for (const id of remove) updated = removeThing(updated, urlOf(id));
+      await save(deck.cardsDocumentUrl, updated, saved.map((card) => urlOf(card.id)));
     },
 
     async removeCard(deck, card): Promise<void> {
@@ -186,7 +242,8 @@ export function createSolidDeckRepository({
   /**
    * Rewrite a deck's catalog entry in place, in this app's format: the
    * entry's own predicates are replaced from the deck, so unknown
-   * triples survive. Returns the deck as written.
+   * triples survive; its agents and distribution are written beside it.
+   * Returns the deck as written.
    */
   async function saveDeck(deck: Deck): Promise<Deck> {
     const catalogUrl = documentUrlOf(deck.url);
@@ -196,17 +253,17 @@ export function createSolidDeckRepository({
       throw new Error(`The deck <${deck.name}> no longer exists.`);
     }
     const written: Deck = { ...deck, formatVersion: DECK_FORMAT_VERSION };
-    const updated = setThing(dataset, deckThing(written, thing));
-    await saveSolidDatasetAt(catalogUrl, updated, { fetch });
+    await save(catalogUrl, withDeck(dataset, written), deckSubjects(written));
     return written;
   }
 
   /**
    * A fresh deck's identity and document locations, before any write.
-   * An import carries over the library deck's provenance — its authors,
-   * licence, description and where it came from — and the direction it
-   * is meant to be studied in. The format version is always this app's
-   * own: the copy is written in the format this app writes.
+   * An import carries over the library release's provenance — its
+   * authors, licence, description, topics and keywords, and which
+   * release it is — and the direction it is meant to be studied in. The
+   * format version is always this app's own: the copy is written in the
+   * format this app writes.
    */
   function newDeck(
     instanceUrl: string,
@@ -217,6 +274,8 @@ export function createSolidDeckRepository({
       license?: string;
       description?: string;
       direction: DeckDirection;
+      themes: string[];
+      keywords: string[];
     },
   ): Deck {
     const base = ensureTrailingSlash(instanceUrl);
@@ -236,6 +295,10 @@ export function createSolidDeckRepository({
         ? {}
         : { description: source.description }),
       ...(source === undefined ? {} : { sourceUrl: source.url }),
+      ...(source === undefined || source.themes.length === 0 ? {} : { themes: source.themes }),
+      ...(source === undefined || source.keywords.length === 0
+        ? {}
+        : { keywords: source.keywords }),
     };
   }
 
@@ -245,8 +308,7 @@ export function createSolidDeckRepository({
     const dataset =
       (await getSolidDatasetOrNull(catalogUrl, fetch)) ??
       createSolidDataset();
-    const updated = setThing(dataset, deckThing(deck, null));
-    await saveSolidDatasetAt(catalogUrl, updated, { fetch });
+    await save(catalogUrl, withDeck(dataset, deck), deckSubjects(deck));
     return deck;
   }
 
@@ -269,11 +331,6 @@ export function createSolidDeckRepository({
       existing,
     );
   }
-}
-
-/** The RDF subject of a deck's catalog entry, in this app's format. */
-function deckThing(deck: Deck, existing: ThingPersisted | null): ThingPersisted {
-  return recordThing(deck.url, DECK_V2, deckToRecord(deck), existing);
 }
 
 async function deleteDocumentIfPresent(

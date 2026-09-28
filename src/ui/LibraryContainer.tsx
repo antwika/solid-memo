@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "../application/useCases";
 import type { Instance } from "../domain/instance";
-import type { LibraryDeck } from "../domain/library";
+import { isCopyOf, type LibraryDeck } from "../domain/library";
 import { errorMessage } from "./errorMessage";
 import { LibraryScreen } from "./LibraryScreen";
 import { Loading } from "./Loading";
@@ -32,11 +32,7 @@ export function LibraryContainer({
     queryKey: ["decks", instance.url],
     queryFn: () => useCases.listDecks(instance.url),
   });
-  const importedUrls = new Set(
-    (decksQuery.data ?? []).flatMap((deck) =>
-      deck.sourceUrl === undefined ? [] : [deck.sourceUrl],
-    ),
-  );
+  const podDecks = decksQuery.data ?? [];
 
   const importMutation = useMutation({
     mutationFn: async (decks: LibraryDeck[]) => {
@@ -65,8 +61,8 @@ export function LibraryContainer({
     <LibraryScreen
       decks={libraryQuery.data}
       libraryHref={libraryHref(instance.url)}
-      deckHref={(deck) => libraryDeckHref(instance.url, deck.url)}
-      isImported={(deck) => importedUrls.has(deck.url)}
+      deckHref={(deck) => libraryDeckHref(instance.url, deck.seriesUrl)}
+      isImported={(deck) => podDecks.some((podDeck) => isCopyOf(podDeck, deck))}
       busy={importMutation.isPending}
       error={errorMessage(importMutation.error)}
       onImport={(decks) => importMutation.mutate(decks)}

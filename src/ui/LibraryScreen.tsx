@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import type { LibraryDeck } from "../domain/library";
+import { filterLibraryDecks, topicsOf, type LibraryDeck } from "../domain/library";
 import { LibraryIcon } from "./icons";
 import { cardCount } from "./studyCounts";
 
@@ -11,7 +11,9 @@ function importLabel(count: number): string {
 
 /**
  * The deck library: ready-made decks to copy into the current instance.
- * Any number can be ticked and imported in one go. A row says only the
+ * Any number can be ticked and imported in one go. The list can be
+ * narrowed to topics (checkboxes, from Solid Memo's topics scheme) and
+ * by a search of names, descriptions and keywords. A row says only the
  * deck's name and size; clicking it (anywhere but the checkbox) opens
  * the deck's own page, where it is described in full and can be
  * imported on its own.
@@ -38,7 +40,17 @@ export function LibraryScreen({
   onImport: (decks: LibraryDeck[]) => void;
 }) {
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
+  const [topics, setTopics] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
   const selected = decks.filter((deck) => selectedUrls.includes(deck.url));
+  const shown = filterLibraryDecks(decks, { topics, query });
+  const available = topicsOf(decks);
+
+  function toggleTopic(topic: string, checked: boolean) {
+    setTopics((current) =>
+      checked ? [...current, topic] : current.filter((t) => t !== topic),
+    );
+  }
 
   function toggle(deck: LibraryDeck, checked: boolean) {
     setSelectedUrls((urls) =>
@@ -63,7 +75,11 @@ export function LibraryScreen({
           </a>
         </h2>
         <span class="hint">
-          {decks.length === 1 ? "1 deck" : `${decks.length} decks`}
+          {shown.length === decks.length
+            ? decks.length === 1
+              ? "1 deck"
+              : `${decks.length} decks`
+            : `${shown.length} of ${decks.length} decks`}
         </span>
       </header>
       <p>
@@ -74,8 +90,32 @@ export function LibraryScreen({
         <p>The library has no decks yet.</p>
       ) : (
         <form onSubmit={handleSubmit}>
+          {available.length > 0 && (
+            <fieldset class="library-topics">
+              <legend>Topics</legend>
+              {available.map((topic) => (
+                <label key={topic.iri} class="checkbox-option">
+                  <input
+                    type="checkbox"
+                    checked={topics.includes(topic.iri)}
+                    onChange={(e) => toggleTopic(topic.iri, e.currentTarget.checked)}
+                  />
+                  {topic.label}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          <label for="library-search">Search</label>
+          <input
+            id="library-search"
+            type="search"
+            value={query}
+            placeholder="Name, description or keyword"
+            onInput={(e) => setQuery(e.currentTarget.value)}
+          />
+          {shown.length === 0 && <p>No deck matches.</p>}
           <ul class="library-list">
-            {decks.map((deck) => (
+            {shown.map((deck) => (
               <li key={deck.url}>
                 <input
                   type="checkbox"

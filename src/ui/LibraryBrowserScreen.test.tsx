@@ -3,9 +3,11 @@ import { fireEvent, render, screen } from "@testing-library/preact";
 import { CARDS_PER_PAGE } from "./BrowserScreen";
 import { LibraryBrowserScreen } from "./LibraryBrowserScreen";
 import type { LibraryCard, LibraryDeck } from "../domain/library";
+import { firstRelease } from "../test/libraryDeck";
 
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
+  ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
   name: "Capitals",
   cardCount: 2,
   authors: [],

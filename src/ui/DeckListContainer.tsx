@@ -8,15 +8,20 @@ import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
 import { deckHref, decksHref, libraryHref } from "./router";
 
-/** Owns the deck list query for one instance. */
+/**
+ * Owns the deck list query for one instance. A deck set aside for
+ * invalid data (docs/validation.md) is listed, but not offered for study.
+ */
 export function DeckListContainer({
   useCases,
   instance,
+  isSetAside = () => false,
   onStudyDeck,
   onCreateDeck,
 }: {
   useCases: UseCases;
   instance: Instance;
+  isSetAside?: (deck: Deck) => boolean;
   onStudyDeck: (deck: Deck) => void;
   onCreateDeck: () => void;
 }) {
@@ -38,14 +43,18 @@ export function DeckListContainer({
       decksHref={decksHref(instance.url)}
       libraryHref={libraryHref(instance.url)}
       deckHref={(deck) => deckHref(instance.url, deck.url)}
-      renderStudyAction={(deck) => (
-        <DeckStudyActionContainer
-          useCases={useCases}
-          instance={instance}
-          deck={deck}
-          onStudy={() => onStudyDeck(deck)}
-        />
-      )}
+      renderStudyAction={(deck) =>
+        isSetAside(deck) ? (
+          <span class="hint">Set aside: its data needs repair</span>
+        ) : (
+          <DeckStudyActionContainer
+            useCases={useCases}
+            instance={instance}
+            deck={deck}
+            onStudy={() => onStudyDeck(deck)}
+          />
+        )
+      }
       onCreateDeck={onCreateDeck}
     />
   );

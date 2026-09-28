@@ -12,6 +12,8 @@ const HEAD = `
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcat:    <http://www.w3.org/ns/dcat#> .
 `;
 const V1_VERSION = `<#formatVersion> a sh:PropertyShape ; sh:path sm:formatVersion ;
   sh:datatype xsd:integer ; sh:maxCount 1 ; sh:in ( 1 ) .`;
@@ -21,8 +23,8 @@ const V2_VERSION = `<#formatVersion> a sh:PropertyShape ; sh:path sm:formatVersi
 const THING_V1 = `${HEAD}
 <#shape> a sh:NodeShape ; sh:name "ThingV1" ; rdfs:comment "Thing one." ;
   sh:nodeKind sh:IRI ; sh:class sm:Thing ;
-  sh:property <#formatVersion>, <#title>, <#count>, <#weight>, <#when>, <#flag>, <#link>,
-    <#mode>, <#tags>, <#modes>, <#gone> .
+  sh:property <#formatVersion>, <#dataset>, <#title>, <#count>, <#weight>, <#when>, <#flag>, <#link>,
+    <#mode>, <#tags>, <#modes>, <#concept>, <#concepts>, <#gone> .
 ${V1_VERSION}
 <#title> a sh:PropertyShape ; sh:path dcterms:title ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 .
 <#count> a sh:PropertyShape ; sh:path sm:count ; sh:datatype xsd:integer ; sh:maxCount 1 .
@@ -33,6 +35,9 @@ ${V1_VERSION}
 <#mode> a sh:PropertyShape ; sh:path sm:mode ; sh:datatype xsd:string ; sh:maxCount 1 ; sh:in ( "a" "b" ) .
 <#tags> a sh:PropertyShape ; sh:path sm:tag ; sh:datatype xsd:string .
 <#modes> a sh:PropertyShape ; sh:path sm:modes ; sh:datatype xsd:string ; sh:in ( "x" ) .
+<#concept> a sh:PropertyShape ; sh:path sm:concept ; sh:nodeKind sh:IRI ; sh:maxCount 1 ; sh:in ( sm:c1 sm:c2 ) .
+<#concepts> a sh:PropertyShape ; sh:path sm:concepts ; sh:nodeKind sh:IRI ; sh:in ( sm:c1 ) .
+<#dataset> a sh:PropertyShape ; sh:path rdf:type ; sh:hasValue dcat:Dataset .
 <#gone> a sh:PropertyShape ; sh:path sm:gone ; sh:maxCount 0 .
 `;
 
@@ -53,13 +58,15 @@ const files = (...entries: [string, string][]) =>
   entries.map(([path, turtle]) => ({ path, turtle }));
 
 describe("parseShapes", () => {
-  it("maps every property kind and cardinality, skipping validation-only ones", () => {
+  it("maps every property kind and cardinality, listing forbidden predicates apart", () => {
     const [model] = parseShapes(files(["thing/v1.ttl", THING_V1]));
     expect(model).toEqual({
       name: "ThingV1",
       shape: "thing",
       version: 1,
       targetClass: "https://solid-memo.com/vocab/v1#Thing",
+      additionalTypes: ["http://www.w3.org/ns/dcat#Dataset"],
+      absent: ["https://solid-memo.com/vocab/v1#gone"],
       shapeIri: "https://solid-memo.com/shapes/thing/v1.ttl#shape",
       shapeDocument: "thing/v1.ttl",
       context: "any",
@@ -74,8 +81,21 @@ describe("parseShapes", () => {
         { name: "mode", predicate: "https://solid-memo.com/vocab/v1#mode", kind: "enum", cardinality: "optional", values: ["a", "b"] },
         { name: "tag", predicate: "https://solid-memo.com/vocab/v1#tag", kind: "string", cardinality: "many" },
         { name: "modes", predicate: "https://solid-memo.com/vocab/v1#modes", kind: "enum", cardinality: "many", values: ["x"] },
+        { name: "concept", predicate: "https://solid-memo.com/vocab/v1#concept", kind: "iriEnum", cardinality: "optional", values: ["https://solid-memo.com/vocab/v1#c1", "https://solid-memo.com/vocab/v1#c2"] },
+        { name: "concepts", predicate: "https://solid-memo.com/vocab/v1#concepts", kind: "iriEnum", cardinality: "many", values: ["https://solid-memo.com/vocab/v1#c1"] },
       ],
     });
+  });
+
+  it("takes a shape's class from DCAT or FOAF too", () => {
+    const [model] = parseShapes(
+      files([
+        "catalog/v1.ttl",
+        `${HEAD} <#shape> a sh:NodeShape ; sh:name "CatalogV1" ; sh:class dcat:Catalog ; sh:property <#formatVersion> . ${V1_VERSION}`,
+      ]),
+    );
+    expect(model.targetClass).toBe("http://www.w3.org/ns/dcat#Catalog");
+    expect(model.additionalTypes).toEqual([]);
   });
 
   it("tells pod and library shapes apart and sorts by kind then version", () => {
@@ -101,7 +121,12 @@ describe("parseShapes", () => {
     rejects(
       "thing/v1.ttl",
       `${HEAD} <#shape> a sh:NodeShape ; sh:name "ThingV1" ; sh:property <#formatVersion> . ${V1_VERSION}`,
-      '"ThingV1" needs an sh:class in the Solid Memo vocabulary.',
+      '"ThingV1" needs an sh:class in the Solid Memo, DCAT or FOAF vocabulary.',
+    );
+    rejects(
+      "thing/v1.ttl",
+      `${HEAD} <#shape> a sh:NodeShape ; sh:name "ThingV1" ; sh:class <https://other.example/#Thing> ; sh:property <#formatVersion> . ${V1_VERSION}`,
+      '"ThingV1" needs an sh:class in the Solid Memo, DCAT or FOAF vocabulary.',
     );
     rejects(
       "thing/v1.ttl",
@@ -136,7 +161,14 @@ describe("parseShapes", () => {
        ${V1_VERSION} <#p> a sh:PropertyShape ; sh:path sm:p ; ${property} .`;
     rejects("thing/v1.ttl", shape("sh:datatype xsd:date"), "<https://solid-memo.com/shapes/thing/v1.ttl#p> has no supported sh:datatype or sh:nodeKind sh:IRI.");
     rejects("thing/v1.ttl", shape("sh:nodeKind sh:Literal"), "has no supported sh:datatype");
-    rejects("thing/v1.ttl", shape("sh:datatype xsd:integer ; sh:in ( 1 2 )"), "uses sh:in, which is only supported for xsd:string.");
+    rejects("thing/v1.ttl", shape("sh:datatype xsd:integer ; sh:in ( 1 2 )"), "uses sh:in, which is only supported for xsd:string and IRIs.");
+    rejects("thing/v1.ttl", shape('sh:nodeKind sh:IRI ; sh:in ( sm:a "b" )'), "lists sh:in values of another kind than the field's.");
+    rejects("thing/v1.ttl", shape("sh:datatype xsd:string ; sh:in ( sm:a )"), "lists sh:in values of another kind than the field's.");
+    const typed = (property: string) =>
+      `${HEAD} <#shape> a sh:NodeShape ; sh:name "ThingV1" ; sh:class sm:Thing ; sh:property <#formatVersion>, <#p> .
+       ${V1_VERSION} <#p> a sh:PropertyShape ; sh:path rdf:type ; ${property} .`;
+    rejects("thing/v1.ttl", typed("sh:minCount 1"), "<https://solid-memo.com/shapes/thing/v1.ttl#p> constrains rdf:type without an sh:hasValue class.");
+    rejects("thing/v1.ttl", typed('sh:hasValue "Dataset"'), "constrains rdf:type without an sh:hasValue class.");
     rejects("thing/v1.ttl", shape("sh:datatype xsd:integer"), "<https://solid-memo.com/shapes/thing/v1.ttl#p> repeats a integer; only strings and IRIs may repeat.");
   });
 
@@ -190,6 +222,8 @@ export interface ThingV1 {
   readonly mode?: "a" | "b";
   readonly tag: readonly string[];
   readonly modes: readonly ("x")[];
+  readonly concept?: "https://solid-memo.com/vocab/v1#c1" | "https://solid-memo.com/vocab/v1#c2";
+  readonly concepts: readonly ("https://solid-memo.com/vocab/v1#c1")[];
 }
 
 /**  */
@@ -219,6 +253,8 @@ export type LatestRecord = {
   shape: "thing",
   version: 1,
   targetClass: "https://solid-memo.com/vocab/v1#Thing",
+  additionalTypes: ["http://www.w3.org/ns/dcat#Dataset"],
+  absent: ["https://solid-memo.com/vocab/v1#gone"],
   shapeIri: "https://solid-memo.com/shapes/thing/v1.ttl#shape",
   shapeDocument: "thing/v1.ttl",
   context: "any",

@@ -1,6 +1,13 @@
 import { readFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildThing, createThing, mockSolidDatasetFrom, setThing } from "@inrupt/solid-client";
+import {
+  buildThing,
+  createThing,
+  mockSolidDatasetFrom,
+  setThing,
+  type ThingBuilder,
+  type ThingPersisted,
+} from "@inrupt/solid-client";
 import { getSolidDatasetOrNull } from "../solid/datasets";
 import { DCTERMS, RDF, SM } from "../solid/vocab";
 import type { ShapeEngine } from "./engine";
@@ -41,16 +48,21 @@ function makeValidator() {
       ? [{ path: SM.cardsDocument, message: "Less than 1 values", severity: "violation" as const, constraint: "MinCount" }]
       : [],
   );
-  const createEngine = vi.fn((): ShapeEngine => ({ validateNode }));
-  const loader: ShapeLoader = { load: vi.fn(async () => ({ size: 0 }) as never) };
+  const validate = vi.fn(async () => [] as Awaited<ReturnType<ShapeEngine["validate"]>>);
+  const createEngine = vi.fn((): ShapeEngine => ({ validateNode, validate }));
+  const loader: ShapeLoader = {
+    load: vi.fn(async () => ({ size: 0 }) as never),
+    loadProfile: vi.fn(async () => []),
+    loadReferenceData: vi.fn(async () => []),
+  };
   const validator = createShaclShapeValidator({
     fetch: vi.fn() as unknown as typeof fetch,
     shapesFetch: vi.fn() as unknown as typeof fetch,
     shapesBaseUrl: "https://app.example/shapes/",
-    loadEngine: async () => ({ createEngine }),
+    loadEngine: async () => ({ createEngine, mergeDatasets: (...parts) => parts.flatMap((p) => [...p]) as never }),
     loader,
   });
-  return { validator, validateNode, createEngine, loader };
+  return { validator, validateNode, validate, createEngine, loader };
 }
 
 beforeEach(() => {
@@ -62,7 +74,7 @@ describe("createShaclShapeValidator", () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(catalog());
     const shapesFetch: typeof fetch = async (input) => {
       const url = String(input);
-      const body = await readFile(`${process.cwd()}/shapes/${url.slice("https://app.example/shapes/".length)}`, "utf8");
+      const body = await readFile(`${process.cwd()}/${url.slice("https://app.example/".length)}`, "utf8");
       const response = new Response(body, { status: 200, headers: { "Content-Type": "text/turtle" } });
       Object.defineProperty(response, "url", { value: url });
       return response;
@@ -112,7 +124,7 @@ describe("createShaclShapeValidator", () => {
             { path: SM.cardsDocument, message: "Less than 1 values", severity: "violation", constraint: "MinCount" },
           ],
         },
-        { url: `${DOC}#deck-2`, status: "newer", shape: "deck", version: 9, latest: 2 },
+        { url: `${DOC}#deck-2`, status: "newer", shape: "deck", version: 9, latest: 3 },
         { url: `${DOC}#note`, status: "untyped" },
       ],
     });
@@ -125,5 +137,149 @@ describe("createShaclShapeValidator", () => {
     await validator.validateDocument(DOC);
     expect(loader.load).toHaveBeenCalledOnce();
     expect(createEngine).toHaveBeenCalledOnce();
+  });
+
+  it("checks a document with DCAT or FOAF subjects against DCAT-AP too, merging what it finds by subject", async () => {
+    const DCAT_DATASET = "http://www.w3.org/ns/dcat#Dataset";
+    let dataset = catalog();
+    dataset = setThing(dataset, buildThing(createThing({ url: `${DOC}#deck-1` }))
+      .addIri(RDF.type, SM.Deck).addIri(RDF.type, DCAT_DATASET)
+      .addStringNoLocale(DCTERMS.title, "Capitals").addInteger(SM.formatVersion, 2).build());
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(dataset);
+    const { validator, validate } = makeValidator();
+    const violation = (focusNode: string, severity: "violation" | "warning" = "violation") => ({
+      focusNode,
+      path: DCTERMS.description,
+      message: "Less than 1 values",
+      severity,
+      constraint: "MinCount",
+    });
+    validate.mockResolvedValue([
+      violation(`${DOC}#deck-1`),
+      violation(`${DOC}#deck-2`),
+      violation(`${DOC}#note`),
+      violation(`${DOC}#licence`, "warning"),
+      violation("https://elsewhere.example/#x"),
+    ]);
+    const report = await validator.validateDocument(DOC);
+    const profiled = { path: DCTERMS.description, message: "Less than 1 values", severity: "violation", constraint: "MinCount", profile: "dcat-ap" };
+    expect(report.subjects).toEqual([
+      expect.objectContaining({ url: `${DOC}#deck-1`, status: "checked", violations: [expect.anything(), profiled] }),
+      { url: `${DOC}#deck-2`, status: "newer", shape: "deck", version: 9, latest: 3 },
+      { url: `${DOC}#note`, status: "profiled", violations: [profiled] },
+    ]);
+  });
+
+  it("holds a DCAT deck to DCAT-AP with the site's own profile and reference data", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      setThing(
+        mockSolidDatasetFrom(DOC),
+        buildThing(createThing({ url: `${DOC}#deck-1` }))
+          .addIri(RDF.type, SM.Deck)
+          .addIri(RDF.type, "http://www.w3.org/ns/dcat#Dataset")
+          .addStringNoLocale(DCTERMS.title, "Capitals")
+          .addIri("http://www.w3.org/ns/dcat#theme", "https://example.com/not-a-concept")
+          .addInteger(SM.formatVersion, 2)
+          .build(),
+      ),
+    );
+    const shapesFetch: typeof fetch = async (input) => {
+      const url = String(input);
+      const body = await readFile(`${process.cwd()}/${url.slice("https://app.example/".length)}`, "utf8");
+      const response = new Response(body, { status: 200, headers: { "Content-Type": "text/turtle" } });
+      Object.defineProperty(response, "url", { value: url });
+      return response;
+    };
+    const validator = createShaclShapeValidator({
+      fetch: vi.fn() as unknown as typeof fetch,
+      shapesFetch,
+      shapesBaseUrl: "https://app.example/shapes/",
+    });
+    const report = await validator.validateDocument(DOC);
+    const deck = report.subjects[0] as { violations: { path?: string; profile?: string }[] };
+    expect(deck.violations.filter((v) => v.profile === "dcat-ap").map((v) => v.path).sort()).toEqual([
+      DCTERMS.description,
+      "http://www.w3.org/ns/dcat#theme",
+    ]);
+    await validator.validateDocument(DOC);
+  }, 30_000);
+
+  it("checks a write with the engine it has: pathless results named by subject, warnings and results about other subjects passed over", async () => {
+    const { validator, validateNode, validate } = makeValidator();
+    validateNode.mockResolvedValue([
+      { message: "Each side needs text or a picture.", severity: "violation", constraint: "Or" },
+      { path: SM.front, message: "odd", severity: "warning", constraint: "Pattern" },
+    ] as never);
+    validate.mockResolvedValue([
+      { focusNode: `${DOC}#other`, message: "x", severity: "violation", constraint: "MinCount" },
+    ]);
+    const dataset = setThing(
+      setThing(
+        mockSolidDatasetFrom(DOC),
+        buildThing(createThing({ url: `${DOC}#deck-1` }))
+          .addIri(RDF.type, SM.Deck)
+          .addIri(RDF.type, "http://www.w3.org/ns/dcat#Dataset")
+          .addInteger(SM.formatVersion, 3)
+          .build(),
+      ),
+      buildThing(createThing({ url: `${DOC}#other` })).addStringNoLocale(DCTERMS.title, "x").build(),
+    );
+    await expect(validator.checkSubjects(dataset, [`${DOC}#deck-1`])).rejects.toThrow(
+      `Solid Memo did not save data that does not conform to its shapes:\n  <${DOC}#deck-1>: Each side needs text or a picture.`,
+    );
+  });
+
+  describe("checkSubjects", () => {
+    const shapesFetch: typeof fetch = async (input) => {
+      const url = String(input);
+      const body = await readFile(`${process.cwd()}/${url.slice("https://app.example/".length)}`, "utf8");
+      const response = new Response(body, { status: 200, headers: { "Content-Type": "text/turtle" } });
+      Object.defineProperty(response, "url", { value: url });
+      return response;
+    };
+    const validator = createShaclShapeValidator({
+      fetch: vi.fn() as unknown as typeof fetch,
+      shapesFetch,
+      shapesBaseUrl: "https://app.example/shapes/",
+    });
+    type Builder = ThingBuilder<ThingPersisted>;
+    const deck = (build: (t: Builder) => Builder) =>
+      setThing(
+        mockSolidDatasetFrom(DOC),
+        build(
+          buildThing(createThing({ url: `${DOC}#deck-1` }))
+            .addIri(RDF.type, SM.Deck)
+            .addIri(RDF.type, "http://www.w3.org/ns/dcat#Dataset")
+            .addStringNoLocale(DCTERMS.title, "Capitals")
+            .addIri(SM.studyDirection, SM.bidirectional)
+            .addIri(SM.cardsDocument, "https://pod.example/d.ttl")
+            .addIri(SM.reviewsDocument, "https://pod.example/r.ttl")
+            .addInteger(SM.formatVersion, 3),
+        ).build(),
+      );
+
+    it("lets a write through when what it touches conforms", async () => {
+      await expect(
+        validator.checkSubjects(deck((t) => t.addStringNoLocale(DCTERMS.description, "Capitals.")), [`${DOC}#deck-1`, `${DOC}#gone`]),
+      ).resolves.toBeUndefined();
+    });
+
+    it("refuses a write that breaks a shape or DCAT-AP, naming every problem", async () => {
+      await expect(validator.checkSubjects(deck((t) => t), [`${DOC}#deck-1`])).rejects.toThrow(
+        [
+          "Solid Memo did not save data that does not conform to its shapes:",
+          `  <${DOC}#deck-1> (${DCTERMS.description}): A format-3 deck has a description, as DCAT-AP asks of every dataset.`,
+          `  <${DOC}#deck-1> (${DCTERMS.description}): DCAT-AP: Less than 1 values`,
+        ].join("\n"),
+      );
+    });
+
+    it("checks only the subjects a write touches, leaving untyped and newer ones alone", async () => {
+      const dataset = setThing(
+        setThing(deck((t) => t), buildThing(createThing({ url: `${DOC}#note` })).addStringNoLocale(DCTERMS.title, "x").build()),
+        buildThing(createThing({ url: `${DOC}#future` })).addIri(RDF.type, SM.Deck).addInteger(SM.formatVersion, 9).build(),
+      );
+      await expect(validator.checkSubjects(dataset, [`${DOC}#note`, `${DOC}#future`])).resolves.toBeUndefined();
+    });
   });
 });

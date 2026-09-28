@@ -6,7 +6,9 @@ import {
   type Deck,
   type DeckDirection,
 } from "../domain/deck";
+import type { DeckAbout } from "../domain/deckAbout";
 import { CardThumbnail } from "./CardFace";
+import { DeckAboutSection } from "./DeckAboutSection";
 import { DIRECTION_LABELS } from "./direction";
 import { BrowserIcon, TrashIcon } from "./icons";
 import { Pager, paginate } from "./Pager";
@@ -15,8 +17,9 @@ import { Pager, paginate } from "./Pager";
 export const CARDS_PER_PAGE = 10;
 
 /**
- * Management view for one deck: rename/remove the deck, choose which
- * way it is studied, add cards, and open any card's own page (where it
+ * Management view for one deck: rename/remove the deck, describe it
+ * (description, topics, keywords), choose which way it is studied, add
+ * cards, and open any card's own page (where it
  * is edited) by clicking it. Long decks are paged; the page is route
  * state, so it survives a round trip to a card's page.
  */
@@ -28,6 +31,7 @@ export function BrowserScreen({
   busy,
   error,
   onRenameDeck,
+  onDescribeDeck,
   onChangeDirection,
   onRemoveDeck,
   onAddCard,
@@ -44,6 +48,8 @@ export function BrowserScreen({
   busy: boolean;
   error: string | null;
   onRenameDeck: (name: string) => void;
+  /** Replace the deck's description, topics and keywords. */
+  onDescribeDeck: (about: DeckAbout) => void;
   /** Study the deck front→back, back→front or both ways. */
   onChangeDirection: (direction: DeckDirection) => void;
   onRemoveDeck: () => void;
@@ -139,6 +145,7 @@ export function BrowserScreen({
           </div>
         </form>
       )}
+      <DeckAboutSection deck={deck} busy={busy} onSave={onDescribeDeck} />
       <fieldset>
         <legend>Study direction</legend>
         {DECK_DIRECTIONS.map((direction) => (

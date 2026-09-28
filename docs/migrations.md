@@ -16,7 +16,7 @@ app writes today; `DECK_FORMAT_VERSION` and friends are aliases of it.
 
 | Class | 1 | 2 | Why the version moved |
 |---|---|---|---|
-| Instance | title, created | — | — |
+| Instance | title, created | `dcterms:replaces` (the instance it is an updated copy of) and `dcterms:modified` (when it replaced it), both optional | The format update writes a copy and keeps the original as a backup; the copy records which one, so the backup can be found, restored or deleted. |
 | Deck | title, document links, provenance | `sm:direction`, stated | A format-1 reader would study a bidirectional deck one way only and count the other way's review subjects against the day's budgets without matching them to any card. |
 | Card | `sm:front` and `sm:back`, both required | a side may be a picture (`sm:frontImage` / `sm:backImage`, an IRI), text, or both | A format-1 reader treats a card without `sm:front` as malformed and drops it, so picture-only cards must not be mistaken for format 1. |
 | Review state | the SM-2 fields; a snapshot and per-direction subjects were added without a bump, so format 1 admits them | the same fields; the snapshot is all five triples or none; the subject naming (`#<cardId>`, `#<cardId>@back-to-front`) is part of the contract | Stamping begins: a format-1 reader meeting a format-2 state would silently ignore the snapshot and the other direction, which is what a version is meant to flag. |
@@ -41,82 +41,185 @@ Rules that hold across versions:
 flowchart LR
     v1["CardV1"] -->|card/1-to-2| v2["CardV2"]
     d1["DeckV1"] -->|deck/1-to-2<br/>direction: front-to-back| d2["DeckV2"]
+    d2 -->|deck/2-to-3<br/>DCAT dataset: direction concept,<br/>default description, creator agents,<br/>release 1 as its source| d3["DeckV3"]
+    l2["LibraryDeckV2"] -->|libraryDeck/2-to-3<br/>release 1 of its series| l3["LibraryDeckV3"]
     r1["ReviewStateV1"] -->|reviewState/1-to-2<br/>partial snapshot dropped| r2["ReviewStateV2"]
     p1["PreferencesV1"] -->|preferences/1-to-2<br/>defaults filled| p2["PreferencesV2"]
+    p2 -->|preferences/2-to-3<br/>block the instance on invalid data| p3["PreferencesV3"]
 ```
 
 One module per step (`<class>/<n>-to-<n+1>.ts`), each a pure, total
 function from the record of one version to the record of the next,
-never mutating its input. `migrate(shape, record)` walks the chain to
-the latest version; a gap is a programming error and throws. Tests
+never mutating its input. Besides the record a step is given the IRI of
+the subject being migrated (`MigrationContext`), for a step that names
+new resources beside it. `migrate(shape, record, { subject })` walks the
+chain to the latest version; a gap is a programming error and throws. Tests
 assert that the chain is contiguous for every kind, that every step is
 pure, that the latest record passes through untouched, and — with the
 real shapes — that every step's output conforms to the shape it moves to.
 
 ## The pod migration
 
+The format update never writes the user's instance. It copies the
+instance into a new sibling container, updates and checks the copy,
+and only then points the type index at it; the original stays in the
+pod as a backup.
+
 ```mermaid
-flowchart LR
+flowchart TD
     open["Instance opened"] --> plan["planMigration<br/>read meta, preferences,<br/>every deck's cards and reviews"]
     plan -->|nothing outdated| quiet["(nothing shown)"]
-    plan -->|outdated| notice["Notice: what will change,<br/>document by document"]
-    notice -->|user clicks Update| run["migrateInstance<br/>re-read, restamp,<br/>one PATCH per document"]
-    run --> done["'Updated …'<br/>caches refreshed"]
-    run -->|failure part-way| notice
+    plan -->|outdated| notice["Notice: what will change"]
+    notice -->|Update…| confirm["Confirm: how the update<br/>keeps the data safe"]
+    confirm -->|Start the update| stage["1 stage: main-&lt;uuid&gt;/ must not exist;<br/>remembered in the browser"]
+    stage --> access["2 access: the container's own<br/>.acl / .acr, rebased"]
+    access --> copy["3 copy: every resource, rebased<br/>(RDF: IRIs rewritten; other files<br/>byte for byte) and its own ACL"]
+    copy --> upgrade["4 upgrade: the copy in place,<br/>with dcterms:replaces the original"]
+    upgrade --> validate["5 validate: validateInstance(copy)<br/>must conform"]
+    validate --> verify["6 verify: the original's listing<br/>and fingerprints unchanged"]
+    verify --> switch["7 switch: both type indexes<br/>point at the copy"]
+    switch --> done["The updated instance opens;<br/>the original is the backup"]
+    stage & access & copy & upgrade & validate & verify & switch -->|error| undo["Revert indexes switched so far,<br/>delete the copy, show the error"]
 ```
 
 - **Plan first, write nothing.** Opening an instance reads the meta
   document, the preferences, and every deck's entry, cards and review
   states, and counts what is below the latest version. The result is
   cached for the session per instance.
-- **The user decides.** The notice names what is outdated (deck entries,
-  cards and review states per deck, the preferences, the instance
-  record), says which formats this app now writes and what each added,
-  and offers one button. Until it is pressed the app keeps working on
-  the old format. There is no automatic write.
-- **Re-read before writing.** `migrateInstance` reads each document again
-  and restamps only the outdated subjects, so nothing edited between the
-  plan and the click is overwritten with stale content.
-- **One write per document**, in the order meta → preferences → per deck
-  (entry, cards, review states), each an in-place edit so unknown
-  triples survive. A failure leaves whole documents either done or
-  untouched; the plan is recomputed and the notice shows what remains.
-- **Content does not change.** Each subject is written from the model
-  the app already read — which the chain brought up to date — so a
-  format-1 deck gains the direction it was being studied in, a
-  format-1 preferences document gains the defaults it was being read
-  with, and everything else keeps its triples and only moves its
-  version.
+- **The user decides.** The notice names what is outdated and which
+  formats this app now writes; its button opens a confirmation that
+  explains the copy, the backup, the copied access and the new address.
+  Until **Start the update** is pressed the app keeps working on the old
+  format. Once started the run cannot be cancelled (a half-cancelled run
+  is the risky state); a progress bar shows the step and, while copying,
+  the document count.
+- **The original is read-only while the update runs.** Every adapter
+  talks to the pod through one fetch wrapped by the write fence
+  ([writeFence.ts](../src/infrastructure/solid/writeFence.ts)).
+  `updateInstance` holds the original's container from its first step
+  until it returns, and while it is held any request under it other than
+  GET, HEAD or OPTIONS is refused before it leaves the browser — whether
+  it comes from the update (a link it failed to rebase, say) or from
+  anything else in the tab. Other tabs and apps cannot be fenced; the
+  verify step catches them.
+- **A copy, named with a UUID.** `…/solid-memo/main/` is copied to
+  `…/solid-memo/main-<uuid>/` (`stagingUrlOf`). The target must not
+  exist (`ensureAbsent`), so nothing is ever overwritten.
+- **Access control first.** The instance container's own ACL document
+  (WAC `.acl` or ACP `.acr`, found through `Link: rel="acl"`) is copied
+  with its IRIs rebased before any data, so the copy is never more open
+  than the original; so is the ACL of every copied resource that has
+  one. An ACL that cannot be read or placed stops the run.
+- **Rebased, not reinterpreted.** Turtle documents are read, every IRI
+  under the old container is rewritten to the new one (`mapIris`, in the
+  lazy SHACL chunk), and the result is saved; literals, blank nodes and
+  foreign IRIs are left as they are. Other files are copied byte for
+  byte with their content type, so files Solid Memo does not know survive.
+- **The copy is updated in place**, exactly as the old in-place update
+  did: meta → preferences → per deck (entry, cards, review states) →
+  catalogue (last, since it lists the decks as DCAT datasets, which
+  older entries are not), each an in-place edit so unknown triples survive. Each subject
+  is written from the model the chain brought up to date, so content does
+  not change, only its version. An instance without a catalogue gets one,
+  published by the signed-in user ([data-model.md](data-model.md#the-catalogue)).
+  The copy's `meta.ttl` gains `dcterms:replaces <original>` and
+  `dcterms:modified`.
+- **Validation is the gate.** The whole copy is checked with
+  `validateInstance` ([validation.md](validation.md)); a single violation
+  stops the run. The invalid-data policy does not apply here: an update
+  never produces data that needs a repair.
+- **Nothing changed meanwhile.** The original is listed again and each
+  resource's fingerprint (ETag, else Last-Modified, else a SHA-256 of the
+  body) compared with the one taken when it was copied. A review saved
+  in another tab during the copy stops the run, so no study is lost.
+- **One commit point.** `switchInstance` rewrites the `sm:Instance`
+  registration (and the `dcat:Catalog` one, adding it if missing) in
+  each type index that registers the original, one save per index. If a
+  later index fails, the ones already switched are switched back. Until
+  this step nothing is visible to the user or to other apps.
+- **Failure leaves nothing behind.** Any error deletes the copy and
+  reports the step, the error and "No changes were made to your data".
+  If the delete fails too, the copy's address is shown with **Try
+  removing it again**.
+- **A closed tab.** Step 1 remembers the copy in `localStorage`
+  (`solid-memo:update:<instance>`), cleared on success or cleanup. On
+  the next opening of the instance, a copy still there is offered for
+  removal ("An update … was cut off"). Another browser does not know of
+  it; the copy's `meta.ttl` names its original (`dcterms:replaces`), so
+  it can be recognised by hand.
+- **The address changes.** The updated instance lives at the new URL;
+  the app opens it, and old bookmarks lead to the instance picker.
 
-After the first deploy that versions review states and preferences,
-every existing instance shows the notice once for them; the update is
-restamping only.
+### Proof on a real server
+
+`npm run test:pod` runs the update — the app's own use cases and Solid
+adapters, wired as in `main.tsx` — against a real Solid server, recording
+every HTTP request ([instanceUpdate.integration.test.ts](../src/integration/instanceUpdate.integration.test.ts)).
+It seeds an old-format instance with an unknown file and shared access,
+and checks that:
+
+- not one write is attempted on the original, which is byte for byte
+  (ACLs included) what it was, after the update and after a restore;
+- every write goes to the copy, but for the type index, which is
+  written last, after the whole copy was read back and validated;
+- the copy is updated and conforms, keeps the unknown file byte for
+  byte, and has its ACLs rebased;
+- a write to the original from the same tab during the update is
+  refused by the fence;
+- a failure while copying a document, copying access control, updating
+  the copy, or switching the type index leaves the original and the
+  type index as they were, and no copy;
+- a change made to an already copied document by another tab makes the
+  update give up at the verify step, leaving no trace.
+
+Start a server that lets anyone read and write first:
+`npx @solid/community-server -p 3999` (in memory), or set
+`SOLID_SERVER_URL`. Without a server, `npm test` skips it.
+
+### The backup
+
+The original is left untouched and unregistered. Preferences show it
+under **Previous version** while the instance's meta names it:
+
+- **Restore previous version** switches the type indexes back and
+  deletes the updated instance; what was studied since the update is
+  lost with it (the confirmation says so).
+- **Delete backup** deletes the original and clears `dcterms:replaces`.
+
+A backup that is gone (deleted by another app) is forgotten quietly.
+Library upgrades and repairs still edit in place: they are small,
+single-document writes, and only the format update copies.
 
 ## Catching up with the library
 
-A deck imported from the [deck library](deck-library.md) may be
-re-published there in a newer format later — format 2 gave the library's
-decks a study direction (they are all bidirectional). The ordinary
-migration above would bring the copy to format 2 as front→back, the only
-direction its format-1 entry could state; the user's copy would never
-learn what the library now says.
+A deck imported from the [deck library](deck-library.md) says which
+release it came from (`prov:wasDerivedFrom <…/decks/name/n.ttl>`; a deck
+imported before releases came from what became release 1). When the
+library publishes a newer release, the deck page offers to bring the
+copy up to it (`planLibraryUpgrade` in
+[domain/libraryUpgrade.ts](../src/domain/libraryUpgrade.ts), shown by
+[ui/LibraryUpgradeContainer.tsx](../src/ui/LibraryUpgradeContainer.tsx)).
 
-So the deck page of an imported deck also asks the library
-(`planLibraryUpgrade` in [domain/libraryUpgrade.ts](../src/domain/libraryUpgrade.ts);
-shown by [ui/LibraryUpgradeContainer.tsx](../src/ui/LibraryUpgradeContainer.tsx))
-and offers to apply the newer format's additions with the library's
-values. The offer is made only when every check passes:
+The plan compares three sets of cards by fragment id — the release the
+copy came from, the current release, and the copy — so the library's
+changes reach only what the user left as the library had it:
 
-- the deck's `dcterms:source` is exactly that library document;
-- the library's deck format is newer than the copy's;
-- this app writes that deck format (or a newer one) and reads every card
-  format the document uses;
-- something beyond the version number would change (for 1 → 2: the
-  direction differs) — otherwise the ordinary migration suffices.
+| In the releases | In the copy | The upgrade |
+|---|---|---|
+| Added in the new release | Not there | Adds it |
+| Changed | As the old release had it | Changes it |
+| Changed or removed | Changed by the user | Keeps the user's card, and says so |
+| Removed | As the old release had it | Removes it, and its review states |
+| Anything | Removed by the user | Leaves it removed |
 
-Applying it is one write of the catalog entry (`saveDeck`): the library's
-direction and format version. Cards and review history are untouched,
-and the direction remains the user's to change in the Browser.
+A new study direction is taken up when the copy is still studied the old
+release's way. The notice lists the notes of every release in between.
+Nothing is offered for a release that is not newer, uses a card format
+this app does not know, or would change nothing. Applying it is one
+write of the cards document (`applyCardChanges`: an existing card keeps
+its creation time and unknown triples), one of the review states of
+removed cards, and one of the catalog entry, which now names the new
+release. Review history of every other card is kept.
 
 ## Adding a format version
 
