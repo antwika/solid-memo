@@ -8,7 +8,40 @@
   <meta name="theme-color" content="#f7f6f1" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#11171e" media="(prefers-color-scheme: dark)" />
   <link rel="icon" type="image/svg+xml" href="/src/assets/favicon.svg" />
-  <title>Solid Memo</title>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <title>Solid Memo - Spaced-repetition flashcards in your Solid pod</title>
+
+  <!-- Search engines and link previews. The app routes by URL hash, so this
+       one page is the only one there is to index. Absolute URLs because
+       crawlers resolve og:image and canonical without the page's base. -->
+  <link rel="canonical" href="https://solid-memo.com/" />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Solid Memo" />
+  <meta property="og:title" content="Solid Memo" />
+  <meta property="og:description" content="Spaced-repetition flashcards that live in your own Solid pod." />
+  <meta property="og:url" content="https://solid-memo.com/" />
+  <meta property="og:image" content="https://solid-memo.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="The Solid Memo wordmark" />
+  <meta property="og:locale" content="en" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Solid Memo",
+      "url": "https://solid-memo.com/",
+      "description": "Spaced-repetition flashcards that live in your own Solid pod.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "image": "https://solid-memo.com/og-image.png",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+  </script>
 </head>
 
 <body>
