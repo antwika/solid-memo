@@ -76,10 +76,15 @@ export function LibraryDeckScreen({
         )}
         <dt>Release</dt>
         <dd>
-          {deck.version}
-          {current?.issued !== undefined && ` of ${formatDate(current.issued)}`}
-          {deck.versionNotes !== undefined && ` — ${deck.versionNotes}`}
+          Version {deck.version}
+          {current?.issued !== undefined && `, released ${formatDate(current.issued)}`}
         </dd>
+        {deck.versionNotes !== undefined && (
+          <>
+            <dt>Release notes</dt>
+            <dd>{deck.versionNotes}</dd>
+          </>
+        )}
         {deck.authors.length > 0 && (
           <>
             <dt>{deck.authors.length === 1 ? "Author" : "Authors"}</dt>
