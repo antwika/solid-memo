@@ -41,7 +41,8 @@ jobs:
       - run: python scripts/shacl_crosscheck.py
 
   # The app's use cases and Solid adapters against a real Solid server: a
-  # Community Solid Server in memory, on this runner (docs/testing.md).
+  # Community Solid Server in memory, which the tests start on this runner
+  # (docs/testing.md).
   pod:
     runs-on: ubuntu-latest
     steps:
@@ -51,15 +52,4 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Start a Community Solid Server
-        run: |
-          npm run pod > css.log 2>&1 &
-          for i in $(seq 1 60); do
-            curl -sf -o /dev/null http://localhost:3999/ && exit 0
-            sleep 1
-          done
-          cat css.log
-          exit 1
       - run: npm run test:pod
-      - if: failure()
-        run: cat css.log

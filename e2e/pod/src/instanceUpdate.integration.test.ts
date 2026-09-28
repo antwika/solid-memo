@@ -2,12 +2,12 @@
 /**
  * The format update against a real Solid server (docs/migrations.md): the
  * app's own use cases and Solid adapters, wired as in main.tsx, with every
- * HTTP request recorded. Skipped unless SOLID_SERVER_URL names a server
- * that lets anyone read and write, e.g. a Community Solid Server started
- * with `npm run pod` (see docs/testing.md), then `npm run test:pod`.
+ * HTTP request recorded. `npm run test:pod` starts a Community Solid
+ * Server for them (globalSetup.ts), unless SOLID_SERVER_URL names one
+ * (see docs/testing.md).
  */
 import { readFile } from "node:fs/promises";
-import { describe, expect, it } from "vitest";
+import { describe, expect, inject, it } from "vitest";
 import { VOCAB_ROOT } from "@solid-memo/vocab/tooling/root";
 import { createUseCases, type UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
@@ -21,7 +21,7 @@ import { createSolidReviewStateRepository } from "@solid-memo/solid/solidReviewS
 import { createSolidWebIdDocumentRepository } from "@solid-memo/solid/solidWebIdDocumentRepository";
 import { createWriteFence } from "@solid-memo/solid/writeFence";
 
-const SERVER = process.env.SOLID_SERVER_URL;
+const SERVER = inject("solidServerUrl");
 const SITE = "https://solid-memo.test/";
 const READS = new Set(["GET", "HEAD", "OPTIONS"]);
 const PREFIXES = `@prefix sm: <https://solid-memo.com/vocab/v1#> .
@@ -209,7 +209,7 @@ async function registeredContainers(pod: Pod): Promise<string> {
   return triples(pod.typeIndex);
 }
 
-describe.skipIf(SERVER === undefined)("the format update on a real Solid server", () => {
+describe("the format update on a real Solid server", () => {
   it("writes nothing to the instance it updates: the copy is completed and checked before the type index moves", async () => {
     const pod = await seedPod();
     const before = await snapshot(pod.source);
