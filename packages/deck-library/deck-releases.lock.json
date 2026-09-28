@@ -7,10 +7,22 @@
       "sha256": "80a44d6be032f37a0c61cb6a4d12b771ccf97024f658378635ab94880a234e9a"
     },
     {
+      "deck": "famous-paintings",
+      "version": 1,
+      "issued": "2026-09-28T21:25:02Z",
+      "sha256": "005acfb9f703f110a4f4ec9937f48ac3143a36c67f7f8b373417473f41f23c24"
+    },
+    {
       "deck": "http-status-codes",
       "version": 1,
       "issued": "2026-09-28T17:02:14Z",
       "sha256": "8beecb8be2068d97ef62b510c579f2c7b21319d3e24685c936a8042a217914cb"
+    },
+    {
+      "deck": "network-ports",
+      "version": 1,
+      "issued": "2026-09-28T21:25:01Z",
+      "sha256": "f5a162c7905fcb0e2f221db7ccc96f533c8ee1c44552c444c7f75dc6d3d97606"
     },
     {
       "deck": "periodic-table",
