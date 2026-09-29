@@ -121,7 +121,7 @@
     a solid-memo:Card ;
     solid-memo:formatVersion 1 ;
     dcterms:created "2026-09-23T21:20:07.000Z"^^xsd:dateTime ;
-    solid-memo:front "Life, row, commotion, waist" ;
+    solid-memo:front "Life" ;
     solid-memo:back "Ett liv" .
 
 <#en-manniska>
