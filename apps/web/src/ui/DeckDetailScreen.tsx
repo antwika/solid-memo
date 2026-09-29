@@ -14,6 +14,7 @@ export function DeckDetailScreen({
   error,
   deckHref,
   onStudy,
+  onPreferences,
   onBrowse,
   onResetDay,
   notice,
@@ -33,6 +34,8 @@ export function DeckDetailScreen({
   deckHref: string;
   /** Today's session: due prompts and new ones, interleaved. */
   onStudy: () => void;
+  /** Open the deck's preferences: its own daily limits. */
+  onPreferences: () => void;
   /** Open the Browser view, where the deck and its cards are edited. */
   onBrowse: () => void;
   /** Undo today's reviews of this deck. */
@@ -62,7 +65,12 @@ export function DeckDetailScreen({
             {deck.name}
           </a>
         </h2>
-        <button onClick={onBrowse}>Browser</button>
+        <div class="header-actions">
+          <button onClick={onPreferences} aria-label="Deck preferences">
+            Preferences
+          </button>
+          <button onClick={onBrowse}>Browser</button>
+        </div>
       </header>
       <DeckProvenance
         authors={deck.authors}

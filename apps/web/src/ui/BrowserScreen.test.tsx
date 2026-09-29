@@ -34,10 +34,8 @@ function renderScreen(
     page: 1,
     busy: false,
     error: null,
-    onRenameDeck: vi.fn(),
     onDescribeDeck: vi.fn(),
     onChangeDirection: vi.fn(),
-    onRemoveDeck: vi.fn(),
     onAddCard: vi.fn(),
     cardHref: (c: Card) => `#/card?card=${c.id}`,
     onRemoveCard: vi.fn(),
@@ -95,30 +93,6 @@ describe("BrowserScreen deck editing", () => {
     expect(screen.getByRole("region", { name: "About this deck" })).toHaveTextContent(/^Topics: GeographyDescribe deck$/);
   });
 
-  it("renames the deck, trimmed, and closes the form", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
-
-    const field = screen.getByLabelText("Deck name");
-    expect(field).toHaveValue("Kanji N5");
-    fireEvent.input(field, { target: { value: "  Kanji N4 " } });
-    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
-
-    expect(props.onRenameDeck).toHaveBeenCalledWith("Kanji N4");
-    expect(screen.queryByLabelText("Deck name")).toBeNull();
-  });
-
-  it("cancels renaming without saving", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
-    fireEvent.click(screen.getByRole("button", { name: "Cancel renaming" }));
-
-    expect(props.onRenameDeck).not.toHaveBeenCalled();
-    expect(
-      screen.getByRole("button", { name: "Rename deck" }),
-    ).toBeInTheDocument();
-  });
-
   it("offers the three study directions, showing the deck's own", () => {
     const { props } = renderScreen();
     expect(
@@ -146,30 +120,6 @@ describe("BrowserScreen deck editing", () => {
     ).toBeInTheDocument();
   });
 
-  it("removes the deck after confirmation", () => {
-    const confirm = vi.fn(() => true);
-    vi.stubGlobal("confirm", confirm);
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Remove deck" }));
-
-    expect(confirm).toHaveBeenCalledWith(
-      'Remove the deck "Kanji N5" and all its cards? This cannot be undone.',
-    );
-    expect(props.onRemoveDeck).toHaveBeenCalledOnce();
-  });
-
-  it("keeps the deck when the confirmation is declined", () => {
-    vi.stubGlobal("confirm", vi.fn(() => false));
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Remove deck" }));
-    expect(props.onRemoveDeck).not.toHaveBeenCalled();
-  });
-
-  it("disables deck editing while busy", () => {
-    renderScreen({ busy: true });
-    expect(screen.getByRole("button", { name: "Rename deck" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Remove deck" })).toBeDisabled();
-  });
 });
 
 describe("BrowserScreen", () => {

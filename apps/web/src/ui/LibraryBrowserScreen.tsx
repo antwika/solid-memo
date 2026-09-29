@@ -13,6 +13,7 @@ import { cardCount } from "./studyCounts";
 export function LibraryBrowserScreen({
   deck,
   deckHref,
+  cardHref,
   cards,
   page,
   onPageChange,
@@ -20,6 +21,8 @@ export function LibraryBrowserScreen({
   deck: LibraryDeck;
   /** URL of the deck's page; its name links there. */
   deckHref: string;
+  /** URL of a card's own page; its row links there. */
+  cardHref: (card: LibraryCard) => string;
   cards: LibraryCard[];
   /** 1-based; out-of-range values show the nearest page. */
   page: number;
@@ -48,7 +51,7 @@ export function LibraryBrowserScreen({
             {pageCount > 1
               ? `Cards ${firstIndex + 1}–${firstIndex + pageCards.length} of ${cards.length}. `
               : `${cardCount(cards.length)}. `}
-            Import the deck to study or edit them.
+            Click a card to open it. Import the deck to study or edit them.
           </p>
           <table class="card-table">
             <thead>
@@ -60,13 +63,17 @@ export function LibraryBrowserScreen({
             <tbody>
               {pageCards.map((card) => (
                 <tr key={card.id}>
-                  <td>
-                    <CardThumbnail imageUrl={card.frontImageUrl} />
-                    {card.front}
+                  <td class="clickable">
+                    <a href={cardHref(card)}>
+                      <CardThumbnail imageUrl={card.frontImageUrl} />
+                      {card.front}
+                    </a>
                   </td>
-                  <td>
-                    <CardThumbnail imageUrl={card.backImageUrl} />
-                    {card.back}
+                  <td class="clickable">
+                    <a href={cardHref(card)} tabIndex={-1} aria-hidden="true">
+                      <CardThumbnail imageUrl={card.backImageUrl} />
+                      {card.back}
+                    </a>
                   </td>
                 </tr>
               ))}

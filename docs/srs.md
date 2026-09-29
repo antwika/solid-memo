@@ -83,7 +83,9 @@ reviewing at 03:00 still counts as yesterday. Timezone caveat: study days are
 device-local; travelling shifts due times by a few hours (accepted for v1).
 
 `buildStudyQueue` produces the day's session from cards + the deck's
-direction + review states + preferences (`now` is always passed in, never
+direction + review states + preferences — the instance's, with the
+deck's own daily limits in their place where it sets them
+(`deckPreferences` in `domain/deckPace.ts`) (`now` is always passed in, never
 read from a clock — that keeps it deterministic and testable):
 
 - **due**: prompts whose `due <= today`, oldest due first, capped at

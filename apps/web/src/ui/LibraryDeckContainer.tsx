@@ -4,7 +4,7 @@ import type { Instance } from "@solid-memo/domain/instance";
 import { isCopyOf, type LibraryDeck } from "@solid-memo/domain/library";
 import { errorMessage } from "./errorMessage";
 import { LibraryDeckScreen } from "./LibraryDeckScreen";
-import { libraryDeckHref } from "./router";
+import { libraryDeckHref, libraryPreviewHref } from "./router";
 
 /**
  * Owns one library deck's page and its import; returns to the deck list
@@ -48,6 +48,7 @@ export function LibraryDeckContainer({
     <LibraryDeckScreen
       deck={deck}
       deckHref={libraryDeckHref(instance.url, deck.seriesUrl)}
+      previewHref={libraryPreviewHref(instance.url, deck.seriesUrl)}
       imported={imported}
       busy={importMutation.isPending}
       error={errorMessage(importMutation.error)}

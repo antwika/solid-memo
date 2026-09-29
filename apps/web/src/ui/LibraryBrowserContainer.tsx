@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
-import type { LibraryDeck } from "@solid-memo/domain/library";
+import type { LibraryCard, LibraryDeck } from "@solid-memo/domain/library";
 import { errorMessage } from "./errorMessage";
 import { LibraryBrowserScreen } from "./LibraryBrowserScreen";
 import { Loading } from "./Loading";
@@ -10,6 +10,7 @@ export function LibraryBrowserContainer({
   useCases,
   deck,
   deckHref,
+  cardHref,
   page,
   onPageChange,
 }: {
@@ -17,6 +18,8 @@ export function LibraryBrowserContainer({
   deck: LibraryDeck;
   /** URL of the deck's page. */
   deckHref: string;
+  /** URL of a card's own page. */
+  cardHref: (card: LibraryCard) => string;
   /** 1-based page, from the route. */
   page: number;
   onPageChange: (page: number) => void;
@@ -37,6 +40,7 @@ export function LibraryBrowserContainer({
     <LibraryBrowserScreen
       deck={deck}
       deckHref={deckHref}
+      cardHref={cardHref}
       cards={cardsQuery.data}
       page={page}
       onPageChange={onPageChange}

@@ -19,6 +19,7 @@ import { cardCount } from "./studyCounts";
 export function LibraryDeckScreen({
   deck,
   deckHref,
+  previewHref,
   imported,
   busy,
   error,
@@ -28,6 +29,8 @@ export function LibraryDeckScreen({
   deck: LibraryDeck;
   /** URL of this page; the heading links here like every screen's. */
   deckHref: string;
+  /** URL of the deck's preview, which tries its cards before import. */
+  previewHref: string;
   /** The instance already holds a copy; a second one is still allowed. */
   imported: boolean;
   /** The import is in progress. */
@@ -134,6 +137,9 @@ export function LibraryDeckScreen({
         <button class="primary" onClick={onImport} disabled={busy}>
           {busy ? "Importing…" : "Import this deck"}
         </button>
+        <a class="button" href={previewHref}>
+          Preview
+        </a>
         {imported && (
           <span class="hint library-imported">Already imported</span>
         )}

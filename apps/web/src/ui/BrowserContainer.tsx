@@ -14,7 +14,6 @@ export function BrowserContainer({
   page,
   onAddCard,
   cardHref,
-  onDeckRemoved,
   onPageChange,
 }: {
   useCases: UseCases;
@@ -25,8 +24,6 @@ export function BrowserContainer({
   onAddCard: () => void;
   /** URL of a card's own page. */
   cardHref: (card: Card) => string;
-  /** The deck is gone; leave the Browser. */
-  onDeckRemoved: () => void;
   onPageChange: (page: number) => void;
 }) {
   const queryClient = useQueryClient();
@@ -34,11 +31,6 @@ export function BrowserContainer({
   const cardsQuery = useQuery({
     queryKey: ["cards", deck.cardsDocumentUrl],
     queryFn: () => useCases.listCards(deck),
-  });
-
-  const renameDeckMutation = useMutation({
-    mutationFn: (name: string) => useCases.renameDeck(deck, name),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["decks"] }),
   });
 
   const describeDeckMutation = useMutation({
@@ -52,14 +44,6 @@ export function BrowserContainer({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
       queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
-    },
-  });
-
-  const removeDeckMutation = useMutation({
-    mutationFn: () => useCases.removeDeck(deck),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
-      onDeckRemoved();
     },
   });
 
@@ -90,23 +74,17 @@ export function BrowserContainer({
       cards={cardsQuery.data}
       page={page}
       busy={
-        renameDeckMutation.isPending ||
         describeDeckMutation.isPending ||
         setDirectionMutation.isPending ||
-        removeDeckMutation.isPending ||
         removeCardMutation.isPending
       }
       error={
-        errorMessage(renameDeckMutation.error) ??
         errorMessage(describeDeckMutation.error) ??
         errorMessage(setDirectionMutation.error) ??
-        errorMessage(removeDeckMutation.error) ??
         errorMessage(removeCardMutation.error)
       }
-      onRenameDeck={(name) => renameDeckMutation.mutate(name)}
       onDescribeDeck={(about) => describeDeckMutation.mutate(about)}
       onChangeDirection={(direction) => setDirectionMutation.mutate(direction)}
-      onRemoveDeck={() => removeDeckMutation.mutate()}
       onAddCard={onAddCard}
       cardHref={cardHref}
       onRemoveCard={(card) => removeCardMutation.mutate(card)}

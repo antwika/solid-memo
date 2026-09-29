@@ -817,6 +817,92 @@ describe("Workspace", () => {
     );
   });
 
+  it("opens a library card from the deck's card list and goes back to the list", async () => {
+    const libraryUrl = "https://solid-memo.com/decks/capitals.ttl";
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listLibraryDecks: vi.fn(async () => [
+          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
+        ]),
+        listLibraryCards: vi.fn(async () => [
+          { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+        ]),
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole("link", { name: "Deck library" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Capitals" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Browse cards" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Sweden" }));
+
+    expect(await screen.findByRole("heading", { name: "Card" })).toBeInTheDocument();
+    expect(screen.getByText("Stockholm")).toBeInTheDocument();
+    expect(window.location.hash).toBe(
+      routeToHash({
+        screen: "libraryCard",
+        instanceUrl: instanceA.url,
+        libraryDeckUrl: librarySeriesUrlOf(libraryUrl),
+        cardId: "sweden",
+      }),
+    );
+    const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
+    expect(within(nav).getByRole("link", { name: "Sweden" })).toHaveAttribute("aria-current", "page");
+    fireEvent.click(within(nav).getByRole("link", { name: "Cards" }));
+    expect(await screen.findByRole("heading", { name: "Cards: Capitals" })).toBeInTheDocument();
+  });
+
+  it("falls back to the card list for a library card the deck does not have", async () => {
+    const libraryUrl = "https://solid-memo.com/decks/capitals.ttl";
+    const libraryDeckUrl = librarySeriesUrlOf(libraryUrl);
+    window.history.replaceState(
+      null,
+      "",
+      routeToHash({ screen: "libraryCard", instanceUrl: instanceA.url, libraryDeckUrl, cardId: "atlantis" }),
+    );
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listLibraryDecks: vi.fn(async () => [
+          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
+        ]),
+        listLibraryCards: vi.fn(async () => [
+          { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+        ]),
+      }),
+    );
+    expect(await screen.findByRole("heading", { name: "Cards: Capitals" })).toBeInTheDocument();
+    expect(window.location.hash).toBe(
+      routeToHash({ screen: "libraryBrowser", instanceUrl: instanceA.url, libraryDeckUrl }),
+    );
+  });
+
+  it("shows an error when a library card's deck cannot be read", async () => {
+    const libraryUrl = "https://solid-memo.com/decks/capitals.ttl";
+    window.history.replaceState(
+      null,
+      "",
+      routeToHash({
+        screen: "libraryCard",
+        instanceUrl: instanceA.url,
+        libraryDeckUrl: librarySeriesUrlOf(libraryUrl),
+        cardId: "sweden",
+      }),
+    );
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listLibraryDecks: vi.fn(async () => [
+          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
+        ]),
+        listLibraryCards: vi.fn(async () => {
+          throw new Error("library offline");
+        }),
+      }),
+    );
+    expect(await screen.findByText("library offline")).toHaveClass("error");
+  });
+
   it("opens a library deck's page from a link to one of its releases", async () => {
     const release = "https://solid-memo.com/decks/capitals/1.ttl";
     window.history.replaceState(
@@ -1021,7 +1107,7 @@ describe("Workspace", () => {
     expect(await screen.findByText("Page 2 of 2")).toBeInTheDocument();
   });
 
-  it("removes a deck from the Browser and lands on the deck list", async () => {
+  it("removes a deck from its preferences and lands on the deck list", async () => {
     vi.stubGlobal("confirm", vi.fn(() => true));
     const deck: Deck = {
       id: "deck-1",
@@ -1045,7 +1131,7 @@ describe("Workspace", () => {
     renderWorkspace(useCases);
 
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Deck preferences" }));
     fireEvent.click(await screen.findByRole("button", { name: "Remove deck" }));
 
     expect(await screen.findByText(/No decks yet/)).toBeInTheDocument();
@@ -1053,7 +1139,7 @@ describe("Workspace", () => {
     expect(window.location.hash).toContain("#/decks");
   });
 
-  it("shows a deck's new name after renaming it in the Browser", async () => {
+  it("shows a deck's new name after renaming it in its preferences", async () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
@@ -1078,7 +1164,7 @@ describe("Workspace", () => {
     );
 
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Deck preferences" }));
     fireEvent.click(await screen.findByRole("button", { name: "Rename deck" }));
     fireEvent.input(screen.getByLabelText("Deck name"), {
       target: { value: "Kanji N4" },
@@ -1086,7 +1172,7 @@ describe("Workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save name" }));
 
     expect(
-      await screen.findByRole("heading", { name: "Browser: Kanji N4" }),
+      await screen.findByRole("heading", { name: "Preferences: Kanji N4" }),
     ).toBeInTheDocument();
   });
 
@@ -1120,6 +1206,46 @@ describe("Workspace", () => {
     expect(
       await screen.findByRole("heading", { name: "Kanji N5" }),
     ).toBeInTheDocument();
+  });
+
+  it("opens the deck's preferences from the deck detail and returns there after saving", async () => {
+    const deck: Deck = {
+      id: "deck-1",
+      url: `${instanceA.url}catalog.ttl#deck-1`,
+      name: "Kanji N5",
+      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
+      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 3,
+      authors: [],
+    };
+    const setDeckPace = vi.fn(async (d: Deck, pace: object) => ({ ...d, ...pace }));
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+        setDeckPace,
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Deck preferences" }));
+    expect(
+      await screen.findByRole("heading", { name: "Preferences: Kanji N5" }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe(
+      routeToHash({ screen: "deckPreferences", instanceUrl: instanceA.url, deckUrl: deck.url }),
+    );
+    const trail = within(screen.getByRole("navigation", { name: "Breadcrumb" }));
+    expect(trail.getByRole("link", { name: "Preferences" })).toHaveAttribute("aria-current", "page");
+
+    fireEvent.input(screen.getByLabelText("New cards per day"), { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save preferences" }));
+    expect(
+      await screen.findByRole("heading", { name: "Kanji N5" }),
+    ).toBeInTheDocument();
+    expect(setDeckPace).toHaveBeenCalledWith(deck, { newCardsPerDay: 4 });
   });
 
   it("starts a study session from the deck detail and ends it on the deck list", async () => {

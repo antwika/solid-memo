@@ -38,6 +38,8 @@ export function deckFromRecord(
     ...(data.source === undefined ? {} : { sourceUrl: data.source }),
     ...(data.theme.length === 0 ? {} : { themes: [...data.theme] }),
     ...(data.keyword.length === 0 ? {} : { keywords: [...data.keyword] }),
+    ...(data.newCardsPerDay === undefined ? {} : { newCardsPerDay: data.newCardsPerDay }),
+    ...(data.maxReviewsPerDay === undefined ? {} : { maxReviewsPerDay: data.maxReviewsPerDay }),
   };
 }
 
@@ -56,6 +58,8 @@ export function deckToRecord(deck: Deck): DeckV3 {
     cardsDocument: deck.cardsDocumentUrl,
     reviewsDocument: deck.reviewsDocumentUrl,
     ...(deck.sourceUrl === undefined ? {} : { source: deck.sourceUrl }),
+    ...(deck.newCardsPerDay === undefined ? {} : { newCardsPerDay: deck.newCardsPerDay }),
+    ...(deck.maxReviewsPerDay === undefined ? {} : { maxReviewsPerDay: deck.maxReviewsPerDay }),
   };
 }
 

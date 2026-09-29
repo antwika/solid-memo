@@ -14,12 +14,14 @@ export function DeckDetailContainer({
   instance,
   deck,
   onStudy,
+  onPreferences,
   onBrowse,
 }: {
   useCases: UseCases;
   instance: Instance;
   deck: Deck;
   onStudy: () => void;
+  onPreferences: () => void;
   onBrowse: () => void;
 }) {
   const cardsQuery = useQuery({
@@ -72,6 +74,7 @@ export function DeckDetailContainer({
       onResetDay={() => resetDayMutation.mutate()}
       deckHref={deckHref(instance.url, deck.url)}
       onStudy={onStudy}
+      onPreferences={onPreferences}
       onBrowse={onBrowse}
       notice={
         <LibraryUpgradeContainer

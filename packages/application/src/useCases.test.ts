@@ -393,6 +393,16 @@ describe("createUseCases", () => {
     );
   });
 
+  it("setDeckPace saves the deck's own daily limits, refusing one that is not a whole number", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await useCases.setDeckPace({ ...deck, maxReviewsPerDay: 50 }, { newCardsPerDay: 5 });
+    expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({ ...deck, newCardsPerDay: 5 });
+    await expect(useCases.setDeckPace(deck, { newCardsPerDay: 1.5 })).rejects.toThrow(
+      "A daily limit is a whole number, 0 or more.",
+    );
+  });
+
   it("createInstance trims inputs and passes the WebID", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
@@ -1222,6 +1232,14 @@ describe("createUseCases", () => {
     );
     expect(queue.due.map((p) => p.card.id)).toEqual(["card-due"]);
     expect(queue.newPrompts.map((p) => p.card.id)).toEqual(["card-new"]);
+
+    const capped = await useCases.getStudyQueue(
+      instance.url,
+      { ...deck, newCardsPerDay: 0, maxReviewsPerDay: 0 },
+      new Date(2026, 8, 21, 12, 0),
+    );
+    expect(capped.due).toEqual([]);
+    expect(capped.newPrompts).toEqual([]);
   });
 
   it("recordReview starts fresh for a never-reviewed card", async () => {

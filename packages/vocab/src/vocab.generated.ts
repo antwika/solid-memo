@@ -1,6 +1,6 @@
 /* Generated from vocab/v1.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
-/** Solid Memo's own vocabulary, version 1.6 (see docs/vocab.md). */
+/** Solid Memo's own vocabulary, version 1.7 (see docs/vocab.md). */
 export const SM_NS = "https://solid-memo.com/vocab/v1#";
 
 export const SM = {
@@ -26,6 +26,10 @@ export const SM = {
   studyDirection: `${SM_NS}studyDirection`,
   /** In the deck library's index only: how many cards a listed deck document holds. (Added in 1.4 for the library index.) */
   cardCount: `${SM_NS}cardCount`,
+  /** Maximum unseen cards of this deck introduced per study day, in place of the instance's newCardsPerDay. Absent means the instance's. (Added in 1.7.) */
+  deckNewCardsPerDay: `${SM_NS}deckNewCardsPerDay`,
+  /** Maximum due-card reviews of this deck per study day, in place of the instance's maxReviewsPerDay. Absent means the instance's. (Added in 1.7.) */
+  deckMaxReviewsPerDay: `${SM_NS}deckMaxReviewsPerDay`,
   /** Text on the front of the card. (Since 1.0.) */
   front: `${SM_NS}front`,
   /** Text on the back of the card. (Since 1.0.) */

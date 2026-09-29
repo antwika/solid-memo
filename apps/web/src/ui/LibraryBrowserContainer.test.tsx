@@ -27,6 +27,7 @@ function renderContainer(useCases: UseCases) {
         useCases={useCases}
         deck={capitals}
         deckHref="#/library-deck?deck=capitals"
+        cardHref={(c) => `#/library-card?card=${c.id}`}
         page={1}
         onPageChange={vi.fn()}
       />

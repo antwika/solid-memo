@@ -28,10 +28,19 @@ export type RouteRef =
     libraryDeckUrl: string;
     page?: number;
   }
+  /** One card of a library deck, read-only; `cardId` is its fragment id. */
+  | {
+    screen: "libraryCard";
+    instanceUrl: string;
+    libraryDeckUrl: string;
+    cardId: string;
+  }
   /** A library deck's cards shown at random, for a try before import;
       nothing is recorded. */
   | { screen: "libraryPreview"; instanceUrl: string; libraryDeckUrl: string }
   | { screen: "deckDetail"; instanceUrl: string; deckUrl: string }
+  /** The deck's own preferences: its daily limits. */
+  | { screen: "deckPreferences"; instanceUrl: string; deckUrl: string }
   /** `page` is 1-based; absent means the first page. */
   | { screen: "browser"; instanceUrl: string; deckUrl: string; page?: number }
   | { screen: "cardCreator"; instanceUrl: string; deckUrl: string }
@@ -78,6 +87,12 @@ export function routeToHash(ref: RouteRef): string {
           ? { page: String(ref.page) }
           : {}),
       })}`;
+    case "libraryCard":
+      return `#/library-card${params({
+        instance: ref.instanceUrl,
+        deck: ref.libraryDeckUrl,
+        card: ref.cardId,
+      })}`;
     case "libraryPreview":
       return `#/library-preview${params({
         instance: ref.instanceUrl,
@@ -85,6 +100,11 @@ export function routeToHash(ref: RouteRef): string {
       })}`;
     case "deckDetail":
       return `#/deck${params({ instance: ref.instanceUrl, deck: ref.deckUrl })}`;
+    case "deckPreferences":
+      return `#/deck-preferences${params({
+        instance: ref.instanceUrl,
+        deck: ref.deckUrl,
+      })}`;
     case "browser":
       return `#/browse${params({
         instance: ref.instanceUrl,
@@ -202,6 +222,12 @@ export function parseHash(hash: string): RouteRef | null {
       } as const;
       return page === null ? ref : { ...ref, page };
     }
+    case "/library-card": {
+      const cardId = query.get("card");
+      return instanceUrl === null || deckUrl === null || cardId === null
+        ? null
+        : { screen: "libraryCard", instanceUrl, libraryDeckUrl: deckUrl, cardId };
+    }
     case "/library-preview":
       return instanceUrl === null || deckUrl === null
         ? null
@@ -210,6 +236,10 @@ export function parseHash(hash: string): RouteRef | null {
       return instanceUrl === null || deckUrl === null
         ? null
         : { screen: "deckDetail", instanceUrl, deckUrl };
+    case "/deck-preferences":
+      return instanceUrl === null || deckUrl === null
+        ? null
+        : { screen: "deckPreferences", instanceUrl, deckUrl };
     case "/browse": {
       if (instanceUrl === null || deckUrl === null) return null;
       const page = parsePage(query.get("page"));

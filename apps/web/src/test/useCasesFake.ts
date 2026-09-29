@@ -48,6 +48,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     renameDeck: vi.fn(async (deck, name) => ({ ...deck, name })),
     setDeckDirection: vi.fn(async (deck, direction) => ({ ...deck, direction })),
     describeDeck: vi.fn(async (deck, about) => ({ ...deck, ...about })),
+    setDeckPace: vi.fn(async (deck, pace) => ({ ...deck, ...pace })),
     removeDeck: vi.fn(async () => undefined),
     listLibraryDecks: vi.fn(async () => []),
     importLibraryDeck: vi.fn(async () => {

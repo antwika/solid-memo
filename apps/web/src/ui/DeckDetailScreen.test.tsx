@@ -28,6 +28,7 @@ function renderScreen(
     busy: false,
     error: null,
     onStudy: vi.fn(),
+    onPreferences: vi.fn(),
     onBrowse: vi.fn(),
     onResetDay: vi.fn(),
     ...overrides,
@@ -204,6 +205,15 @@ describe("DeckDetailScreen", () => {
     const { props } = renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Browser" }));
     expect(props.onBrowse).toHaveBeenCalledOnce();
+  });
+
+  it("opens the deck's preferences from a button above the Browser's", () => {
+    const { props } = renderScreen();
+    const preferences = screen.getByRole("button", { name: "Deck preferences" });
+    expect(preferences).toHaveTextContent("Preferences");
+    expect(preferences.nextElementSibling).toBe(screen.getByRole("button", { name: "Browser" }));
+    fireEvent.click(preferences);
+    expect(props.onPreferences).toHaveBeenCalledOnce();
   });
 
   it("offers no editing: cards are added and edited in the Browser", () => {

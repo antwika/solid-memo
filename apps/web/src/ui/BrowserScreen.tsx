@@ -1,4 +1,3 @@
-import { useState } from "preact/hooks";
 import {
   cardLabel,
   DECK_DIRECTIONS,
@@ -17,8 +16,8 @@ import { Pager, paginate } from "./Pager";
 export const CARDS_PER_PAGE = 10;
 
 /**
- * Management view for one deck: rename/remove the deck, describe it
- * (description, topics, keywords), choose which way it is studied, add
+ * Management view for one deck: describe it (description, topics,
+ * keywords), choose which way it is studied, add
  * cards, and open any card's own page (where it
  * is edited) by clicking it. Long decks are paged; the page is route
  * state, so it survives a round trip to a card's page.
@@ -30,10 +29,8 @@ export function BrowserScreen({
   page,
   busy,
   error,
-  onRenameDeck,
   onDescribeDeck,
   onChangeDirection,
-  onRemoveDeck,
   onAddCard,
   cardHref,
   onRemoveCard,
@@ -47,12 +44,10 @@ export function BrowserScreen({
   page: number;
   busy: boolean;
   error: string | null;
-  onRenameDeck: (name: string) => void;
   /** Replace the deck's description, topics and keywords. */
   onDescribeDeck: (about: DeckAbout) => void;
   /** Study the deck front→back, back→front or both ways. */
   onChangeDirection: (direction: DeckDirection) => void;
-  onRemoveDeck: () => void;
   /** Navigate to the card creator view. */
   onAddCard: () => void;
   /** URL of a card's own page. */
@@ -60,31 +55,12 @@ export function BrowserScreen({
   onRemoveCard: (card: Card) => void;
   onPageChange: (page: number) => void;
 }) {
-  /** The deck-name draft while renaming; null otherwise. */
-  const [deckName, setDeckName] = useState<string | null>(null);
-
   const {
     pageCount,
     currentPage,
     firstIndex,
     items: pageCards,
   } = paginate(cards, page, CARDS_PER_PAGE);
-
-  function handleRenameSubmit(event: Event, name: string) {
-    event.preventDefault();
-    onRenameDeck(name.trim());
-    setDeckName(null);
-  }
-
-  function handleRemoveDeck() {
-    if (
-      window.confirm(
-        `Remove the deck "${deck.name}" and all its cards? This cannot be undone.`,
-      )
-    ) {
-      onRemoveDeck();
-    }
-  }
 
   function handleRemove(card: Card) {
     if (
@@ -107,44 +83,6 @@ export function BrowserScreen({
           Add card
         </button>
       </header>
-      {deckName === null ? (
-        <div class="edit-actions">
-          <button onClick={() => setDeckName(deck.name)} disabled={busy}>
-            Rename deck
-          </button>
-          <button class="danger" onClick={handleRemoveDeck} disabled={busy}>
-            Remove deck
-          </button>
-        </div>
-      ) : (
-        <form
-          class="card-edit"
-          onSubmit={(e) => handleRenameSubmit(e, deckName)}
-        >
-          <label for="deck-name">Deck name</label>
-          <input
-            id="deck-name"
-            type="text"
-            value={deckName}
-            onInput={(e) => setDeckName(e.currentTarget.value)}
-            required
-            disabled={busy}
-          />
-          <div class="edit-actions">
-            <button type="submit" disabled={busy}>
-              Save name
-            </button>
-            <button
-              type="button"
-              aria-label="Cancel renaming"
-              onClick={() => setDeckName(null)}
-              disabled={busy}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
       <DeckAboutSection deck={deck} busy={busy} onSave={onDescribeDeck} />
       <fieldset>
         <legend>Study direction</legend>

@@ -1,6 +1,7 @@
 import { profileNameOf, type SolidAccount } from "@solid-memo/domain/account";
 import { defaultCatalogDescription, type Catalog } from "@solid-memo/domain/catalog";
 import { withAbout, type DeckAbout } from "@solid-memo/domain/deckAbout";
+import { deckPreferences, withPace, type DeckPace } from "@solid-memo/domain/deckPace";
 import { isCopyOf } from "@solid-memo/domain/library";
 import { planRepair, type Repair, type RepairPlan } from "@solid-memo/domain/repair";
 import {
@@ -132,6 +133,11 @@ export interface UseCases {
   setDeckDirection(deck: Deck, direction: DeckDirection): Promise<Deck>;
   /** Replace what a deck says about itself: its description, topics and keywords. */
   describeDeck(deck: Deck, about: DeckAbout): Promise<Deck>;
+  /**
+   * Set the deck's own daily limits; a limit left out follows the
+   * instance's preferences again.
+   */
+  setDeckPace(deck: Deck, pace: DeckPace): Promise<Deck>;
   removeDeck(deck: Deck): Promise<void>;
   /** The ready-made decks the app offers for import. */
   listLibraryDecks(): Promise<LibraryDeck[]>;
@@ -448,6 +454,9 @@ export function createUseCases({
     async describeDeck(deck, about) {
       return deckRepository.saveDeck(withAbout(deck, about));
     },
+    async setDeckPace(deck, pace) {
+      return deckRepository.saveDeck(withPace(deck, pace));
+    },
     removeDeck(deck) {
       return deckRepository.removeDeck(deck);
     },
@@ -666,7 +675,7 @@ export function createUseCases({
         cards,
         direction: deck.direction,
         reviews,
-        prefs,
+        prefs: deckPreferences(prefs, deck),
         now,
         random,
       });

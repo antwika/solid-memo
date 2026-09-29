@@ -82,6 +82,21 @@ describe("breadcrumbsFor", () => {
       { label: "Capitals", route: libraryDeck },
       { label: "Cards", route: cards },
     ]);
+    const libraryCard: RouteRef = { ...libraryDeck, screen: "libraryCard", cardId: "sweden" };
+    const cardsCrumb = {
+      label: "Cards",
+      route: { screen: "libraryBrowser", instanceUrl, libraryDeckUrl: "https://solid-memo.com/decks/capitals.ttl" },
+    };
+    expect(
+      breadcrumbsFor(libraryCard, { ...NO_NAMES, libraryDeck: "Capitals", libraryCard: "Sweden" }),
+    ).toEqual([
+      { label: "Decks", route: home },
+      { label: "Deck library", route: { screen: "library", instanceUrl } },
+      { label: "Capitals", route: libraryDeck },
+      cardsCrumb,
+      { label: "Sweden", route: libraryCard },
+    ]);
+    expect(breadcrumbsFor(libraryCard, NO_NAMES).at(-1)).toEqual({ label: "", route: libraryCard });
     const preview: RouteRef = { ...libraryDeck, screen: "libraryPreview" };
     expect(
       breadcrumbsFor(preview, { ...NO_NAMES, libraryDeck: "Capitals" }),
@@ -97,6 +112,15 @@ describe("breadcrumbsFor", () => {
     expect(breadcrumbsFor(deckDetail, { deck: "Kanji N5", card: "", libraryDeck: "" })).toEqual([
       { label: "Decks", route: home },
       { label: "Kanji N5", route: deckDetail },
+    ]);
+  });
+
+  it("links the deck from its preferences", () => {
+    const preferences: RouteRef = { screen: "deckPreferences", instanceUrl, deckUrl };
+    expect(breadcrumbsFor(preferences, { deck: "Kanji N5", card: "", libraryDeck: "" })).toEqual([
+      { label: "Decks", route: home },
+      { label: "Kanji N5", route: deckDetail },
+      { label: "Preferences", route: preferences },
     ]);
   });
 
