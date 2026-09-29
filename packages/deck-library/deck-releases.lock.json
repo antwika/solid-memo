@@ -43,10 +43,22 @@
       "sha256": "9ed4c639d6fc3eddf48c43d9f41f2debbfa64ba137b61838a9d570f0ec1fbb81"
     },
     {
+      "deck": "swedish-nouns",
+      "version": 2,
+      "issued": "2026-09-29T20:14:05Z",
+      "sha256": "ded5b72384f98743a6f7117dd91796a08f96ae346caffab8fa9b5186d917d27b"
+    },
+    {
       "deck": "swedish-verbs",
       "version": 1,
       "issued": "2026-09-28T17:02:16Z",
       "sha256": "4c2aa26b9a78b5c6df29a09b7c22ae5e656b7322663b28bc2386cd6e99409553"
+    },
+    {
+      "deck": "swedish-verbs",
+      "version": 2,
+      "issued": "2026-09-29T20:14:17Z",
+      "sha256": "1c21bb03b3087833a40904fa9a602598fd9c17ed8f834c097de58167c405e0db"
     },
     {
       "deck": "world-flags",
