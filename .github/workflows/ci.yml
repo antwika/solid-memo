@@ -32,7 +32,7 @@ jobs:
       - run: npm run build
       # The published library and vocabulary, checked again by an
       # independent SHACL engine (pySHACL), SPARQL constraints included.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
           cache: pip
