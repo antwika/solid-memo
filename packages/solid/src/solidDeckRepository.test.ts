@@ -412,6 +412,26 @@ describe("saveDeck", () => {
     expect(getUrl(thing, SM.reviewsDocument)).toBe(deck.reviewsDocumentUrl);
   });
 
+  it("writes the deck's own daily limits, and removes one the deck no longer sets", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      setThing(
+        catalogWithDeck(),
+        buildThing(getThing(catalogWithDeck(), deck.url)!)
+          .addInteger(SM.deckNewCardsPerDay, 20)
+          .addInteger(SM.deckMaxReviewsPerDay, 100)
+          .build(),
+      ),
+    );
+
+    const saved = await makeRepository().saveDeck({ ...deck, newCardsPerDay: 5 });
+
+    expect(saved).toEqual({ ...deck, newCardsPerDay: 5, formatVersion: 3 });
+    const [, dataset] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    const thing = getThing(dataset as SolidDataset, deck.url)!;
+    expect(getInteger(thing, SM.deckNewCardsPerDay)).toBe(5);
+    expect(getInteger(thing, SM.deckMaxReviewsPerDay)).toBeNull();
+  });
+
   it("rejects when the deck is gone", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
     await expect(makeRepository().saveDeck(deck)).rejects.toThrow(

@@ -76,7 +76,9 @@ flowchart LR
 │                        sm:Deck and dcat:Dataset: sm:formatVersion 3,
 │                        dcterms:description, sm:studyDirection, optional
 │                        dcterms:creator/license, dcat:theme/keyword,
-│                        prov:wasDerivedFrom; beside each deck its
+│                        prov:wasDerivedFrom, the deck's own study caps
+│                        (sm:deckNewCardsPerDay/MaxReviewsPerDay);
+│                        beside each deck its
 │                        dcat:Distribution (#deck-X-cards) and the
 │                        foaf:Agent nodes of its creators (#agent-…)
 ├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn),
@@ -138,6 +140,13 @@ graph LR
   it with the string `sm:direction` (absent meaning front→back, the only
   way there was before the field existed). Changed in the Browser; a
   library deck brings its own.
+- **Study pace**: a deck may set its own daily limits,
+  `sm:deckNewCardsPerDay` and `sm:deckMaxReviewsPerDay`, in place of the
+  instance's `sm:newCardsPerDay` and `sm:maxReviewsPerDay`; a limit it
+  does not set follows the preferences. Changed on the deck's own
+  Preferences page (`#/deck-preferences`, from the deck's page); a
+  library release never sets them, and a library upgrade keeps the
+  copy's.
 - **Format versions**: every subject the app writes carries
   `sm:formatVersion`, saying which version of its class's
   [shape](shapes.md) it conforms to: instance 1, decks 3 (DCAT),

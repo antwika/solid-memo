@@ -11,9 +11,9 @@ import { studyCountsSummary } from "./studyCounts";
  * What a deck-list row offers for its deck today, with how much is left
  * ("12 to review"). Nothing is offered unless there is something to
  * do: when the deck is done for the day, a hint says so beside a green
- * tick. While the queue is
- * first being fetched the slot shows a loader, so an empty slot never
- * reads as "done".
+ * tick. While the queue is first being fetched a skeleton stands where
+ * that hint will be and a loader where the action will be, so an empty
+ * row never reads as "done".
  */
 export function DeckStudyAction({
   deckName,
@@ -31,9 +31,12 @@ export function DeckStudyAction({
 }) {
   if (queue === undefined) {
     return loading ? (
-      <span class="study-loading" role="status" aria-label="Checking what is due">
-        <LoadingDots />
-      </span>
+      <>
+        <span class="hint study-skeleton" aria-hidden="true" />
+        <span class="study-loading" role="status" aria-label="Checking what is due">
+          <LoadingDots />
+        </span>
+      </>
     ) : null;
   }
   const summary = studyCountsSummary({

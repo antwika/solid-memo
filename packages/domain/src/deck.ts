@@ -138,6 +138,13 @@ export interface Deck {
   themes?: string[];
   /** Free-text keywords (dcat:keyword). Absent when none is stated. */
   keywords?: string[];
+  /**
+   * The deck's own cap on new prompts per study day, in place of the
+   * instance's preference; absent means the preference (see deckPace.ts).
+   */
+  newCardsPerDay?: number;
+  /** The deck's own cap on reviews per study day, likewise. */
+  maxReviewsPerDay?: number;
 }
 
 /** What is on a card: its editable content, without identity. */
@@ -213,7 +220,7 @@ function normalizeImageUrl(value: string | undefined): string | undefined {
  * prompts): its front text, else its back text — a picture-only front is
  * best named by its answer — else its id.
  */
-export function cardLabel(card: Card): string {
+export function cardLabel(card: CardContent & { id: string }): string {
   if (card.front !== "") return card.front;
   if (card.back !== "") return card.back;
   return card.id;

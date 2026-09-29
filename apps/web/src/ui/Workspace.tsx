@@ -13,6 +13,7 @@ import { CardContainer } from "./CardContainer";
 import { CardCreatorContainer } from "./CardCreatorContainer";
 import { DeckCreatorContainer } from "./DeckCreatorContainer";
 import { DeckDetailContainer } from "./DeckDetailContainer";
+import { DeckPreferencesContainer } from "./DeckPreferencesContainer";
 import { DeckListContainer } from "./DeckListContainer";
 import { errorMessage } from "./errorMessage";
 import { InstanceBar } from "./InstanceBar";
@@ -21,6 +22,7 @@ import { InstancePicker } from "./InstancePicker";
 import { BackupContainer } from "./BackupContainer";
 import { DataCheckNotice } from "./DataCheckNotice";
 import { LibraryBrowserContainer } from "./LibraryBrowserContainer";
+import { LibraryCardScreen } from "./LibraryCardScreen";
 import { LibraryContainer } from "./LibraryContainer";
 import { LibraryDeckContainer } from "./LibraryDeckContainer";
 import { LibraryPreviewContainer } from "./LibraryPreviewContainer";
@@ -130,6 +132,7 @@ export function Workspace({
   const libraryDeckUrl =
     route?.screen === "libraryDeck" ||
     route?.screen === "libraryBrowser" ||
+    route?.screen === "libraryCard" ||
     route?.screen === "libraryPreview"
       ? route.libraryDeckUrl
       : null;
@@ -153,6 +156,28 @@ export function Workspace({
       replace({ screen: "library", instanceUrl: instanceUrl! });
     }
   }, [needsLibraryDeck, libraryQuery.data, libraryDeckUrl, instanceUrl]);
+
+  const libraryCardId = route?.screen === "libraryCard" ? route.cardId : null;
+  const needsLibraryCard = libraryCardId !== null && activeLibraryDeck !== null;
+  const libraryCardsQuery = useQuery({
+    queryKey: ["libraryCards", activeLibraryDeck?.url],
+    queryFn: () => useCases.listLibraryCards(activeLibraryDeck!),
+    enabled: needsLibraryCard,
+  });
+  const activeLibraryCard = needsLibraryCard
+    ? (libraryCardsQuery.data?.find((c) => c.id === libraryCardId) ?? null)
+    : null;
+
+  useEffect(() => {
+    if (!needsLibraryCard || libraryCardsQuery.data === undefined) return;
+    if (!libraryCardsQuery.data.some((c) => c.id === libraryCardId)) {
+      replace({
+        screen: "libraryBrowser",
+        instanceUrl: instanceUrl!,
+        libraryDeckUrl: libraryDeckUrl!,
+      });
+    }
+  }, [needsLibraryCard, libraryCardsQuery.data, libraryCardId, instanceUrl, libraryDeckUrl]);
 
   const preferencesQuery = useQuery({
     queryKey: ["preferences", instanceUrl],
@@ -289,6 +314,14 @@ export function Workspace({
       return <Loading label="Loading the deck library…" />;
     }
   }
+  if (needsLibraryCard) {
+    if (libraryCardsQuery.error) {
+      return <p class="error">{errorMessage(libraryCardsQuery.error)}</p>;
+    }
+    if (activeLibraryCard === null) {
+      return <Loading label="Loading card…" />;
+    }
+  }
 
   const screen = (() => {
     switch (route.screen) {
@@ -410,8 +443,24 @@ export function Workspace({
             useCases={useCases}
             deck={activeLibraryDeck!}
             deckHref={libraryDeckHref(instanceUrl!, libraryDeckUrl!)}
+            cardHref={(card) =>
+              routeToHash({
+                screen: "libraryCard",
+                instanceUrl: instanceUrl!,
+                libraryDeckUrl: libraryDeckUrl!,
+                cardId: card.id,
+              })
+            }
             page={route.page ?? 1}
             onPageChange={(page) => replace({ ...route, page })}
+          />
+        );
+      case "libraryCard":
+        return (
+          <LibraryCardScreen
+            card={activeLibraryCard!}
+            deckName={activeLibraryDeck!.name}
+            deckHref={libraryDeckHref(instanceUrl!, libraryDeckUrl!)}
           />
         );
       case "libraryPreview":
@@ -438,9 +487,34 @@ export function Workspace({
                 deckUrl: deckUrl!,
               })
             }
+            onPreferences={() =>
+              navigate({
+                screen: "deckPreferences",
+                instanceUrl: instanceUrl!,
+                deckUrl: deckUrl!,
+              })
+            }
             onBrowse={() =>
               navigate({
                 screen: "browser",
+                instanceUrl: instanceUrl!,
+                deckUrl: deckUrl!,
+              })
+            }
+          />
+        );
+      case "deckPreferences":
+        return (
+          <DeckPreferencesContainer
+            useCases={useCases}
+            instance={activeInstance!}
+            deck={activeDeck!}
+            onDeckRemoved={() =>
+              replace({ screen: "home", instanceUrl: instanceUrl! })
+            }
+            onDone={() =>
+              navigate({
+                screen: "deckDetail",
                 instanceUrl: instanceUrl!,
                 deckUrl: deckUrl!,
               })
@@ -468,9 +542,6 @@ export function Workspace({
                 deckUrl: deckUrl!,
                 cardUrl: card.url,
               })
-            }
-            onDeckRemoved={() =>
-              replace({ screen: "home", instanceUrl: instanceUrl! })
             }
             onPageChange={(page) => replace({ ...route, page })}
           />
@@ -605,6 +676,7 @@ export function Workspace({
           deck: activeDeck?.name ?? "",
           card: activeCard === null ? "" : cardLabel(activeCard),
           libraryDeck: activeLibraryDeck?.name ?? "",
+          libraryCard: activeLibraryCard === null ? "" : cardLabel(activeLibraryCard),
         })}
       />
       {shown}

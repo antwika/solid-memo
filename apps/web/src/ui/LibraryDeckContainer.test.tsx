@@ -65,6 +65,10 @@ describe("LibraryDeckContainer", () => {
       `#/library-deck?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.seriesUrl)}`,
     );
     expect(screen.queryByText("Already imported")).toBeNull();
+    expect(screen.getByRole("link", { name: "Preview" })).toHaveAttribute(
+      "href",
+      `#/library-preview?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.seriesUrl)}`,
+    );
   });
 
   it("hands the card list over to its owner", () => {

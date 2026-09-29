@@ -38,6 +38,7 @@ function renderScreen(
   const props = {
     deck: capitals,
     deckHref: "#/library-deck?deck=capitals",
+    previewHref: "#/library-preview?deck=capitals",
     imported: false,
     busy: false,
     error: null,
@@ -204,6 +205,15 @@ describe("LibraryDeckScreen", () => {
     const { props } = renderScreen();
     fireEvent.click(screen.getByRole("button", { name: "Import this deck" }));
     expect(props.onImport).toHaveBeenCalledOnce();
+  });
+
+  it("offers a preview right next to the import", () => {
+    renderScreen();
+    const preview = screen.getByRole("link", { name: "Preview" });
+    expect(preview).toHaveAttribute("href", "#/library-preview?deck=capitals");
+    expect(preview.previousElementSibling).toBe(
+      screen.getByRole("button", { name: "Import this deck" }),
+    );
   });
 
   it("locks the button while importing", () => {

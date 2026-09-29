@@ -40,6 +40,7 @@ function renderContainer(useCases: UseCases) {
     defaultOptions: { queries: { retry: false } },
   });
   const onStudy = vi.fn();
+  const onPreferences = vi.fn();
   const onBrowse = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
@@ -48,11 +49,12 @@ function renderContainer(useCases: UseCases) {
         instance={instance}
         deck={deck}
         onStudy={onStudy}
+        onPreferences={onPreferences}
         onBrowse={onBrowse}
       />
     </QueryClientProvider>,
   );
-  return { onStudy, onBrowse };
+  return { onStudy, onPreferences, onBrowse };
 }
 
 describe("DeckDetailContainer", () => {
@@ -177,7 +179,7 @@ describe("DeckDetailContainer", () => {
   });
 
   it("forwards the navigation callbacks", async () => {
-    const { onStudy, onBrowse } =
+    const { onStudy, onPreferences, onBrowse } =
       renderContainer(
         makeUseCasesFake({
           listCards: vi.fn(async () => [card]),
@@ -188,5 +190,7 @@ describe("DeckDetailContainer", () => {
     expect(onStudy).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("button", { name: "Browser" }));
     expect(onBrowse).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole("button", { name: "Deck preferences" }));
+    expect(onPreferences).toHaveBeenCalledOnce();
   });
 });

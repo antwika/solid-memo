@@ -159,6 +159,8 @@ export const DECK_V3: ShapeDescriptor<DeckV3> = {
     { name: "cardsDocument", predicate: "https://solid-memo.com/vocab/v1#cardsDocument", kind: "iri", cardinality: "one" },
     { name: "reviewsDocument", predicate: "https://solid-memo.com/vocab/v1#reviewsDocument", kind: "iri", cardinality: "one" },
     { name: "source", predicate: "http://www.w3.org/ns/prov#wasDerivedFrom", kind: "iri", cardinality: "optional" },
+    { name: "newCardsPerDay", predicate: "https://solid-memo.com/vocab/v1#deckNewCardsPerDay", kind: "integer", cardinality: "optional" },
+    { name: "maxReviewsPerDay", predicate: "https://solid-memo.com/vocab/v1#deckMaxReviewsPerDay", kind: "integer", cardinality: "optional" },
   ],
 };
 
@@ -256,7 +258,7 @@ export const LIBRARY_DECK_V3: ShapeDescriptor<LibraryDeckV3> = {
   version: 3,
   targetClass: "https://solid-memo.com/vocab/v1#Deck",
   additionalTypes: ["http://www.w3.org/ns/dcat#Dataset"],
-  absent: ["https://solid-memo.com/vocab/v1#direction","https://solid-memo.com/vocab/v1#cardsDocument","https://solid-memo.com/vocab/v1#reviewsDocument","http://purl.org/dc/terms/source"],
+  absent: ["https://solid-memo.com/vocab/v1#direction","https://solid-memo.com/vocab/v1#cardsDocument","https://solid-memo.com/vocab/v1#reviewsDocument","http://purl.org/dc/terms/source","https://solid-memo.com/vocab/v1#deckNewCardsPerDay","https://solid-memo.com/vocab/v1#deckMaxReviewsPerDay"],
   shapeIri: "https://solid-memo.com/shapes/deck/v3.ttl#inLibrary",
   shapeDocument: "deck/v3.ttl",
   context: "library",

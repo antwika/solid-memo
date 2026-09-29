@@ -45,6 +45,8 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "deck/v3/invalid/library-without-education-theme.ttl": { path: "http://www.w3.org/ns/dcat#theme", message: "A library deck has the EU data theme EDUC" },
   "deck/v3/invalid/library-with-source.ttl": { path: `${DC}source`, message: "A format-3 deck names what it is drawn from with prov:wasDerivedFrom" },
   "deck/v3/invalid/library-bad-version.ttl": { path: "http://www.w3.org/ns/dcat#version", message: "A release states its version: 1, 2, …" },
+  "deck/v3/invalid/pod-with-negative-new-cards-per-day.ttl": { path: `${SM}deckNewCardsPerDay`, message: "A deck's new cards per day is one whole number, 0 or more." },
+  "deck/v3/invalid/library-with-new-cards-per-day.ttl": { path: `${SM}deckNewCardsPerDay`, message: "A library deck sets no study caps" },
   "deck-series/v1/invalid/library-without-current-version.ttl": { path: "http://www.w3.org/ns/dcat#hasCurrentVersion", message: "A deck series names its current release." },
   "catalog/v1/invalid/without-publisher.ttl": { path: `${DC}publisher`, message: "A catalogue names its publisher" },
   "agent/v1/invalid/without-name.ttl": { path: "http://xmlns.com/foaf/0.1/name", message: "An agent has a name." },

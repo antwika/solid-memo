@@ -259,6 +259,30 @@ section>header h2 {
   flex: 1 1 14rem;
 }
 
+/* A short number field followed by what it counts; the pair takes the
+   field's usual space below, so the text lines up with the field. */
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.input-with-unit input {
+  width: 5.5rem;
+  flex: none;
+  margin-bottom: 0;
+  padding-inline: 0.6rem;
+}
+
+/* Several buttons beside a heading, stacked. */
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
 h2 a {
   color: inherit;
   text-decoration: underline;
@@ -1625,11 +1649,47 @@ h2 {
 }
 
 .deck-list .deck-meta>button,
-.deck-list .deck-meta>.hint,
+.deck-list .study-done,
 .day-reset,
 .session-actions button,
 p[role="status"]:not(.loading) {
   animation: bounce-in 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+/* A row's subtext spans its column, so growing it from the centre would
+   bring the text in from the right; it slides in from the left instead. */
+.deck-list .deck-meta>.hint:not(.study-done),
+.library-deck-meta {
+  animation: row-in 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+/* Stands where a row's subtext will be while it loads: a bar about as
+   long and tall as "12 to review", with a sheen sweeping left to right. */
+.deck-list .deck-meta>.hint.study-skeleton {
+  justify-self: start;
+  width: 6.5rem;
+  height: 0.8rem;
+  padding: 0;
+  margin: 0.3rem 0 0.35rem 1.75rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+      var(--border) 30%,
+      var(--surface-hover) 50%,
+      var(--border) 70%);
+  background-size: 250% 100%;
+  animation:
+    fade-in 0.3s ease backwards,
+    skeleton-sheen 1.3s ease-in-out infinite;
+}
+
+@keyframes skeleton-sheen {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: 0 0;
+  }
 }
 
 @keyframes deal-in {

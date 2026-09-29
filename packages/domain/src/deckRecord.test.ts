@@ -45,6 +45,8 @@ describe("deck records", () => {
       sourceUrl: "https://solid-memo.com/decks/capitals/1.ttl",
       themes: [TOPIC],
       keywords: ["capitals"],
+      newCardsPerDay: 5,
+      maxReviewsPerDay: 0,
     };
     const record = deckToRecord(full);
     expect(record).toEqual({
@@ -61,6 +63,8 @@ describe("deck records", () => {
       cardsDocument: CARDS,
       reviewsDocument: REVIEWS,
       source: full.sourceUrl,
+      newCardsPerDay: 5,
+      maxReviewsPerDay: 0,
     });
     expect(deckFromRecord(deck.url, 3, record, byAgent)).toEqual(full);
   });

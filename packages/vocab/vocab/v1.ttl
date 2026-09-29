@@ -16,9 +16,9 @@
     a owl:Ontology ;
     dcterms:title "Solid Memo vocabulary, v1" ;
     dcterms:description "Terms for spaced-repetition flashcards stored in a Solid pod: instances, decks, cards, SM-2 review state and study preferences." ;
-    owl:versionInfo "1.6" ;
+    owl:versionInfo "1.7" ;
     rdfs:seeAlso <https://solid-memo.com/vocab/v1.ttl> ;
-    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated." .
+    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps)." .
 
 #################### Classes ####################
 
@@ -115,6 +115,24 @@ solid-memo:cardCount
     rdfs:range xsd:integer ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.4 for the library index." .
+
+solid-memo:deckNewCardsPerDay
+    a owl:DatatypeProperty ;
+    rdfs:label "deck new cards per day" ;
+    rdfs:comment "Maximum unseen cards of this deck introduced per study day, in place of the instance's newCardsPerDay. Absent means the instance's." ;
+    rdfs:domain solid-memo:Deck ;
+    rdfs:range xsd:integer ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.7." .
+
+solid-memo:deckMaxReviewsPerDay
+    a owl:DatatypeProperty ;
+    rdfs:label "deck max reviews per day" ;
+    rdfs:comment "Maximum due-card reviews of this deck per study day, in place of the instance's maxReviewsPerDay. Absent means the instance's." ;
+    rdfs:domain solid-memo:Deck ;
+    rdfs:range xsd:integer ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.7." .
 
 #################### Card ####################
 

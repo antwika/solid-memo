@@ -69,14 +69,14 @@ describe("DeckStudyAction", () => {
     expect(screen.queryByText(/review/)).toBeNull();
   });
 
-  it("shows a loader in the slot while the queue is first fetched", () => {
+  it("shows a skeleton for the counts and a loader for the action while the queue is first fetched", () => {
     const { container } = renderAction(undefined, true);
     const status = screen.getByRole("status", { name: "Checking what is due" });
     expect(status).toHaveClass("study-loading");
-    expect(container.querySelector(".loading-dots")).toHaveAttribute(
-      "aria-hidden",
-      "true",
-    );
+    expect(status.querySelector(".loading-dots")).toHaveAttribute("aria-hidden", "true");
+    const skeleton = container.querySelector(".study-skeleton");
+    expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    expect(skeleton).toBeEmptyDOMElement();
     expect(screen.queryByRole("button")).toBeNull();
   });
 

@@ -91,6 +91,8 @@ export interface DeckV3 {
   readonly cardsDocument: string;
   readonly reviewsDocument: string;
   readonly source?: string;
+  readonly newCardsPerDay?: number;
+  readonly maxReviewsPerDay?: number;
 }
 
 /** A deck's cards as a file: a dcat:Distribution. */

@@ -27,6 +27,7 @@ function renderScreen(
   const props = {
     deck: capitals,
     deckHref: "#/library-deck?deck=capitals",
+    cardHref: (c: LibraryCard) => `#/library-card?card=${c.id}`,
     cards: [card(1), card(2)],
     page: 1,
     onPageChange: vi.fn(),
@@ -49,10 +50,22 @@ describe("LibraryBrowserScreen", () => {
     expect(screen.getByText("Front 1")).toBeInTheDocument();
     expect(screen.getByText("Back 2")).toBeInTheDocument();
     expect(
-      screen.getByText("2 cards. Import the deck to study or edit them."),
+      screen.getByText("2 cards. Click a card to open it. Import the deck to study or edit them."),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.getAllByRole("link")).toHaveLength(3);
     expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("links each row to the card's own page", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Front 2" })).toHaveAttribute(
+      "href",
+      "#/library-card?card=card-2",
+    );
+    const back = screen.getByText("Back 2").closest("a")!;
+    expect(back).toHaveAttribute("href", "#/library-card?card=card-2");
+    expect(back).toHaveAttribute("aria-hidden", "true");
+    expect(back.closest("td")).toHaveClass("clickable");
   });
 
   it("shows a card's pictures", () => {
