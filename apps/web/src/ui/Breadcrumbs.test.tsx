@@ -82,6 +82,15 @@ describe("breadcrumbsFor", () => {
       { label: "Capitals", route: libraryDeck },
       { label: "Cards", route: cards },
     ]);
+    const preview: RouteRef = { ...libraryDeck, screen: "libraryPreview" };
+    expect(
+      breadcrumbsFor(preview, { ...NO_NAMES, libraryDeck: "Capitals" }),
+    ).toEqual([
+      { label: "Decks", route: home },
+      { label: "Deck library", route: { screen: "library", instanceUrl } },
+      { label: "Capitals", route: libraryDeck },
+      { label: "Preview", route: preview },
+    ]);
   });
 
   it("ends the deck view's trail with a link to the deck itself", () => {

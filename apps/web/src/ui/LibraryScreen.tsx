@@ -14,14 +14,15 @@ function importLabel(count: number): string {
  * Any number can be ticked and imported in one go. The list can be
  * narrowed to topics (checkboxes, from Solid Memo's topics scheme) and
  * by a search of names, descriptions and keywords. A row says only the
- * deck's name and size; clicking it (anywhere but the checkbox) opens
- * the deck's own page, where it is described in full and can be
- * imported on its own.
+ * deck's name and size; clicking it (anywhere but the checkbox and the
+ * Preview button) opens the deck's own page, where it is described in
+ * full and can be imported on its own. Preview tries its cards first.
  */
 export function LibraryScreen({
   decks,
   libraryHref,
   deckHref,
+  previewHref,
   isImported,
   busy,
   error,
@@ -32,6 +33,8 @@ export function LibraryScreen({
   libraryHref: string;
   /** URL of a library deck's page; its name links there. */
   deckHref: (deck: LibraryDeck) => string;
+  /** URL of a library deck's preview; its Preview button links there. */
+  previewHref: (deck: LibraryDeck) => string;
   /** Whether the instance already holds a copy of the deck. */
   isImported: (deck: LibraryDeck) => boolean;
   /** An import is in progress. */
@@ -127,10 +130,19 @@ export function LibraryScreen({
                 <a class="library-deck-name" href={deckHref(deck)}>
                   {deck.name}
                 </a>
-                <span class="hint">{cardCount(deck.cardCount)}</span>
-                {isImported(deck) && (
-                  <span class="hint library-imported">Already imported</span>
-                )}
+                <span class="library-deck-meta">
+                  <span class="hint">{cardCount(deck.cardCount)}</span>
+                  {isImported(deck) && (
+                    <span class="hint library-imported">Already imported</span>
+                  )}
+                </span>
+                <a
+                  class="button library-preview"
+                  href={previewHref(deck)}
+                  aria-label={`Preview ${deck.name}`}
+                >
+                  Preview
+                </a>
               </li>
             ))}
           </ul>

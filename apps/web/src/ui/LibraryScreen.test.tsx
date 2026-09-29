@@ -32,6 +32,7 @@ function renderScreen(
     decks: [capitals, rivers],
     libraryHref: "#/library?instance=a",
     deckHref: (deck: LibraryDeck) => `#/library-deck?deck=${deck.url}`,
+    previewHref: (deck: LibraryDeck) => `#/library-preview?deck=${deck.url}`,
     isImported: () => false,
     busy: false,
     error: null,
@@ -77,6 +78,16 @@ describe("LibraryScreen", () => {
     expect(screen.queryByText(/Anton Wiklund/)).toBeNull();
     expect(screen.queryByText(/from Wikipedia/)).toBeNull();
     expect(screen.queryByRole("link", { name: "CC0 1.0" })).toBeNull();
+  });
+
+  it("links each deck's Preview button to its preview", () => {
+    renderScreen();
+    expect(
+      screen.getByRole("link", { name: "Preview Capitals of the world" }),
+    ).toHaveAttribute("href", `#/library-preview?deck=${capitals.url}`);
+    expect(screen.getByRole("link", { name: "Preview Rivers" })).toHaveTextContent(
+      "Preview",
+    );
   });
 
   it("narrows the list to the chosen topics, broader ones included, and says how many are shown", () => {

@@ -78,8 +78,14 @@ export interface CardSide {
   imageUrl?: string;
 }
 
-/** What a prompt asks and what it answers with. */
-export function promptSides(prompt: Prompt): {
+/**
+ * What a prompt asks and what it answers with. Any card content will do,
+ * so a library deck's cards can be shown the same way before import.
+ */
+export function promptSides(prompt: {
+  card: CardContent;
+  direction: StudyDirection;
+}): {
   question: CardSide;
   answer: CardSide;
 } {

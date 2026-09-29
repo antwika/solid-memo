@@ -48,7 +48,11 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
     route: { screen: "library", instanceUrl: route.instanceUrl },
   };
   if (route.screen === "library") return [decks, library];
-  if (route.screen === "libraryDeck" || route.screen === "libraryBrowser") {
+  if (
+    route.screen === "libraryDeck" ||
+    route.screen === "libraryBrowser" ||
+    route.screen === "libraryPreview"
+  ) {
     const libraryDeck: Crumb = {
       label: names.libraryDeck,
       route: {
@@ -57,9 +61,13 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
         libraryDeckUrl: route.libraryDeckUrl,
       },
     };
-    return route.screen === "libraryDeck"
-      ? [decks, library, libraryDeck]
-      : [decks, library, libraryDeck, { label: "Cards", route }];
+    if (route.screen === "libraryDeck") return [decks, library, libraryDeck];
+    return [
+      decks,
+      library,
+      libraryDeck,
+      { label: route.screen === "libraryBrowser" ? "Cards" : "Preview", route },
+    ];
   }
   if (route.screen === "preferences") {
     return [decks, { label: "Preferences", route }];

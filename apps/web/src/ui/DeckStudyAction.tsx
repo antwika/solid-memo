@@ -10,7 +10,8 @@ import { studyCountsSummary } from "./studyCounts";
 /**
  * What a deck-list row offers for its deck today, with how much is left
  * ("12 to review"). Nothing is offered unless there is something to
- * do: a green tick when the deck is done for the day. While the queue is
+ * do: when the deck is done for the day, a hint says so beside a green
+ * tick. While the queue is
  * first being fetched the slot shows a loader, so an empty slot never
  * reads as "done".
  */
@@ -41,14 +42,12 @@ export function DeckStudyAction({
   });
   if (summary === null) {
     return (
-      <span
-        class="hint study-done"
-        role="img"
-        aria-label="Nothing to study today"
-        title="Nothing to study today"
-      >
-        <CheckIcon />
-      </span>
+      <>
+        <span class="hint">Done for today</span>
+        <span class="hint study-done">
+          <CheckIcon />
+        </span>
+      </>
     );
   }
   return (
