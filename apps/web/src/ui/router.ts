@@ -28,6 +28,9 @@ export type RouteRef =
     libraryDeckUrl: string;
     page?: number;
   }
+  /** A library deck's cards shown at random, for a try before import;
+      nothing is recorded. */
+  | { screen: "libraryPreview"; instanceUrl: string; libraryDeckUrl: string }
   | { screen: "deckDetail"; instanceUrl: string; deckUrl: string }
   /** `page` is 1-based; absent means the first page. */
   | { screen: "browser"; instanceUrl: string; deckUrl: string; page?: number }
@@ -74,6 +77,11 @@ export function routeToHash(ref: RouteRef): string {
         ...(ref.page !== undefined && ref.page > 1
           ? { page: String(ref.page) }
           : {}),
+      })}`;
+    case "libraryPreview":
+      return `#/library-preview${params({
+        instance: ref.instanceUrl,
+        deck: ref.libraryDeckUrl,
       })}`;
     case "deckDetail":
       return `#/deck${params({ instance: ref.instanceUrl, deck: ref.deckUrl })}`;
@@ -137,6 +145,14 @@ export function libraryDeckHref(
   return routeToHash({ screen: "libraryDeck", instanceUrl, libraryDeckUrl });
 }
 
+/** Hash URL of a library deck's preview: what its Preview button opens. */
+export function libraryPreviewHref(
+  instanceUrl: string,
+  libraryDeckUrl: string,
+): string {
+  return routeToHash({ screen: "libraryPreview", instanceUrl, libraryDeckUrl });
+}
+
 /**
  * Hash URL of a deck's page: what a deck's name links to wherever the UI
  * shows it — deck list, headings, breadcrumb.
@@ -186,6 +202,10 @@ export function parseHash(hash: string): RouteRef | null {
       } as const;
       return page === null ? ref : { ...ref, page };
     }
+    case "/library-preview":
+      return instanceUrl === null || deckUrl === null
+        ? null
+        : { screen: "libraryPreview", instanceUrl, libraryDeckUrl: deckUrl };
     case "/deck":
       return instanceUrl === null || deckUrl === null
         ? null

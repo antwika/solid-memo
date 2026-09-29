@@ -39,6 +39,11 @@ const roundTrips: RouteRef[] = [
     page: 2,
   },
   {
+    screen: "libraryPreview",
+    instanceUrl: "https://pod.example/solid-memo/a/",
+    libraryDeckUrl: "https://solid-memo.com/decks/capitals.ttl",
+  },
+  {
     screen: "deckDetail",
     instanceUrl: "https://pod.example/solid-memo/a/",
     deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
@@ -128,6 +133,8 @@ describe("routeToHash / parseHash", () => {
     "#/library-browse",
     "#/library-browse?instance=https%3A%2F%2Fpod.example%2F",
     "#/library-browse?deck=https%3A%2F%2Fsolid-memo.com%2Fdecks%2Fcapitals.ttl&page=2",
+    "#/library-preview?instance=https%3A%2F%2Fpod.example%2F",
+    "#/library-preview?deck=https%3A%2F%2Fsolid-memo.com%2Fdecks%2Fcapitals.ttl",
     "#/deck",
     "#/deck?instance=https%3A%2F%2Fpod.example%2F",
     "#/browse?deck=https%3A%2F%2Fpod.example%2Fd%23deck-1",

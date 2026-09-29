@@ -83,6 +83,10 @@ describe("LibraryContainer", () => {
       "href",
       `#/library-deck?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.seriesUrl)}`,
     );
+    expect(screen.getByRole("link", { name: "Preview Capitals" })).toHaveAttribute(
+      "href",
+      `#/library-preview?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.seriesUrl)}`,
+    );
   });
 
   it("shows an error when the library cannot be read", async () => {

@@ -23,6 +23,7 @@ import { DataCheckNotice } from "./DataCheckNotice";
 import { LibraryBrowserContainer } from "./LibraryBrowserContainer";
 import { LibraryContainer } from "./LibraryContainer";
 import { LibraryDeckContainer } from "./LibraryDeckContainer";
+import { LibraryPreviewContainer } from "./LibraryPreviewContainer";
 import { Loading } from "./Loading";
 import { MigrationContainer } from "./MigrationContainer";
 import { StudyContainer } from "./StudyContainer";
@@ -127,7 +128,9 @@ export function Workspace({
   }, [needsCard, cardsQuery.data, cardUrl, instanceUrl, deckUrl]);
 
   const libraryDeckUrl =
-    route?.screen === "libraryDeck" || route?.screen === "libraryBrowser"
+    route?.screen === "libraryDeck" ||
+    route?.screen === "libraryBrowser" ||
+    route?.screen === "libraryPreview"
       ? route.libraryDeckUrl
       : null;
   const needsLibraryDeck = libraryDeckUrl !== null && activeInstance !== null;
@@ -409,6 +412,17 @@ export function Workspace({
             deckHref={libraryDeckHref(instanceUrl!, libraryDeckUrl!)}
             page={route.page ?? 1}
             onPageChange={(page) => replace({ ...route, page })}
+          />
+        );
+      case "libraryPreview":
+        return (
+          <LibraryPreviewContainer
+            useCases={useCases}
+            deck={activeLibraryDeck!}
+            deckHref={libraryDeckHref(instanceUrl!, libraryDeckUrl!)}
+            onExit={() =>
+              navigate({ screen: "library", instanceUrl: instanceUrl! })
+            }
           />
         );
       case "deckDetail":

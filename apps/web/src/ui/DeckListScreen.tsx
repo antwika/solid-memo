@@ -52,7 +52,7 @@ export function DeckListScreen({
                 <DeckIcon />
                 {deck.name}
               </a>
-              {renderStudyAction(deck)}
+              <span class="deck-meta">{renderStudyAction(deck)}</span>
             </li>
           ))}
         </ul>

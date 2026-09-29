@@ -5,7 +5,7 @@ import { isCopyOf, type LibraryDeck } from "@solid-memo/domain/library";
 import { errorMessage } from "./errorMessage";
 import { LibraryScreen } from "./LibraryScreen";
 import { Loading } from "./Loading";
-import { libraryDeckHref, libraryHref } from "./router";
+import { libraryDeckHref, libraryHref, libraryPreviewHref } from "./router";
 
 /**
  * Owns the library listing and the import mutation for one instance;
@@ -62,6 +62,7 @@ export function LibraryContainer({
       decks={libraryQuery.data}
       libraryHref={libraryHref(instance.url)}
       deckHref={(deck) => libraryDeckHref(instance.url, deck.seriesUrl)}
+      previewHref={(deck) => libraryPreviewHref(instance.url, deck.seriesUrl)}
       isImported={(deck) => podDecks.some((podDeck) => isCopyOf(podDeck, deck))}
       busy={importMutation.isPending}
       error={errorMessage(importMutation.error)}

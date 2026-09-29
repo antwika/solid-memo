@@ -883,12 +883,32 @@ dl.facts .sources {
 
 .deck-list li {
   position: relative;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.75rem;
 }
 
-.deck-list li>button,
-.deck-list li>.hint {
-  flex-shrink: 0;
+/* Two columns: the name with what is due below it, and the study action
+   beside both, so the name ends (in an ellipsis) before the action. The
+   action's parts are laid out by the row itself. */
+.deck-list .deck-meta {
+  display: contents;
+}
+
+/* Under the name's text, past its padding and icon. */
+.deck-list .deck-meta>.hint:not(.study-done) {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
+  padding-left: 1.75rem;
+}
+
+.deck-list .deck-meta>button,
+.deck-list .study-done,
+.deck-list .study-loading {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 
 .deck-list .deck-open::after {
@@ -898,7 +918,7 @@ dl.facts .sources {
   border-radius: inherit;
 }
 
-.deck-list li>button {
+.deck-list .deck-meta>button {
   position: relative;
   z-index: 1;
 }
@@ -938,13 +958,12 @@ dl.facts .sources {
 }
 
 .deck-list .deck-open {
-  flex: 0 1 auto;
-  margin-right: auto;
-  min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 0.5rem 0.4rem;
+  padding: 0.15rem 0.4rem 0;
   font-weight: 650;
   font-size: 1rem;
   color: inherit;
@@ -985,10 +1004,10 @@ dl.facts .sources {
 
 .library-list li {
   position: relative;
-  display: flex;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.35rem 0.75rem;
+  column-gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1013,12 +1032,12 @@ dl.facts .sources {
 }
 
 .library-list .library-deck-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 0.25rem 0;
+  grid-column: 2;
+  grid-row: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding: 0.15rem 0 0;
   font-size: 1rem;
   font-weight: 650;
   color: inherit;
@@ -1030,6 +1049,27 @@ dl.facts .sources {
   position: absolute;
   inset: 0;
   border-radius: inherit;
+}
+
+/* As in the deck list: the checkbox beside the name, which ends in an
+   ellipsis, and the size under the name, followed by the imported badge,
+   which wraps below it when there is no room. */
+.library-deck-meta {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+/* Beside the name and the size, as Study is in the deck list. */
+.library-list .library-preview {
+  position: relative;
+  z-index: 1;
+  grid-column: 3;
+  grid-row: 1 / span 2;
 }
 
 .library-list .hint {
@@ -1584,8 +1624,8 @@ h2 {
   }
 }
 
-.deck-list li>button,
-.deck-list li>.hint,
+.deck-list .deck-meta>button,
+.deck-list .deck-meta>.hint,
 .day-reset,
 .session-actions button,
 p[role="status"]:not(.loading) {

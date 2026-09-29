@@ -165,14 +165,14 @@ describe("DeckListContainer", () => {
     expect(
       await screen.findByRole("status", { name: "Checking what is due" }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "Nothing to study today" })).toBeNull();
+    expect(screen.queryByText("Done for today")).toBeNull();
 
     await waitFor(() => {
       expect(useCases.getStudyQueue).toHaveBeenCalledOnce();
     });
     resolveQueue({ due: [], newPrompts: [], studiedToday: 0 });
     expect(
-      await screen.findByRole("img", { name: "Nothing to study today" }),
+      await screen.findByText("Done for today"),
     ).toBeInTheDocument();
     expect(screen.queryByRole("status", { name: "Checking what is due" })).toBeNull();
   });
@@ -200,7 +200,7 @@ describe("DeckListContainer", () => {
       makeUseCasesFake({ listDecks: vi.fn(async () => [deck]) }),
     );
     expect(
-      await screen.findByRole("img", { name: "Nothing to study today" }),
+      await screen.findByText("Done for today"),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Study|Practice/ })).toBeNull();
   });
@@ -219,7 +219,7 @@ describe("DeckListContainer", () => {
       expect(screen.queryByRole("button", { name: /Study|Practice/ })).toBeNull();
     });
     expect(
-      screen.queryByRole("img", { name: "Nothing to study today" }),
+      screen.queryByText("Done for today"),
     ).toBeNull();
     await waitFor(() => {
       expect(

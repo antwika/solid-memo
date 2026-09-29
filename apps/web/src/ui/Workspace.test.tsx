@@ -773,6 +773,50 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
+  it("previews a library deck from the library and goes back to it", async () => {
+    const libraryUrl = "https://solid-memo.com/decks/capitals.ttl";
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listLibraryDecks: vi.fn(async () => [
+          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
+        ]),
+        listLibraryCards: vi.fn(async () => [
+          { id: "se", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+        ]),
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole("link", { name: "Deck library" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Preview Capitals" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Preview: Capitals" }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe(
+      routeToHash({
+        screen: "libraryPreview",
+        instanceUrl: instanceA.url,
+        libraryDeckUrl: librarySeriesUrlOf(libraryUrl),
+      }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Reveal" }));
+    expect(screen.getByText("Stockholm")).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
+    expect(within(nav).getByRole("link", { name: "Preview" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Back to library" }));
+    expect(
+      await screen.findByRole("checkbox", { name: "Capitals" }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe(
+      routeToHash({ screen: "library", instanceUrl: instanceA.url }),
+    );
+  });
+
   it("opens a library deck's page from a link to one of its releases", async () => {
     const release = "https://solid-memo.com/decks/capitals/1.ttl";
     window.history.replaceState(
