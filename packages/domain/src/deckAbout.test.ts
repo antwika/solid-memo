@@ -7,14 +7,14 @@ const EDUC = "http://publications.europa.eu/resource/authority/data-theme/EDUC";
 const deck: Deck = {
   id: "deck-1",
   url: "https://pod.example/c.ttl#deck-1",
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardsDocumentUrl: "https://pod.example/d.ttl",
   reviewsDocumentUrl: "https://pod.example/r.ttl",
   createdAt: "",
   formatVersion: 3,
   direction: "front-to-back",
   authors: [],
-  description: "Old.",
+  description: { en: "Old." },
   themes: [EDUC, `${TOPIC}geography`],
   keywords: ["old"],
 };
@@ -37,7 +37,15 @@ describe("withAbout", () => {
   it("replaces the description, the topics and the keywords, keeping other themes", () => {
     expect(
       withAbout(deck, { description: "  Every capital. ", topics: [`${TOPIC}languages`], keywords: ["new"] }),
-    ).toEqual({ ...deck, description: "Every capital.", themes: [EDUC, `${TOPIC}languages`], keywords: ["new"] });
+    ).toEqual({ ...deck, description: { en: "Every capital." }, themes: [EDUC, `${TOPIC}languages`], keywords: ["new"] });
+  });
+
+  it("changes only the English description, keeping its translations", () => {
+    const swedish = { ...deck, description: { "en-gb": "Old.", sv: "Gammal." } };
+    expect(withAbout(swedish, { description: "New.", topics: [], keywords: [] }).description).toEqual({
+      "en-gb": "New.",
+      sv: "Gammal.",
+    });
   });
 
   it("gives a deck without themes the topics it names", () => {

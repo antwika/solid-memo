@@ -3,6 +3,8 @@ import { useState } from "preact/hooks";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { DeckPace } from "@solid-memo/domain/deckPace";
 import type { StudyPreferences } from "@solid-memo/domain/preferences";
+import { editedText } from "@solid-memo/domain/langText";
+import { readerText } from "./readerText";
 
 type Limit = keyof DeckPace;
 
@@ -75,7 +77,7 @@ export function DeckPreferencesScreen({
   function handleRemove() {
     if (
       window.confirm(
-        `Remove the deck "${deck.name}" and all its cards? This cannot be undone.`,
+        `Remove the deck "${readerText(deck.title)}" and all its cards? This cannot be undone.`,
       )
     ) {
       onRemove();
@@ -95,12 +97,12 @@ export function DeckPreferencesScreen({
     <section>
       <header>
         <h2>
-          Preferences: <a href={deckHref}>{deck.name}</a>
+          Preferences: <a href={deckHref}>{readerText(deck.title)}</a>
         </h2>
       </header>
       {deckName === null ? (
         <div class="edit-actions">
-          <button onClick={() => setDeckName(deck.name)} disabled={busy}>
+          <button onClick={() => setDeckName(editedText(deck.title))} disabled={busy}>
             Rename deck
           </button>
           <button class="danger" onClick={handleRemove} disabled={busy}>

@@ -14,6 +14,7 @@ import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
 import { StudyScreen } from "./StudyScreen";
 import { deckHref } from "./router";
+import { readerText } from "./readerText";
 
 /**
  * Owns one study session. The queue is fetched once when the session
@@ -118,7 +119,7 @@ export function StudyContainer({
   const prompt = position < prompts.length ? prompts[position] : null;
   return (
     <StudyScreen
-      deckName={deck.name}
+      deckName={readerText(deck.title)}
       deckHref={deckHref(instance.url, deck.url)}
       prompt={prompt}
       position={position + 1}

@@ -30,7 +30,7 @@ const INSTANCE = "https://pod.example/solid-memo/a/";
 const deck: Deck = {
   id: "deck-1",
   url: `${INSTANCE}catalog.ttl#deck-1`,
-  name: "Kanji N5",
+  title: { en: "Kanji N5" },
   cardsDocumentUrl: `${INSTANCE}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${INSTANCE}reviews/deck-1.ttl`,
   direction: "front-to-back",

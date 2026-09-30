@@ -7,6 +7,7 @@ import { formatDate } from "./formatDate";
 import { LibraryIcon } from "./icons";
 import { linkify } from "./linkify";
 import { cardCount } from "./studyCounts";
+import { readerText } from "./readerText";
 
 /**
  * One library deck in full — its blurb, what it is about, who made it
@@ -48,13 +49,13 @@ export function LibraryDeckScreen({
         <h2>
           <a href={deckHref}>
             <LibraryIcon />
-            {deck.name}
+            {readerText(deck.title)}
           </a>
         </h2>
         <button onClick={onBrowse}>Browse cards</button>
       </header>
       {deck.description !== undefined && (
-        <p class="deck-description">{linkify(deck.description)}</p>
+        <p class="deck-description">{linkify(readerText(deck.description))}</p>
       )}
       <dl class="facts">
         <dt>Size</dt>

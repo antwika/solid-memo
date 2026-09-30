@@ -42,14 +42,14 @@ describe("toDeck", () => {
     expect(toDeck(thing)).toEqual({
       id: "deck-1",
       url: `${CATALOG}#deck-1`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: CARDS_DOC,
       reviewsDocumentUrl: REVIEWS_DOC,
       direction: "front-to-back",
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
       authors: [],
-      description: "Flashcards: Kanji N5.",
+      description: { en: "Flashcards: Kanji N5." },
     });
   });
 
@@ -71,7 +71,7 @@ describe("toDeck", () => {
       formatVersion: 1,
       authors: ["Anton Wiklund", "A friend"],
       license: "https://creativecommons.org/publicdomain/zero/1.0/",
-      description: "Capitals, from Wikipedia.",
+      description: { en: "Capitals, from Wikipedia." },
       sourceUrl: "https://solid-memo.com/decks/capitals/1.ttl",
     });
   });
@@ -320,7 +320,7 @@ describe("the catalogue node", () => {
   const deck: Deck = {
     id: "deck-1",
     url: `${CATALOG}#deck-1`,
-    name: "Capitals",
+    title: { en: "Capitals" },
     cardsDocumentUrl: CARDS_DOC,
     reviewsDocumentUrl: REVIEWS_DOC,
     createdAt: "",

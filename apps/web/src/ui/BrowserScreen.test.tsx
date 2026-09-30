@@ -6,7 +6,7 @@ import type { Card, Deck } from "@solid-memo/domain/deck";
 const deck: Deck = {
   id: "deck-1",
   url: "https://pod.example/solid-memo/a/catalog.ttl#deck-1",
-  name: "Kanji N5",
+  title: { en: "Kanji N5" },
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
   direction: "front-to-back",
@@ -51,7 +51,7 @@ describe("BrowserScreen deck editing", () => {
     const { props } = renderScreen({
       deck: {
         ...deck,
-        description: "Kanji of the N5 level.",
+        description: { en: "Kanji of the N5 level." },
         themes: ["https://solid-memo.com/vocab/topics#languages"],
         keywords: ["kanji", "JLPT"],
       },

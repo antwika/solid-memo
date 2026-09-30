@@ -6,7 +6,7 @@ import { DeckPreferencesScreen } from "./DeckPreferencesScreen";
 const deck: Deck = {
   id: "deck-1",
   url: "https://pod.example/c.ttl#deck-1",
-  name: "Kanji N5",
+  title: { en: "Kanji N5" },
   cardsDocumentUrl: "https://pod.example/d.ttl",
   reviewsDocumentUrl: "https://pod.example/r.ttl",
   createdAt: "",

@@ -17,7 +17,7 @@ const instance: Instance = {
 const deck: Deck = {
   id: "deck-1",
   url: `${instance.url}catalog.ttl#deck-1`,
-  name: "Kanji N5",
+  title: { en: "Kanji N5" },
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
   direction: "front-to-back",

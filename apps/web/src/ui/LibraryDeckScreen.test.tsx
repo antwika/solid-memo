@@ -13,11 +13,11 @@ const WIKIDATA = "https://www.wikidata.org/wiki/Property:P36";
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
   ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
-  name: "Capitals of the world",
+  title: { en: "Capitals of the world" },
   cardCount: 243,
   authors: ["Anton Wiklund"],
   license: CC0,
-  description: `Every country and its capital. Compiled from ${WIKIPEDIA}.`,
+  description: { en: `Every country and its capital. Compiled from ${WIKIPEDIA}.` },
   createdAt: "2026-09-22T21:00:10.236Z",
   modifiedAt: "2026-09-27T20:12:13.000Z",
   direction: "bidirectional",
@@ -181,7 +181,7 @@ describe("LibraryDeckScreen", () => {
       deck: {
         url: capitals.url,
         ...firstRelease(capitals.url),
-        name: "Rivers",
+        title: { en: "Rivers" },
         cardCount: 1,
         authors: [],
         direction: "front-to-back",

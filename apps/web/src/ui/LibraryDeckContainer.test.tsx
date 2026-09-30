@@ -17,7 +17,7 @@ const instance: Instance = {
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
   ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardCount: 2,
   authors: ["Anton Wiklund"],
   direction: "front-to-back",
@@ -27,7 +27,7 @@ const capitals: LibraryDeck = {
 const importedDeck: Deck = {
   id: "deck-1",
   url: `${instance.url}catalog.ttl#deck-1`,
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
   direction: "front-to-back",

@@ -2,6 +2,7 @@ import { useState } from "preact/hooks";
 import { filterLibraryDecks, topicsOf, type LibraryDeck } from "@solid-memo/domain/library";
 import { LibraryIcon } from "./icons";
 import { cardCount } from "./studyCounts";
+import { readerText } from "./readerText";
 
 /** "Import selected" until something is ticked, then the count. */
 function importLabel(count: number): string {
@@ -122,13 +123,13 @@ export function LibraryScreen({
               <li key={deck.url}>
                 <input
                   type="checkbox"
-                  aria-label={deck.name}
+                  aria-label={readerText(deck.title)}
                   checked={selectedUrls.includes(deck.url)}
                   disabled={busy}
                   onChange={(e) => toggle(deck, e.currentTarget.checked)}
                 />
                 <a class="library-deck-name" href={deckHref(deck)}>
-                  {deck.name}
+                  {readerText(deck.title)}
                 </a>
                 <span class="library-deck-meta">
                   <span class="hint">{cardCount(deck.cardCount)}</span>
@@ -139,7 +140,7 @@ export function LibraryScreen({
                 <a
                   class="button library-preview"
                   href={previewHref(deck)}
-                  aria-label={`Preview ${deck.name}`}
+                  aria-label={`Preview ${readerText(deck.title)}`}
                 >
                   Preview
                 </a>

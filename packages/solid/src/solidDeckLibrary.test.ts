@@ -68,10 +68,10 @@ describe("fetchLibraryDeck", () => {
 
     await expect(makeLibrary().fetchLibraryDeck(DOC)).resolves.toEqual({
       url: DOC,
-      name: "Capitals",
+      title: { en: "Capitals" },
       formatVersion: 1,
       authors: [],
-      description: "Flashcards: Capitals.",
+      description: { en: "Flashcards: Capitals." },
       direction: "front-to-back",
       version: "1",
       seriesUrl: expect.any(String),

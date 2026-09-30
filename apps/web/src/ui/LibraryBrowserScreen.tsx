@@ -4,6 +4,7 @@ import { CardThumbnail } from "./CardFace";
 import { BrowserIcon } from "./icons";
 import { Pager, paginate } from "./Pager";
 import { cardCount } from "./studyCounts";
+import { readerText } from "./readerText";
 
 /**
  * A library deck's cards, to look through before importing it: the
@@ -40,7 +41,7 @@ export function LibraryBrowserScreen({
       <header>
         <h2>
           <BrowserIcon />
-          Cards: <a href={deckHref}>{deck.name}</a>
+          Cards: <a href={deckHref}>{readerText(deck.title)}</a>
         </h2>
       </header>
       {cards.length === 0 ? (

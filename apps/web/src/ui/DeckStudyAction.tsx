@@ -6,6 +6,7 @@ import type { StudyQueue } from "@solid-memo/domain/scheduling";
 import { CheckIcon } from "./icons";
 import { LoadingDots } from "./Loading";
 import { studyCountsSummary } from "./studyCounts";
+import { readerText } from "./readerText";
 
 /**
  * What a deck-list row offers for its deck today, with how much is left
@@ -89,7 +90,7 @@ export function DeckStudyActionContainer({
 
   return (
     <DeckStudyAction
-      deckName={deck.name}
+      deckName={readerText(deck.title)}
       queue={queueQuery.data}
       loading={queueQuery.isPending}
       onStudy={onStudy}

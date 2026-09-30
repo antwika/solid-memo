@@ -139,7 +139,7 @@ describe("what the app writes, under DCAT-AP", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${CATALOG}#deck-1`,
-      name: "Capitals",
+      title: { en: "Capitals" },
       cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
       reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
       createdAt: "2026-09-21T10:00:00.000Z",

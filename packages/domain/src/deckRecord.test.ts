@@ -19,7 +19,7 @@ const FLAG = "https://flagcdn.com/se.svg";
 const deck: Deck = {
   id: "deck-1",
   url: `${CATALOG}#deck-1`,
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardsDocumentUrl: CARDS,
   reviewsDocumentUrl: REVIEWS,
   createdAt: "2026-09-21T10:00:00.000Z",
@@ -28,7 +28,7 @@ const deck: Deck = {
   direction: "bidirectional",
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
-  description: "From Wikipedia.",
+  description: { en: "From Wikipedia." },
   sourceUrl: "https://solid-memo.com/decks/capitals.ttl",
 };
 
@@ -51,7 +51,7 @@ describe("deck records", () => {
     const record = deckToRecord(full);
     expect(record).toEqual({
       title: { en: "Capitals" },
-      description: { en: deck.description },
+      description: deck.description,
       created: deck.createdAt,
       modified: deck.modifiedAt,
       creator: [ANTON],
@@ -69,37 +69,24 @@ describe("deck records", () => {
     expect(deckFromRecord(deck.url, 3, record, byAgent)).toEqual(full);
   });
 
-  it("round-trip a name and description in several languages, showing the English", () => {
+  it("round-trip a title and description in every language they are in", () => {
     const record = deckToRecord({
       ...deck,
-      nameTexts: { en: "Capitals", sv: "Huvudstäder" },
-      descriptionTexts: { en: "From Wikipedia.", sv: "Från Wikipedia." },
+      title: { "en-gb": "Capitals", sv: "Huvudstäder" },
+      description: { "en-gb": "From Wikipedia.", sv: "Från Wikipedia." },
     });
-    expect(record.title).toEqual({ en: "Capitals", sv: "Huvudstäder" });
-    expect(record.description).toEqual({ en: "From Wikipedia.", sv: "Från Wikipedia." });
+    expect(record.title).toEqual({ "en-gb": "Capitals", sv: "Huvudstäder" });
+    expect(record.description).toEqual({ "en-gb": "From Wikipedia.", sv: "Från Wikipedia." });
     const read = deckFromRecord(deck.url, 4, record, byAgent);
-    expect(read.name).toBe("Capitals");
-    expect(read.description).toBe("From Wikipedia.");
-    expect(read.nameTexts).toEqual({ en: "Capitals", sv: "Huvudstäder" });
-  });
-
-  it("change only the English when the name or description is edited, keeping the translations", () => {
-    const read = deckFromRecord(
-      deck.url,
-      4,
-      deckToRecord({ ...deck, nameTexts: { "en-gb": "Capitals", sv: "Huvudstäder" } }),
-      byAgent,
-    );
-    const renamed = deckToRecord({ ...read, name: "Capital cities", description: "Edited." });
-    expect(renamed.title).toEqual({ "en-gb": "Capital cities", sv: "Huvudstäder" });
-    expect(renamed.description).toEqual({ en: "Edited." });
+    expect(read.title).toEqual({ "en-gb": "Capitals", sv: "Huvudstäder" });
+    expect(read.description).toEqual({ "en-gb": "From Wikipedia.", sv: "Från Wikipedia." });
   });
 
   it("give a deck without a description the default one, and leave out what it does not have", () => {
     const bare: Deck = {
       id: "deck-1",
       url: `${CATALOG}#deck-1`,
-      name: "Own",
+      title: { en: "Own" },
       cardsDocumentUrl: CARDS,
       reviewsDocumentUrl: REVIEWS,
       createdAt: "",
@@ -121,7 +108,7 @@ describe("deck records", () => {
     });
     expect(deckFromRecord(bare.url, 1, record, byAgent)).toEqual({
       ...bare,
-      description: "Flashcards: Own.",
+      description: { en: "Flashcards: Own." },
     });
   });
 
@@ -228,10 +215,10 @@ describe("library deck records", () => {
     const cards = [{ id: "se", front: "Sweden", back: "Stockholm", formatVersion: 1 }];
     expect(libraryDeckFromRecord(RELEASE, 4, release, cards, byAgent)).toEqual({
       url: RELEASE,
-      name: "Capitals",
+      title: { en: "Capitals" },
       formatVersion: 4,
       authors: ["Anton Wiklund"],
-      description: "From Wikipedia.",
+      description: { en: "From Wikipedia." },
       direction: "front-to-back",
       version: "1",
       seriesUrl: "https://solid-memo.com/decks/index.ttl#capitals",
@@ -241,7 +228,7 @@ describe("library deck records", () => {
     });
   });
 
-  it("show a release's English name and description, and keep its other languages", () => {
+  it("keep a release's title and description in every language they are in", () => {
     const content = libraryDeckFromRecord(
       RELEASE,
       4,
@@ -249,9 +236,8 @@ describe("library deck records", () => {
       [],
       byAgent,
     );
-    expect(content.name).toBe("Capitals");
-    expect(content.nameTexts).toEqual({ sv: "Huvudstäder", en: "Capitals" });
-    expect(content.descriptionTexts).toBeUndefined();
+    expect(content.title).toEqual({ sv: "Huvudstäder", en: "Capitals" });
+    expect(content.description).toEqual({ en: "From Wikipedia." });
   });
 
   it("carry the licence, version notes and modification time when stated", () => {

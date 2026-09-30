@@ -42,7 +42,7 @@ const instance: Instance = {
 const deck: Deck = {
   id: "deck-1",
   url: `${instance.url}catalog.ttl#deck-1`,
-  name: "Kanji N5",
+  title: { en: "Kanji N5" },
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
   direction: "front-to-back",
@@ -61,7 +61,7 @@ const card: Card = {
 const libraryDeck: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
   ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardCount: 1,
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -70,7 +70,7 @@ const libraryDeck: LibraryDeck = {
 };
 const libraryContent: LibraryDeckContent = {
   url: libraryDeck.url,
-  name: "Capitals",
+  title: { en: "Capitals" },
   formatVersion: 1,
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -387,7 +387,7 @@ describe("createUseCases", () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
     await useCases.describeDeck(deck, { description: " Kanji. ", topics: [], keywords: ["kanji"] });
-    expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({ ...deck, description: "Kanji.", keywords: ["kanji"] });
+    expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({ ...deck, description: { en: "Kanji." }, keywords: ["kanji"] });
     await expect(useCases.describeDeck(deck, { description: "", topics: [], keywords: [] })).rejects.toThrow(
       "A deck needs a description.",
     );

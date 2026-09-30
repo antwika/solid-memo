@@ -6,6 +6,7 @@ import type { LibraryDeck } from "@solid-memo/domain/library";
 import { errorMessage } from "./errorMessage";
 import { LibraryPreviewScreen, type PreviewPrompt } from "./LibraryPreviewScreen";
 import { Loading } from "./Loading";
+import { readerText } from "./readerText";
 
 /**
  * Fetches a library deck's cards and shows them at random, one after
@@ -57,7 +58,7 @@ export function LibraryPreviewContainer({
 
   return (
     <LibraryPreviewScreen
-      deckName={deck.name}
+      deckName={readerText(deck.title)}
       deckHref={deckHref}
       prompt={prompts.length === 0 ? null : prompts[index]}
       turn={turn}

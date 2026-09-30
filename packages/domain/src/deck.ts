@@ -111,7 +111,11 @@ export interface Deck {
   id: string;
   /** Full subject URL: <catalog.ttl>#<id>. The deck's identity. */
   url: string;
-  name: string;
+  /**
+   * The deck's title, in every language it states it in (one of them
+   * English): the app shows the reader's language and edits the English.
+   */
+  title: LangText;
   cardsDocumentUrl: string;
   reviewsDocumentUrl: string;
   /** ISO dateTime. */
@@ -127,17 +131,10 @@ export interface Deck {
   license?: string;
   /**
    * A sentence or two about the deck, when stated: what it covers and,
-   * for content taken from elsewhere, where it came from.
+   * for content taken from elsewhere, where it came from. In every
+   * language the deck states it in, as the title.
    */
-  description?: string;
-  /**
-   * The name and description in every language the deck states them in
-   * (deck format 4), when there is more than English: `name` and
-   * `description` are the English ones, which the app shows and edits;
-   * the other languages are kept as they are.
-   */
-  nameTexts?: LangText;
-  descriptionTexts?: LangText;
+  description?: LangText;
   /** URL of the library release this one was imported from, if it was. */
   sourceUrl?: string;
   /**
