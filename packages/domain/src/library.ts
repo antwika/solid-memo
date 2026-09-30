@@ -1,5 +1,6 @@
 import { TOPICS } from "@solid-memo/vocab/concepts.generated";
 import type { CardContent, Deck, DeckDirection } from "./deck";
+import type { LangText } from "./langText";
 import { librarySeriesUrlOf } from "./libraryLayout";
 
 /**
@@ -27,6 +28,14 @@ export interface LibraryDeck {
   authors: string[];
   license?: string;
   description?: string;
+  /**
+   * The name and description in every language the deck states them in
+   * (deck format 4), when there is more than English: `name` and
+   * `description` are the English ones, which the app shows and edits;
+   * the other languages are kept as they are.
+   */
+  nameTexts?: LangText;
+  descriptionTexts?: LangText;
   /** How the deck is meant to be studied; adjustable after import. */
   direction: DeckDirection;
   /** When the deck was made (ISO 8601), when it says. */
@@ -68,6 +77,14 @@ export interface LibraryDeckContent {
   authors: string[];
   license?: string;
   description?: string;
+  /**
+   * The name and description in every language the deck states them in
+   * (deck format 4), when there is more than English: `name` and
+   * `description` are the English ones, which the app shows and edits;
+   * the other languages are kept as they are.
+   */
+  nameTexts?: LangText;
+  descriptionTexts?: LangText;
   direction: DeckDirection;
   /** The release's version within its deck: "1", "2", … */
   version: string;

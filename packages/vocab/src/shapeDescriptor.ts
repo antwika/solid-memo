@@ -17,7 +17,9 @@ export type TermKind =
   | "iri"
   | "enum"
   /** An IRI from a fixed list (sh:in over IRIs): a concept of a SKOS scheme. */
-  | "iriEnum";
+  | "iriEnum"
+  /** Language-tagged literals (rdf:langString), at most one per language: a LangText. */
+  | "text";
 
 /** "one" = exactly one; "optional" = at most one; "many" = any number. */
 export type Cardinality = "one" | "optional" | "many";

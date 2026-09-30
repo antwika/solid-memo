@@ -12,6 +12,7 @@ import {
   type Thing,
 } from "@inrupt/solid-client";
 import { directionOfConcept } from "@solid-memo/domain/concepts";
+import { beyondEnglish, shown } from "@solid-memo/domain/langText";
 import { agentUrlOf } from "@solid-memo/domain/agentRecord";
 import { cardContentFromRecord, libraryDeckFromRecord } from "@solid-memo/domain/deckRecord";
 import type {
@@ -20,7 +21,7 @@ import type {
   LibraryRelease,
   LibrarySource,
 } from "@solid-memo/domain/library";
-import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
+import { LATEST_VERSION, type LangText } from "@solid-memo/vocab/types.generated";
 import { migrate } from "@solid-memo/domain/shapes/migrations";
 import { fragmentIdOf } from "@solid-memo/domain/subjectUrl";
 import { readVersioned, storedVersionOf } from "../records";
@@ -69,11 +70,12 @@ function toLibraryDeck(
     releases: hasVersion
       .map((url) => toLibraryRelease(index, url))
       .sort((a, b) => Number(a.version) - Number(b.version)),
-    name: release.title,
+    name: shown(release.title),
     cardCount: getInteger(currentThing!, SM.cardCount) ?? 0,
     authors: release.creator.map((agent) => names.get(agent) ?? agent),
     ...(release.license === undefined ? {} : { license: release.license }),
-    description: release.description,
+    description: shown(release.description),
+    ...texts(release.title, release.description),
     direction: directionOfConcept(release.studyDirection)!,
     ...(createdAt === undefined ? {} : { createdAt }),
     ...(modifiedAt === undefined ? {} : { modifiedAt }),
@@ -82,6 +84,16 @@ function toLibraryDeck(
     sources: release.wasDerivedFrom.map((sourceUrl) =>
       toLibrarySource(sourceUrl, getThing(index, sourceUrl)),
     ),
+  };
+}
+
+/** A release's name and description in every language, when in more than English. */
+function texts(title: LangText, description: LangText): { nameTexts?: LangText; descriptionTexts?: LangText } {
+  const nameTexts = beyondEnglish(title);
+  const descriptionTexts = beyondEnglish(description);
+  return {
+    ...(nameTexts === undefined ? {} : { nameTexts }),
+    ...(descriptionTexts === undefined ? {} : { descriptionTexts }),
   };
 }
 
@@ -143,7 +155,7 @@ export function toLibraryDeckContent(
     .filter((card): card is LibraryCard => card !== null);
   const subject = asUrl(deck!);
   const names = agentNamesOf(dataset);
-  if (read.record.version !== 3) {
+  if (read.record.version < 3) {
     for (const author of read.record.data.creator) names.set(agentUrlOf(subject, author), author);
   }
   return libraryDeckFromRecord(

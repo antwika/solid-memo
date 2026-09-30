@@ -6,6 +6,7 @@ import {
   getDatetime,
   getInteger,
   getStringNoLocale,
+  getStringWithLocale,
   getStringNoLocaleAll,
   getThing,
   getUrl,
@@ -226,15 +227,15 @@ describe("createDeck", () => {
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
       direction: "front-to-back",
       createdAt: "2026-09-21T10:00:00.000Z",
-      formatVersion: 3,
+      formatVersion: 4,
       authors: [],
     });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
     const thing = getThing(saved as SolidDataset, created.url)!;
-    expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Kanji N5");
-    expect(getStringNoLocale(thing, DCTERMS.description)).toBe("Flashcards: Kanji N5.");
-    expect(getInteger(thing, SM.formatVersion)).toBe(3);
+    expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe("Kanji N5");
+    expect(getStringWithLocale(thing, DCTERMS.description, "en")).toBe("Flashcards: Kanji N5.");
+    expect(getInteger(thing, SM.formatVersion)).toBe(4);
     expect(getUrl(thing, SM.studyDirection)).toBe(SM.frontToBack);
     expect(getUrlAll(thing, DCTERMS.creator)).toEqual([]);
     expect(getUrl(thing, DCTERMS.license)).toBeNull();
@@ -293,7 +294,7 @@ describe("importDeck", () => {
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
       direction: "bidirectional",
       createdAt: "2026-09-21T10:00:00.000Z",
-      formatVersion: 3,
+      formatVersion: 4,
       authors: ["Anton Wiklund", "A friend"],
       license: content.license,
       description: content.description,
@@ -320,10 +321,10 @@ describe("importDeck", () => {
     expect(getStringNoLocale(afghanistan, SM.back)).toBe("Afghanistan");
     expect(getSolidDatasetOrNull).toHaveBeenCalledTimes(1);
     const entry = getThing(calls[1][1] as SolidDataset, imported.url)!;
-    expect(getStringNoLocale(entry, DCTERMS.title)).toBe("Capitals");
+    expect(getStringWithLocale(entry, DCTERMS.title, "en")).toBe("Capitals");
     expect(getUrl(entry, PROV.wasDerivedFrom)).toBe(content.url);
     expect(getUrl(entry, DCTERMS.source)).toBeNull();
-    expect(getInteger(entry, SM.formatVersion)).toBe(3);
+    expect(getInteger(entry, SM.formatVersion)).toBe(4);
     expect(getUrl(entry, SM.studyDirection)).toBe(SM.bidirectional);
     expect(getUrlAll(entry, DCTERMS.creator)).toEqual([
       `${CATALOG}#agent-anton-wiklund`,
@@ -334,9 +335,23 @@ describe("importDeck", () => {
     expect(getUrlAll(entry, "http://www.w3.org/ns/dcat#theme")).toEqual(content.themes);
     expect(getStringNoLocaleAll(entry, "http://www.w3.org/ns/dcat#keyword")).toEqual(content.keywords);
     expect(getUrl(entry, DCTERMS.license)).toBe(content.license);
-    expect(getStringNoLocale(entry, DCTERMS.description)).toBe(
+    expect(getStringWithLocale(entry, DCTERMS.description, "en")).toBe(
       content.description,
     );
+  });
+
+  it("copies the release's name and description in every language it states them in", async () => {
+    const imported = await makeRepository().importDeck(INSTANCE, {
+      ...content,
+      nameTexts: { en: content.name, sv: "Huvudstäder" },
+      descriptionTexts: { en: content.description!, sv: "Från Wikipedia." },
+    });
+
+    const catalog = vi.mocked(saveSolidDatasetAt).mock.calls[1][1] as SolidDataset;
+    const entry = getThing(catalog, imported.url)!;
+    expect(getStringWithLocale(entry, DCTERMS.title, "en")).toBe(content.name);
+    expect(getStringWithLocale(entry, DCTERMS.title, "sv")).toBe("Huvudstäder");
+    expect(getStringWithLocale(entry, DCTERMS.description, "sv")).toBe("Från Wikipedia.");
   });
 
   it("leaves the catalog alone when the cards document fails to save", async () => {
@@ -356,14 +371,26 @@ describe("renameDeck", () => {
 
     const renamed = await makeRepository().renameDeck(deck, "Kanji N4");
 
-    expect(renamed).toEqual({ ...deck, name: "Kanji N4", formatVersion: 3 });
+    expect(renamed).toEqual({ ...deck, name: "Kanji N4", formatVersion: 4 });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
     const thing = getThing(saved as SolidDataset, deck.url)!;
-    expect(getStringNoLocale(thing, DCTERMS.title)).toBe("Kanji N4");
-    expect(getInteger(thing, SM.formatVersion)).toBe(3);
+    expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe("Kanji N4");
+    expect(getInteger(thing, SM.formatVersion)).toBe(4);
     expect(getUrl(thing, SM.studyDirection)).toBe(SM.frontToBack);
     expect(getUrl(thing, SM.cardsDocument)).toBe(deck.cardsDocumentUrl);
+  });
+
+  it("changes only the English title, keeping its translations", async () => {
+    const withSwedish = { ...deck, nameTexts: { en: deck.name, sv: "Kanji N5 (svenska)" } };
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(catalogWithDeck());
+
+    await makeRepository().renameDeck(withSwedish, "Kanji N4");
+
+    const [, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    const thing = getThing(saved as SolidDataset, deck.url)!;
+    expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe("Kanji N4");
+    expect(getStringWithLocale(thing, DCTERMS.title, "sv")).toBe("Kanji N5 (svenska)");
   });
 
   it("rejects when the catalog no longer exists", async () => {
@@ -401,14 +428,14 @@ describe("saveDeck", () => {
       direction: "bidirectional",
     });
 
-    expect(saved).toEqual({ ...deck, direction: "bidirectional", formatVersion: 3 });
+    expect(saved).toEqual({ ...deck, direction: "bidirectional", formatVersion: 4 });
     const [saveUrl, dataset] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
     const thing = getThing(dataset as SolidDataset, deck.url)!;
     expect(getUrl(thing, SM.studyDirection)).toBe(SM.bidirectional);
     expect(getStringNoLocale(thing, SM.direction)).toBeNull();
-    expect(getInteger(thing, SM.formatVersion)).toBe(3);
-    expect(getStringNoLocale(thing, DCTERMS.title)).toBe(deck.name);
+    expect(getInteger(thing, SM.formatVersion)).toBe(4);
+    expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe(deck.name);
     expect(getUrl(thing, SM.reviewsDocument)).toBe(deck.reviewsDocumentUrl);
   });
 
@@ -425,7 +452,7 @@ describe("saveDeck", () => {
 
     const saved = await makeRepository().saveDeck({ ...deck, newCardsPerDay: 5 });
 
-    expect(saved).toEqual({ ...deck, newCardsPerDay: 5, formatVersion: 3 });
+    expect(saved).toEqual({ ...deck, newCardsPerDay: 5, formatVersion: 4 });
     const [, dataset] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     const thing = getThing(dataset as SolidDataset, deck.url)!;
     expect(getInteger(thing, SM.deckNewCardsPerDay)).toBe(5);

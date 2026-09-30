@@ -73,7 +73,7 @@ flowchart LR
 │                        study caps, sm:answerScale, sm:developerMode,
 │                        sm:invalidDataPolicy, sm:formatVersion 3
 ├── catalog.ttl     one subject per deck (titles live ONLY here), a
-│                        sm:Deck and dcat:Dataset: sm:formatVersion 3,
+│                        sm:Deck and dcat:Dataset: sm:formatVersion 4,
 │                        dcterms:description, sm:studyDirection, optional
 │                        dcterms:creator/license, dcat:theme/keyword,
 │                        prov:wasDerivedFrom, the deck's own study caps

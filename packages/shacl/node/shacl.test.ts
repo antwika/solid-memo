@@ -47,6 +47,11 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "deck/v3/invalid/library-bad-version.ttl": { path: "http://www.w3.org/ns/dcat#version", message: "A release states its version: 1, 2, …" },
   "deck/v3/invalid/pod-with-negative-new-cards-per-day.ttl": { path: `${SM}deckNewCardsPerDay`, message: "A deck's new cards per day is one whole number, 0 or more." },
   "deck/v3/invalid/library-with-new-cards-per-day.ttl": { path: `${SM}deckNewCardsPerDay`, message: "A library deck sets no study caps" },
+  "deck/v4/invalid/pod-with-untagged-title.ttl": { path: `${DC}title`, message: "A title is language-tagged text, one per language, and one of them English" },
+  "deck/v4/invalid/pod-with-two-titles-in-one-language.ttl": { path: `${DC}title`, message: 'Language "sv" has been used by 2 values' },
+  "deck/v4/invalid/pod-with-two-english-titles.ttl": { path: `${DC}title`, message: "A title is language-tagged text, one per language, and one of them English" },
+  "deck/v4/invalid/library-without-english-description.ttl": { path: `${DC}description`, message: "A description is language-tagged text, one per language, and one of them English" },
+  "deck-series/v2/invalid/library-with-untagged-description.ttl": { path: `${DC}description`, message: "A description is language-tagged text, one per language, and one of them English" },
   "deck-series/v1/invalid/library-without-current-version.ttl": { path: "http://www.w3.org/ns/dcat#hasCurrentVersion", message: "A deck series names its current release." },
   "catalog/v1/invalid/without-publisher.ttl": { path: `${DC}publisher`, message: "A catalogue names its publisher" },
   "agent/v1/invalid/without-name.ttl": { path: "http://xmlns.com/foaf/0.1/name", message: "An agent has a name." },
@@ -223,12 +228,12 @@ describe("the vendored profiles over their fixtures", async () => {
       const { turtle } = (await readTurtleTree(`${ROOT}fixtures`)).find((f) => f.path === path)!;
       return parseTurtle(turtle, `https://pod.example/${path}`);
     };
-    const index = await fixture("deck-series/v1/valid/library-index.ttl");
+    const index = await fixture("deck-series/v2/valid/library-index.ttl");
     await expect(
-      validateProfile("pod", await fixture("deck/v3/valid/pod.ttl"), engines["dcat-ap"], reference),
+      validateProfile("pod", await fixture("deck/v4/valid/pod.ttl"), engines["dcat-ap"], reference),
     ).resolves.toBeUndefined();
     await expect(
-      validateProfile("release", await fixture("deck/v3/valid/library-release.ttl"), engines["dcat-ap"], [...reference, ...index]),
+      validateProfile("release", await fixture("deck/v4/valid/library-release.ttl"), engines["dcat-ap"], [...reference, ...index]),
     ).resolves.toBeUndefined();
     await expect(
       validateProfile("series", index, engines["dcat-ap"], reference),

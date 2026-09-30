@@ -20,6 +20,7 @@ import { GENERATED_HEADER, SM_NS } from "./vocab.ts";
 export const SHAPES_BASE = "https://solid-memo.com/shapes/";
 const SH = "http://www.w3.org/ns/shacl#";
 const XSD = "http://www.w3.org/2001/XMLSchema#";
+const RDF_LANG_STRING = "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString";
 const RDFS_COMMENT = "http://www.w3.org/2000/01/rdf-schema#comment";
 
 /**
@@ -41,7 +42,8 @@ export type TermKind =
   | "boolean"
   | "iri"
   | "enum"
-  | "iriEnum";
+  | "iriEnum"
+  | "text";
 export type Cardinality = "one" | "optional" | "many";
 export type ShapeContext = "pod" | "library" | "any";
 
@@ -78,6 +80,7 @@ const DATATYPES: Record<string, TermKind> = {
   [`${XSD}decimal`]: "decimal",
   [`${XSD}dateTime`]: "dateTime",
   [`${XSD}boolean`]: "boolean",
+  [RDF_LANG_STRING]: "text",
 };
 
 function lowerFirst(text: string): string {
@@ -232,8 +235,11 @@ function parseProperty(
     fail(`<${shape}> lists sh:in values of another kind than the field's.`);
   }
   const name = of("name")[0]?.value ?? localName(predicate);
+  // A text is one field however many languages it is in: required or not.
   const cardinality: Cardinality =
-    maxCount === undefined ? "many" : minCount >= 1 ? "one" : "optional";
+    kind === "text"
+      ? minCount >= 1 ? "one" : "optional"
+      : maxCount === undefined ? "many" : minCount >= 1 ? "one" : "optional";
   if (cardinality === "many" && kind !== "string" && kind !== "iri") {
     fail(`<${shape}> repeats a ${kind}; only strings and IRIs may repeat.`);
   }
@@ -254,7 +260,9 @@ function tsType(field: ShapeField): string {
         ? "number"
         : field.kind === "boolean"
           ? "boolean"
-          : "string";
+          : field.kind === "text"
+            ? "LangText"
+            : "string";
   return field.cardinality === "many"
     ? field.kind === "enum" || field.kind === "iriEnum"
       ? `readonly (${scalar})[]`
@@ -289,6 +297,12 @@ export function renderDomainTypes(models: readonly ShapeModel[]): string {
   const shapes = [...groups.keys()];
   const lines = [
     GENERATED_HEADER("shapes/<class>/v<N>.ttl"),
+    "/**",
+    " * A text in one or more languages (rdf:langString values): language tag,",
+    " * lower case (\"en\", \"sv\", \"en-gb\"), to the text in that language.",
+    " */",
+    "export type LangText = Readonly<Record<string, string>>;",
+    "",
     "/** The record kinds the shapes describe (see docs/shapes.md). */",
     `export type ShapeName = ${shapes.map((s) => JSON.stringify(s)).join(" | ")};`,
     "",

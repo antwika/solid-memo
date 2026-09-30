@@ -110,6 +110,31 @@ describe("toLibraryDecks", () => {
     ]);
   });
 
+  it("shows a deck of format 4 by its English name and description, keeping the other languages", async () => {
+    const index = await datasetFromIndex(`
+@prefix sm: <https://solid-memo.com/vocab/v1#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+<> a dcat:Catalog ; dcterms:title "Library" ; dcterms:description "Decks." ; dcterms:publisher <#solid-memo> ; dcat:dataset <#capitals> .
+<#capitals> a dcat:DatasetSeries, dcat:Dataset ; sm:formatVersion 2 ;
+   dcterms:title "Capitals"@en, "Huvudstäder"@sv ; dcterms:description "Capitals."@en, "Huvudstäder."@sv ;
+   dcterms:publisher <#solid-memo> ; dcat:first <capitals/1.ttl> ; dcat:last <capitals/1.ttl> ;
+   dcat:hasVersion <capitals/1.ttl> ; dcat:hasCurrentVersion <capitals/1.ttl> .
+<capitals/1.ttl> a sm:Deck, dcat:Dataset ; sm:formatVersion 4 ;
+   dcterms:title "Huvudstäder"@sv, "Capitals"@en ; dcterms:description "Capitals of the world."@en, "Världens huvudstäder."@sv ;
+   dcterms:publisher <#solid-memo> ; sm:studyDirection sm:frontToBack ; dcat:theme <${EDUC}> ;
+   dcat:version "1" ; dcat:inSeries <#capitals> ; dcat:isVersionOf <#capitals> ; dcat:distribution <capitals/1.ttl#turtle> .
+`);
+    expect(toLibraryDecks(index)).toEqual([
+      expect.objectContaining({
+        name: "Capitals",
+        description: "Capitals of the world.",
+        nameTexts: { en: "Capitals", sv: "Huvudstäder" },
+        descriptionTexts: { en: "Capitals of the world.", sv: "Världens huvudstäder." },
+      }),
+    ]);
+  });
+
   it("names a release the index does not describe by its URL alone, and counts no cards it does not state", async () => {
     const index = await datasetFromIndex(
       INDEX_TURTLE.replace("sm:cardCount 243 ;", "").replace(', <capitals/1.ttl>, <capitals/3.ttl>', ', <capitals/9.ttl>')
@@ -243,11 +268,11 @@ describe("toLibraryDeckContent", () => {
   it("refuses a deck in a newer format than it writes", () => {
     const dataset = deckDocument(
       thing(CANONICAL, (t) =>
-        t.addIri(RDF.type, SM.Deck).addInteger(SM.formatVersion, 4),
+        t.addIri(RDF.type, SM.Deck).addInteger(SM.formatVersion, 5),
       ),
     );
     expect(() => toLibraryDeckContent(DOC, dataset)).toThrow(
-      `<${DOC}> is in deck format 4, newer than this app supports (3).`,
+      `<${DOC}> is in deck format 5, newer than this app supports (4).`,
     );
   });
 

@@ -109,7 +109,7 @@ describe("a missing catalogue", () => {
 describe("describeFormats", () => {
   it("names the formats the plan touches, with what each added", () => {
     expect(describeFormats(plan)).toBe(
-      "deck format 3, which describes decks with the DCAT and SKOS standards and gives every deck a description, card format 2, which adds pictures on cards and review-state format 2, which keeps each study direction's state and the day's undo snapshot",
+      "deck format 4, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages, card format 2, which adds pictures on cards and review-state format 2, which keeps each study direction's state and the day's undo snapshot",
     );
     expect(
       describeFormats({
@@ -134,7 +134,7 @@ describe("MigrationNotice", () => {
     expect(region).toHaveTextContent(
       "2 deck entries, 255 cards in 2 decks and 30 review states in one deck are stored in an older format.",
     );
-    expect(region).toHaveTextContent("Solid Memo now writes deck format 3");
+    expect(region).toHaveTextContent("Solid Memo now writes deck format 4");
     expect(region).toHaveTextContent("card format 2");
     expect(
       screen.getAllByRole("listitem").map((item) => item.textContent),

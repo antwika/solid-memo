@@ -51,7 +51,7 @@ ${V2_VERSION}
 const THING_V2_PLAIN = `${HEAD}
 <#shape> a sh:NodeShape ; sh:name "ThingV2" ; sh:class sm:Thing ; sh:property <#formatVersion>, <#title> .
 ${V2_VERSION}
-<#title> a sh:PropertyShape ; sh:path dcterms:title ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 .
+<#title> a sh:PropertyShape ; sh:path dcterms:title ; sh:datatype <http://www.w3.org/1999/02/22-rdf-syntax-ns#langString> ; sh:minCount 1 ; sh:uniqueLang true .
 `;
 
 const files = (...entries: [string, string][]) =>
@@ -186,6 +186,22 @@ describe("parseShapes", () => {
     ).toThrow('shapes: "ThingV1" is defined twice.');
   });
 
+  it("reads language-tagged text as one field, required or optional however many languages it holds", () => {
+    const LANG = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#langString>";
+    const [model] = parseShapes(
+      files([
+        "thing/v1.ttl",
+        `${HEAD} <#shape> a sh:NodeShape ; sh:name "ThingV1" ; sh:class sm:Thing ; sh:property <#formatVersion>, <#title>, <#note> . ${V1_VERSION}
+<#title> a sh:PropertyShape ; sh:path dcterms:title ; sh:datatype ${LANG} ; sh:minCount 1 ; sh:uniqueLang true .
+<#note> a sh:PropertyShape ; sh:path dcterms:description ; sh:datatype ${LANG} ; sh:uniqueLang true .`,
+      ]),
+    );
+    expect(model.fields).toEqual([
+      { name: "title", predicate: "http://purl.org/dc/terms/title", kind: "text", cardinality: "one" },
+      { name: "description", predicate: "http://purl.org/dc/terms/description", kind: "text", cardinality: "optional" },
+    ]);
+  });
+
   it("requires versions to run without gaps when rendering", () => {
     const models = parseShapes(files(["thing/v2.ttl", THING_V2]));
     expect(() => renderDomainTypes(models)).toThrow(
@@ -202,6 +218,12 @@ describe("renderers", () => {
 
   it("renders the record types and unions", () => {
     expect(renderDomainTypes(models)).toBe(`/* Generated from shapes/<class>/v<N>.ttl by \`npm run generate\`. Do not edit: change the source and regenerate. */
+
+/**
+ * A text in one or more languages (rdf:langString values): language tag,
+ * lower case ("en", "sv", "en-gb"), to the text in that language.
+ */
+export type LangText = Readonly<Record<string, string>>;
 
 /** The record kinds the shapes describe (see docs/shapes.md). */
 export type ShapeName = "thing";
@@ -228,7 +250,7 @@ export interface ThingV1 {
 
 /**  */
 export interface ThingV2 {
-  readonly title: string;
+  readonly title: LangText;
 }
 
 export type ThingRecord = { version: 1; data: ThingV1 } | { version: 2; data: ThingV2 };
@@ -262,6 +284,9 @@ export type LatestRecord = {
     { name: "title", predicate: "http://purl.org/dc/terms/title", kind: "string", cardinality: "one" },`);
     expect(text).toContain(
       `    { name: "mode", predicate: "https://solid-memo.com/vocab/v1#mode", kind: "enum", cardinality: "optional", values: ["a","b"] },`,
+    );
+    expect(text).toContain(
+      `    { name: "title", predicate: "http://purl.org/dc/terms/title", kind: "text", cardinality: "one" },\n  ],`,
     );
     expect(text).toContain("export const SHAPES = {\n  thing: { 1: THING_V1, 2: THING_V2 },\n} as const;");
     expect(text).toContain("export const ALL_SHAPES: readonly ShapeDescriptor[] = [\n  THING_V1,\n  THING_V2,\n];");

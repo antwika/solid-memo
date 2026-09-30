@@ -27,7 +27,7 @@ import {
 import { distributionUrlOf } from "@solid-memo/domain/dcat";
 import { migrate } from "@solid-memo/domain/shapes/migrations";
 import { documentUrlOf } from "@solid-memo/domain/subjectUrl";
-import { AGENT_V1, CATALOG_V1, DECK_V3, DISTRIBUTION_V1 } from "@solid-memo/vocab/descriptors.generated";
+import { AGENT_V1, CATALOG_V1, DECK_V4, DISTRIBUTION_V1 } from "@solid-memo/vocab/descriptors.generated";
 import { readVersioned, recordThing } from "../records";
 import { DCAT, DCTERMS, RDF, SM } from "../vocab";
 
@@ -65,7 +65,7 @@ export function toDeck(thing: Thing, agentNames: ReadonlyMap<string, string> = n
   if (read === null) return null;
   const url = asUrl(thing);
   const names = new Map(agentNames);
-  if (read.record.version !== 3) {
+  if (read.record.version < 3) {
     for (const author of read.record.data.creator) names.set(agentUrlOf(url, author), author);
   }
   return deckFromRecord(
@@ -85,7 +85,7 @@ export function toDeck(thing: Thing, agentNames: ReadonlyMap<string, string> = n
 export function withDeck(dataset: SolidDataset, deck: Deck): SolidDataset {
   let updated = setThing(
     dataset,
-    recordThing(deck.url, DECK_V3, deckToRecord(deck), getThing(dataset, deck.url)),
+    recordThing(deck.url, DECK_V4, deckToRecord(deck), getThing(dataset, deck.url)),
   );
   for (const { url, record } of deckAgents(deck)) {
     updated = setThing(updated, recordThing(url, AGENT_V1, record, getThing(updated, url)));

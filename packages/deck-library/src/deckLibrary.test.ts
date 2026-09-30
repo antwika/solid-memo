@@ -158,6 +158,24 @@ describe("buildIndex", () => {
     expect(of(series, `${DCAT}hasCurrentVersion`)).toEqual([`${DECKS}capitals/2.ttl`]);
   });
 
+  it("states a series' title and description in every language of its current release, untagged text as English", async () => {
+    const swedish = SOURCE.replace('dcterms:title "Capitals" ;', 'dcterms:title "Capitals"@en , "Huvudstäder"@sv ;')
+      .replace('dcterms:description "Capitals of the world." ;', 'dcterms:description "Capitals of the world."@en , "Världens huvudstäder."@sv ;')
+      .replace("solid-memo:formatVersion 3 .", "solid-memo:formatVersion 4 .");
+    const releases = [release("capitals", 1, SOURCE), release("capitals", 2, swedish)];
+    const built = buildIndex(releases);
+    const texts = (subject: string, predicate: string) =>
+      parseTurtle(built, INDEX)
+        .filter((q) => q.subject.value === subject && q.predicate.value === predicate)
+        .map((q) => `${q.object.value}@${q.object.termType === "Literal" ? q.object.language : ""}`)
+        .sort();
+    expect(texts(`${INDEX}#capitals`, `${DCTERMS}title`)).toEqual(["Capitals@en", "Huvudstäder@sv"]);
+    expect(texts(`${INDEX}#capitals`, `${DCTERMS}description`)).toEqual(["Capitals of the world.@en", "Världens huvudstäder.@sv"]);
+    expect(texts(`${DECKS}capitals/1.ttl`, `${DCTERMS}title`)).toEqual(["Capitals@en"]);
+    expect(texts(`${INDEX}#capitals`, `${SM}formatVersion`)).toEqual(["2@"]);
+    await expect(validateLibrary(releases, built, validators)).resolves.toBeUndefined();
+  });
+
   it("keeps the series links and the version links in agreement", () => {
     for (const deck of ["capitals", "rivers"]) {
       const series = `${INDEX}#${deck}`;
