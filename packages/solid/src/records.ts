@@ -6,6 +6,7 @@ import {
   getDatetime,
   getDecimal,
   getInteger,
+  getStringByLocaleAll,
   getStringNoLocale,
   getStringNoLocaleAll,
   getUrl,
@@ -16,6 +17,7 @@ import {
 } from "@inrupt/solid-client";
 import {
   LATEST_VERSION,
+  type LangText,
   type ShapeName,
   type VersionedRecord,
 } from "@solid-memo/vocab/types.generated";
@@ -33,7 +35,7 @@ import { RDF, SM } from "./vocab";
  * mapper can only read and write what the shape says (see docs/shapes.md).
  */
 
-type FieldValue = string | number | boolean | readonly string[];
+type FieldValue = string | number | boolean | readonly string[] | LangText;
 
 /** One field's value; undefined when absent, null when a required one is. */
 function readField(thing: Thing, field: FieldDescriptor): FieldValue | null | undefined {
@@ -52,8 +54,10 @@ function readField(thing: Thing, field: FieldDescriptor): FieldValue | null | un
   return value;
 }
 
-function readScalar(thing: Thing, field: FieldDescriptor): string | number | boolean | null {
+function readScalar(thing: Thing, field: FieldDescriptor): string | number | boolean | LangText | null {
   switch (field.kind) {
+    case "text":
+      return readText(thing, field.predicate);
     case "string":
       return getStringNoLocale(thing, field.predicate);
     case "enum": {
@@ -75,6 +79,18 @@ function readScalar(thing: Thing, field: FieldDescriptor): string | number | boo
       return value !== null && field.values!.includes(value) ? value : null;
     }
   }
+}
+
+/**
+ * A text's language-tagged values, by lower-case language tag (the first
+ * value of each language: the shapes allow one); null when there are none.
+ * Untagged literals are not part of a text.
+ */
+function readText(thing: Thing, predicate: string): LangText | null {
+  const text: LangText = Object.fromEntries(
+    [...getStringByLocaleAll(thing, predicate)].map(([language, values]) => [language.toLowerCase(), values[0]]),
+  );
+  return Object.keys(text).length > 0 ? text : null;
 }
 
 /**
@@ -131,6 +147,13 @@ export function applyRecord<T>(
     builder.removeAll(field.predicate);
     const value = (record as Record<string, FieldValue | undefined>)[field.name];
     if (value === undefined) continue;
+    if (field.kind === "text") {
+      const text = value as LangText;
+      for (const language of Object.keys(text).sort()) {
+        builder.addStringWithLocale(field.predicate, text[language], language);
+      }
+      continue;
+    }
     for (const one of Array.isArray(value) ? value : [value]) {
       addValue(builder, field, one as string | number | boolean);
     }

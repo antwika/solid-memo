@@ -112,8 +112,8 @@ describe("toDeck", () => {
     const thing = deckThing((t) =>
       t
         .addIri(RDF.type, SM.Deck)
-        .addStringNoLocale(DCTERMS.title, "Future")
-        .addStringNoLocale(DCTERMS.description, "From the future.")
+        .addStringWithLocale(DCTERMS.title, "Future", "en")
+        .addStringWithLocale(DCTERMS.description, "From the future.", "en")
         .addIri(SM.studyDirection, SM.backToFront)
         .addIri(SM.cardsDocument, CARDS_DOC)
         .addIri(SM.reviewsDocument, REVIEWS_DOC)

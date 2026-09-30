@@ -16,7 +16,8 @@
                        topic:geography ,
                        topic:computing ,
                        topic:science ,
-                       topic:art .
+                       topic:art ,
+                       topic:labour-market .
 
 topic:languages
     a skos:Concept ;
@@ -66,5 +67,12 @@ topic:art
     a skos:Concept ;
     skos:prefLabel "Art"@en ;
     skos:definition "Paintings, artists and the history of art."@en ;
+    skos:inScheme <> ;
+    skos:topConceptOf <> .
+
+topic:labour-market
+    a skos:Concept ;
+    skos:prefLabel "Labour market"@en ;
+    skos:definition "Occupations, work and the labour market."@en ;
     skos:inScheme <> ;
     skos:topConceptOf <> .

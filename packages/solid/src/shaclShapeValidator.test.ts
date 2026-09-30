@@ -128,7 +128,7 @@ describe("createShaclShapeValidator", () => {
             { path: SM.cardsDocument, message: "Less than 1 values", severity: "violation", constraint: "MinCount" },
           ],
         },
-        { url: `${DOC}#deck-2`, status: "newer", shape: "deck", version: 9, latest: 3 },
+        { url: `${DOC}#deck-2`, status: "newer", shape: "deck", version: 9, latest: 4 },
         { url: `${DOC}#note`, status: "untyped" },
       ],
     });
@@ -169,7 +169,7 @@ describe("createShaclShapeValidator", () => {
     const profiled = { path: DCTERMS.description, message: "Less than 1 values", severity: "violation", constraint: "MinCount", profile: "dcat-ap" };
     expect(report.subjects).toEqual([
       expect.objectContaining({ url: `${DOC}#deck-1`, status: "checked", violations: [expect.anything(), profiled] }),
-      { url: `${DOC}#deck-2`, status: "newer", shape: "deck", version: 9, latest: 3 },
+      { url: `${DOC}#deck-2`, status: "newer", shape: "deck", version: 9, latest: 4 },
       { url: `${DOC}#note`, status: "profiled", violations: [profiled] },
     ]);
   });

@@ -61,7 +61,7 @@ export function describeFormats(plan: MigrationPlan): string {
   }
   if (plan.deckCount > 0) {
     parts.push(
-      `deck format ${DECK_FORMAT_VERSION}, which describes decks with the DCAT and SKOS standards and gives every deck a description`,
+      `deck format ${DECK_FORMAT_VERSION}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages`,
     );
   }
   if (plan.cardCount > 0) {

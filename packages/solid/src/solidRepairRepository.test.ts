@@ -3,6 +3,7 @@ import {
   buildThing,
   createThing,
   getStringNoLocale,
+  getStringWithLocale,
   getThing,
   getUrl,
   mockSolidDatasetFrom,
@@ -73,6 +74,30 @@ describe("applyRepairs", () => {
     const two = getThing(saved(), `${CATALOG}#deck-2`)!;
     expect(getStringNoLocale(two, DCTERMS.description)).toBe("Flashcards: a deck.");
     expect(getStringNoLocale(two, SM.direction)).toBe("front-to-back");
+  });
+
+  it("describes a format-4 deck in English, from its English title", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      documentOf(
+        CATALOG,
+        buildThing(createThing({ url: `${CATALOG}#deck-1` }))
+          .addIri(RDF.type, SM.Deck)
+          .addStringWithLocale(DCTERMS.title, "Huvudstäder", "sv")
+          .addStringWithLocale(DCTERMS.title, "Capitals", "en")
+          .build(),
+        buildThing(createThing({ url: `${CATALOG}#deck-2` })).addIri(RDF.type, SM.Deck).build(),
+      ),
+    );
+    await repository().applyRepairs([
+      repair("describe-deck", `${CATALOG}#deck-1`, 4),
+      repair("describe-deck", `${CATALOG}#deck-2`, 4),
+    ]);
+    const one = getThing(saved(), `${CATALOG}#deck-1`)!;
+    expect(getStringWithLocale(one, DCTERMS.description, "en")).toBe("Flashcards: Capitals.");
+    expect(getStringWithLocale(one, DCTERMS.title, "sv")).toBe("Huvudstäder");
+    expect(getStringWithLocale(getThing(saved(), `${CATALOG}#deck-2`)!, DCTERMS.description, "en")).toBe(
+      "Flashcards: a deck.",
+    );
   });
 
   it("drops a half-written snapshot and recomputes a due day, leaving a state without the facts as it is", async () => {

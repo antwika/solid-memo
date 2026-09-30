@@ -5,12 +5,13 @@ import {
   getInteger,
   getStringNoLocale,
   getStringNoLocaleAll,
+  getStringWithLocale,
   getUrl,
   getUrlAll,
 } from "@inrupt/solid-client";
 import { describe, expect, it } from "vitest";
 import type { ShapeDescriptor } from "@solid-memo/vocab/shapeDescriptor";
-import { CARD_V2, DECK_V2, PREFERENCES_V2, REVIEW_STATE_V2 } from "@solid-memo/vocab/descriptors.generated";
+import { CARD_V2, DECK_V2, DECK_V4, PREFERENCES_V2, REVIEW_STATE_V2 } from "@solid-memo/vocab/descriptors.generated";
 import { applyRecord, readRecord, readVersioned, recordThing, storedVersionOf } from "./records";
 import { DCTERMS, RDF, SM } from "./vocab";
 
@@ -152,6 +153,38 @@ describe("readRecord", () => {
       .addStringNoLocale(`${EX}link`, "https://example.com/a")
       .build();
     expect(readRecord(thing, THING)).toEqual({ name: "Ann", tags: [], links: [], concepts: [] });
+  });
+});
+
+describe("language-tagged text", () => {
+  const record = {
+    title: { en: "Capitals", sv: "Huvudstäder" },
+    description: { en: "Capitals of the world." },
+    creator: [],
+    studyDirection: `${SM.frontToBack}` as const,
+    theme: [],
+    keyword: [],
+    distribution: [],
+    cardsDocument: "https://pod.example/d.ttl",
+    reviewsDocument: "https://pod.example/r.ttl",
+  };
+
+  it("writes one literal per language and reads them back by tag", () => {
+    const thing = recordThing(URL_, DECK_V4, record, null);
+    expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe("Capitals");
+    expect(getStringWithLocale(thing, DCTERMS.title, "sv")).toBe("Huvudstäder");
+    expect(getStringNoLocale(thing, DCTERMS.title)).toBeNull();
+    expect(readRecord(thing, DECK_V4)).toEqual(record);
+  });
+
+  it("reads only tagged values, the first of a language twice stated, and none as missing", () => {
+    const thing = buildThing(recordThing(URL_, DECK_V4, record, null))
+      .addStringWithLocale(DCTERMS.title, "Huvudorter", "sv")
+      .addStringNoLocale(DCTERMS.title, "Untagged")
+      .build();
+    expect(readRecord(thing, DECK_V4)?.title).toEqual({ en: "Capitals", sv: "Huvudstäder" });
+    const untagged = buildThing(createThing({ url: URL_ })).addStringNoLocale(DCTERMS.title, "Capitals").build();
+    expect(readRecord(untagged, DECK_V4)).toBeNull();
   });
 });
 

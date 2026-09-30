@@ -54,8 +54,8 @@ describe("migrate", () => {
     });
     const deck = { title: "Own", creator: ["Anton"], cardsDocument: "d", reviewsDocument: "r" };
     expect(migrate("deck", { version: 1, data: deck }, CONTEXT)).toEqual({
-      title: "Own",
-      description: "Flashcards: Own.",
+      title: { en: "Own" },
+      description: { en: "Flashcards: Own." },
       creator: ["https://pod.example/x.ttl#agent-anton"],
       studyDirection: `${SM}frontToBack`,
       theme: [],
@@ -71,7 +71,7 @@ describe("migrate", () => {
         CONTEXT,
       ),
     ).toMatchObject({
-      description: "Mine.",
+      description: { en: "Mine." },
       studyDirection: `${SM}bidirectional`,
       source: "https://solid-memo.com/decks/capitals/1.ttl",
     });
@@ -83,8 +83,8 @@ describe("migrate", () => {
         { subject: LIBRARY },
       ),
     ).toEqual({
-      title: "L",
-      description: "Capitals.",
+      title: { en: "L" },
+      description: { en: "Capitals." },
       creator: [],
       publisher: "https://solid-memo.com/decks/index.ttl#solid-memo",
       studyDirection: `${SM}frontToBack`,
@@ -99,7 +99,13 @@ describe("migrate", () => {
     });
     expect(
       migrate("libraryDeck", { version: 2, data: { title: "L", creator: [], direction: "back-to-front", source: [] } }, { subject: LIBRARY }),
-    ).toMatchObject({ description: "Flashcards: L.", studyDirection: `${SM}backToFront` });
+    ).toMatchObject({ description: { en: "Flashcards: L." }, studyDirection: `${SM}backToFront` });
+    const series = { title: "L", description: "Capitals.", publisher: "p", theme: [], keyword: [], first: "a", last: "b", hasVersion: ["a", "b"], hasCurrentVersion: "b" };
+    expect(migrate("libraryDeckSeries", { version: 1, data: series }, { subject: LIBRARY })).toEqual({
+      ...series,
+      title: { en: "L" },
+      description: { en: "Capitals." },
+    });
     const review = {
       easeFactor: 2.5,
       intervalDays: 1,

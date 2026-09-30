@@ -50,8 +50,8 @@ describe("deck records", () => {
     };
     const record = deckToRecord(full);
     expect(record).toEqual({
-      title: "Capitals",
-      description: deck.description,
+      title: { en: "Capitals" },
+      description: { en: deck.description },
       created: deck.createdAt,
       modified: deck.modifiedAt,
       creator: [ANTON],
@@ -69,6 +69,32 @@ describe("deck records", () => {
     expect(deckFromRecord(deck.url, 3, record, byAgent)).toEqual(full);
   });
 
+  it("round-trip a name and description in several languages, showing the English", () => {
+    const record = deckToRecord({
+      ...deck,
+      nameTexts: { en: "Capitals", sv: "Huvudstäder" },
+      descriptionTexts: { en: "From Wikipedia.", sv: "Från Wikipedia." },
+    });
+    expect(record.title).toEqual({ en: "Capitals", sv: "Huvudstäder" });
+    expect(record.description).toEqual({ en: "From Wikipedia.", sv: "Från Wikipedia." });
+    const read = deckFromRecord(deck.url, 4, record, byAgent);
+    expect(read.name).toBe("Capitals");
+    expect(read.description).toBe("From Wikipedia.");
+    expect(read.nameTexts).toEqual({ en: "Capitals", sv: "Huvudstäder" });
+  });
+
+  it("change only the English when the name or description is edited, keeping the translations", () => {
+    const read = deckFromRecord(
+      deck.url,
+      4,
+      deckToRecord({ ...deck, nameTexts: { "en-gb": "Capitals", sv: "Huvudstäder" } }),
+      byAgent,
+    );
+    const renamed = deckToRecord({ ...read, name: "Capital cities", description: "Edited." });
+    expect(renamed.title).toEqual({ "en-gb": "Capital cities", sv: "Huvudstäder" });
+    expect(renamed.description).toEqual({ en: "Edited." });
+  });
+
   it("give a deck without a description the default one, and leave out what it does not have", () => {
     const bare: Deck = {
       id: "deck-1",
@@ -83,8 +109,8 @@ describe("deck records", () => {
     };
     const record = deckToRecord(bare);
     expect(record).toEqual({
-      title: "Own",
-      description: "Flashcards: Own.",
+      title: { en: "Own" },
+      description: { en: "Flashcards: Own." },
       creator: [],
       studyDirection: `${SM}frontToBack`,
       theme: [],
@@ -183,8 +209,8 @@ describe("card records", () => {
 describe("library deck records", () => {
   const RELEASE = "https://solid-memo.com/decks/capitals/1.ttl";
   const release = {
-    title: "Capitals",
-    description: "From Wikipedia.",
+    title: { en: "Capitals" },
+    description: { en: "From Wikipedia." },
     creator: [ANTON],
     publisher: "https://solid-memo.com/decks/index.ttl#solid-memo",
     studyDirection: `${SM}frontToBack` as const,
@@ -200,10 +226,10 @@ describe("library deck records", () => {
 
   it("build a release's content around its cards", () => {
     const cards = [{ id: "se", front: "Sweden", back: "Stockholm", formatVersion: 1 }];
-    expect(libraryDeckFromRecord(RELEASE, 3, release, cards, byAgent)).toEqual({
+    expect(libraryDeckFromRecord(RELEASE, 4, release, cards, byAgent)).toEqual({
       url: RELEASE,
       name: "Capitals",
-      formatVersion: 3,
+      formatVersion: 4,
       authors: ["Anton Wiklund"],
       description: "From Wikipedia.",
       direction: "front-to-back",
@@ -215,11 +241,24 @@ describe("library deck records", () => {
     });
   });
 
+  it("show a release's English name and description, and keep its other languages", () => {
+    const content = libraryDeckFromRecord(
+      RELEASE,
+      4,
+      { ...release, title: { sv: "Huvudstäder", en: "Capitals" }, description: { en: "From Wikipedia." } },
+      [],
+      byAgent,
+    );
+    expect(content.name).toBe("Capitals");
+    expect(content.nameTexts).toEqual({ sv: "Huvudstäder", en: "Capitals" });
+    expect(content.descriptionTexts).toBeUndefined();
+  });
+
   it("carry the licence, version notes and modification time when stated", () => {
     expect(
       libraryDeckFromRecord(
         RELEASE,
-        3,
+        4,
         {
           ...release,
           license: "https://creativecommons.org/publicdomain/zero/1.0/",

@@ -27,6 +27,7 @@ import {
   validateTurtleDocument,
 } from "@solid-memo/shacl/node/shacl";
 import { SM_NS } from "@solid-memo/vocab/tooling/vocab";
+import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { VOCAB_ROOT } from "@solid-memo/vocab/tooling/root";
 import { DECK_LIBRARY_ROOT } from "./root.ts";
 
@@ -151,6 +152,19 @@ function literalOf(quads: readonly Quad[], subject: string, predicate: string): 
 }
 
 /**
+ * A title or description in every language a release states it in, as
+ * language-tagged literals: a format-4 release's as they are, a format-3
+ * release's untagged one as English (deck series format 2 states text as
+ * deck format 4 does).
+ */
+function textOf(quads: readonly Quad[], subject: string, predicate: string): Quad_Object[] {
+  const { literal } = DataFactory;
+  return objectsOf(quads, subject, predicate)
+    .filter((o) => o.termType === "Literal")
+    .map((o) => (o.termType === "Literal" && o.language === "" ? literal(o.value, "en") : o));
+}
+
+/**
  * The index: a dcat:Catalog of the library's decks. Each deck is a
  * dcat:DatasetSeries (and dcat:Dataset) whose members are its releases,
  * which are its versions too; every release is described (a
@@ -192,10 +206,10 @@ export function buildIndex(releases: readonly DeckRelease[]): string {
     const series = seriesUrlOf(deck);
     add(series, RDF_TYPE, iri(`${DCAT}DatasetSeries`));
     add(series, RDF_TYPE, iri(`${DCAT}Dataset`));
+    add(series, `${SM_NS}formatVersion`, literal(String(LATEST_VERSION.libraryDeckSeries), iri(`${XSD}integer`)));
     for (const predicate of [`${DCTERMS}title`, `${DCTERMS}description`]) {
-      const object = literalOf(latestQuads, latestUrl, predicate);
       // A release without one fails validation, which says so.
-      if (object !== undefined) add(series, predicate, object);
+      for (const object of textOf(latestQuads, latestUrl, predicate)) add(series, predicate, object);
     }
     add(series, `${DCTERMS}publisher`, iri(PUBLISHER_URL));
     for (const predicate of [`${DCAT}theme`, `${DCAT}keyword`]) {
@@ -210,9 +224,10 @@ export function buildIndex(releases: readonly DeckRelease[]): string {
       const url = releaseUrlOf(deck, release.version);
       const quads = quadsOf(release);
       add(url, RDF_TYPE, iri(`${DCAT}Dataset`));
+      for (const predicate of [`${DCTERMS}title`, `${DCTERMS}description`]) {
+        for (const object of textOf(quads, url, predicate)) add(url, predicate, object);
+      }
       for (const predicate of [
-        `${DCTERMS}title`,
-        `${DCTERMS}description`,
         `${DCAT}version`,
         `${DCTERMS}issued`,
         `${ADMS}versionNotes`,

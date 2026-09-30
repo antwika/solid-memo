@@ -111,5 +111,10 @@ export const TOPICS = {
       label: "Art",
       definition: "Paintings, artists and the history of art.",
     },
+    {
+      iri: "https://solid-memo.com/vocab/topics#labour-market",
+      label: "Labour market",
+      definition: "Occupations, work and the labour market.",
+    },
   ],
 } as const satisfies ConceptScheme;

@@ -1,3 +1,4 @@
+import type { LangText } from "./langText";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { isHttpUrl } from "./webId";
 
@@ -129,6 +130,14 @@ export interface Deck {
    * for content taken from elsewhere, where it came from.
    */
   description?: string;
+  /**
+   * The name and description in every language the deck states them in
+   * (deck format 4), when there is more than English: `name` and
+   * `description` are the English ones, which the app shows and edits;
+   * the other languages are kept as they are.
+   */
+  nameTexts?: LangText;
+  descriptionTexts?: LangText;
   /** URL of the library release this one was imported from, if it was. */
   sourceUrl?: string;
   /**

@@ -8,6 +8,7 @@ import {
   type SolidDataset,
   type ThingPersisted,
 } from "@inrupt/solid-client";
+import type { LangText } from "@solid-memo/domain/langText";
 import type { DeckRepository } from "@solid-memo/application/ports";
 import {
   CARD_FORMAT_VERSION,
@@ -265,6 +266,8 @@ export function createSolidDeckRepository({
       authors: string[];
       license?: string;
       description?: string;
+      nameTexts?: LangText;
+      descriptionTexts?: LangText;
       direction: DeckDirection;
       themes: string[];
       keywords: string[];
@@ -286,6 +289,8 @@ export function createSolidDeckRepository({
       ...(source?.description === undefined
         ? {}
         : { description: source.description }),
+      ...(source?.nameTexts === undefined ? {} : { nameTexts: source.nameTexts }),
+      ...(source?.descriptionTexts === undefined ? {} : { descriptionTexts: source.descriptionTexts }),
       ...(source === undefined ? {} : { sourceUrl: source.url }),
       ...(source === undefined || source.themes.length === 0 ? {} : { themes: source.themes }),
       ...(source === undefined || source.keywords.length === 0

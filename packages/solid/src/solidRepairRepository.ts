@@ -3,6 +3,7 @@ import {
   getDatetime,
   getInteger,
   getStringNoLocale,
+  getStringWithLocale,
   getThing,
   removeThing,
   setThing,
@@ -63,6 +64,11 @@ function repairedThing(
   const builder = buildThing(thing);
   switch (repair.kind) {
     case "describe-deck": {
+      // Format 4 states text language-tagged, the app's own in English.
+      if (repair.version >= 4) {
+        const title = getStringWithLocale(thing, DCTERMS.title, "en") ?? "a deck";
+        return builder.setStringWithLocale(DCTERMS.description, defaultDeckDescription(title), "en").build();
+      }
       const title = getStringNoLocale(thing, DCTERMS.title) ?? "a deck";
       return builder.setStringNoLocale(DCTERMS.description, defaultDeckDescription(title)).build();
     }

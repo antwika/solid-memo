@@ -22,6 +22,14 @@ app writes today; `DECK_FORMAT_VERSION` and friends are aliases of it.
 | Review state | the SM-2 fields; a snapshot and per-direction subjects were added without a bump, so format 1 admits them | the same fields; the snapshot is all five triples or none; the subject naming (`#<cardId>`, `#<cardId>@back-to-front`) is part of the contract | Stamping begins: a format-1 reader meeting a format-2 state would silently ignore the snapshot and the other direction, which is what a version is meant to flag. |
 | Preferences | whatever the unversioned era wrote: every field optional, a missing one meaning its default | every field stated | The document is rewritten on every save, so stamping costs nothing; format 2 is the complete record. |
 
+Deck format 4 (and library deck series format 2, its summary in the
+library index) states a deck's title and description as language-tagged
+text: one value per language, exactly one of them English, which the
+app shows and edits while keeping the other languages. The version moved
+because a format-3 reader knows only untagged strings: it would read a
+format-4 deck as having no title and drop it. The step to format 4 tags a
+format-3 deck's title and description as English.
+
 Rules that hold across versions:
 
 - **Readers never refuse older data.** A subject is read with the shape
@@ -42,7 +50,10 @@ flowchart LR
     v1["CardV1"] -->|card/1-to-2| v2["CardV2"]
     d1["DeckV1"] -->|deck/1-to-2<br/>direction: front-to-back| d2["DeckV2"]
     d2 -->|deck/2-to-3<br/>DCAT dataset: direction concept,<br/>default description, creator agents,<br/>release 1 as its source| d3["DeckV3"]
+    d3 -->|deck/3-to-4<br/>title and description tagged English| d4["DeckV4"]
     l2["LibraryDeckV2"] -->|libraryDeck/2-to-3<br/>release 1 of its series| l3["LibraryDeckV3"]
+    l3 -->|libraryDeck/3-to-4<br/>title and description tagged English| l4["LibraryDeckV4"]
+    s1["LibraryDeckSeriesV1"] -->|libraryDeckSeries/1-to-2<br/>title and description tagged English| s2["LibraryDeckSeriesV2"]
     r1["ReviewStateV1"] -->|reviewState/1-to-2<br/>partial snapshot dropped| r2["ReviewStateV2"]
     p1["PreferencesV1"] -->|preferences/1-to-2<br/>defaults filled| p2["PreferencesV2"]
     p2 -->|preferences/2-to-3<br/>block the instance on invalid data| p3["PreferencesV3"]
