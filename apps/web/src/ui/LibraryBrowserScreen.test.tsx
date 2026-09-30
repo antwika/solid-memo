@@ -8,7 +8,7 @@ import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
   ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardCount: 2,
   authors: [],
   direction: "front-to-back",

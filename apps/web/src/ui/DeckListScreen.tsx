@@ -1,6 +1,7 @@
 import type { ComponentChildren } from "preact";
 import type { Deck } from "@solid-memo/domain/deck";
 import { CollectionIcon, DeckIcon, LibraryIcon } from "./icons";
+import { readerText } from "./readerText";
 
 /** Decks to open or study. Decks are renamed and removed in the Browser. */
 export function DeckListScreen({
@@ -50,7 +51,7 @@ export function DeckListScreen({
             <li key={deck.url}>
               <a class="deck-open" href={deckHref(deck)}>
                 <DeckIcon />
-                {deck.name}
+                {readerText(deck.title)}
               </a>
               <span class="deck-meta">{renderStudyAction(deck)}</span>
             </li>

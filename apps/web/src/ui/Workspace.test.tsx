@@ -63,7 +63,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -140,7 +140,7 @@ describe("Workspace", () => {
     });
 
     it("sets aside the decks with invalid data, keeping the rest", async () => {
-      const other = { ...deck, id: "deck-2", url: `${instanceA.url}catalog.ttl#deck-2`, name: "Capitals", cardsDocumentUrl: `${instanceA.url}decks/deck-2.ttl`, reviewsDocumentUrl: `${instanceA.url}reviews/deck-2.ttl` };
+      const other = { ...deck, id: "deck-2", url: `${instanceA.url}catalog.ttl#deck-2`, title: { en: "Capitals" }, cardsDocumentUrl: `${instanceA.url}decks/deck-2.ttl`, reviewsDocumentUrl: `${instanceA.url}reviews/deck-2.ttl` };
       renderWorkspace(
         makeUseCases({
           listInstances: vi.fn(async () => [instanceA]),
@@ -554,7 +554,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kana",
+      title: { en: "Kana" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -600,7 +600,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Capitals",
+      title: { en: "Capitals" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -621,7 +621,7 @@ describe("Workspace", () => {
           {
             url: deck.sourceUrl!,
             ...firstRelease(deck.sourceUrl!),
-            name: "Capitals",
+            title: { en: "Capitals" },
             cardCount: 3,
             authors: [],
             direction: "front-to-back" as const,
@@ -658,7 +658,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Capitals",
+      title: { en: "Capitals" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -679,10 +679,10 @@ describe("Workspace", () => {
           {
             url: libraryUrl,
             ...firstRelease(libraryUrl),
-            name: "Capitals",
+            title: { en: "Capitals" },
             cardCount: 3,
             authors: ["Anton Wiklund"],
-            description: "Every capital.",
+            description: { en: "Every capital." },
             direction: "front-to-back" as const,
             sources: [],
           },
@@ -737,7 +737,7 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listLibraryDecks: vi.fn(async () => [
-          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 11, authors: [], direction: "front-to-back" as const, sources: [] },
+          { url: libraryUrl, ...firstRelease(libraryUrl), title: { en: "Capitals" }, cardCount: 11, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => cards),
       }),
@@ -779,7 +779,7 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listLibraryDecks: vi.fn(async () => [
-          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
+          { url: libraryUrl, ...firstRelease(libraryUrl), title: { en: "Capitals" }, cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => [
           { id: "se", front: "Sweden", back: "Stockholm", formatVersion: 1 },
@@ -823,7 +823,7 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listLibraryDecks: vi.fn(async () => [
-          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
+          { url: libraryUrl, ...firstRelease(libraryUrl), title: { en: "Capitals" }, cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => [
           { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
@@ -864,7 +864,7 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listLibraryDecks: vi.fn(async () => [
-          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
+          { url: libraryUrl, ...firstRelease(libraryUrl), title: { en: "Capitals" }, cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => [
           { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
@@ -893,7 +893,7 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listLibraryDecks: vi.fn(async () => [
-          { url: libraryUrl, ...firstRelease(libraryUrl), name: "Capitals", cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
+          { url: libraryUrl, ...firstRelease(libraryUrl), title: { en: "Capitals" }, cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => {
           throw new Error("library offline");
@@ -921,7 +921,7 @@ describe("Workspace", () => {
               { url: release, version: "1" },
               { url: "https://solid-memo.com/decks/capitals/2.ttl", version: "2" },
             ],
-            name: "Capitals",
+            title: { en: "Capitals" },
             cardCount: 3,
             authors: [],
             direction: "front-to-back" as const,
@@ -951,7 +951,7 @@ describe("Workspace", () => {
           {
             url: "https://solid-memo.com/decks/capitals/1.ttl",
             ...firstRelease("https://solid-memo.com/decks/capitals/1.ttl"),
-            name: "Capitals",
+            title: { en: "Capitals" },
             cardCount: 3,
             authors: [],
             direction: "front-to-back" as const,
@@ -996,7 +996,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -1027,7 +1027,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -1063,7 +1063,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Capitals",
+      title: { en: "Capitals" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -1112,7 +1112,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -1143,7 +1143,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -1151,14 +1151,14 @@ describe("Workspace", () => {
       formatVersion: 1,
       authors: [],
     };
-    let name = deck.name;
+    let name = deck.title.en;
     renderWorkspace(
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
-        listDecks: vi.fn(async () => [{ ...deck, name }]),
+        listDecks: vi.fn(async () => [{ ...deck, title: { en: name } }]),
         renameDeck: vi.fn(async (renamed: Deck, newName: string) => {
           name = newName;
-          return { ...renamed, name: newName };
+          return { ...renamed, title: { en: newName } };
         }),
       }),
     );
@@ -1180,7 +1180,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -1212,7 +1212,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -1252,7 +1252,7 @@ describe("Workspace", () => {
     const deck: Deck = {
       id: "deck-1",
       url: `${instanceA.url}catalog.ttl#deck-1`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
       reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
       direction: "front-to-back" as const,
@@ -1354,7 +1354,7 @@ describe("Workspace", () => {
   const deck: Deck = {
     id: "deck-1",
     url: `${instanceA.url}catalog.ttl#deck-1`,
-    name: "Kanji N5",
+    title: { en: "Kanji N5" },
     cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
     reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
     direction: "front-to-back" as const,
@@ -1441,7 +1441,7 @@ describe("Workspace", () => {
     function openBrowser(useCases: UseCases) {
       renderWorkspace(useCases);
       return (async () => {
-        fireEvent.click(await screen.findByRole("link", { name: deck.name }));
+        fireEvent.click(await screen.findByRole("link", { name: deck.title.en }));
         fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
       })();
     }
@@ -1466,7 +1466,7 @@ describe("Workspace", () => {
       );
       expect(
         trail.getAllByRole("link").map((link) => link.textContent),
-      ).toEqual(["Decks", deck.name, "Browser", "水"]);
+      ).toEqual(["Decks", deck.title.en, "Browser", "水"]);
       expect(trail.getByRole("link", { name: "水" })).toHaveAttribute(
         "aria-current",
         "page",
@@ -1474,7 +1474,7 @@ describe("Workspace", () => {
 
       fireEvent.click(trail.getByRole("link", { name: "Browser" }));
       expect(
-        await screen.findByRole("heading", { name: `Browser: ${deck.name}` }),
+        await screen.findByRole("heading", { name: `Browser: ${deck.title.en}` }),
       ).toBeInTheDocument();
     });
 
@@ -1547,7 +1547,7 @@ describe("Workspace", () => {
         }),
       );
       expect(
-        await screen.findByRole("heading", { name: `Browser: ${deck.name}` }),
+        await screen.findByRole("heading", { name: `Browser: ${deck.title.en}` }),
       ).toBeInTheDocument();
     });
 

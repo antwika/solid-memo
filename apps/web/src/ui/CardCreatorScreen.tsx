@@ -1,5 +1,6 @@
 import { AddCardForm } from "./AddCardForm";
 import type { CardContent, Deck } from "@solid-memo/domain/deck";
+import { readerText } from "./readerText";
 
 /** Card entry page; stays open after each add so batches are easy. */
 export function CardCreatorScreen({
@@ -27,7 +28,7 @@ export function CardCreatorScreen({
         </button>
       </header>
       <p class="hint">
-        Adding to "<a href={deckHref}>{deck.name}</a>".
+        Adding to "<a href={deckHref}>{readerText(deck.title)}</a>".
       </p>
       <AddCardForm busy={busy} onAdd={onAdd} />
       {error && <p class="error">{error}</p>}

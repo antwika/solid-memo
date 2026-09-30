@@ -17,7 +17,7 @@ const instance: Instance = {
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
   ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardCount: 2,
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -27,7 +27,7 @@ const capitals: LibraryDeck = {
 const rivers: LibraryDeck = {
   url: "https://solid-memo.com/decks/rivers.ttl",
   ...firstRelease("https://solid-memo.com/decks/rivers.ttl"),
-  name: "Rivers",
+  title: { en: "Rivers" },
   cardCount: 1,
   authors: [],
   direction: "front-to-back",
@@ -37,7 +37,7 @@ const rivers: LibraryDeck = {
 const importedDeck: Deck = {
   id: "deck-1",
   url: `${instance.url}catalog.ttl#deck-1`,
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardsDocumentUrl: `${instance.url}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${instance.url}reviews/deck-1.ttl`,
   direction: "front-to-back",

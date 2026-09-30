@@ -90,7 +90,7 @@ describe("what fails, and the decks set aside for it", () => {
   const deck = (id: string): Deck => ({
     id,
     url: `${INSTANCE}catalog.ttl#${id}`,
-    name: id,
+    title: { en: id },
     cardsDocumentUrl: `${INSTANCE}decks/${id}.ttl`,
     reviewsDocumentUrl: `${INSTANCE}reviews/${id}.ttl`,
     createdAt: "",

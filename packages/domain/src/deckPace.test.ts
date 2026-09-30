@@ -6,7 +6,7 @@ import { DEFAULT_PREFERENCES } from "./preferences";
 const deck: Deck = {
   id: "deck-1",
   url: "https://pod.example/c.ttl#deck-1",
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardsDocumentUrl: "https://pod.example/d.ttl",
   reviewsDocumentUrl: "https://pod.example/r.ttl",
   createdAt: "",

@@ -8,7 +8,7 @@ import {
   type SolidDataset,
   type ThingPersisted,
 } from "@inrupt/solid-client";
-import type { LangText } from "@solid-memo/domain/langText";
+import { inEnglish, shown, withEnglish, type LangText } from "@solid-memo/domain/langText";
 import type { DeckRepository } from "@solid-memo/application/ports";
 import {
   CARD_FORMAT_VERSION,
@@ -83,11 +83,11 @@ export function createSolidDeckRepository({
     },
 
     createDeck(instanceUrl, name): Promise<Deck> {
-      return registerDeck(newDeck(instanceUrl, name));
+      return registerDeck(newDeck(instanceUrl, inEnglish(name)));
     },
 
     async importDeck(instanceUrl, content): Promise<Deck> {
-      const deck = newDeck(instanceUrl, content.name, content);
+      const deck = newDeck(instanceUrl, content.title, content);
       let cards = createSolidDataset();
       for (const card of content.cards) {
         cards = setThing(cards, cardThing(deck, card, null));
@@ -101,7 +101,7 @@ export function createSolidDeckRepository({
     },
 
     renameDeck(deck, name): Promise<Deck> {
-      return saveDeck({ ...deck, name });
+      return saveDeck({ ...deck, title: withEnglish(deck.title, name) });
     },
 
     saveDeck,
@@ -150,7 +150,7 @@ export function createSolidDeckRepository({
       );
       if (dataset === null) {
         throw new Error(
-          `The cards document of <${deck.name}> no longer exists.`,
+          `The cards document of <${shown(deck.title)}> no longer exists.`,
         );
       }
       const thing = getThing(dataset, card.url);
@@ -243,7 +243,7 @@ export function createSolidDeckRepository({
     const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
     const thing = dataset === null ? null : getThing(dataset, deck.url);
     if (dataset === null || thing === null) {
-      throw new Error(`The deck <${deck.name}> no longer exists.`);
+      throw new Error(`The deck <${shown(deck.title)}> no longer exists.`);
     }
     const written: Deck = { ...deck, formatVersion: DECK_FORMAT_VERSION };
     await save(catalogUrl, withDeck(dataset, written), deckSubjects(written));
@@ -260,14 +260,12 @@ export function createSolidDeckRepository({
    */
   function newDeck(
     instanceUrl: string,
-    name: string,
+    title: LangText,
     source?: {
       url: string;
       authors: string[];
       license?: string;
-      description?: string;
-      nameTexts?: LangText;
-      descriptionTexts?: LangText;
+      description?: LangText;
       direction: DeckDirection;
       themes: string[];
       keywords: string[];
@@ -278,7 +276,7 @@ export function createSolidDeckRepository({
     return {
       id,
       url: `${catalogUrlOf(base)}#${id}`,
-      name,
+      title,
       cardsDocumentUrl: `${base}decks/${id}.ttl`,
       reviewsDocumentUrl: `${base}reviews/${id}.ttl`,
       createdAt: now().toISOString(),
@@ -289,8 +287,6 @@ export function createSolidDeckRepository({
       ...(source?.description === undefined
         ? {}
         : { description: source.description }),
-      ...(source?.nameTexts === undefined ? {} : { nameTexts: source.nameTexts }),
-      ...(source?.descriptionTexts === undefined ? {} : { descriptionTexts: source.descriptionTexts }),
       ...(source === undefined ? {} : { sourceUrl: source.url }),
       ...(source === undefined || source.themes.length === 0 ? {} : { themes: source.themes }),
       ...(source === undefined || source.keywords.length === 0

@@ -3,6 +3,7 @@ import type { Deck } from "@solid-memo/domain/deck";
 import { DeckProvenance } from "./DeckProvenance";
 import { DeckIcon } from "./icons";
 import { cardCount as formatCardCount } from "./studyCounts";
+import { readerText } from "./readerText";
 
 export function DeckDetailScreen({
   deck,
@@ -49,7 +50,7 @@ export function DeckDetailScreen({
   function handleResetDay() {
     if (
       window.confirm(
-        `Reset today's study of "${deck.name}"? The ${studied} you studied today will go back to how they were before, and today's answers will be discarded.`,
+        `Reset today's study of "${readerText(deck.title)}"? The ${studied} you studied today will go back to how they were before, and today's answers will be discarded.`,
       )
     ) {
       onResetDay();
@@ -62,7 +63,7 @@ export function DeckDetailScreen({
         <h2>
           <a href={deckHref}>
             <DeckIcon />
-            {deck.name}
+            {readerText(deck.title)}
           </a>
         </h2>
         <div class="header-actions">
@@ -76,7 +77,7 @@ export function DeckDetailScreen({
         authors={deck.authors}
         license={deck.license}
         modifiedAt={deck.modifiedAt}
-        description={deck.description}
+        description={deck.description === undefined ? undefined : readerText(deck.description)}
       />
       {notice}
       {!canStudy && (

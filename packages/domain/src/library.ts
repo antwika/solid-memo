@@ -23,19 +23,13 @@ export interface LibraryDeck {
   /** dcat:theme concepts: the EU education theme and Solid Memo's topics. */
   themes: string[];
   keywords: string[];
-  name: string;
+  /** The deck's title, in every language it states it in (one of them English). */
+  title: LangText;
   cardCount: number;
   authors: string[];
   license?: string;
-  description?: string;
-  /**
-   * The name and description in every language the deck states them in
-   * (deck format 4), when there is more than English: `name` and
-   * `description` are the English ones, which the app shows and edits;
-   * the other languages are kept as they are.
-   */
-  nameTexts?: LangText;
-  descriptionTexts?: LangText;
+  /** A sentence or two about the deck, in every language it states it in. */
+  description?: LangText;
   /** How the deck is meant to be studied; adjustable after import. */
   direction: DeckDirection;
   /** When the deck was made (ISO 8601), when it says. */
@@ -72,19 +66,13 @@ export interface LibrarySource {
 export interface LibraryDeckContent {
   /** URL of the release document: the release's identity. */
   url: string;
-  name: string;
+  /** The deck's title, in every language it states it in (one of them English). */
+  title: LangText;
   formatVersion: number;
   authors: string[];
   license?: string;
-  description?: string;
-  /**
-   * The name and description in every language the deck states them in
-   * (deck format 4), when there is more than English: `name` and
-   * `description` are the English ones, which the app shows and edits;
-   * the other languages are kept as they are.
-   */
-  nameTexts?: LangText;
-  descriptionTexts?: LangText;
+  /** A sentence or two about the deck, in every language it states it in. */
+  description?: LangText;
   direction: DeckDirection;
   /** The release's version within its deck: "1", "2", … */
   version: string;
@@ -147,9 +135,9 @@ function isAbout(deck: LibraryDeck, topic: string): boolean {
 }
 
 /**
- * The decks about every chosen topic whose name, description or
- * keywords contain the query (case-insensitively); all of them when
- * nothing is chosen or typed.
+ * The decks about every chosen topic whose title or description (in any
+ * language) or keywords contain the query (case-insensitively); all of
+ * them when nothing is chosen or typed.
  */
 export function filterLibraryDecks(
   decks: readonly LibraryDeck[],
@@ -160,7 +148,7 @@ export function filterLibraryDecks(
     (deck) =>
       topics.every((topic) => isAbout(deck, topic)) &&
       (needle === "" ||
-        [deck.name, deck.description ?? "", ...deck.keywords].some((text) =>
+        [...Object.values(deck.title), ...Object.values(deck.description ?? {}), ...deck.keywords].some((text) =>
           text.toLocaleLowerCase().includes(needle),
         )),
   );

@@ -91,11 +91,11 @@ describe("toLibraryDecks", () => {
           { url: "https://solid-memo.com/decks/capitals/2.ttl", version: "2", issued: "2026-09-22T10:00:00.000Z", notes: "Added Norway." },
           { url: "https://solid-memo.com/decks/capitals/3.ttl", version: "?" },
         ],
-        name: "Capitals",
+        title: { en: "Capitals" },
         cardCount: 243,
         authors: ["Anton <anton@example.com>", "https://solid-memo.com/decks/capitals/2.ttl#gone"],
         license: CC0,
-        description: "Capitals of the world.",
+        description: { en: "Capitals of the world." },
         direction: "bidirectional",
         createdAt: "2026-09-22T09:49:00.236Z",
         modifiedAt: "2026-09-27T20:12:13.000Z",
@@ -110,7 +110,7 @@ describe("toLibraryDecks", () => {
     ]);
   });
 
-  it("shows a deck of format 4 by its English name and description, keeping the other languages", async () => {
+  it("keeps the title and description of a deck of format 4 in every language", async () => {
     const index = await datasetFromIndex(`
 @prefix sm: <https://solid-memo.com/vocab/v1#> .
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
@@ -127,10 +127,8 @@ describe("toLibraryDecks", () => {
 `);
     expect(toLibraryDecks(index)).toEqual([
       expect.objectContaining({
-        name: "Capitals",
-        description: "Capitals of the world.",
-        nameTexts: { en: "Capitals", sv: "Huvudstäder" },
-        descriptionTexts: { en: "Capitals of the world.", sv: "Världens huvudstäder." },
+        title: { en: "Capitals", sv: "Huvudstäder" },
+        description: { en: "Capitals of the world.", sv: "Världens huvudstäder." },
       }),
     ]);
   });
@@ -214,11 +212,11 @@ describe("toLibraryDeckContent", () => {
     );
     expect(toLibraryDeckContent(DOC, dataset)).toEqual({
       url: DOC,
-      name: "Capitals",
+      title: { en: "Capitals" },
       formatVersion: 2,
       authors: ["Anton Wiklund"],
       license: CC0,
-      description: "From Wikipedia.",
+      description: { en: "From Wikipedia." },
       direction: "bidirectional",
       version: "1",
       seriesUrl: SERIES,
@@ -252,10 +250,10 @@ describe("toLibraryDeckContent", () => {
     const content = toLibraryDeckContent(DOC, dataset);
     expect(content).toEqual({
       url: DOC,
-      name: "Capitals",
+      title: { en: "Capitals" },
       formatVersion: 1,
       authors: [],
-      description: "Flashcards: Capitals.",
+      description: { en: "Flashcards: Capitals." },
       direction: "front-to-back",
       version: "1",
       seriesUrl: SERIES,

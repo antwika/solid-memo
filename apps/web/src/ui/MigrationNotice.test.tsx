@@ -11,7 +11,7 @@ import type { MigrationPlan } from "@solid-memo/domain/migration";
 const deck: Deck = {
   id: "deck-1",
   url: "https://pod.example/solid-memo/a/catalog.ttl#deck-1",
-  name: "Kanji N5",
+  title: { en: "Kanji N5" },
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
   direction: "front-to-back",
@@ -19,8 +19,8 @@ const deck: Deck = {
   formatVersion: 1,
   authors: [],
 };
-const capitals: Deck = { ...deck, id: "deck-2", url: `${deck.url}2`, name: "Capitals" };
-const verbs: Deck = { ...deck, id: "deck-3", url: `${deck.url}3`, name: "Verbs" };
+const capitals: Deck = { ...deck, id: "deck-2", url: `${deck.url}2`, title: { en: "Capitals" } };
+const verbs: Deck = { ...deck, id: "deck-3", url: `${deck.url}3`, title: { en: "Verbs" } };
 
 const nothing = { preferencesOutdated: false, instanceOutdated: false, catalogMissing: false };
 

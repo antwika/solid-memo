@@ -4,6 +4,7 @@ import type { MigrationPlan } from "@solid-memo/domain/migration";
 import { PREFERENCES_FORMAT_VERSION } from "@solid-memo/domain/preferences";
 import { REVIEW_STATE_FORMAT_VERSION } from "@solid-memo/domain/review";
 import { cardCount as formatCardCount } from "./studyCounts";
+import { readerText } from "./readerText";
 
 /** "1 deck entry" / "n deck entries". */
 function deckEntries(count: number): string {
@@ -127,7 +128,7 @@ export function MigrationNotice({
         {plan.preferencesOutdated && <li>Preferences</li>}
         {plan.decks.map(({ deck, deckOutdated, cardCount, reviewCount }) => (
           <li key={deck.url}>
-            {deck.name} —{" "}
+            {readerText(deck.title)} —{" "}
             {[
               ...(deckOutdated ? ["deck entry"] : []),
               ...(cardCount > 0 ? [formatCardCount(cardCount)] : []),

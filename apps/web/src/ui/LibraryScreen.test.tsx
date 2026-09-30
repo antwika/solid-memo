@@ -7,18 +7,18 @@ import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
   ...firstRelease("https://solid-memo.com/decks/capitals.ttl"),
-  name: "Capitals of the world",
+  title: { en: "Capitals of the world" },
   cardCount: 243,
   authors: ["Anton Wiklund"],
   license: "https://creativecommons.org/publicdomain/zero/1.0/",
-  description: "Every country and its capital, from Wikipedia.",
+  description: { en: "Every country and its capital, from Wikipedia." },
   direction: "front-to-back",
   sources: [],
 };
 const rivers: LibraryDeck = {
   url: "https://solid-memo.com/decks/rivers.ttl",
   ...firstRelease("https://solid-memo.com/decks/rivers.ttl"),
-  name: "Rivers",
+  title: { en: "Rivers" },
   cardCount: 1,
   authors: [],
   direction: "front-to-back",
@@ -92,7 +92,7 @@ describe("LibraryScreen", () => {
 
   it("narrows the list to the chosen topics, broader ones included, and says how many are shown", () => {
     const geography = { ...capitals, themes: ["https://solid-memo.com/vocab/topics#geography"] };
-    const swedish = { ...rivers, name: "Swedish nouns", themes: ["https://solid-memo.com/vocab/topics#swedish"] };
+    const swedish = { ...rivers, title: { en: "Swedish nouns" }, themes: ["https://solid-memo.com/vocab/topics#swedish"] };
     renderScreen({ decks: [geography, swedish] });
     const topics = screen.getByRole("group", { name: "Topics" });
     expect([...topics.querySelectorAll("label")].map((l) => l.textContent)).toEqual([

@@ -4,7 +4,7 @@ import { defaultDeckDescription, distributionUrlOf, TURTLE_MEDIA_TYPE } from "./
 import type { Card, CardContent, Deck } from "./deck";
 import type { LibraryCard, LibraryDeckContent } from "./library";
 import type { AgentV1, CardV2, DeckV4, DistributionV1, LibraryDeckV4 } from "@solid-memo/vocab/types.generated";
-import { beyondEnglish, shown, withEnglish, type LangText } from "./langText";
+import { inEnglish, shown } from "./langText";
 import { fragmentIdOf } from "./subjectUrl";
 
 /**
@@ -26,7 +26,7 @@ export function deckFromRecord(
   return {
     id: fragmentIdOf(url),
     url,
-    name: shown(data.title),
+    title: data.title,
     cardsDocumentUrl: data.cardsDocument,
     reviewsDocumentUrl: data.reviewsDocument,
     createdAt: data.created ?? "",
@@ -35,8 +35,7 @@ export function deckFromRecord(
     direction: directionOfConcept(data.studyDirection)!,
     authors: data.creator.map(authorOf),
     ...(data.license === undefined ? {} : { license: data.license }),
-    description: shown(data.description),
-    ...texts(data.title, data.description),
+    description: data.description,
     ...(data.source === undefined ? {} : { sourceUrl: data.source }),
     ...(data.theme.length === 0 ? {} : { themes: [...data.theme] }),
     ...(data.keyword.length === 0 ? {} : { keywords: [...data.keyword] }),
@@ -45,21 +44,11 @@ export function deckFromRecord(
   };
 }
 
-/** The model's nameTexts and descriptionTexts: set only for text in more than English. */
-function texts(title: LangText, description: LangText): Pick<Deck, "nameTexts" | "descriptionTexts"> {
-  const nameTexts = beyondEnglish(title);
-  const descriptionTexts = beyondEnglish(description);
-  return {
-    ...(nameTexts === undefined ? {} : { nameTexts }),
-    ...(descriptionTexts === undefined ? {} : { descriptionTexts }),
-  };
-}
-
-/** The deck as its latest record: the English name and description, other languages kept. */
+/** The deck as its latest record; a deck that states no description gets the default one. */
 export function deckToRecord(deck: Deck): DeckV4 {
   return {
-    title: withEnglish(deck.nameTexts, deck.name),
-    description: withEnglish(deck.descriptionTexts, deck.description ?? defaultDeckDescription(deck.name)),
+    title: deck.title,
+    description: deck.description ?? inEnglish(defaultDeckDescription(shown(deck.title))),
     ...(deck.createdAt === "" ? {} : { created: deck.createdAt }),
     ...(deck.modifiedAt === undefined ? {} : { modified: deck.modifiedAt }),
     creator: deck.authors.map((author) => agentUrlOf(deck.url, author)),
@@ -142,12 +131,11 @@ export function libraryDeckFromRecord(
 ): LibraryDeckContent {
   return {
     url,
-    name: shown(data.title),
+    title: data.title,
     formatVersion: storedVersion,
     authors: data.creator.map(authorOf),
     ...(data.license === undefined ? {} : { license: data.license }),
-    description: shown(data.description),
-    ...texts(data.title, data.description),
+    description: data.description,
     direction: directionOfConcept(data.studyDirection)!,
     version: data.version,
     seriesUrl: data.inSeries,

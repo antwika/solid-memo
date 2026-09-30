@@ -40,6 +40,7 @@ import {
 } from "./router";
 import { ValidationContainer } from "./ValidationContainer";
 import { WebIdDocumentContainer } from "./WebIdDocumentContainer";
+import { readerText } from "./readerText";
 
 export function Workspace({
   useCases,
@@ -459,7 +460,7 @@ export function Workspace({
         return (
           <LibraryCardScreen
             card={activeLibraryCard!}
-            deckName={activeLibraryDeck!.name}
+            deckName={readerText(activeLibraryDeck!.title)}
             deckHref={libraryDeckHref(instanceUrl!, libraryDeckUrl!)}
           />
         );
@@ -666,16 +667,16 @@ export function Workspace({
               instance={activeInstance}
               report={invalidReport}
               policy={policy}
-              setAside={(decksOfCheck.data ?? []).filter(isSetAside).map((deck) => deck.name)}
+              setAside={(decksOfCheck.data ?? []).filter(isSetAside).map((deck) => readerText(deck.title))}
             />
           )}
         </>
       )}
       <Breadcrumbs
         crumbs={breadcrumbsFor(route, {
-          deck: activeDeck?.name ?? "",
+          deck: activeDeck === null ? "" : readerText(activeDeck.title),
           card: activeCard === null ? "" : cardLabel(activeCard),
-          libraryDeck: activeLibraryDeck?.name ?? "",
+          libraryDeck: activeLibraryDeck === null ? "" : readerText(activeLibraryDeck.title),
           libraryCard: activeLibraryCard === null ? "" : cardLabel(activeLibraryCard),
         })}
       />

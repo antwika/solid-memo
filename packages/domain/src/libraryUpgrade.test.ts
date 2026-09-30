@@ -12,7 +12,7 @@ const podCard = (id: string, back: string): Card => ({ id, url: `${CARDS}#${id}`
 function release(version: number, cards: LibraryCard[], direction: Deck["direction"] = "front-to-back"): LibraryDeckContent {
   return {
     url: `${DECKS}capitals/${version}.ttl`,
-    name: "Capitals",
+    title: { en: "Capitals" },
     formatVersion: 3,
     authors: [],
     direction,
@@ -27,7 +27,7 @@ function release(version: number, cards: LibraryCard[], direction: Deck["directi
 const deck: Deck = {
   id: "deck-1",
   url: "https://pod.example/solid-memo/a/catalog.ttl#deck-1",
-  name: "Capitals",
+  title: { en: "Capitals" },
   cardsDocumentUrl: CARDS,
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
   createdAt: "",

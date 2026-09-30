@@ -5,6 +5,7 @@ import type { Instance } from "@solid-memo/domain/instance";
 import type { LibraryUpgradePlan } from "@solid-memo/domain/libraryUpgrade";
 import { errorMessage } from "./errorMessage";
 import { LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
+import { readerText } from "./readerText";
 
 /**
  * Checks whether the library has a newer release of an imported deck
@@ -58,7 +59,7 @@ export function LibraryUpgradeContainer({
   }
   return (
     <LibraryUpgradeNotice
-      deckName={deck.name}
+      deckName={readerText(deck.title)}
       plan={plan}
       busy={upgradeMutation.isPending}
       error={errorMessage(upgradeMutation.error)}

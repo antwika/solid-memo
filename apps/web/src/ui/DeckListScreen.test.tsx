@@ -6,7 +6,7 @@ import type { Deck } from "@solid-memo/domain/deck";
 const deck: Deck = {
   id: "deck-1",
   url: "https://pod.example/solid-memo/a/catalog.ttl#deck-1",
-  name: "Kanji N5",
+  title: { en: "Kanji N5" },
   cardsDocumentUrl: "https://pod.example/solid-memo/a/decks/deck-1.ttl",
   reviewsDocumentUrl: "https://pod.example/solid-memo/a/reviews/deck-1.ttl",
   direction: "front-to-back",
@@ -19,7 +19,7 @@ const secondDeck: Deck = {
   ...deck,
   id: "deck-2",
   url: "https://pod.example/solid-memo/a/catalog.ttl#deck-2",
-  name: "Kana",
+  title: { en: "Kana" },
 };
 
 function renderScreen(
@@ -30,7 +30,7 @@ function renderScreen(
     decksHref: "#/decks?instance=a",
     libraryHref: "#/library?instance=a",
     deckHref: (d: Deck) => `#/deck?deck=${d.id}`,
-    renderStudyAction: (d: Deck) => <span>action for {d.name}</span>,
+    renderStudyAction: (d: Deck) => <span>action for {d.title.en}</span>,
     onCreateDeck: vi.fn(),
     ...overrides,
   };

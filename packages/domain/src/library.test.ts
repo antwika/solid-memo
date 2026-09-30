@@ -18,7 +18,7 @@ function libraryDeck(name: string, themes: string[], extra: Partial<LibraryDeck>
     seriesUrl: `https://solid-memo.com/decks/index.ttl#${name}`,
     version: "2",
     releases: [],
-    name,
+    title: { en: name },
     cardCount: 1,
     authors: [],
     direction: "front-to-back",
@@ -29,7 +29,7 @@ function libraryDeck(name: string, themes: string[], extra: Partial<LibraryDeck>
   };
 }
 
-const capitals = libraryDeck("capitals", [`${TOPIC}geography`], { description: "Every country's capital." });
+const capitals = libraryDeck("capitals", [`${TOPIC}geography`], { description: { en: "Every country's capital." } });
 const nouns = libraryDeck("swedish-nouns", [`${TOPIC}swedish`], { keywords: ["Vocabulary"] });
 const http = libraryDeck("http", [`${TOPIC}computing`]);
 

@@ -4,6 +4,8 @@ import type { Deck } from "@solid-memo/domain/deck";
 import { parseKeywords, topicsOfDeck, type DeckAbout } from "@solid-memo/domain/deckAbout";
 import { topicLabels } from "@solid-memo/domain/library";
 import { linkify } from "./linkify";
+import { editedText } from "@solid-memo/domain/langText";
+import { readerText } from "./readerText";
 
 /**
  * What a deck says about itself — its description, its topics (from
@@ -29,7 +31,7 @@ export function DeckAboutSection({
 
   function edit() {
     setDraft({
-      description: deck.description ?? "",
+      description: editedText(deck.description),
       topics: topicsOfDeck(deck),
       keywords: keywords.join(", "),
     });
@@ -56,7 +58,7 @@ export function DeckAboutSection({
   if (draft === null) {
     return (
       <section class="deck-about" aria-label="About this deck">
-        {deck.description !== undefined && <p class="deck-description">{linkify(deck.description)}</p>}
+        {deck.description !== undefined && <p class="deck-description">{linkify(readerText(deck.description))}</p>}
         {(topics.length > 0 || keywords.length > 0) && (
           <p class="hint">
             {topics.length > 0 && `Topics: ${topics.join(", ")}`}

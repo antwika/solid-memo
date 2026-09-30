@@ -5,14 +5,27 @@ export type { LangText };
 /**
  * Text in several languages, as deck format 4 states titles and
  * descriptions: a language tag (lower case) to the text in that language,
- * one of them English. Solid Memo is English first: it shows and edits the
- * English text, and keeps the other languages as they are.
+ * one of them English. The app shows the text in the reader's language
+ * when there is one, and edits the English text, keeping the other
+ * languages as they are.
  */
 
 /** The tag of the English text: "en", or a regional English ("en-gb"). */
 function englishTag(text: LangText): string | undefined {
-  if ("en" in text) return "en";
-  return Object.keys(text).sort().find((tag) => tag.startsWith("en-"));
+  return matchingTag(text, "en");
+}
+
+/**
+ * The tag in the text for a wanted language: the tag itself, else the
+ * same language without a region ("sv-SE" finds "sv"), else a regional
+ * one ("en" finds "en-gb").
+ */
+function matchingTag(text: LangText, wanted: string): string | undefined {
+  const tag = wanted.toLowerCase();
+  if (tag in text) return tag;
+  const language = tag.split("-")[0];
+  if (language in text) return language;
+  return Object.keys(text).sort().find((t) => t.startsWith(`${language}-`));
 }
 
 /** The English text; undefined when there is none. */
@@ -21,15 +34,22 @@ export function english(text: LangText): string | undefined {
   return tag === undefined ? undefined : text[tag];
 }
 
-/** The text to show: the English one, else the first language's (by tag). */
-export function shown(text: LangText): string {
+/**
+ * The text to show a reader who prefers `languages` (most preferred
+ * first, as navigator.languages lists them): the first of those the text
+ * is in, else the English, else the first language's (by tag).
+ */
+export function shown(text: LangText, languages: readonly string[] = []): string {
+  for (const language of languages) {
+    const tag = matchingTag(text, language);
+    if (tag !== undefined) return text[tag];
+  }
   return english(text) ?? text[Object.keys(text).sort()[0]] ?? "";
 }
 
-/** The whole text when it is in more than English, else undefined: what a model keeps. */
-export function beyondEnglish(text: LangText): LangText | undefined {
-  const tag = englishTag(text);
-  return Object.keys(text).some((t) => t !== tag) ? text : undefined;
+/** The text the app edits: the English, else the text shown; empty when there is none. */
+export function editedText(text: LangText | undefined): string {
+  return text === undefined ? "" : (english(text) ?? shown(text));
 }
 
 /** Untagged text as English: what the app writes for text a user typed. */

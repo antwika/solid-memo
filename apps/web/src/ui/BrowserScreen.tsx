@@ -11,6 +11,7 @@ import { DeckAboutSection } from "./DeckAboutSection";
 import { DIRECTION_LABELS } from "./direction";
 import { BrowserIcon, TrashIcon } from "./icons";
 import { Pager, paginate } from "./Pager";
+import { readerText } from "./readerText";
 
 /** Cards per Browser page: a short list, so paging is quick to scan. */
 export const CARDS_PER_PAGE = 10;
@@ -77,7 +78,7 @@ export function BrowserScreen({
       <header>
         <h2>
           <BrowserIcon />
-          Browser: <a href={deckHref}>{deck.name}</a>
+          Browser: <a href={deckHref}>{readerText(deck.title)}</a>
         </h2>
         <button onClick={onAddCard} disabled={busy}>
           Add card

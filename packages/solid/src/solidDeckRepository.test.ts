@@ -45,7 +45,7 @@ const FLAG = "https://flagcdn.com/h80/af.png";
 const deck: Deck = {
   id: "deck-1",
   url: `${CATALOG}#deck-1`,
-  name: "Kanji N5",
+  title: { en: "Kanji N5" },
   cardsDocumentUrl: `${INSTANCE}decks/deck-1.ttl`,
   reviewsDocumentUrl: `${INSTANCE}reviews/deck-1.ttl`,
   direction: "front-to-back",
@@ -77,7 +77,7 @@ function catalogWithDeck() {
     mockSolidDatasetFrom(CATALOG),
     buildThing(createThing({ url: deck.url }))
       .addIri(RDF.type, SM.Deck)
-      .addStringNoLocale(DCTERMS.title, deck.name)
+      .addStringNoLocale(DCTERMS.title, deck.title.en)
       .addIri(SM.cardsDocument, deck.cardsDocumentUrl)
       .addIri(SM.reviewsDocument, deck.reviewsDocumentUrl)
       .build(),
@@ -100,7 +100,7 @@ describe("listDecks", () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(catalogWithDeck());
     const decks = await makeRepository().listDecks(INSTANCE);
     expect(decks).toHaveLength(1);
-    expect(decks[0].name).toBe("Kanji N5");
+    expect(decks[0].title.en).toBe("Kanji N5");
   });
 });
 
@@ -222,7 +222,7 @@ describe("createDeck", () => {
     expect(created).toEqual({
       id: "deck-fixed",
       url: `${CATALOG}#deck-fixed`,
-      name: "Kanji N5",
+      title: { en: "Kanji N5" },
       cardsDocumentUrl: `${INSTANCE}decks/deck-fixed.ttl`,
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
       direction: "front-to-back",
@@ -259,11 +259,11 @@ describe("createDeck", () => {
 describe("importDeck", () => {
   const content: LibraryDeckContent = {
     url: "https://solid-memo.com/decks/capitals.ttl",
-    name: "Capitals",
+    title: { en: "Capitals" },
     formatVersion: 1,
     authors: ["Anton Wiklund", "A friend"],
     license: "https://creativecommons.org/publicdomain/zero/1.0/",
-    description: "Capitals, from Wikipedia.",
+    description: { en: "Capitals, from Wikipedia." },
     direction: "bidirectional",
     version: "1",
     seriesUrl: "https://solid-memo.com/decks/index.ttl#capitals",
@@ -289,7 +289,7 @@ describe("importDeck", () => {
     expect(imported).toEqual({
       id: "deck-fixed",
       url: `${CATALOG}#deck-fixed`,
-      name: "Capitals",
+      title: { en: "Capitals" },
       cardsDocumentUrl: `${INSTANCE}decks/deck-fixed.ttl`,
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
       direction: "bidirectional",
@@ -336,20 +336,20 @@ describe("importDeck", () => {
     expect(getStringNoLocaleAll(entry, "http://www.w3.org/ns/dcat#keyword")).toEqual(content.keywords);
     expect(getUrl(entry, DCTERMS.license)).toBe(content.license);
     expect(getStringWithLocale(entry, DCTERMS.description, "en")).toBe(
-      content.description,
+      content.description!.en,
     );
   });
 
-  it("copies the release's name and description in every language it states them in", async () => {
+  it("copies the release's title and description in every language it states them in", async () => {
     const imported = await makeRepository().importDeck(INSTANCE, {
       ...content,
-      nameTexts: { en: content.name, sv: "Huvudstäder" },
-      descriptionTexts: { en: content.description!, sv: "Från Wikipedia." },
+      title: { ...content.title, sv: "Huvudstäder" },
+      description: { ...content.description, sv: "Från Wikipedia." },
     });
 
     const catalog = vi.mocked(saveSolidDatasetAt).mock.calls[1][1] as SolidDataset;
     const entry = getThing(catalog, imported.url)!;
-    expect(getStringWithLocale(entry, DCTERMS.title, "en")).toBe(content.name);
+    expect(getStringWithLocale(entry, DCTERMS.title, "en")).toBe(content.title.en);
     expect(getStringWithLocale(entry, DCTERMS.title, "sv")).toBe("Huvudstäder");
     expect(getStringWithLocale(entry, DCTERMS.description, "sv")).toBe("Från Wikipedia.");
   });
@@ -371,7 +371,7 @@ describe("renameDeck", () => {
 
     const renamed = await makeRepository().renameDeck(deck, "Kanji N4");
 
-    expect(renamed).toEqual({ ...deck, name: "Kanji N4", formatVersion: 4 });
+    expect(renamed).toEqual({ ...deck, title: { en: "Kanji N4" }, formatVersion: 4 });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
     const thing = getThing(saved as SolidDataset, deck.url)!;
@@ -382,7 +382,7 @@ describe("renameDeck", () => {
   });
 
   it("changes only the English title, keeping its translations", async () => {
-    const withSwedish = { ...deck, nameTexts: { en: deck.name, sv: "Kanji N5 (svenska)" } };
+    const withSwedish = { ...deck, title: { ...deck.title, sv: "Kanji N5 (svenska)" } };
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(catalogWithDeck());
 
     await makeRepository().renameDeck(withSwedish, "Kanji N4");
@@ -435,7 +435,7 @@ describe("saveDeck", () => {
     expect(getUrl(thing, SM.studyDirection)).toBe(SM.bidirectional);
     expect(getStringNoLocale(thing, SM.direction)).toBeNull();
     expect(getInteger(thing, SM.formatVersion)).toBe(4);
-    expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe(deck.name);
+    expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe(deck.title.en);
     expect(getUrl(thing, SM.reviewsDocument)).toBe(deck.reviewsDocumentUrl);
   });
 
