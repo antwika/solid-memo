@@ -1338,6 +1338,26 @@ form.card-edit {
   font-size: 0.9em;
 }
 
+/* The back's label: how the answer relates to the front, a small caption above it. */
+.card-face p.card-label {
+  margin-bottom: -0.5rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 400;
+  text-align: center;
+}
+
+/* A side's note: what holds of it, set under its text, quieter than it. */
+.card-face p.card-note {
+  margin-top: -0.4rem;
+  max-width: 36rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .card-image {
   display: block;
   max-width: min(100%, 24rem);

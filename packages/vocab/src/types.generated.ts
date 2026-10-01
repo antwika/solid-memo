@@ -45,12 +45,15 @@ export interface CardV2 {
   readonly created?: string;
 }
 
-/** Card format 3: each side has text, a picture or both (a picture is always an IRI); a retired card, which is kept but no longer studied, states owl:deprecated true. */
+/** Card format 3: each side has text, a picture or both (a picture is always an IRI); each side may have a note under it, shown once the answer is revealed, and the back a label above it that says how the answer relates to the front, all three language-tagged text with an English value; a retired card, which is kept but no longer studied, states owl:deprecated true. */
 export interface CardV3 {
   readonly front?: string;
   readonly back?: string;
   readonly frontImage?: string;
   readonly backImage?: string;
+  readonly frontNote?: LangText;
+  readonly backLabel?: LangText;
+  readonly backNote?: LangText;
   readonly created?: string;
   readonly deprecated?: boolean;
 }

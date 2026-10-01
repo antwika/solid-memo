@@ -96,6 +96,9 @@ export function cardContentFromRecord(data: CardV3): CardContent | null {
     back,
     ...(data.frontImage === undefined ? {} : { frontImageUrl: data.frontImage }),
     ...(data.backImage === undefined ? {} : { backImageUrl: data.backImage }),
+    ...(data.frontNote === undefined ? {} : { frontNote: data.frontNote }),
+    ...(data.backLabel === undefined ? {} : { backLabel: data.backLabel }),
+    ...(data.backNote === undefined ? {} : { backNote: data.backNote }),
   };
 }
 
@@ -123,13 +126,16 @@ function retiredOf(data: CardV3): { retired?: true } {
   return data.deprecated === true ? { retired: true } : {};
 }
 
-/** Empty text and a missing picture leave their fields out, as does a card in use its retirement. */
+/** Empty text, a missing picture, label or note leave their fields out, as does a card in use its retirement. */
 export function cardToRecord(card: CardContent & { retired?: true }, createdAt: string): CardV3 {
   return {
     ...(card.front === "" ? {} : { front: card.front }),
     ...(card.back === "" ? {} : { back: card.back }),
     ...(card.frontImageUrl === undefined ? {} : { frontImage: card.frontImageUrl }),
     ...(card.backImageUrl === undefined ? {} : { backImage: card.backImageUrl }),
+    ...(card.frontNote === undefined ? {} : { frontNote: card.frontNote }),
+    ...(card.backLabel === undefined ? {} : { backLabel: card.backLabel }),
+    ...(card.backNote === undefined ? {} : { backNote: card.backNote }),
     ...(createdAt === "" ? {} : { created: createdAt }),
     ...(card.retired === true ? { deprecated: true } : {}),
   };

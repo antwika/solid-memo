@@ -72,6 +72,17 @@ describe("StudyScreen", () => {
     expect(screen.getByText("Afghanistan")).toBeInTheDocument();
   });
 
+  it("shows the question's note only once the answer is revealed, and the answer's with it", () => {
+    const { container } = renderScreen({
+      prompt: { card: { ...card, frontNote: { en: "Kanji" }, backLabel: { en: "Meaning" }, backNote: { en: "An element." } }, direction: "front-to-back" },
+    });
+    expect(container.querySelector(".card-front .card-note")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    expect(container.querySelector(".card-front .card-note")).toHaveTextContent("Kanji");
+    expect(container.querySelector(".card-back .card-label")).toHaveTextContent("Meaning");
+    expect(container.querySelector(".card-back .card-note")).toHaveTextContent("An element.");
+  });
+
   it("asks a back→front prompt from the back and answers with the front", () => {
     const { container } = renderScreen({
       prompt: { card, direction: "back-to-front" },

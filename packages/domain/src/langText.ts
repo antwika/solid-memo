@@ -52,6 +52,28 @@ export function editedText(text: LangText | undefined): string {
   return text === undefined ? "" : (english(text) ?? shown(text));
 }
 
+/**
+ * Text as entered: every language's text trimmed and an empty one left
+ * out; undefined when no English is left, for a text needs its English
+ * (clearing the English clears the text).
+ */
+export function tidied(text: LangText | undefined): LangText | undefined {
+  if (text === undefined) return undefined;
+  const kept = Object.fromEntries(
+    Object.entries(text)
+      .map(([tag, value]) => [tag, value.trim()])
+      .filter(([, value]) => value !== ""),
+  );
+  return englishTag(kept) === undefined ? undefined : kept;
+}
+
+/** Whether two texts say the same in the same languages. */
+export function sameText(a: LangText | undefined, b: LangText | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  const tags = Object.keys(a);
+  return tags.length === Object.keys(b).length && tags.every((tag) => a[tag] === b[tag]);
+}
+
 /** Untagged text as English: what the app writes for text a user typed. */
 export function inEnglish(value: string): LangText {
   return { en: value };

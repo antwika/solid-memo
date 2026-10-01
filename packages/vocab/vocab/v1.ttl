@@ -16,9 +16,9 @@
     a owl:Ontology ;
     dcterms:title "Solid Memo vocabulary, v1" ;
     dcterms:description "Terms for spaced-repetition flashcards stored in a Solid pod: instances, decks, cards, SM-2 review state and study preferences." ;
-    owl:versionInfo "1.7" ;
+    owl:versionInfo "1.8" ;
     rdfs:seeAlso <https://solid-memo.com/vocab/v1.ttl> ;
-    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps)." .
+    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3)." .
 
 #################### Classes ####################
 
@@ -171,6 +171,33 @@ solid-memo:backImage
     rdfs:range rdfs:Resource ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.3 for card format 2." .
+
+solid-memo:frontNote
+    a owl:DatatypeProperty ;
+    rdfs:label "front note" ;
+    rdfs:comment "A short note under the front's text, smaller, shown once the answer is revealed, so it never gives the answer away: what holds of the front (\"Out of use\")." ;
+    rdfs:domain solid-memo:Card ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.8 for card format 3." .
+
+solid-memo:backLabel
+    a owl:DatatypeProperty ;
+    rdfs:label "back label" ;
+    rdfs:comment "A short caption above the back's text that says what kind of answer it is (\"Out of use · replaced by\", \"Capital\", \"Past tense\"), shown whenever the back is, smaller than it. The back's text stays the answer itself." ;
+    rdfs:domain solid-memo:Card ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.8 for card format 3." .
+
+solid-memo:backNote
+    a owl:DatatypeProperty ;
+    rdfs:label "back note" ;
+    rdfs:comment "A short note under the back's text, smaller, shown once the answer is revealed: when or why something changed, where it comes from. The back's text stays the answer itself." ;
+    rdfs:domain solid-memo:Card ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.8 for card format 3." .
 
 #################### Review state ####################
 

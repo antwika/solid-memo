@@ -30,9 +30,13 @@ because a format-3 reader knows only untagged strings: it would read a
 format-4 deck as having no title and drop it. The step to format 4 tags a
 format-3 deck's title and description as English.
 
-Card format 3 lets a card be retired (`owl:deprecated true`): a library
-deck keeps a card it no longer uses instead of removing it, so a copy
-keeps the card and its review state but no longer studies it. The version moved because a format-2 reader
+Card format 3 adds a note under each side (`sm:frontNote`,
+`sm:backNote`, shown once the answer is revealed) and a label above the
+back (`sm:backLabel`, how the answer relates to the front), all three
+language-tagged text like a deck's title, and lets a card be retired
+(`owl:deprecated true`): a library deck keeps a card it no longer uses
+instead of removing it, so a copy keeps the card and its review state
+but no longer studies it. The version moved because a format-2 reader
 would go on studying a retired card. A format-2 card is in use, so the
 step to format 3 changes nothing.
 

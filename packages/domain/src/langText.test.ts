@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { editedText, english, inEnglish, shown, withEnglish } from "./langText";
+import { editedText, english, inEnglish, sameText, shown, tidied, withEnglish } from "./langText";
 
 describe("text in several languages", () => {
   it("finds the English text, a regional English when there is no plain one", () => {
@@ -30,6 +30,20 @@ describe("text in several languages", () => {
     expect(editedText({ sv: "Huvudstäder", "en-gb": "Capitals" })).toBe("Capitals");
     expect(editedText({ sv: "Huvudstäder" })).toBe("Huvudstäder");
     expect(editedText(undefined)).toBe("");
+  });
+
+  it("tidies typed text, and drops a text without English", () => {
+    expect(tidied({ en: " Replaced by ", sv: " Ersatt av ", de: "  " })).toEqual({ en: "Replaced by", sv: "Ersatt av" });
+    expect(tidied({ en: " ", sv: "Ersatt av" })).toBeUndefined();
+    expect(tidied(undefined)).toBeUndefined();
+  });
+
+  it("compares texts language by language", () => {
+    expect(sameText({ en: "a", sv: "b" }, { sv: "b", en: "a" })).toBe(true);
+    expect(sameText({ en: "a" }, { en: "a", sv: "b" })).toBe(false);
+    expect(sameText({ en: "a", sv: "b" }, { en: "a", de: "b" })).toBe(false);
+    expect(sameText(undefined, undefined)).toBe(true);
+    expect(sameText({ en: "a" }, undefined)).toBe(false);
   });
 
   it("replaces the English text under its own tag and keeps the rest", () => {

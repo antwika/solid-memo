@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { CardFace, CardThumbnail } from "./CardFace";
 
@@ -11,6 +11,34 @@ describe("CardFace", () => {
       "水",
     );
     expect(container.querySelector("img")).toBeNull();
+  });
+
+  it("shows a label above the text", () => {
+    const { container } = render(<CardFace side="back" text="Finansmäklare" label={{ en: "Out of use · replaced by" }} />);
+    const [label, text] = container.querySelectorAll(".card-back p");
+    expect(label).toHaveClass("card-label");
+    expect(label).toHaveTextContent("Out of use · replaced by");
+    expect(text).toHaveTextContent("Finansmäklare");
+  });
+
+  it("shows a note under the text", () => {
+    const { container } = render(<CardFace side="back" text="Finansmäklare" note={{ en: "Replaced in version 30." }} />);
+    expect(container.querySelector(".card-back p.card-note")).toHaveTextContent("Replaced in version 30.");
+  });
+
+  it("shows the label and note in the reader's language", () => {
+    vi.stubGlobal("navigator", { languages: ["sv-SE"] });
+    const { container } = render(
+      <CardFace
+        side="back"
+        text="Finansmäklare"
+        label={{ en: "Replaced by", sv: "Ersatt av" }}
+        note={{ en: "In taxonomy version 30.", sv: "I taxonomiversion 30." }}
+      />,
+    );
+    vi.unstubAllGlobals();
+    expect(container.querySelector(".card-label")).toHaveTextContent("Ersatt av");
+    expect(container.querySelector(".card-note")).toHaveTextContent("I taxonomiversion 30.");
   });
 
   it("shows a picture alone, described for screen readers", () => {

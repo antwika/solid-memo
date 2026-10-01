@@ -125,7 +125,7 @@ function StudyCard({
 
   return (
     <div class="practice-card">
-      <CardFace {...question} role="question" />
+      <CardFace {...question} note={revealed ? question.note : undefined} role="question" />
       {revealed ? (
         <>
           <CardFace {...answer} role="answer" />

@@ -5,13 +5,14 @@
 @prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
 @prefix dcterms:    <http://purl.org/dc/terms/> .
 @prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:        <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix owl:        <http://www.w3.org/2002/07/owl#> .
 
-# Card format 3: card format 2, and a card may be retired (owl:deprecated true).
+# Card format 3: card format 2, a note under each side and a label above the back, and a card may be retired (owl:deprecated true).
 <#shape>
     a sh:NodeShape ;
     sh:name "CardV3" ;
-    rdfs:comment "Card format 3: each side has text, a picture or both (a picture is always an IRI); a retired card, which is kept but no longer studied, states owl:deprecated true." ;
+    rdfs:comment "Card format 3: each side has text, a picture or both (a picture is always an IRI); each side may have a note under it, shown once the answer is revealed, and the back a label above it that says how the answer relates to the front, all three language-tagged text with an English value; a retired card, which is kept but no longer studied, states owl:deprecated true." ;
     sh:nodeKind sh:IRI ;
     sh:class solid-memo:Card ;
     sh:property <#formatVersion> ,
@@ -19,11 +20,21 @@
                 <#back> ,
                 <#frontImage> ,
                 <#backImage> ,
+                <#frontNote> ,
+                <#backLabel> ,
+                <#backNote> ,
                 <#created> ,
                 <#deprecated> ;
     sh:or ( [ sh:path solid-memo:front ; sh:minCount 1 ] [ sh:path solid-memo:frontImage ; sh:minCount 1 ] ) ,
-          ( [ sh:path solid-memo:back ; sh:minCount 1 ] [ sh:path solid-memo:backImage ; sh:minCount 1 ] ) ;
-    sh:message "Each side of a card needs text or a picture." .
+          ( [ sh:path solid-memo:back ; sh:minCount 1 ] [ sh:path solid-memo:backImage ; sh:minCount 1 ] ) ,
+          ( [ sh:path solid-memo:frontNote ; sh:maxCount 0 ] [ sh:path solid-memo:frontNote ; sh:qualifiedValueShape <#english> ; sh:qualifiedMinCount 1 ] ) ,
+          ( [ sh:path solid-memo:backLabel ; sh:maxCount 0 ] [ sh:path solid-memo:backLabel ; sh:qualifiedValueShape <#english> ; sh:qualifiedMinCount 1 ] ) ,
+          ( [ sh:path solid-memo:backNote ; sh:maxCount 0 ] [ sh:path solid-memo:backNote ; sh:qualifiedValueShape <#english> ; sh:qualifiedMinCount 1 ] ) ;
+    sh:message "Each side of a card needs text or a picture, and a note or label, when there is one, an English text (\"…\"@en)." .
+
+<#english>
+    a sh:NodeShape ;
+    sh:languageIn ( "en" ) .
 
 <#formatVersion>
     a sh:PropertyShape ;
@@ -59,6 +70,33 @@
     sh:nodeKind sh:IRI ;
     sh:maxCount 1 ;
     sh:message "A picture is an IRI (<https://…>), never a string literal." .
+
+<#frontNote>
+    a sh:PropertyShape ;
+    sh:path solid-memo:frontNote ;
+    sh:datatype rdf:langString ;
+    sh:uniqueLang true ;
+    sh:qualifiedValueShape <#english> ;
+    sh:qualifiedMaxCount 1 ;
+    sh:message "A note under the front is language-tagged text, one per language, and one of them English (\"…\"@en)." .
+
+<#backLabel>
+    a sh:PropertyShape ;
+    sh:path solid-memo:backLabel ;
+    sh:datatype rdf:langString ;
+    sh:uniqueLang true ;
+    sh:qualifiedValueShape <#english> ;
+    sh:qualifiedMaxCount 1 ;
+    sh:message "A label above the back is language-tagged text, one per language, and one of them English (\"…\"@en)." .
+
+<#backNote>
+    a sh:PropertyShape ;
+    sh:path solid-memo:backNote ;
+    sh:datatype rdf:langString ;
+    sh:uniqueLang true ;
+    sh:qualifiedValueShape <#english> ;
+    sh:qualifiedMaxCount 1 ;
+    sh:message "A note under the back is language-tagged text, one per language, and one of them English (\"…\"@en)." .
 
 <#created>
     a sh:PropertyShape ;

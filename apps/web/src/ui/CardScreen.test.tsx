@@ -60,6 +60,43 @@ describe("CardScreen", () => {
     expect(props.onSave).toHaveBeenCalledWith({ front: "火", back: "fire" });
   });
 
+  it("edits a note's English and keeps its other languages; clearing the English clears the note", () => {
+    const { props } = renderScreen({
+      card: { ...card, backNote: { en: "An element.", sv: "Ett element." }, backLabel: { en: "Meaning", sv: "Betydelse" } },
+    });
+    expect(screen.getByLabelText("Back note")).toHaveValue("An element.");
+    fireEvent.input(screen.getByLabelText("Back note"), { target: { value: "One of the five elements." } });
+    fireEvent.input(screen.getByLabelText("Label"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(props.onSave).toHaveBeenCalledWith({
+      front: "水",
+      back: "water",
+      backNote: { en: "One of the five elements.", sv: "Ett element." },
+    });
+  });
+
+  it("shows each side's note and the back's label, prefills them and saves them", () => {
+    const { props, container } = renderScreen({
+      card: { ...card, frontNote: { en: "Kanji" }, backLabel: { en: "Meaning" }, backNote: { en: "An element." } },
+    });
+    expect(container.querySelector(".card-front .card-note")).toHaveTextContent("Kanji");
+    expect(container.querySelector(".card-back .card-label")).toHaveTextContent("Meaning");
+    expect(container.querySelector(".card-back .card-note")).toHaveTextContent("An element.");
+    expect(screen.getByLabelText("Front note")).toHaveValue("Kanji");
+    expect(screen.getByLabelText("Label")).toHaveValue("Meaning");
+    expect(screen.getByLabelText("Back note")).toHaveValue("An element.");
+    fireEvent.input(screen.getByLabelText("Front note"), { target: { value: " N5 " } });
+    fireEvent.input(screen.getByLabelText("Back note"), { target: { value: " One of the five elements. " } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(props.onSave).toHaveBeenCalledWith({
+      front: "水",
+      frontNote: { en: "N5" },
+      backLabel: { en: "Meaning" },
+      back: "water",
+      backNote: { en: "One of the five elements." },
+    });
+  });
+
   it("shows a picture card and prefills its picture fields", () => {
     const { container } = renderScreen({
       card: {

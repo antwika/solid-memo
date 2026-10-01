@@ -1,6 +1,6 @@
 /* Generated from vocab/v1.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
-/** Solid Memo's own vocabulary, version 1.7 (see docs/vocab.md). */
+/** Solid Memo's own vocabulary, version 1.8 (see docs/vocab.md). */
 export const SM_NS = "https://solid-memo.com/vocab/v1#";
 
 export const SM = {
@@ -38,6 +38,12 @@ export const SM = {
   frontImage: `${SM_NS}frontImage`,
   /** A picture on the back of the card, shown above any text. Always an IRI, never a string literal. (Added in 1.3 for card format 2.) */
   backImage: `${SM_NS}backImage`,
+  /** A short note under the front's text, smaller, shown once the answer is revealed, so it never gives the answer away: what holds of the front ("Out of use"). (Added in 1.8 for card format 3.) */
+  frontNote: `${SM_NS}frontNote`,
+  /** A short caption above the back's text that says what kind of answer it is ("Out of use · replaced by", "Capital", "Past tense"), shown whenever the back is, smaller than it. The back's text stays the answer itself. (Added in 1.8 for card format 3.) */
+  backLabel: `${SM_NS}backLabel`,
+  /** A short note under the back's text, smaller, shown once the answer is revealed: when or why something changed, where it comes from. The back's text stays the answer itself. (Added in 1.8 for card format 3.) */
+  backNote: `${SM_NS}backNote`,
   /** SM-2 easiness factor, never below 1.3. (Since 1.0.) */
   easeFactor: `${SM_NS}easeFactor`,
   /** Days between the last review and the next due day. (Since 1.0.) */
