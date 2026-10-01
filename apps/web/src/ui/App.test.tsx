@@ -132,10 +132,10 @@ describe("App", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: "I already have a Pod" }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "solidweb.org" }));
+    fireEvent.click(screen.getByRole("button", { name: "solidweb.me" }));
 
     expect(await screen.findByText("provider unreachable")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "solidweb.org" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "solidweb.me" })).toBeEnabled();
   });
 
   it("shows a login error (Error instance) and re-enables the form", async () => {
