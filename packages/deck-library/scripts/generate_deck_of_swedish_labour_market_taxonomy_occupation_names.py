@@ -1,26 +1,32 @@
 #!/usr/bin/env python3
-"""Build the "Swedish labour market taxonomy: occupation changes" deck (a Swedish occupation name
-as it was -> what it is called today, and what changed) from the labour market
-taxonomy of Arbetsförmedlingen, the Swedish Public Employment Service (the
-JobTech Taxonomy), in the solid-memo Turtle deck format.
+"""Build the "Swedish labour market taxonomy: new and changed occupation names" deck from the
+labour market taxonomy of Arbetsförmedlingen, the Swedish Public Employment
+Service, in the solid-memo Turtle deck format: a Swedish
+occupation name as it was -> what it is called today, and what changed; and a
+name that is new -> when it came, and what it replaces.
 
-Generates decks/swedish-labour-market-taxonomy-occupation-changes.ttl. Python 3.10+, standard library
+Generates decks/swedish-labour-market-taxonomy-occupation-names.ttl. Python 3.10+, standard library
 only. One snapshot of the taxonomy's occupation names is fetched per version
 (~0.7 MB each); with --cache-dir they are kept, since a published version never
 changes.
 
 USAGE
-  python3 scripts/generate_deck_of_swedish_labour_market_taxonomy_occupation_changes.py \\
-      -o decks/swedish-labour-market-taxonomy-occupation-changes.ttl --creator "Name <email>" \\
-      [--from 1] [--to 31] [--cache-dir DIR] [--verbose] [--allow-uncommitted]
+  python3 scripts/generate_deck_of_swedish_labour_market_taxonomy_occupation_names.py \\
+      -o decks/swedish-labour-market-taxonomy-occupation-names.ttl --creator "Name <email>" \\
+      [--from 1] [--to 31] [--cache-dir DIR] [--verbose] [--allow-uncommitted] [--notes-file FILE]
+  python3 scripts/generate_deck_of_swedish_labour_market_taxonomy_occupation_names.py \\
+      -o decks/swedish-labour-market-taxonomy-occupation-names.ttl --check
 
   The deck starts from --from (default: version 1, the first) and runs to
   --to (default: the newest version). The script prints a report of what it
   included, excluded and adjusted and why, then the release notes and the
-  `npm run deck:release` command that releases the deck with them.
+  `npm run deck:release` command that releases the deck with them
+  (--notes-file also writes the notes to a file). --check writes nothing
+  and says whether the taxonomy has a version the latest release lacks;
+  the weekly workflow .github/workflows/taxonomy-deck.yml uses it.
 
 SOURCE
-  Arbetsmarknadstaxonomi (JobTech Taxonomy), Arbetsförmedlingen
+  Arbetsmarknadstaxonomi, Arbetsförmedlingen (served by its JobTech API)
   https://taxonomy.api.jobtechdev.se/v1/taxonomy/   CC0 1.0 (as stated in
   Arbetsförmedlingen's DCAT record on dataportal.se), so the deck is CC0 too.
 
@@ -33,17 +39,38 @@ METHOD
     concepts(type: "occupation-name", version: N, include_deprecated: true)
       { id preferred_label deprecated replaced_by { id preferred_label } }
 
-  One rule decides the cards: an outdated name is a name a concept had while
-  it was live and no longer has, because the concept was renamed or
-  deprecated. Its card has the outdated name on the front, and on the back
-  what the concept is called today (itself if live, its successors if
-  deprecated, " · " between them) and how and when the name went out of use:
+  Every card has a name on the front, with a note under it (card format 3),
+  shown once the answer is revealed: the verdict, "In use" or "Out of use".
+  Its back has a label that says how the answer relates to the name, the
+  answer itself, what the name stands for today, and a note under it that
+  says when. Two rules decide the cards. An outdated name is a name a
+  concept had while it was live and no longer has, because the concept was
+  renamed or deprecated. Its answer is what the concept is called today
+  (itself if live, its successors if deprecated, " · " between them):
 
-    Aktiemäklare -> "Finansmäklare (Ersatt i taxonomiversion 30, …)"
-    Motorman -> "Motorman fartyg (Nytt namn i taxonomiversion 31, …)"
-    Scentekniker -> "Teatertekniker/Scentekniker (Ny synonym: Teatertekniker, …)"
-    Hamnarbetare/Stuveriarbetare -> "Hamnarbetare (Synonymen Stuveriarbetare togs bort …)"
-    X -> "Ingen ersättare (Utgick i taxonomiversion N, …)"
+    Aktiemäklare (Out of use) -> "Replaced by" / "Finansmäklare" / "In taxonomy version 30, …"
+    Motorman (Out of use) -> "Replaced by" / "Motorman fartyg" / "In taxonomy version 27, …"
+    Arbetsledare, mureri (Out of use) -> "Renamed to" / "Arbetsledare, murning" / "In taxonomy version N, …"
+    Asfaltarbetare (Out of use) -> "Replaced by" / "Asfaltverksmaskinist · Beläggningsarbetare" /
+        "Renamed to Asfaltarbetare, asfaltframställning in taxonomy version 17; replaced in version 22, …"
+    Scentekniker (In use) -> "Synonym added" / "Teatertekniker/Scentekniker" / "Teatertekniker added in …"
+    Hamnarbetare/Stuveriarbetare (Out of use) -> "Synonym removed" / "Hamnarbetare" / "Stuveriarbetare removed in …"
+    X (Out of use) -> "Ingen ersättare" / "Went out of use in taxonomy version N, …"
+
+  A new name is a name a live concept has today that no live concept had in
+  the first version read (give or take punctuation, spacing or word order).
+  Its answer is what it replaces, if anything:
+
+    Finansmäklare (In use) -> "Replacing" / "Aktiemäklare · …" / "Added in taxonomy version 30, …"
+    X (In use) -> "Nytt yrke" / "Added in taxonomy version N, …"
+
+  The answer is always Swedish, like the names: "Nytt yrke" (a new
+  occupation), "Ingen ersättare" (no replacement). The notes and the label
+  are in English and Swedish, and the app shows the reader's language.
+
+  One card per name: a new name that later goes out of use keeps its card,
+  whose back then tells what replaced it, and an outdated name that comes back
+  into use becomes a new name again.
 
   Not cards: an old name that is today's name give or take punctuation,
   spacing or word order ("7-9" -> "7–9", "A/B" -> "B/A"), or exactly (a new
@@ -52,8 +79,11 @@ METHOD
 
   The deck is cumulative, and meant to grow by one release per taxonomy
   version: a later run adds cards and changes backs, so an imported copy keeps
-  its reviews when it is upgraded. A card goes only when its name comes back
-  into use, as it would then be wrong. Card ids come from the front alone
+  its reviews when it is upgraded. A card of the previous release that no
+  rule makes any longer (say, a name back in use as it was in the first
+  version) is never removed but retired (owl:deprecated true), as it was last
+  released: a copy keeps it and its reviews, but no longer studies it, and a
+  later release can bring it back. Card ids come from the front alone
   ("<slug>-<hash>"), since the outdated name never changes; the replaced_by
   links are always read from the newest version, as the taxonomy repoints them
   rather than chaining (see below). Every card's dcterms:created is the time of
@@ -106,13 +136,15 @@ REPRODUCIBILITY
 
   The description says what the deck is, not what a release did: that goes in
   the release notes, which the script writes by comparing with the deck's
-  previous release, if any.
+  previous release, if any: how many names are new, how many changed (and how),
+  and which cards were retired or brought back.
 
 LANGUAGE
   Solid Memo is English first. The deck is in deck format 4, which states the
   title and description in several languages: English, which the app shows,
   and Swedish (TEXTS). The keywords and the notes on the cards' backs are
-  English, the occupation names Swedish.
+  English, the occupation names Swedish. The cards are in card format 3,
+  which can retire a card.
 """
 
 from __future__ import annotations
@@ -245,10 +277,18 @@ def name_change(old: str, new: str) -> tuple[str | None, list[str], list[str]]:
     return None, [], []
 
 
+def name_key(label: str) -> frozenset[str]:
+    """A label's names, as a new name is told from an old one: its "/"-joined
+    names, each without its dashes, commas and spacing and case folded, in any
+    order ("A/B" and "B/A", "7-9" and "7–9" are the same name)."""
+    return frozenset(" ".join(re.sub(r"[‐‑‒–—−]", "-", part).replace(",", " ").split()).casefold()
+                     for part in label.split("/"))
+
+
 def card_id(front: str) -> str:
-    """A card's fragment id, from its front alone: the outdated name never
-    changes, so neither does the id, whichever concepts the name belonged to and
-    however it went out of use. The hash tells spellings apart that slug alike
+    """A card's fragment id, from its front alone: a name never changes, so
+    neither does the id, whichever concepts the name belonged to, however it
+    went out of use, and whether it is new or outdated. The hash tells spellings apart that slug alike
     ("Kock, storhushåll" and "Kock storhushåll")."""
     return f"{slug(front)}-{hashlib.sha1(front.encode()).hexdigest()[:6]}"
 
@@ -267,10 +307,19 @@ class Card:
     concept_ids: list[str] = field(default_factory=list)
     added: list[str] = field(default_factory=list)  # synonyms, for kind "synonym_added"
     removed: list[str] = field(default_factory=list)  # synonyms, for kind "synonym_removed"
+    replaces: list[str] = field(default_factory=list)  # outdated names, for kind "new"
+    # For a name that went by a rename, of a concept since deprecated: the
+    # name it was renamed to, and the version the concept was deprecated in.
+    renamed_to: str | None = None
+    deprecated_in: int | None = None
 
 
 # What each kind of card says, as (title, why), for the report.
 CARD_KINDS: dict[str, tuple[str, str]] = {
+    "new": ("new names",
+            "a name a live occupation has today that no live occupation had in the first version read, "
+            "give or take punctuation, spacing or word order. Front: the new name; back: in use, and the "
+            "outdated names it replaces, or that it is a new occupation; note: the version it came in"),
     "replaced": ("replaced names",
                  "a name that was live and is now deprecated, with the concepts that replace it. "
                  "Front: the old name; back: what replaces it today, and the version it was replaced in"),
@@ -330,7 +379,7 @@ WHY: dict[str, tuple[str, str, str]] = {
                   "new concept replacing the old one: nothing to learn"),
     "revived": ("excluded", "names deprecated and later taken back into use",
                 "the concept is live again, so the name is not outdated; a card an earlier release had "
-                "for it is removed, since it would now be wrong"),
+                "for it is retired, since it would now be wrong"),
     "relabelled_at_deprecation": ("adjusted", "concepts given another name as they were deprecated",
                                   "the taxonomy often puts back an older name on a concept it deprecates "
                                   "(\"Hamnarbetare\" deprecated as \"Hamnarbetare/Stuveriarbetare\"); "
@@ -338,17 +387,21 @@ WHY: dict[str, tuple[str, str, str]] = {
                                   "concept last had while live"),
     "renamed_then_replaced": ("adjusted", "old names of concepts that were renamed and later replaced",
                               "the old name keeps its card, which now names what replaces the concept "
-                              "today, so a learner who studied it keeps its reviews"),
+                              "today (the note gives both steps), so a learner who studied it keeps its "
+                              "reviews"),
     "replacement_missing": ("adjusted", "replaced names whose replacement the taxonomy has dropped",
                             "the newest version names nothing replacing them, though an earlier one "
                             "did: the back names the last replacement given, rather than the card "
                             "disappearing for a release"),
-    "shared_name": ("adjusted", "outdated names that two concepts had",
+    "handed_over": ("adjusted", "outdated names handed from a deprecated concept to a new one with the same name",
+                    "the name lived on, so the card follows it to the concept that had it last: its answer, "
+                    "and the version the name really went out of use in"),
+    "shared_name": ("adjusted", "outdated names that two concepts had, neither replacing the other",
                     "one card per name, naming the successors of both: two cards with the same front "
                     "would contradict each other"),
     "replacement_added": ("adjusted", "replaced names that had no replacement when deprecated",
                           "the taxonomy added what replaces them in a later version; the back shows "
-                          "it, with the version the name went out of use in"),
+                          "it, and the note the version the name went out of use in"),
     "repointed": ("adjusted", "replaced names whose replacement was itself replaced later",
                   "the taxonomy repoints the old name to the new successor instead of chaining, and "
                   "the back shows who replaces it today; a later release may change such a back"),
@@ -362,13 +415,21 @@ METHOD = [
     "The taxonomy keeps replaced_by pointing at live concepts, so the latest version alone says what "
     "every outdated name is called today; the earlier versions are read only to find when each name "
     "went out of use.",
-    "One rule decides the cards: an outdated name is a name a concept had while it was live and no "
-    "longer has. The back names what the concept is called today (itself if live, its successors if "
-    "deprecated), and how and when the name went out of use. Labels given only at deprecation are "
-    "never cards.",
+    "Each card has a name on the front. Once the answer is revealed, the note under the front says "
+    "whether the name is in use; the label above the back says how the answer relates to the name "
+    "(\"Replaced by\", \"Replacing\"); the back is the answer, in Swedish like the names; and the note "
+    "under it says what happened, and when. The notes and the label are in English and Swedish.",
+    "The first rule: an outdated name is a name a concept had while it was live and no longer has. Its "
+    "answer is what the concept is called today (itself if live, its successors if deprecated). Labels "
+    "given only at deprecation are never cards.",
+    "The second rule: a new name is a name a live concept has today that no live concept had in the "
+    "first version read, give or take punctuation, spacing or word order. Its answer is the outdated "
+    "names it replaces, or \"Nytt yrke\" (a new occupation). One card per name: a new name that goes out "
+    "of use keeps its card, whose back then says what replaced it.",
     "The deck is cumulative: a later release adds cards and changes backs, so a copy imported by a "
-    "learner keeps its reviews when it is upgraded. A card is removed only if its name comes back into "
-    "use (give or take punctuation), since the card would then be wrong.",
+    "learner keeps its reviews when it is upgraded. A card of the previous release that neither rule makes "
+    "any longer is retired (owl:deprecated true) as it was, never removed: a copy keeps it and its "
+    "reviews, but no longer studies it.",
 ]
 
 
@@ -391,6 +452,7 @@ def build_cards(snaps: dict[int, dict[str, Concept]], since: int,
     left_out: list[LeftOut] = []
     met: Met = collections.defaultdict(list)
     cards: dict[str, Card] = {}  # by front
+    candidates: dict[str, list[Card]] = collections.defaultdict(list)  # by front, one per concept
 
     def live_in(cid: str, v: int) -> bool:
         return cid in snaps[v] and not snaps[v][cid].deprecated
@@ -477,27 +539,63 @@ def build_cards(snaps: dict[int, dict[str, Concept]], since: int,
             if label in live_labels:
                 left_out.append(LeftOut(label, cid, v, "live_name" if by_deprecation else "live_old_name"))
                 continue
-            if now.deprecated and not by_deprecation:
-                met["renamed_then_replaced"].append(f"{label} → {snaps[v][cid].label} (version {v}) → "
-                                                    f"{' · '.join(current)} (version {went})")
-            kind = kind or ("discontinued" if not current else "replaced" if by_deprecation else "renamed")
-            if label in cards:  # two concepts had this name: one card, naming the successors of both
-                card = cards[label]
-                met["shared_name"].append(f"{label}: a name of {card.concept_ids[0]} and of {cid}")
-                card.replacements = sorted({*card.replacements, *current}, key=by_name)
-                card.kind = next(k for k in ("replaced", "renamed", "discontinued") if k in (card.kind, kind)
-                                 or k == "discontinued")
-                if card.kind == "discontinued" and card.replacements:
-                    card.kind = "replaced"
-                card.added, card.removed = [], []
-                card.version = min(card.version, v)
-                card.concept_ids.append(cid)
-            else:
-                cards[label] = Card(card_id(label), label, current, v, kind=kind, concept_ids=[cid],
-                                    added=added, removed=removed)
+            # A name renamed away, of a concept deprecated since, is a replaced
+            # name: its answer is what replaces the concept today, and its
+            # note tells both steps.
+            kind = kind or ("discontinued" if not current else "replaced" if now.deprecated else "renamed")
+            then = ({"renamed_to": snaps[v][cid].label, "deprecated_in": went}
+                    if now.deprecated and not by_deprecation else {})
+            candidates[label].append(Card(card_id(label), label, current, v, kind=kind, concept_ids=[cid],
+                                          added=added, removed=removed, **then))
+
+    # A name more than one concept had. Usually a hand-over: the taxonomy
+    # deprecated a concept and made a new one with the very same name, which
+    # changed nothing about the name, so the card is the new concept's alone.
+    # Otherwise one card names the successors of both.
+    def handed_over(old: str, new: str) -> bool:
+        return any(new in snaps[v][old].replaced_by for v in snaps if old in snaps[v])
+
+    for label, these in candidates.items():
+        these = [c for c in these
+                 if not any(handed_over(c.concept_ids[0], o.concept_ids[0]) for o in these if o is not c)]
+        for c in candidates[label]:
+            if c not in these:
+                met["handed_over"].append(f"{label}: from {c.concept_ids[0]} to a new concept with the same name")
+        card = these[0]
+        for other in these[1:]:
+            met["shared_name"].append(f"{label}: a name of {card.concept_ids[0]} and of {other.concept_ids[0]}")
+            card.replacements = sorted({*card.replacements, *other.replacements}, key=by_name)
+            card.kind = next(k for k in ("replaced", "renamed", "discontinued") if k in (card.kind, other.kind)
+                             or k == "discontinued")
+            if card.kind == "discontinued" and card.replacements:
+                card.kind = "replaced"
+            card.added, card.removed = [], []
+            card.renamed_to, card.deprecated_in = None, None  # two paths: the note gives the first date only
+            card.version = min(card.version, other.version)
+            card.concept_ids.append(other.concept_ids[0])
+        cards[label] = card
+        if card.renamed_to is not None:  # counted once the card is settled: a hand-over drops a concept's
+            met["renamed_then_replaced"].append(f"{label} → {card.renamed_to} (version {card.version}) → "
+                                                f"{' · '.join(card.replacements) or 'nothing'} "
+                                                f"(version {card.deprecated_in})")
 
     if errors:
         sys.exit("the taxonomy is not as this script expects:\n" + "\n".join(errors))
+
+    # The new names: live today, and no live concept had them (give or take
+    # punctuation, spacing or word order) in the first version read. The
+    # version a name came in is the last it appeared in after being absent.
+    live_keys = {v: {name_key(c.label) for c in snaps[v].values() if not c.deprecated}
+                 for v in range(since - 1, to + 1)}
+    for label in sorted(live_labels, key=by_name):
+        key = name_key(label)
+        if key in live_keys[since - 1] or label in cards:
+            continue
+        came = max(v for v in range(since, to + 1) if key in live_keys[v] and key not in live_keys[v - 1])
+        replaces = sorted({c.front for c in cards.values() if c.kind != "new" and label in c.replacements},
+                          key=by_name)
+        cards[label] = Card(card_id(label), label, [], came, kind="new", replaces=replaces)
+
     result = sorted(cards.values(), key=lambda c: (by_name(c.front), c.id))
     for what, values in (("front", [c.front for c in result]), ("id", [c.id for c in result])):
         duplicates = sorted({x for x in values if values.count(x) > 1})
@@ -512,7 +610,7 @@ REPO_URL = "https://github.com/antwika/solid-memo"
 
 
 # Options that do not change the deck, left out of the command it records.
-NOT_RECORDED = {"--cache-dir": True, "--verbose": False, "--allow-uncommitted": False}
+NOT_RECORDED = {"--cache-dir": True, "--verbose": False, "--allow-uncommitted": False, "--notes-file": True}
 
 
 @dataclass
@@ -539,13 +637,26 @@ def script_provenance(allow_uncommitted: bool) -> Provenance:
 
     top = git("rev-parse", "--show-toplevel")
     rel = os.path.relpath(script, top).replace(os.sep, "/") if top else script.name
-    argv, skip = [], False
+    def from_top(path: str) -> str:
+        """An output path as the repository root sees it: the command is recorded to run from there."""
+        return os.path.relpath(os.path.abspath(path), top).replace(os.sep, "/") if top else path
+
+    argv, skip, output = [], False, False
     for arg in sys.argv[1:]:
         name = arg.split("=", 1)[0]
         if skip:
             skip = False
+        elif output:
+            argv.append(from_top(arg))
+            output = False
         elif name in NOT_RECORDED:
             skip = NOT_RECORDED[name] and "=" not in arg
+        elif name in ("-o", "--output"):
+            if "=" in arg:
+                argv.append(f"{name}={from_top(arg.split('=', 1)[1])}")
+            else:
+                argv.append(arg)
+                output = True
         else:
             argv.append(arg)
     command = shlex.join(["python3", rel, *argv])
@@ -607,51 +718,120 @@ def xsd_datetime(timestamp: str) -> str:
 # in several languages, one of them English, which Solid Memo shows.
 TEXTS = {
     "en": {
-        "title": "Swedish labour market taxonomy: occupation changes",
+        "title": "Swedish labour market taxonomy: new and changed occupation names",
         "description": (
-            "Swedish occupation names that have changed in the labour market taxonomy of "
-            "Arbetsförmedlingen, the Swedish Public Employment Service (the JobTech Taxonomy), since its "
-            "first version ({first_date}). The name as it was is on the front. The back shows what the "
-            "occupation is called today and what changed: a new name, a replacement by one or more other "
-            "occupations, a synonym added or removed, or no replacement at all, with the taxonomy version "
-            "and date of the change. The names are in Swedish. The deck grows by one release for every new "
-            "version of the taxonomy; each release's notes say what it changed."
+            "Occupation names that are new or have changed in the labour market taxonomy of the Swedish "
+            "Public Employment Service (Arbetsförmedlingen) since {first_date}. The front shows a name, the back whether it is still in use and what it is "
+            "today: its current name, its replacement or that it is new, with the version and date of the change. "
+            "One release per taxonomy version."
         ),
     },
     "sv": {
-        "title": "Svensk arbetsmarknadstaxonomi: yrkesändringar",
+        "title": "Arbetsmarknadstaxonomin: nya och ändrade yrkesbenämningar",
         "description": (
-            "Svenska yrkesbenämningar som har ändrats i Arbetsförmedlingens arbetsmarknadstaxonomi "
-            "(JobTech Taxonomy) sedan dess första version ({first_date}). Benämningen som den var står på "
-            "framsidan. Baksidan visar vad yrket heter i dag och vad som ändrades: ett nytt namn, ett eller "
-            "flera andra yrken som ersätter det, en synonym som lagts till eller tagits bort, eller ingen "
-            "ersättare alls, med taxonomiversion och datum för ändringen. Leken växer med en ny utgåva för "
-            "varje ny version av taxonomin; varje utgåvas anteckningar säger vad den ändrade."
+            "Yrkesbenämningar som är nya eller har ändrats i Arbetsförmedlingens arbetsmarknadstaxonomi "
+            "sedan {first_date}. Framsidan visar en benämning, baksidan om den fortfarande används och vad "
+            "den är i dag: dess nuvarande namn, vad som ersätter den eller att den är ny, med version och "
+            "datum för ändringen. En utgåva per taxonomiversion."
         ),
     },
 }
-KEYWORDS = ["occupations", "labour market", "Sweden", "Arbetsförmedlingen", "JobTech Taxonomy"]
+KEYWORDS = ["occupations", "labour market", "Sweden", "Arbetsförmedlingen", "Arbetsmarknadstaxonomi"]
 
 
 def english_list(items: list[str]) -> str:
     return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
 
 
-def back_text(card: Card, versions: dict[int, str]) -> str:
-    """The current name(s), then what changed and when: "Hamnarbetare (synonym
-    Stuveriarbetare removed in taxonomy version 24, 2025-01-14)"."""
-    when = f"in taxonomy version {card.version}, {versions[card.version][:10]}"
-    if card.kind == "synonym_added":
-        what = (f"synonym {card.added[0]} added" if len(card.added) == 1
-                else f"synonyms {english_list(card.added)} added")
-    elif card.kind == "synonym_removed":
-        what = (f"synonym {card.removed[0]} removed" if len(card.removed) == 1
-                else f"synonyms {english_list(card.removed)} removed")
-    elif card.kind == "discontinued":
-        return f"No replacement (went out of use {when})"
-    else:
-        what = "renamed" if card.kind == "renamed" else "replaced"
-    return f"{' · '.join(card.replacements)} ({what} {when})"
+@dataclass
+class Back:
+    """What a card says besides its front: the note under the front, the
+    verdict ("In use", "Out of use"), shown once the answer is revealed; the
+    label above the back, how the answer relates to the front ("Replaced
+    by"); the answer; and the note under it, which says when. The notes and
+    the label are in every language of TEXTS (card format 3), empty when a
+    card has none; the answer is one text, in Swedish like the names."""
+    front_note: dict[str, str]
+    label: dict[str, str]
+    text: str
+    note: dict[str, str]
+
+
+Text = dict[str, str]  # language tag -> text
+
+
+def lists(items: list[str]) -> Text:
+    """ "A, B and C" in every language."""
+    if len(items) == 1:
+        return {"en": items[0], "sv": items[0]}
+    return {"en": ", ".join(items[:-1]) + " and " + items[-1], "sv": ", ".join(items[:-1]) + " och " + items[-1]}
+
+
+IN_USE: Text = {"en": "In use", "sv": "Används"}
+OUT_OF_USE: Text = {"en": "Out of use", "sv": "Används inte längre"}
+NONE: Text = {}
+# The answers that are no occupation name, in Swedish like the names.
+NEW_OCCUPATION = "Nytt yrke"
+NO_REPLACEMENT = "Ingen ersättare"
+REPLACED_BY: Text = {"en": "Replaced by", "sv": "Ersatt av"}
+RENAMED_TO: Text = {"en": "Renamed to", "sv": "Bytte namn till"}
+REPLACING: Text = {"en": "Replacing", "sv": "Ersätter"}
+SYNONYM_ADDED: Text = {"en": "Synonym added", "sv": "Synonym tillagd"}
+SYNONYM_REMOVED: Text = {"en": "Synonym removed", "sv": "Synonym borttagen"}
+
+
+def is_new(back: Back) -> bool:
+    """Whether a card's back says its front is a new name: what it replaces, or that it is a new occupation."""
+    return back.label.get("en") == REPLACING["en"] or back.text == NEW_OCCUPATION
+
+
+def back_of(card: Card, versions: dict[int, str]) -> Back:
+    """The card's back: "Out of use" / "Replaced by" / "Finansmäklare" / "In
+    taxonomy version 30, 2026-05-08."; for a new name "In use" / "Replacing" /
+    "Aktiemäklare · …", or "In use" / "Nytt yrke"."""
+    v, date = card.version, versions[card.version][:10]
+    today = " · ".join(card.replacements)
+    if card.renamed_to is not None and card.kind in ("replaced", "discontinued"):
+        then, then_date = card.deprecated_in, versions[card.deprecated_in][:10]
+        replaced = card.kind == "replaced"
+        note = {
+            "en": f"Renamed to {card.renamed_to} in taxonomy version {v}; "
+                  f"{'replaced' if replaced else 'went out of use'} in version {then}, {then_date}.",
+            "sv": f"Bytte namn till {card.renamed_to} i taxonomiversion {v}; "
+                  f"{'ersatt' if replaced else 'slutade användas'} i version {then}, {then_date}.",
+        }
+        if not replaced:
+            return Back(OUT_OF_USE, NONE, NO_REPLACEMENT, note)
+        return Back(OUT_OF_USE, REPLACED_BY, today, note)
+    in_version: Text = {"en": f"In taxonomy version {v}, {date}.", "sv": f"I taxonomiversion {v}, {date}."}
+    added: Text = {"en": f"Added in taxonomy version {v}, {date}.", "sv": f"Tillkom i taxonomiversion {v}, {date}."}
+    if card.kind == "new":
+        if card.replaces:
+            return Back(IN_USE, REPLACING, " · ".join(card.replaces), added)
+        return Back(IN_USE, NONE, NEW_OCCUPATION, added)
+    if card.kind == "discontinued":
+        return Back(OUT_OF_USE, NONE, NO_REPLACEMENT, {
+            "en": f"Went out of use in taxonomy version {v}, {date}.",
+            "sv": f"Slutade användas i taxonomiversion {v}, {date}.",
+        })
+    if card.kind in ("synonym_added", "synonym_removed"):
+        names = lists(card.added if card.kind == "synonym_added" else card.removed)
+        many = len(card.added or card.removed) > 1
+        en, sv = (("added", "tillagda" if many else "tillagd") if card.kind == "synonym_added"
+                  else ("removed", "borttagna" if many else "borttagen"))
+        note = {"en": f"{names['en']} {en} in taxonomy version {v}, {date}.",
+                "sv": f"{names['sv']} {sv} i taxonomiversion {v}, {date}."}
+        if card.kind == "synonym_added":
+            return Back(IN_USE, SYNONYM_ADDED, today, note)
+        return Back(OUT_OF_USE, SYNONYM_REMOVED, today, note)
+    if card.kind == "renamed":
+        return Back(OUT_OF_USE, RENAMED_TO, today, in_version)
+    return Back(OUT_OF_USE, REPLACED_BY, today, in_version)
+
+
+def tagged(text: Text, predicate: str) -> str:
+    """ "…"@en , "…"@sv, aligned in the house style, English first."""
+    return aligned(predicate, [f"{ttl_str(text[tag])}@{tag}" for tag in sorted(text, key=lambda t: (t != "en", t))])
 
 
 CC0 = "<https://creativecommons.org/publicdomain/zero/1.0/>"
@@ -663,33 +843,59 @@ def comment_lines(lines: list[str], width: int = 96) -> list[str]:
     for line in lines:
         indent = "    " if line.startswith(("- ", "  ")) else ""
         out += ["#" if not line else "# " + w
-                for w in (textwrap.wrap(line, width, subsequent_indent=indent) or [""])]
+                for w in (textwrap.wrap(line, width, subsequent_indent=indent, break_on_hyphens=False,
+                                        break_long_words=False) or [""])]
     return out
 
 
 def notes_comment(left_out: list[LeftOut], met: Met) -> list[str]:
-    """The deck's comment block: the names left out, and how each of the
-    taxonomy's inconsistencies was handled and how often."""
-    lines = [f"Left out: {len(left_out)} outdated names are not cards:"]
+    """The deck's comment block: the names left out, and what else was left
+    out or adjusted, why, and how often."""
+    lines = [f"Left out: {counted(len(left_out), 'outdated names')} that a current occupation still has:"]
     lines += [f"  {x.label} ({x.concept_id}), version {x.version}: {LEFT_OUT_BECAUSE[x.reason]}"
               for x in left_out]
-    lines += ["", "Inconsistencies in the taxonomy, and how they were handled:"]
-    lines += [f"- {len(met[key])} {title}: {why}." for key, (_, title, why) in WHY.items() if met.get(key)]
+    lines += ["", "What was left out or adjusted, and why:"]
+    lines += [f"- {counted(len(met[key]), title)}: {why}." for key, (_, title, why) in WHY.items() if met.get(key)]
     lines += ["", "Method:"] + [f"- {m}" for m in METHOD]
     return comment_lines(lines)
+
+
+def counted(n: int, title: str) -> str:
+    """ "3 old names of concepts …", or for one "1 old name of concepts …": a
+    title is written plural, its first noun made singular for a count of 1."""
+    if n != 1:
+        return f"{n} {title}"
+    one = re.sub(r"\b(names|concepts|changes)\b", lambda m: m.group(1)[:-1], title, count=1)
+    return f"1 {one.replace(' that were ', ' that was ', 1)}"
 
 
 def plural(n: int, word: str) -> str:
     return f"{n} {word}" if n == 1 else f"{n} {word}s"
 
 
-PHRASES = {"replaced": "names replaced", "renamed": "renamed", "synonym_added": "with a synonym added",
+PHRASES = {"replaced": "replaced", "renamed": "renamed", "synonym_added": "with a synonym added",
            "synonym_removed": "with a synonym removed", "discontinued": "gone with no replacement"}
 
 
-def previous_release(output: Path) -> tuple[int, int | None, dict[str, tuple[str, str]]] | None:
+@dataclass
+class Released:
+    """A card as a release has it."""
+    front: str
+    back: Back
+    created: str | None  # xsd:dateTime
+    retired: bool
+
+
+def ttl_unescape(s: str) -> str:
+    return re.sub(r"\\(.)", r"\1", s)
+
+
+Previous = tuple[int, int | None, dict[str, Released]]
+
+
+def previous_release(output: Path) -> Previous | None:
     """The deck's latest release, if any: (its number, the newest taxonomy
-    version it records, its cards by id as (front, back))."""
+    version it records, its cards by id)."""
     folder = output.resolve().parent.parent / "releases" / output.stem
     numbered = sorted((int(f.stem), f) for f in folder.glob("*.ttl") if f.stem.isdigit()) if folder.is_dir() else []
     if not numbered:
@@ -697,44 +903,84 @@ def previous_release(output: Path) -> tuple[int, int | None, dict[str, tuple[str
     number, path = numbered[-1]
     text = path.read_text(encoding="utf-8")
     versions = [int(v) for v in re.findall(r"^<#taxonomy-version-(\d+)>", text, re.M)]
-    cards = {m[0]: (m[1], m[2]) for m in re.findall(
-        r'^<#([^>]+)>\n    a solid-memo:Card ;\n(?:    .*\n)*?    solid-memo:front "(.*?)" ;\n'
-        r'    solid-memo:back "(.*?)" \.', text, re.M)}
+    cards: dict[str, Released] = {}
+    for m in re.finditer(r"^<#([^>]+)>\n((?:    .*\n?)+)", text, re.M):
+        block = m.group(2)
+        if not block.startswith("    a solid-memo:Card ;"):
+            continue
+        value = lambda p: (found := re.search(rf'^    {p} "((?:[^"\\]|\\.)*)"', block, re.M)) and ttl_unescape(found.group(1))
+
+        def texts(p: str) -> Text:
+            """A predicate's language-tagged literals: its line and the lines continuing its object list."""
+            found = re.search(rf'^    {p} ((?:.|\n {{6,}})*?) [;.]$', block, re.M)
+            return {tag: ttl_unescape(v) for v, tag in
+                    re.findall(r'"((?:[^"\\]|\\.)*)"@([a-z-]+)', found.group(1))} if found else {}
+        back = Back(texts("solid-memo:frontNote"), texts("solid-memo:backLabel"),
+                    value("solid-memo:back") or "", texts("solid-memo:backNote"))
+        cards[m.group(1)] = Released(value("solid-memo:front") or "", back, value("dcterms:created"),
+                                     bool(re.search(r"^    owl:deprecated true", block, re.M)))
     return number, max(versions) if versions else None, cards
 
 
-def release_notes(cards: list[Card], left_out: list[LeftOut], met: Met, *, versions: dict[int, str],
-                  start: int, to: int, previous: tuple[int, int | None, dict[str, tuple[str, str]]] | None,
+def retired_cards(cards: list[Card], previous: Previous | None) -> dict[str, Released]:
+    """The cards of the previous release that no rule makes any longer, by id,
+    retired as that release had them: never removed, so a copy keeps them and
+    their reviews. A card retired before stays retired."""
+    if previous is None:
+        return {}
+    now = {c.id for c in cards}
+    return {i: Released(r.front, r.back, r.created, True) for i, r in previous[2].items() if i not in now}
+
+
+def release_notes(cards: list[Card], retired: dict[str, Released], left_out: list[LeftOut], met: Met, *,
+                  versions: dict[int, str], start: int, to: int, previous: Previous | None,
                   provenance: Provenance) -> str:
-    """Notes for releasing this deck: what this release covers and changes, what
-    it left out and why, and how the taxonomy's inconsistencies were handled."""
-    by_kind = {kind: [c for c in cards if c.kind == kind] for kind in CARD_KINDS}
-    counts = lambda cs: ", ".join(f"{sum(1 for c in cs if c.kind == k)} {p}" for k, p in PHRASES.items()
-                                  if any(c.kind == k for c in cs))
+    """Notes for releasing this deck: what this release covers, how many names
+    are new, changed (and how) or retired, what it left out and why, and how
+    the taxonomy's inconsistencies were handled."""
+    def summary(cs: list[Card], retiring: list[str], restored: list[str]) -> str:
+        new = [c for c in cs if c.kind == "new"]
+        changed = [c for c in cs if c.kind != "new"]
+        how = ", ".join(f"{sum(1 for c in changed if c.kind == k)} {p}" for k, p in PHRASES.items()
+                        if any(c.kind == k for c in changed))
+        parts = [plural(len(new), "new name"),
+                 plural(len(changed), "changed name") + (f" ({how})" if how else "")]
+        if retiring:
+            parts.append(f"{plural(len(retiring), 'card')} retired, no longer made by the rules "
+                         f"({'; '.join(sorted(retiring, key=by_name))})")
+        if restored:
+            parts.append(f"{plural(len(restored), 'retired card')} brought back ({'; '.join(sorted(restored, key=by_name))})")
+        return ", ".join(parts[:-1]) + " and " + parts[-1] if len(parts) > 1 else parts[0]
+
     if previous is None or previous[1] is None:
-        notes = [f"First release. Covers JobTech Taxonomy versions {start} to {to} ({versions[start][:10]} to "
-                 f"{versions[to][:10]}): {len(cards)} cards, {counts(cards)}."]
+        notes = [f"First release. Covers taxonomy versions {start} to {to} ({versions[start][:10]} to "
+                 f"{versions[to][:10]}): {summary(cards, [], [])}."]
     else:
         number, was, old = previous
-        now = {c.id: (c.front, ttl_str(back_text(c, versions))[1:-1]) for c in cards}
-        added = [c for c in cards if c.id not in old]
-        changed = [i for i in now.keys() & old.keys() if now[i] != old[i]]
-        removed = sorted(old[i][0] for i in old.keys() - now.keys())
-        notes = [f"Adds JobTech Taxonomy version{'s' if to - was > 1 else ''} "
+        was_new = lambda i: is_new(old[i].back)
+        # A name is new or changed in this release when its card is new, or
+        # its card says something else of it than before: a new name gone out
+        # of use, an outdated name back in use, or a card brought back.
+        now_different = [c for c in cards if c.id not in old or old[c.id].retired
+                         or (c.kind == "new") != was_new(c.id)]
+        retiring = [r.front for i, r in retired.items() if not old[i].retired]
+        restored = [c.front for c in cards if c.id in old and old[c.id].retired]
+        backs = [c for c in cards if c.id in old and not old[c.id].retired and (c.kind == "new") == was_new(c.id)
+                 and old[c.id].back != back_of(c, versions)]
+        notes = [f"Adds taxonomy version{'s' if to - was > 1 else ''} "
                  f"{f'{was + 1} to {to}' if to - was > 1 else to} ({versions[to][:10]}) to release {number}, "
-                 f"which covered versions {start} to {was}: {plural(len(added), 'card')} added"
-                 + (f" ({counts(added)})" if added else "") + f", {plural(len(changed), 'back')} changed"
-                 + (f", and {plural(len(removed), 'card')} removed because {'its name is' if len(removed) == 1 else 'their names are'} "
-                    f"in use again ({'; '.join(removed)})" if removed else "") + "."]
-        notes.append(f"The whole deck now has {plural(len(cards), 'card')}: {counts(cards)}.")
+                 f"which covered versions {start} to {was}: {summary(now_different, retiring, restored)}; "
+                 f"{plural(len(backs), 'back')} updated."]
+        notes.append(f"The whole deck now has {plural(len(cards), 'card')} in use: {summary(cards, [], [])}"
+                     + (f"; and {plural(len(retired), 'retired card')}." if retired else "."))
     if previous is not None and previous[1] is not None:
         notes.append("Across the whole deck:")
     if left_out:
-        notes.append(f"Left out: {len(left_out)} outdated names that a current occupation still has "
+        notes.append(f"Left out: {counted(len(left_out), 'outdated names')} that a current occupation still has "
                      f"({'; '.join(x.label for x in left_out)}), since a card calling them outdated would be wrong.")
-    handled = [f"{len(met[k])} {title}" for k, (where, title, _) in WHY.items()
+    handled = [counted(len(met[k]), title) for k, (where, title, _) in WHY.items()
                if where != "excluded" and k not in LEFT_OUT_BECAUSE and met.get(k)]
-    skipped = [f"{len(met[k])} {title}" for k, (where, title, _) in WHY.items()
+    skipped = [counted(len(met[k]), title) for k, (where, title, _) in WHY.items()
                if where == "excluded" and k not in LEFT_OUT_BECAUSE and met.get(k)]
     if skipped:
         notes.append(f"Not cards, as nothing changed that a learner could study: {'; '.join(skipped)}.")
@@ -752,14 +998,14 @@ def report(cards: list[Card], left_out: list[LeftOut], met: Met, *, versions: di
     by_kind = {kind: [c for c in cards if c.kind == kind] for kind in CARD_KINDS}
     split = sorted((c for c in by_kind["replaced"] if len(c.replacements) > 1), key=lambda c: -len(c.replacements))
     lines: list[str] = [
-        f"Changes to occupation names in the JobTech Taxonomy, starting from version {since - 1} "
+        f"Changes to occupation names in the labour market taxonomy, starting from version {since - 1} "
         f"({versions[since - 1][:10]}) up to version {to} ({versions[to][:10]}): {len(cards)} cards. "
         "Examples are the newest changes.",
     ]
 
     def entry(count: int, title: str, why: str, examples: list[str]) -> None:
         lines.append("")
-        lines.append(f"- {count} {title}: {why}.")
+        lines.append(f"- {count} {title}: {why}." if title.startswith("of them") else f"- {counted(count, title)}: {why}.")
         shown = examples if verbose else examples[:3]
         lines.extend(f"      {e}" for e in shown)
         if len(examples) > len(shown):
@@ -769,6 +1015,8 @@ def report(cards: list[Card], left_out: list[LeftOut], met: Met, *, versions: di
         return sorted(cs, key=lambda c: (-c.version, by_name(c.front)))
 
     def card_line(c: Card) -> str:
+        if c.kind == "new":
+            return f"{c.front} (version {c.version})" + (f", replacing {' · '.join(c.replaces)}" if c.replaces else "")
         return f"{c.front} → {' · '.join(c.replacements)} (version {c.version})"
 
     lines += ["", "INCLUDED"]
@@ -803,7 +1051,7 @@ def report(cards: list[Card], left_out: list[LeftOut], met: Met, *, versions: di
 SPDX_PREFIX = "@prefix spdx:       <http://spdx.org/rdf/terms#> ."
 
 
-def write_deck(path: Path, cards: list[Card], left_out: list[LeftOut], met: Met, *,
+def write_deck(path: Path, cards: list[Card], retired: dict[str, Released], left_out: list[LeftOut], met: Met, *,
                versions: dict[int, str], checksums: dict[int, str], start: int, to: int,
                creator: str | None, provenance: Provenance) -> None:
     """The deck, a pure function of its inputs: the taxonomy versions read (by
@@ -825,6 +1073,7 @@ def write_deck(path: Path, cards: list[Card], left_out: list[LeftOut], met: Met,
         "@prefix dcat:       <http://www.w3.org/ns/dcat#> .",
         "@prefix foaf:       <http://xmlns.com/foaf/0.1/> .",
         "@prefix topic:      <https://solid-memo.com/vocab/topics#> .",
+        "@prefix owl:        <http://www.w3.org/2002/07/owl#> .",
         SPDX_PREFIX,
         "",
         "<>",
@@ -875,10 +1124,12 @@ def write_deck(path: Path, cards: list[Card], left_out: list[LeftOut], met: Met,
         "",
         *comment_lines([
             "How this deck was produced (W3C PROV-O). It is a pure function of the taxonomy versions "
-            "read, this script and the command line, and records all three: the script by commit and "
-            "SHA-256, and every taxonomy version by its publication time, the query that fetched it and "
-            "a SHA-256 of the answer, normalised as the script's checksum() describes. To reproduce it "
-            "byte for byte, from the repository root:",
+            "read, this script, the command line and the deck's previous release, if any (whose cards it "
+            "keeps, retiring those no rule makes any longer). It records the script by commit and "
+            "SHA-256, the command line, and every taxonomy version by its publication time, the query "
+            "that fetched it and a SHA-256 of the answer, normalised as the script's checksum() "
+            "describes; the commit holds the previous release. To reproduce it byte for byte, from the "
+            "repository root:",
             f"  {reproduce}",
             "The script refuses to overwrite this file if a taxonomy version no longer matches its "
             "checksum here.",
@@ -898,7 +1149,7 @@ def write_deck(path: Path, cards: list[Card], left_out: list[LeftOut], met: Met,
         f'spdx:checksumValue "{provenance.script_sha256}"^^xsd:hexBinary ] .',
         "",
         f"<{TAXONOMY}>",
-        '    dcterms:title "Arbetsmarknadstaxonomi (JobTech Taxonomy)" ;',
+        '    dcterms:title "Arbetsmarknadstaxonomi" ;',
         '    dcterms:creator "Arbetsförmedlingen" ;',
         f"    dcterms:license {CC0} .",
     ]
@@ -907,7 +1158,7 @@ def write_deck(path: Path, cards: list[Card], left_out: list[LeftOut], met: Met,
             "",
             f"<#taxonomy-version-{v}>",
             "    a prov:Entity ;",
-            f'    dcterms:title "JobTech Taxonomy version {v}: {CONCEPT_TYPE} concepts, deprecated ones included" ;',
+            f'    dcterms:title "Arbetsmarknadstaxonomi version {v}: {CONCEPT_TYPE} concepts, deprecated ones included" ;',
             f"    dcterms:isVersionOf <{TAXONOMY}> ;",
             f'    dcat:version "{v}" ;',
             f'    dcterms:issued "{versions[v]}"^^xsd:dateTime ;',
@@ -915,21 +1166,43 @@ def write_deck(path: Path, cards: list[Card], left_out: list[LeftOut], met: Met,
             "    spdx:checksum [ a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; "
             f'spdx:checksumValue "{checksums[v]}"^^xsd:hexBinary ] .',
         ]
-    for card in cards:
+    written = [(card.id, card.front, back_of(card, versions), xsd_datetime(versions[card.version]), False)
+               for card in cards]
+    written += [(i, r.front, r.back, r.created, True) for i, r in retired.items()]
+    for card_id_, front, back, created, is_retired in sorted(written, key=lambda w: (by_name(w[1]), w[0])):
         out += [
             "",
-            f"<#{card.id}>",
+            f"<#{card_id_}>",
             "    a solid-memo:Card ;",
-            "    solid-memo:formatVersion 1 ;",
-            f'    dcterms:created "{xsd_datetime(versions[card.version])}"^^xsd:dateTime ;',
-            f"    solid-memo:front {ttl_str(card.front)} ;",
-            f"    solid-memo:back {ttl_str(back_text(card, versions))} .",
+            "    solid-memo:formatVersion 3 ;",
+            *([f'    dcterms:created "{created}"^^xsd:dateTime ;'] if created else []),
+            *(["    owl:deprecated true ;"] if is_retired else []),
+            f"    solid-memo:front {ttl_str(front)} ;",
+            *([f"    solid-memo:frontNote {tagged(back.front_note, 'solid-memo:frontNote')} ;"]
+              if back.front_note else []),
+            *([f"    solid-memo:backLabel {tagged(back.label, 'solid-memo:backLabel')} ;"]
+              if back.label else []),
+            f"    solid-memo:back {ttl_str(back.text)}" + (" ;" if back.note else " ."),
+            *([f"    solid-memo:backNote {tagged(back.note, 'solid-memo:backNote')} ."] if back.note else []),
         ]
 
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
 # --------------------------------------------------------------------------- main
+
+
+def check(output: Path) -> None:
+    """For the weekly workflow (.github/workflows/taxonomy-deck.yml): the
+    newest taxonomy version, the newest the deck's latest release covers, and
+    whether there is a release to bring up to date ("update=true"). A deck
+    never released is released by hand first, so it is never updated here."""
+    newest = max(load_versions())
+    previous = previous_release(output)
+    released = previous[1] if previous is not None else None
+    print(f"newest={newest}")
+    print(f"released={'' if released is None else released}")
+    print(f"update={'true' if released is not None and newest > released else 'false'}")
 
 
 def main() -> None:
@@ -945,9 +1218,17 @@ def main() -> None:
                     help="list every name in the report, not just three examples of each kind")
     ap.add_argument("--allow-uncommitted", action="store_true",
                     help="write a draft although this script is not committed and unmodified")
+    ap.add_argument("--notes-file", type=Path, default=None,
+                    help="also write the release notes to this file, for `npm run deck:release`")
+    ap.add_argument("--check", action="store_true",
+                    help="write nothing: print, as key=value lines, the newest taxonomy version, the newest one "
+                         "the deck's latest release covers, and whether the deck can be brought up to date")
     args = ap.parse_args()
     if args.output.suffix != ".ttl":
         ap.error(f"{args.output}: output must be a .ttl file")
+    if args.check:
+        check(args.output)
+        return
     provenance = script_provenance(args.allow_uncommitted)
 
     versions = load_versions()
@@ -965,13 +1246,17 @@ def main() -> None:
 
     since = args.start + 1  # the first version whose changes can be seen
     cards, left_out, met = build_cards(snaps, since, to)
+    previous = previous_release(args.output)
+    retired = retired_cards(cards, previous)
     print(report(cards, left_out, met, versions=versions, since=since, to=to, verbose=args.verbose),
           file=sys.stderr)
-    write_deck(args.output, cards, left_out, met, versions=versions, checksums=checksums, start=args.start, to=to,
-               creator=args.creator, provenance=provenance)
-    notes = release_notes(cards, left_out, met, versions=versions, start=args.start, to=to,
-                          previous=previous_release(args.output), provenance=provenance)
-    print(f"\nwrote {args.output}: {len(cards)} cards\n\nRELEASE NOTES\n"
+    write_deck(args.output, cards, retired, left_out, met, versions=versions, checksums=checksums, start=args.start,
+               to=to, creator=args.creator, provenance=provenance)
+    notes = release_notes(cards, retired, left_out, met, versions=versions, start=args.start, to=to,
+                          previous=previous, provenance=provenance)
+    if args.notes_file is not None:
+        args.notes_file.write_text(notes + "\n", encoding="utf-8")
+    print(f"\nwrote {args.output}: {len(cards)} cards in use, {len(retired)} retired\n\nRELEASE NOTES\n"
           + textwrap.fill(notes, 100, initial_indent="  ", subsequent_indent="  ")
           + f"\n\nTo release it:\n  npm run deck:release -- {args.output.stem} --notes {shlex.quote(notes)}",
           file=sys.stderr)

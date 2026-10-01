@@ -112,14 +112,22 @@ translations. Sources in format 3 (untagged text) stay valid.
   the famous paintings deck, whose pictures are public-domain
   thumbnails linked from Wikimedia Commons, by
   [scripts/generate_deck_of_famous_paintings.py](../packages/deck-library/scripts/generate_deck_of_famous_paintings.py)
-  and the Swedish labour market taxonomy deck of occupation changes, from the labour market
-  taxonomy of Arbetsförmedlingen (the Swedish Public Employment Service), by
-  [scripts/generate_deck_of_swedish_labour_market_taxonomy_occupation_changes.py](../packages/deck-library/scripts/generate_deck_of_swedish_labour_market_taxonomy_occupation_changes.py).
-  That deck grows by one release per taxonomy version: commit the script,
-  re-run it, and release with the `npm run deck:release` command it
-  prints, whose notes it writes by comparing with the previous release.
-  Cards are added or changed, and removed only when their name is in use
-  again, so copies keep their reviews when they are upgraded. The deck is
+  and the Swedish labour market taxonomy deck of new and changed
+  occupation names, from the labour market taxonomy of
+  Arbetsförmedlingen (the Swedish Public Employment Service), by
+  [scripts/generate_deck_of_swedish_labour_market_taxonomy_occupation_names.py](../packages/deck-library/scripts/generate_deck_of_swedish_labour_market_taxonomy_occupation_names.py).
+  That deck has one card per name: every name that went out of use since
+  the taxonomy's first version (with what replaced it), and every name
+  that is new since then (with what it replaces). The note under the
+  front gives the verdict, "In use" or "Out of use", once the answer is
+  revealed; the back's label says how the answer relates ("Replaced
+  by"), and its note says when. It grows by one release per taxonomy
+  version: commit the script, re-run it, and release with the `npm run
+  deck:release` command it prints, whose notes it writes by comparing
+  with the previous release — how many names are new, how many changed
+  and how, and which cards were retired or brought back. Cards are added
+  or changed, and retired (never removed) when no rule makes them any
+  more, so copies keep their reviews when they are upgraded. The deck is
   reproducible byte for byte: it records the script's commit and SHA-256,
   the command line, and a SHA-256 of every taxonomy version it read, and
   the script refuses to run from uncommitted code (unless
