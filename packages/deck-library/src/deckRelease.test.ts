@@ -110,6 +110,19 @@ describe("contentOf", () => {
     expect(contentOf(again, url)).toEqual(contentOf(first, url));
   });
 
+  it("names blank nodes by what they say, the same in every parse", () => {
+    const blank = (value: string) =>
+      `<> <${DCTERMS}source> [ <${DCTERMS}title> "${value}" ; <${DCTERMS}creator> [ <${DCTERMS}title> "A" ] ] .`;
+    expect(contentOf(blank("x"), url)).toEqual(contentOf(blank("x"), url));
+    expect(contentOf(blank("x"), url)).not.toEqual(contentOf(blank("y"), url));
+    expect(contentOf(blank("x"), url)[0]).toMatch(/^BlankNode:[0-9a-f]{64} /);
+  });
+
+  it("names a cycle of blank nodes, which a deck never has, without looping", () => {
+    const cycle = `_:a <${DCTERMS}relation> _:b . _:b <${DCTERMS}relation> _:a .`;
+    expect(contentOf(cycle, url)).toEqual(contentOf(cycle, url));
+  });
+
   it("differs when a card or a language tag changes", () => {
     const first = releaseText("capitals", SOURCE, { version: 1, issued: "2026-09-28T10:00:00Z" });
     const changed = releaseText("capitals", SOURCE.replace('"Stockholm"', '"Sthlm"'), { version: 1, issued: "2026-09-28T10:00:00Z" });

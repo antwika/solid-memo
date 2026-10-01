@@ -124,17 +124,45 @@ function termKey(term: Term): string {
  * What a release says about its deck, without what makes it a release:
  * the triples of a document read against `base`, less the release
  * triples on the document and its distribution. Two documents with the
- * same content are the same deck.
+ * same content are the same deck. A blank node is named by what it says
+ * (contentLabels), not by the label the parser happened to give it, which
+ * differs from one parse to the next.
  */
 export function contentOf(turtle: string, base: string): string[] {
-  return parseTurtle(turtle, base)
-    .filter(
-      (q: Quad) =>
-        !(q.subject.value === base && RELEASE_PREDICATES.includes(q.predicate.value)) &&
-        q.subject.value !== `${base}#${DISTRIBUTION}`,
-    )
-    .map((q) => `${termKey(q.subject)} ${q.predicate.value} ${termKey(q.object)}`)
-    .sort();
+  const quads = parseTurtle(turtle, base).filter(
+    (q: Quad) =>
+      !(q.subject.value === base && RELEASE_PREDICATES.includes(q.predicate.value)) &&
+      q.subject.value !== `${base}#${DISTRIBUTION}`,
+  );
+  const labels = contentLabels(quads);
+  const key = (term: Term) => (term.termType === "BlankNode" ? `BlankNode:${labels.get(term.value)}` : termKey(term));
+  return quads.map((q) => `${key(q.subject)} ${q.predicate.value} ${key(q.object)}`).sort();
+}
+
+/**
+ * A name for every blank node from what it says: the SHA-256 of its
+ * triples, the blank nodes they name in turn named the same way (a cycle
+ * of blank nodes, which a deck never has, named as such).
+ */
+function contentLabels(quads: readonly Quad[]): Map<string, string> {
+  const labels = new Map<string, string>();
+  const label = (node: string, seen: ReadonlySet<string>): string => {
+    const known = labels.get(node);
+    if (known !== undefined) return known;
+    if (seen.has(node)) return "cycle";
+    const inner = new Set([...seen, node]);
+    const triples = quads
+      .filter((q) => q.subject.termType === "BlankNode" && q.subject.value === node)
+      .map((q) => `${q.predicate.value} ${q.object.termType === "BlankNode" ? label(q.object.value, inner) : termKey(q.object)}`)
+      .sort();
+    const named = sha256(triples.join("\n"));
+    labels.set(node, named);
+    return named;
+  };
+  for (const q of quads) {
+    for (const term of [q.subject, q.object]) if (term.termType === "BlankNode") label(term.value, new Set());
+  }
+  return labels;
 }
 
 export function sha256(text: string): string {
