@@ -31,6 +31,8 @@ const plan: LibraryUpgradePlan = {
   notes: [],
   add: [{ id: "no", front: "Norway", back: "Oslo", formatVersion: 1 }],
   change: [],
+  retire: [],
+  restore: [],
   remove: [],
   kept: [],
 };

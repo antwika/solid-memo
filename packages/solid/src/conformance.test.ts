@@ -73,6 +73,7 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
   card: {
     1: { front: "Sweden", back: "Stockholm" },
     2: { frontImage: "https://flagcdn.com/se.svg", back: "Sweden" },
+    3: { front: "Yugoslavia", back: "Belgrade", deprecated: true },
   },
   reviewState: {
     1: { easeFactor: 2.5, intervalDays: 1, repetitions: 1, due: "2026-09-22", firstReviewedAt: "2026-09-21T10:00:00.000Z", lastReviewedAt: "2026-09-21T10:00:00.000Z", previousDue: "2026-09-21" },

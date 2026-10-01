@@ -12,7 +12,7 @@ export type ShapeName = "agent" | "card" | "catalog" | "deck" | "distribution" |
 /** The shape version this app writes for each kind. */
 export const LATEST_VERSION = {
   agent: 1,
-  card: 2,
+  card: 3,
   catalog: 1,
   deck: 4,
   distribution: 1,
@@ -43,6 +43,16 @@ export interface CardV2 {
   readonly frontImage?: string;
   readonly backImage?: string;
   readonly created?: string;
+}
+
+/** Card format 3: each side has text, a picture or both (a picture is always an IRI); a retired card, which is kept but no longer studied, states owl:deprecated true. */
+export interface CardV3 {
+  readonly front?: string;
+  readonly back?: string;
+  readonly frontImage?: string;
+  readonly backImage?: string;
+  readonly created?: string;
+  readonly deprecated?: boolean;
 }
 
 /** A catalogue of decks: a dcat:Catalog. */
@@ -297,7 +307,7 @@ export interface ReviewStateV2 {
 }
 
 export type AgentRecord = { version: 1; data: AgentV1 };
-export type CardRecord = { version: 1; data: CardV1 } | { version: 2; data: CardV2 };
+export type CardRecord = { version: 1; data: CardV1 } | { version: 2; data: CardV2 } | { version: 3; data: CardV3 };
 export type CatalogRecord = { version: 1; data: CatalogV1 };
 export type DeckRecord = { version: 1; data: DeckV1 } | { version: 2; data: DeckV2 } | { version: 3; data: DeckV3 } | { version: 4; data: DeckV4 };
 export type DistributionRecord = { version: 1; data: DistributionV1 };
@@ -324,7 +334,7 @@ export type VersionedRecord = {
 /** The latest record of each kind: what this app writes. */
 export type LatestRecord = {
   agent: AgentV1;
-  card: CardV2;
+  card: CardV3;
   catalog: CatalogV1;
   deck: DeckV4;
   distribution: DistributionV1;

@@ -1,7 +1,7 @@
 import { useState } from "preact/hooks";
 import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
-import { studyDirections } from "@solid-memo/domain/deck";
+import { activeCards, studyDirections } from "@solid-memo/domain/deck";
 import type { LibraryDeck } from "@solid-memo/domain/library";
 import { errorMessage } from "./errorMessage";
 import { LibraryPreviewScreen, type PreviewPrompt } from "./LibraryPreviewScreen";
@@ -44,7 +44,7 @@ export function LibraryPreviewContainer({
   }
 
   const directions = studyDirections(deck.direction);
-  const prompts: PreviewPrompt[] = cardsQuery.data.flatMap((card) =>
+  const prompts: PreviewPrompt[] = activeCards(cardsQuery.data).flatMap((card) =>
     directions.map((direction) => ({ card, direction })),
   );
   const index = shown?.index ?? Math.floor(first * prompts.length);

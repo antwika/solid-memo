@@ -1233,6 +1233,27 @@ td.clickable:first-child a {
   background: var(--surface-hover);
 }
 
+/* A retired card: kept, but no longer studied, so it reads as set aside. */
+.card-table tr.retired td {
+  color: var(--text-muted);
+}
+
+.retired-tag {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  vertical-align: 0.1em;
+}
+
+.retired-toggle label {
+  display: inline-flex;
+  align-items: center;
+}
+
 .pager {
   display: flex;
   align-items: center;

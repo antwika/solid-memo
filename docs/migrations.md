@@ -30,6 +30,12 @@ because a format-3 reader knows only untagged strings: it would read a
 format-4 deck as having no title and drop it. The step to format 4 tags a
 format-3 deck's title and description as English.
 
+Card format 3 lets a card be retired (`owl:deprecated true`): a library
+deck keeps a card it no longer uses instead of removing it, so a copy
+keeps the card and its review state but no longer studies it. The version moved because a format-2 reader
+would go on studying a retired card. A format-2 card is in use, so the
+step to format 3 changes nothing.
+
 Rules that hold across versions:
 
 - **Readers never refuse older data.** A subject is read with the shape
@@ -48,6 +54,7 @@ Rules that hold across versions:
 ```mermaid
 flowchart LR
     v1["CardV1"] -->|card/1-to-2| v2["CardV2"]
+    v2 -->|card/2-to-3<br/>in use: nothing to change| v3["CardV3"]
     d1["DeckV1"] -->|deck/1-to-2<br/>direction: front-to-back| d2["DeckV2"]
     d2 -->|deck/2-to-3<br/>DCAT dataset: direction concept,<br/>default description, creator agents,<br/>release 1 as its source| d3["DeckV3"]
     d3 -->|deck/3-to-4<br/>title and description tagged English| d4["DeckV4"]
@@ -232,19 +239,28 @@ changes reach only what the user left as the library had it:
 
 | In the releases | In the copy | The upgrade |
 |---|---|---|
-| Added in the new release | Not there | Adds it |
+| Added in the new release | Not there | Adds it (retired, if the release has it retired) |
 | Changed | As the old release had it | Changes it |
 | Changed or removed | Changed by the user | Keeps the user's card, and says so |
+| Retired | Anything | Retires it: kept, with its review states, but no longer studied |
+| Retired before, in use again | Retired | Brings it back, with the review states it had |
 | Removed | As the old release had it | Removes it, and its review states |
 | Anything | Removed by the user | Leaves it removed |
+
+Retiring is not a change of the card's content, so it applies to cards
+the user changed too: nothing of theirs is lost. A library release never
+removes a card any more (the build refuses one that drops a card of the
+release before it); the removal rows are for releases made before cards
+could be retired.
 
 A new study direction is taken up when the copy is still studied the old
 release's way. The notice lists the notes of every release in between.
 Nothing is offered for a release that is not newer, uses a card format
 this app does not know, or would change nothing. Applying it is one
 write of the cards document (`applyCardChanges`: an existing card keeps
-its creation time and unknown triples), one of the review states of
-removed cards, and one of the catalog entry, which now names the new
+its creation time and unknown triples; `upgradedCards` says what is
+written), one of the review states of removed cards, and one of the
+catalog entry, which now names the new
 release. Review history of every other card is kept.
 
 ## Adding a format version

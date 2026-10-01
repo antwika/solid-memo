@@ -155,6 +155,24 @@ describe("BrowserScreen", () => {
     ).toBeInTheDocument();
   });
 
+  it("hides retired cards until asked, then lists them marked", () => {
+    const retired: Card = { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, front: "火", retired: true };
+    const { container } = renderScreen({ cards: [card, retired] });
+    expect(screen.queryByText("火")).toBeNull();
+    expect(screen.getByText(/1 card is retired: kept, with its review history, but no longer studied\./)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Show retired cards" }));
+    expect(screen.getByText("火")).toBeInTheDocument();
+    expect(container.querySelector("tr.retired")).toHaveTextContent("火Retired");
+  });
+
+  it("offers no retired cards to show when there are none, and says so when every card is retired", () => {
+    renderScreen();
+    expect(screen.queryByRole("checkbox", { name: "Show retired cards" })).toBeNull();
+    renderScreen({ cards: [{ ...card, retired: true }, { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, retired: true }] });
+    expect(screen.getByText("Every card in this deck is retired.")).toBeInTheDocument();
+    expect(screen.getByText(/2 cards are retired: kept, with their review history/)).toBeInTheDocument();
+  });
+
   it("removes a card after confirmation", () => {
     const confirm = vi.fn(() => true);
     vi.stubGlobal("confirm", confirm);

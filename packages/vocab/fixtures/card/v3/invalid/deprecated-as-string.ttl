@@ -1,0 +1,9 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix owl:        <http://www.w3.org/2002/07/owl#> .
+
+<#yu>
+    a solid-memo:Card ;
+    solid-memo:front "Yugoslavia" ;
+    solid-memo:back "Belgrade" ;
+    solid-memo:formatVersion 3 ;
+    owl:deprecated "true" .

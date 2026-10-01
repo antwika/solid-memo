@@ -5,6 +5,7 @@ import type {
   AgentV1,
   CardV1,
   CardV2,
+  CardV3,
   CatalogV1,
   DeckV1,
   DeckV2,
@@ -72,6 +73,25 @@ export const CARD_V2: ShapeDescriptor<CardV2> = {
     { name: "frontImage", predicate: "https://solid-memo.com/vocab/v1#frontImage", kind: "iri", cardinality: "optional" },
     { name: "backImage", predicate: "https://solid-memo.com/vocab/v1#backImage", kind: "iri", cardinality: "optional" },
     { name: "created", predicate: "http://purl.org/dc/terms/created", kind: "dateTime", cardinality: "optional" },
+  ],
+};
+
+export const CARD_V3: ShapeDescriptor<CardV3> = {
+  shape: "card",
+  version: 3,
+  targetClass: "https://solid-memo.com/vocab/v1#Card",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/card/v3.ttl#shape",
+  shapeDocument: "card/v3.ttl",
+  context: "any",
+  fields: [
+    { name: "front", predicate: "https://solid-memo.com/vocab/v1#front", kind: "string", cardinality: "optional" },
+    { name: "back", predicate: "https://solid-memo.com/vocab/v1#back", kind: "string", cardinality: "optional" },
+    { name: "frontImage", predicate: "https://solid-memo.com/vocab/v1#frontImage", kind: "iri", cardinality: "optional" },
+    { name: "backImage", predicate: "https://solid-memo.com/vocab/v1#backImage", kind: "iri", cardinality: "optional" },
+    { name: "created", predicate: "http://purl.org/dc/terms/created", kind: "dateTime", cardinality: "optional" },
+    { name: "deprecated", predicate: "http://www.w3.org/2002/07/owl#deprecated", kind: "boolean", cardinality: "optional" },
   ],
 };
 
@@ -500,7 +520,7 @@ export const REVIEW_STATE_V2: ShapeDescriptor<ReviewStateV2> = {
 /** Every descriptor by kind and version. */
 export const SHAPES = {
   agent: { 1: AGENT_V1 },
-  card: { 1: CARD_V1, 2: CARD_V2 },
+  card: { 1: CARD_V1, 2: CARD_V2, 3: CARD_V3 },
   catalog: { 1: CATALOG_V1 },
   deck: { 1: DECK_V1, 2: DECK_V2, 3: DECK_V3, 4: DECK_V4 },
   distribution: { 1: DISTRIBUTION_V1 },
@@ -516,6 +536,7 @@ export const ALL_SHAPES: readonly ShapeDescriptor[] = [
   AGENT_V1,
   CARD_V1,
   CARD_V2,
+  CARD_V3,
   CATALOG_V1,
   DECK_V1,
   DECK_V2,

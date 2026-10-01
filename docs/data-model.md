@@ -83,7 +83,8 @@ flowchart LR
 │                        foaf:Agent nodes of its creators (#agent-…)
 ├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn),
 │                        sm:front/back text and/or sm:frontImage/backImage
-│                        IRIs, each with sm:formatVersion
+│                        IRIs, each with sm:formatVersion; a retired card
+│                        (owl:deprecated true) is kept but not studied
 └── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per card and
                           direction (fast churn) — #<cardId> front→back,
                           #<cardId>@back-to-front the other way; optional
@@ -105,7 +106,7 @@ graph LR
     X["catalog.ttl#deck-X-cards<br/>a dcat:Distribution<br/>dcat:accessURL"]
     C -->|dcterms:creator| A
     C -->|dcat:distribution| X
-    D["decks/deck-X.ttl#card-N<br/>a sm:Card<br/>sm:front / sm:back<br/>sm:frontImage / sm:backImage<br/>sm:formatVersion"]
+    D["decks/deck-X.ttl#card-N<br/>a sm:Card<br/>sm:front / sm:back<br/>sm:frontImage / sm:backImage<br/>sm:formatVersion<br/>owl:deprecated (retired)"]
     R["reviews/deck-X.ttl#card-N<br/>reviews/deck-X.ttl#card-N@back-to-front<br/>a sm:ReviewState<br/>SM-2 fields"]
     C -->|sm:cardsDocument| D
     C -->|sm:reviewsDocument| R

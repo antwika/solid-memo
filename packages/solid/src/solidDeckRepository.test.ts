@@ -3,6 +3,7 @@ import {
   buildThing,
   createThing,
   deleteSolidDataset,
+  getBoolean,
   getDatetime,
   getInteger,
   getStringNoLocale,
@@ -21,6 +22,8 @@ import { getSolidDatasetOrNull } from "./datasets";
 import { DCTERMS, PROV, RDF, SM } from "./vocab";
 import type { Card, Deck } from "@solid-memo/domain/deck";
 import type { LibraryDeckContent } from "@solid-memo/domain/library";
+
+const OWL_DEPRECATED = "http://www.w3.org/2002/07/owl#deprecated";
 
 vi.mock("@inrupt/solid-client", async (importOriginal) => {
   const actual =
@@ -176,6 +179,30 @@ describe("applyCardChanges", () => {
     expect(getThing(saved, `${deck.cardsDocumentUrl}#is`)).toBeNull();
   });
 
+  it("retires a card and brings one back, stating owl:deprecated only on a retired card", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      setThing(
+        mockSolidDatasetFrom(deck.cardsDocumentUrl),
+        buildThing(createThing({ url: `${deck.cardsDocumentUrl}#yu` }))
+          .addIri(RDF.type, SM.Card)
+          .addStringNoLocale(SM.front, "Yugoslavia")
+          .addStringNoLocale(SM.back, "Belgrade")
+          .addBoolean(OWL_DEPRECATED, true)
+          .build(),
+      ) as never,
+    );
+    await makeRepository().applyCardChanges(deck, {
+      save: [
+        { id: "yu", front: "Yugoslavia", back: "Belgrade" },
+        { id: "se", front: "Sweden", back: "Stockholm", retired: true },
+      ],
+      remove: [],
+    });
+    const saved = vi.mocked(saveSolidDatasetAt).mock.calls[0][1] as SolidDataset;
+    expect(getBoolean(getThing(saved, `${deck.cardsDocumentUrl}#yu`)!, OWL_DEPRECATED)).toBeNull();
+    expect(getBoolean(getThing(saved, `${deck.cardsDocumentUrl}#se`)!, OWL_DEPRECATED)).toBe(true);
+  });
+
   it("creates the cards document when there is none", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
     await makeRepository().applyCardChanges(deck, { save: [{ id: "no", front: "Norway", back: "Oslo" }], remove: [] });
@@ -311,7 +338,7 @@ describe("importDeck", () => {
     const sweden = getThing(cards, `${imported.cardsDocumentUrl}#sweden`)!;
     expect(getStringNoLocale(sweden, SM.front)).toBe("Sweden");
     expect(getStringNoLocale(sweden, SM.back)).toBe("Stockholm");
-    expect(getInteger(sweden, SM.formatVersion)).toBe(2);
+    expect(getInteger(sweden, SM.formatVersion)).toBe(3);
     const afghanistan = getThing(
       cards,
       `${imported.cardsDocumentUrl}#afghanistan`,
@@ -554,7 +581,7 @@ describe("addCard", () => {
       front: "火",
       back: "fire",
       createdAt: "2026-09-21T10:00:00.000Z",
-      formatVersion: 2,
+      formatVersion: 3,
     });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(deck.cardsDocumentUrl);
@@ -562,7 +589,7 @@ describe("addCard", () => {
     expect(getStringNoLocale(thing, SM.front)).toBe("火");
     expect(getStringNoLocale(thing, SM.back)).toBe("fire");
     expect(getUrl(thing, SM.frontImage)).toBeNull();
-    expect(getInteger(thing, SM.formatVersion)).toBe(2);
+    expect(getInteger(thing, SM.formatVersion)).toBe(3);
   });
 
   it("writes a picture as an IRI and no text triple for an empty side", async () => {
@@ -628,7 +655,7 @@ describe("updateCard", () => {
       front: "수영하다",
       back: "to swim",
       frontImageUrl: FLAG,
-      formatVersion: 2,
+      formatVersion: 3,
     });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(deck.cardsDocumentUrl);
@@ -637,10 +664,20 @@ describe("updateCard", () => {
     expect(getStringNoLocale(thing, SM.back)).toBe("to swim");
     expect(getUrl(thing, SM.frontImage)).toBe(FLAG);
     expect(getUrl(thing, SM.backImage)).toBeNull();
-    expect(getInteger(thing, SM.formatVersion)).toBe(2);
+    expect(getInteger(thing, SM.formatVersion)).toBe(3);
     expect(
       getStringNoLocale(thing, "https://other.example/vocab#note"),
     ).toBe("kept");
+  });
+
+  it("keeps a retired card retired when it is edited", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(cardsDoc());
+
+    const updated = await makeRepository().updateCard(deck, { ...card, retired: true }, { front: "x", back: "y" });
+
+    expect(updated.retired).toBe(true);
+    const saved = vi.mocked(saveSolidDatasetAt).mock.calls[0][1] as SolidDataset;
+    expect(getBoolean(getThing(saved, card.url)!, OWL_DEPRECATED)).toBe(true);
   });
 
   it("rejects when the cards document no longer exists", async () => {
@@ -692,13 +729,13 @@ describe("saveCards", () => {
       ...card,
       id: "card-gone",
       url: `${deck.cardsDocumentUrl}#card-gone`,
-      formatVersion: 2,
+      formatVersion: 3,
     };
 
     await makeRepository().saveCards(deck, [
-      { ...card, formatVersion: 2 },
+      { ...card, formatVersion: 3 },
       gone,
-      { ...other, formatVersion: 2 },
+      { ...other, formatVersion: 3 },
     ]);
 
     expect(saveSolidDatasetAt).toHaveBeenCalledTimes(1);
@@ -706,7 +743,7 @@ describe("saveCards", () => {
     expect(saveUrl).toBe(deck.cardsDocumentUrl);
     for (const c of [card, other]) {
       const thing = getThing(saved as SolidDataset, c.url)!;
-      expect(getInteger(thing, SM.formatVersion)).toBe(2);
+      expect(getInteger(thing, SM.formatVersion)).toBe(3);
       expect(getStringNoLocale(thing, SM.front)).toBe(c.front);
       expect(getStringNoLocale(thing, SM.back)).toBe(c.back);
     }

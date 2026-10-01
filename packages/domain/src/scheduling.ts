@@ -1,4 +1,4 @@
-import { promptsOf, type Card, type DeckDirection, type Prompt } from "./deck";
+import { activeCards, promptsOf, type Card, type DeckDirection, type Prompt } from "./deck";
 import type { StudyPreferences } from "./preferences";
 import {
   reviewKeyOf,
@@ -48,6 +48,7 @@ export interface StudyQueue {
 }
 
 export function buildStudyQueue(args: {
+  /** The deck's cards; retired ones are never studied. */
   cards: Card[];
   /** The deck's direction: which prompts its cards make. */
   direction: DeckDirection;
@@ -60,7 +61,7 @@ export function buildStudyQueue(args: {
   const { cards, direction, reviews, prefs, now, random } = args;
   const today = studyDayOf(now, prefs.dayBoundaryHour);
   const reviewOf = new Map(reviews.map((r) => [reviewKeyOf(r), r]));
-  const prompts = promptsOf(cards, direction);
+  const prompts = promptsOf(activeCards(cards), direction);
 
   const reviewedToday = reviews.filter(
     (r) => studyDayOf(new Date(r.lastReviewedAt), prefs.dayBoundaryHour) === today,

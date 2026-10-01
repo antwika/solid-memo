@@ -15,7 +15,11 @@ import type { LibraryCard, LibraryDeckContent, LibraryRelease } from "./library"
  * copy came from, the newer one and the copy itself tells what the
  * library changed and what the user did: the library's changes are
  * applied only to cards the user has left as the library had them.
- * Review history is kept, but for cards the upgrade removes.
+ * Retiring a card is not a change of its content: the library's
+ * retirements apply to every card, since a retired card is kept, with
+ * its review state, and only leaves study. Review history is kept, but
+ * for cards the upgrade removes — which releases did before they could
+ * retire a card.
  */
 export interface LibraryUpgradePlan {
   /** The release the copy came from, and the one it moves to. */
@@ -25,15 +29,19 @@ export interface LibraryUpgradePlan {
   releaseUrl: string;
   /** What changed, release by release, oldest first; releases without notes left out. */
   notes: { version: string; notes: string }[];
-  /** Cards the library added. */
+  /** Cards the library added; retired ones too, kept retired, so a later release can bring them back. */
   add: LibraryCard[];
-  /** Cards the library changed that the user has not. */
+  /** Cards the library changed that the user has not, as the release has them, retired or not. */
   change: LibraryCard[];
+  /** Cards the library retired: kept with their review state, as the user has them, but no longer studied. */
+  retire: Card[];
+  /** Retired cards the library uses again: studied again, with the review state they had. */
+  restore: Card[];
   /** Cards the library removed that the user has not changed. */
   remove: Card[];
   /** Cards the library changed or removed that the user has changed too: left as the user has them. */
   kept: Card[];
-  /** The library's new study direction, when the copy is still studied the old one. */
+  /** The library's new study direction, when the copy is still studied the old way. */
   direction?: DeckDirection;
 }
 
@@ -76,19 +84,32 @@ export function planLibraryUpgrade({
 
   const add = to.cards.filter((card) => !before.has(card.id) && !copy.has(card.id));
   const change: LibraryCard[] = [];
+  const retire: Card[] = [];
+  const restore: Card[] = [];
   const remove: Card[] = [];
   const kept: Card[] = [];
   for (const old of from.cards) {
     const mine = copy.get(old.id);
     const next = after.get(old.id);
-    if (mine === undefined || (next !== undefined && sameContent(old, next))) continue;
-    if (!sameContent(mine, old)) kept.push(mine);
-    else if (next === undefined) remove.push(mine);
-    else change.push(next);
+    if (mine === undefined) continue;
+    if (next === undefined) {
+      (sameContent(mine, old) ? remove : kept).push(mine);
+      continue;
+    }
+    if (!sameContent(old, next)) {
+      if (sameContent(mine, old)) change.push(next);
+      else kept.push(mine);
+    }
+    const retired = next.retired === true;
+    if (retired !== (old.retired === true) && retired !== (mine.retired === true)) {
+      (retired ? retire : restore).push(mine);
+    }
   }
   const direction =
     to.direction !== from.direction && deck.direction === from.direction ? to.direction : undefined;
-  if (add.length + change.length + remove.length === 0 && direction === undefined) return null;
+  if (add.length + change.length + retire.length + restore.length + remove.length === 0 && direction === undefined) {
+    return null;
+  }
   return {
     fromVersion: from.version,
     toVersion: to.version,
@@ -98,10 +119,27 @@ export function planLibraryUpgrade({
       .flatMap((r) => (r.notes === undefined ? [] : [{ version: r.version, notes: r.notes }])),
     add,
     change,
+    retire,
+    restore,
     remove,
     kept,
     ...(direction === undefined ? {} : { direction }),
   };
+}
+
+/**
+ * The cards the upgrade writes: the added and changed ones as the release
+ * has them, and the retired and restored ones as the copy has them, with
+ * their retirement changed. A changed card already carries the
+ * release's retirement.
+ */
+export function upgradedCards(plan: LibraryUpgradePlan): (LibraryCard | Card)[] {
+  const changed = new Set(plan.change.map((card) => card.id));
+  const flagged = [
+    ...plan.retire.map((card): Card => ({ ...card, retired: true })),
+    ...plan.restore.map(({ retired: _retired, ...card }): Card => card),
+  ].filter((card) => !changed.has(card.id));
+  return [...plan.add, ...plan.change, ...flagged];
 }
 
 /** The deck as the upgrade writes it: from the newer release, in its direction when that changes. */

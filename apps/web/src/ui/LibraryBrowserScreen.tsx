@@ -5,12 +5,13 @@ import { BrowserIcon } from "./icons";
 import { Pager, paginate } from "./Pager";
 import { cardCount } from "./studyCounts";
 import { readerText } from "./readerText";
+import { RetiredTag, useRetiredCards } from "./RetiredCards";
 import { breakable } from "./breakable";
 
 /**
  * A library deck's cards, to look through before importing it: the
- * Browser's table without its editing. Paged the same way, with the page
- * as route state.
+ * Browser's table without its editing, retired cards listed only when
+ * asked. Paged the same way, with the page as route state.
  */
 export function LibraryBrowserScreen({
   deck,
@@ -30,12 +31,13 @@ export function LibraryBrowserScreen({
   page: number;
   onPageChange: (page: number) => void;
 }) {
+  const { listed, toggle } = useRetiredCards(cards);
   const {
     pageCount,
     currentPage,
     firstIndex,
     items: pageCards,
-  } = paginate(cards, page, CARDS_PER_PAGE);
+  } = paginate(listed, page, CARDS_PER_PAGE);
 
   return (
     <section>
@@ -45,14 +47,15 @@ export function LibraryBrowserScreen({
           Cards: <a href={deckHref}>{readerText(deck.title)}</a>
         </h2>
       </header>
-      {cards.length === 0 ? (
+      {toggle}
+      {listed.length === 0 ? (
         <p>This deck has no cards.</p>
       ) : (
         <>
           <p class="hint">
             {pageCount > 1
-              ? `Cards ${firstIndex + 1}–${firstIndex + pageCards.length} of ${cards.length}. `
-              : `${cardCount(cards.length)}. `}
+              ? `Cards ${firstIndex + 1}–${firstIndex + pageCards.length} of ${listed.length}. `
+              : `${cardCount(listed.length)}. `}
             Click a card to open it. Import the deck to study or edit them.
           </p>
           <table class="card-table">
@@ -64,11 +67,12 @@ export function LibraryBrowserScreen({
             </thead>
             <tbody>
               {pageCards.map((card) => (
-                <tr key={card.id}>
+                <tr key={card.id} class={card.retired ? "retired" : undefined}>
                   <td class="clickable">
                     <a href={cardHref(card)}>
                       <CardThumbnail imageUrl={card.frontImageUrl} />
                       {breakable(card.front)}
+                      {card.retired && <RetiredTag />}
                     </a>
                   </td>
                   <td class="clickable">

@@ -8,6 +8,7 @@ import {
 import { CardContentFields, draftOf } from "./CardContentFields";
 import { CardFace } from "./CardFace";
 import { CardIcon, TrashIcon } from "./icons";
+import { RetiredNotice } from "./RetiredCards";
 
 /** One card's own page: the card as it looks in study, and its editor. */
 export function CardScreen({
@@ -62,6 +63,7 @@ export function CardScreen({
         <CardFace side="front" text={card.front} imageUrl={card.frontImageUrl} />
         <CardFace side="back" text={card.back} imageUrl={card.backImageUrl} />
       </div>
+      {card.retired && <RetiredNotice />}
       <form onSubmit={handleSubmit} noValidate>
         <CardContentFields draft={draft} busy={busy} onChange={setDraft} />
         {invalid && (

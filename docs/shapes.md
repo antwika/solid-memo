@@ -60,6 +60,7 @@ share the same named property shapes.
 | Deck 2 | Deck 1 + `sm:direction` 1..1, one of `front-to-back`, `back-to-front`, `bidirectional`; `dcterms:modified` 0..1 dateTime |
 | Card 1 | `sm:front`, `sm:back` 1..1 |
 | Card 2 | `sm:front`, `sm:back` 0..1; `sm:frontImage`, `sm:backImage` 0..1 IRI; each side has text or a picture |
+| Card 3 | Card 2 + `owl:deprecated` 0..1 boolean: `true` on a retired card, kept with its review states but never studied, and listed in the Browser only when asked; left out on a card in use |
 | Review state 1 | `sm:easeFactor` decimal, `sm:intervalDays`, `sm:repetitions` integer, `sm:due` `YYYY-MM-DD`, `sm:firstReviewedAt`, `sm:lastReviewedAt` dateTime, all 1..1; the five `sm:previous*` 0..1 each (unversioned pods already hold snapshots); subject named per direction |
 | Review state 2 | Review state 1 with the snapshot all or nothing |
 | Preferences 1 | `sm:newCardsPerDay`, `sm:maxReviewsPerDay`, `sm:dayBoundaryHour` (0–23) integer 0..1; `sm:answerScale` 0..1, `sm2` or `minimal`; `sm:developerMode` 0..1 boolean |

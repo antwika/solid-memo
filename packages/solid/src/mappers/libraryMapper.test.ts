@@ -321,11 +321,11 @@ describe("toLibraryDeckContent", () => {
           .addIri(RDF.type, SM.Card)
           .addStringNoLocale(SM.front, "Sweden")
           .addStringNoLocale(SM.back, "Stockholm")
-          .addInteger(SM.formatVersion, 3),
+          .addInteger(SM.formatVersion, 4),
       ),
     );
     expect(() => toLibraryDeckContent(DOC, dataset)).toThrow(
-      `<${CANONICAL}#se> in <${DOC}> is in card format 3, newer than this app supports (2).`,
+      `<${CANONICAL}#se> in <${DOC}> is in card format 4, newer than this app supports (3).`,
     );
   });
 

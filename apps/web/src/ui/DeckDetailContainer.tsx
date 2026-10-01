@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
-import type { Deck } from "@solid-memo/domain/deck";
+import { activeCards, type Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import { DeckDetailScreen } from "./DeckDetailScreen";
 import { errorMessage } from "./errorMessage";
@@ -65,7 +65,7 @@ export function DeckDetailContainer({
   return (
     <DeckDetailScreen
       deck={deck}
-      cardCount={cardsQuery.data.length}
+      cardCount={activeCards(cardsQuery.data).length}
       dueCount={queueQuery.data.due.length}
       newCount={queueQuery.data.newPrompts.length}
       studiedToday={queueQuery.data.studiedToday}

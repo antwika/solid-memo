@@ -28,4 +28,15 @@ describe("LibraryCardScreen", () => {
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.queryByRole("textbox")).toBeNull();
   });
+
+  it("says a retired card is no longer studied", () => {
+    render(
+      <LibraryCardScreen
+        card={{ id: "yu", front: "Yugoslavia", back: "Belgrade", formatVersion: 3, retired: true }}
+        deckName="Capitals"
+        deckHref="#/library-deck?deck=capitals"
+      />,
+    );
+    expect(screen.getByRole("note")).toHaveTextContent("This card is retired");
+  });
 });

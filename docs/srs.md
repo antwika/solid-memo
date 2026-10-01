@@ -86,7 +86,9 @@ device-local; travelling shifts due times by a few hours (accepted for v1).
 direction + review states + preferences — the instance's, with the
 deck's own daily limits in their place where it sets them
 (`deckPreferences` in `domain/deckPace.ts`) (`now` is always passed in, never
-read from a clock — that keeps it deterministic and testable):
+read from a clock — that keeps it deterministic and testable). Retired
+cards (`owl:deprecated true`) make no prompts: their review states are
+kept, but never due and never new:
 
 - **due**: prompts whose `due <= today`, oldest due first, capped at
   `maxReviewsPerDay` minus reviews already done today.

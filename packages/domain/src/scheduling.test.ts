@@ -94,6 +94,15 @@ describe("buildStudyQueue", () => {
     expect(queue.newPrompts.map((p) => p.card.id)).toEqual(["new1", "new2"]);
   });
 
+  it("never studies a retired card, due or new", () => {
+    const cards = [card("a"), { ...card("retired-due"), retired: true as const }, { ...card("retired-new"), retired: true as const }];
+    const reviews = [review("a", "2026-09-20", yesterday), review("retired-due", "2026-09-20", yesterday)];
+
+    const queue = buildStudyQueue({ cards, direction: "front-to-back", reviews, prefs, now, random: keepOrder });
+    expect(queue.due.map((p) => p.card.id)).toEqual(["a"]);
+    expect(queue.newPrompts).toEqual([]);
+  });
+
   it("draws new cards at random rather than in deck order", () => {
     const cards = [card("n1"), card("n2"), card("n3"), card("n4")];
     const queue = buildStudyQueue({

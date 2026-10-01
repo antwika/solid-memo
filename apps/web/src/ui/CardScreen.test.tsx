@@ -140,6 +140,13 @@ describe("CardScreen", () => {
     expect(props.onRemove).not.toHaveBeenCalled();
   });
 
+  it("says a retired card is no longer studied, and says nothing of it otherwise", () => {
+    renderScreen();
+    expect(screen.queryByRole("note")).toBeNull();
+    renderScreen({ card: { ...card, retired: true } });
+    expect(screen.getByRole("note")).toHaveTextContent("It is kept, with its review history, but no longer studied.");
+  });
+
   it("confirms a save", () => {
     renderScreen({ saved: true });
     expect(screen.getByRole("status")).toHaveTextContent("Saved.");

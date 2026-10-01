@@ -3,7 +3,7 @@ import { directionOfConcept, conceptOfDirection } from "./concepts";
 import { defaultDeckDescription, distributionUrlOf, TURTLE_MEDIA_TYPE } from "./dcat";
 import type { Card, CardContent, Deck } from "./deck";
 import type { LibraryCard, LibraryDeckContent } from "./library";
-import type { AgentV1, CardV2, DeckV4, DistributionV1, LibraryDeckV4 } from "@solid-memo/vocab/types.generated";
+import type { AgentV1, CardV3, DeckV4, DistributionV1, LibraryDeckV4 } from "@solid-memo/vocab/types.generated";
 import { inEnglish, shown } from "./langText";
 import { fragmentIdOf } from "./subjectUrl";
 
@@ -86,7 +86,7 @@ export function deckDistribution(deck: Deck): { url: string; record: Distributio
  * The content of a card record; null when a side has neither text nor a
  * picture — the one rule of the card shape a record cannot carry.
  */
-export function cardContentFromRecord(data: CardV2): CardContent | null {
+export function cardContentFromRecord(data: CardV3): CardContent | null {
   const front = data.front ?? "";
   const back = data.back ?? "";
   if (front === "" && data.frontImage === undefined) return null;
@@ -99,7 +99,7 @@ export function cardContentFromRecord(data: CardV2): CardContent | null {
   };
 }
 
-export function cardFromRecord(url: string, storedVersion: number, data: CardV2): Card | null {
+export function cardFromRecord(url: string, storedVersion: number, data: CardV3): Card | null {
   const content = cardContentFromRecord(data);
   if (content === null) return null;
   return {
@@ -108,17 +108,30 @@ export function cardFromRecord(url: string, storedVersion: number, data: CardV2)
     ...content,
     createdAt: data.created ?? "",
     formatVersion: storedVersion,
+    ...retiredOf(data),
   };
 }
 
-/** Empty text and a missing picture leave their fields out. */
-export function cardToRecord(content: CardContent, createdAt: string): CardV2 {
+/** A card of a library release; null as for cardContentFromRecord. */
+export function libraryCardFromRecord(url: string, storedVersion: number, data: CardV3): LibraryCard | null {
+  const content = cardContentFromRecord(data);
+  if (content === null) return null;
+  return { id: fragmentIdOf(url), ...content, formatVersion: storedVersion, ...retiredOf(data) };
+}
+
+function retiredOf(data: CardV3): { retired?: true } {
+  return data.deprecated === true ? { retired: true } : {};
+}
+
+/** Empty text and a missing picture leave their fields out, as does a card in use its retirement. */
+export function cardToRecord(card: CardContent & { retired?: true }, createdAt: string): CardV3 {
   return {
-    ...(content.front === "" ? {} : { front: content.front }),
-    ...(content.back === "" ? {} : { back: content.back }),
-    ...(content.frontImageUrl === undefined ? {} : { frontImage: content.frontImageUrl }),
-    ...(content.backImageUrl === undefined ? {} : { backImage: content.backImageUrl }),
+    ...(card.front === "" ? {} : { front: card.front }),
+    ...(card.back === "" ? {} : { back: card.back }),
+    ...(card.frontImageUrl === undefined ? {} : { frontImage: card.frontImageUrl }),
+    ...(card.backImageUrl === undefined ? {} : { backImage: card.backImageUrl }),
     ...(createdAt === "" ? {} : { created: createdAt }),
+    ...(card.retired === true ? { deprecated: true } : {}),
   };
 }
 

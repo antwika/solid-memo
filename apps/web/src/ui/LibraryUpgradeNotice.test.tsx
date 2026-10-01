@@ -16,6 +16,8 @@ const plan: LibraryUpgradePlan = {
   ],
   add: [libraryCard("no")],
   change: [libraryCard("se"), libraryCard("dk")],
+  retire: [],
+  restore: [],
   remove: [card("is")],
   kept: [card("fi")],
 };
@@ -33,6 +35,14 @@ describe("describeChanges", () => {
       "studies it both ways",
     );
   });
+
+  it("counts retirements and cards brought back, not what is added or changed retired", () => {
+    const retired = { ...libraryCard("yu"), retired: true as const };
+    expect(
+      describeChanges({ ...plan, add: [retired], change: [retired], retire: [card("se")], restore: [card("dk"), card("fi")], remove: [] }),
+    ).toBe("retires 1 card and brings back 2 cards");
+    expect(describeChanges({ ...plan, add: [retired], change: [], remove: [] })).toBe("updates cards you no longer study");
+  });
 });
 
 describe("LibraryUpgradeNotice", () => {
@@ -49,6 +59,13 @@ describe("LibraryUpgradeNotice", () => {
     expect(props.onUpgrade).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Update to release 3" }));
     expect(props.onUpgrade).toHaveBeenCalledOnce();
+  });
+
+  it("says a retired card is kept when the update retires any", () => {
+    renderNotice({ plan: { ...plan, change: [], retire: [card("se")], remove: [], kept: [] } });
+    expect(screen.getByRole("region", { name: "Newer library release" })).toHaveTextContent(
+      "Updating adds 1 card and retires 1 card. Your review history is kept; a retired card is kept, but no longer studied.",
+    );
   });
 
   it("says nothing of removals, kept cards or notes when there are none, and counts kept cards", () => {

@@ -92,6 +92,12 @@ export interface LibraryCard extends CardContent {
   /** Fragment id in the library document; kept as the card's id on import. */
   id: string;
   formatVersion: number;
+  /**
+   * Set when the release retires the card: the deck no longer uses it,
+   * but keeps it so copies keep it and its review state. An import
+   * copies it retired.
+   */
+  retired?: true;
 }
 
 /** Whether a deck in the pod is a copy of a library deck, of any of its releases. */

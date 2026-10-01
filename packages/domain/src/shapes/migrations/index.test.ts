@@ -44,7 +44,7 @@ describe("the migration chain", () => {
 describe("migrate", () => {
   it("returns a latest record untouched", () => {
     const data = { front: "Sweden", back: "Stockholm" };
-    expect(migrate("card", { version: 2, data }, CONTEXT)).toBe(data);
+    expect(migrate("card", { version: 3, data }, CONTEXT)).toBe(data);
   });
 
   it("walks a record up to the latest version", () => {
