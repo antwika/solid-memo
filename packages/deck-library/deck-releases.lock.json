@@ -37,6 +37,12 @@
       "sha256": "72d439fec352db7b026319c991c2d0cc25da348b29f676397bbfcadc721dbe9d"
     },
     {
+      "deck": "swedish-labour-market-taxonomy-occupation-names",
+      "version": 1,
+      "issued": "2026-10-01T00:38:16Z",
+      "sha256": "f7b5659259e68656a21245b62cbd4859d9ddba996a46ba7d6773f2ac6e4a8782"
+    },
+    {
       "deck": "swedish-nouns",
       "version": 1,
       "issued": "2026-09-28T17:02:16Z",
