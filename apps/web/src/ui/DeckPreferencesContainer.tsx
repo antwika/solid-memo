@@ -7,6 +7,7 @@ import { DeckPreferencesScreen } from "./DeckPreferencesScreen";
 import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
 import { deckHref, routeToHash } from "./router";
+import { useI18n } from "./i18n";
 
 /**
  * Owns a deck's preferences: reads the instance's (which the deck falls
@@ -29,6 +30,7 @@ export function DeckPreferencesContainer({
   /** Called after a successful save. */
   onDone: () => void;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const preferencesQuery = useQuery({
@@ -62,7 +64,7 @@ export function DeckPreferencesContainer({
     return <p class="error">{errorMessage(preferencesQuery.error)}</p>;
   }
   if (preferencesQuery.data === undefined) {
-    return <Loading label="Loading preferences…" />;
+    return <Loading label={t("deckPreferences.loading")} />;
   }
 
   return (

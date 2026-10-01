@@ -11,7 +11,8 @@
     "test": "vitest run --coverage"
   },
   "dependencies": {
-    "@solid-memo/application": "*"
+    "@solid-memo/application": "*",
+    "@solid-memo/domain": "*"
   },
   "devDependencies": {
     "happy-dom": "^20.14.5"

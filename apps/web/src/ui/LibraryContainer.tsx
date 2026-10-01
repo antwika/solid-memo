@@ -3,6 +3,7 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import { isCopyOf, type LibraryDeck } from "@solid-memo/domain/library";
 import { errorMessage } from "./errorMessage";
+import { useI18n } from "./i18n";
 import { LibraryScreen } from "./LibraryScreen";
 import { Loading } from "./Loading";
 import { libraryDeckHref, libraryHref, libraryPreviewHref } from "./router";
@@ -21,6 +22,7 @@ export function LibraryContainer({
   /** Called after a successful import. */
   onDone: () => void;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const libraryQuery = useQuery({
@@ -54,7 +56,7 @@ export function LibraryContainer({
     return <p class="error">{errorMessage(libraryQuery.error)}</p>;
   }
   if (libraryQuery.data === undefined) {
-    return <Loading label="Loading the deck library…" />;
+    return <Loading label={t("library.loading")} />;
   }
 
   return (

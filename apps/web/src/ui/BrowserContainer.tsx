@@ -4,6 +4,7 @@ import type { Card, Deck, DeckDirection } from "@solid-memo/domain/deck";
 import type { DeckAbout } from "@solid-memo/domain/deckAbout";
 import { BrowserScreen } from "./BrowserScreen";
 import { errorMessage } from "./errorMessage";
+import { useI18n } from "./i18n";
 import { Loading } from "./Loading";
 
 /** Owns the card list and the deck/card mutations for the Browser view. */
@@ -26,6 +27,7 @@ export function BrowserContainer({
   cardHref: (card: Card) => string;
   onPageChange: (page: number) => void;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const cardsQuery = useQuery({
@@ -64,7 +66,7 @@ export function BrowserContainer({
     return <p class="error">{errorMessage(cardsQuery.error)}</p>;
   }
   if (cardsQuery.data === undefined) {
-    return <Loading label="Loading cards…" />;
+    return <Loading label={t("browser.loading")} />;
   }
 
   return (

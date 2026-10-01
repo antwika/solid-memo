@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { CardFace, CardThumbnail } from "./CardFace";
+import { I18nProvider } from "./i18n";
 
 const FLAG = "https://flagcdn.com/af.svg";
 
@@ -27,16 +28,16 @@ describe("CardFace", () => {
   });
 
   it("shows the label and note in the reader's language", () => {
-    vi.stubGlobal("navigator", { languages: ["sv-SE"] });
     const { container } = render(
-      <CardFace
-        side="back"
-        text="Finansmäklare"
-        label={{ en: "Replaced by", sv: "Ersatt av" }}
-        note={{ en: "In taxonomy version 30.", sv: "I taxonomiversion 30." }}
-      />,
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <CardFace
+          side="back"
+          text="Finansmäklare"
+          label={{ en: "Replaced by", sv: "Ersatt av" }}
+          note={{ en: "In taxonomy version 30.", sv: "I taxonomiversion 30." }}
+        />
+      </I18nProvider>,
     );
-    vi.unstubAllGlobals();
     expect(container.querySelector(".card-label")).toHaveTextContent("Ersatt av");
     expect(container.querySelector(".card-note")).toHaveTextContent("I taxonomiversion 30.");
   });

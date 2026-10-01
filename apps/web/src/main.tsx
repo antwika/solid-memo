@@ -10,6 +10,7 @@ import { createSolidDeckRepository } from "@solid-memo/solid/solidDeckRepository
 import { createSolidDigestRepository } from "@solid-memo/solid/solidDigestRepository";
 import { createSolidInstanceRepository } from "@solid-memo/solid/solidInstanceRepository";
 import { createSolidPreferencesRepository } from "@solid-memo/solid/solidPreferencesRepository";
+import { createLocalStorageLanguagePreference } from "@solid-memo/browser/localStorageLanguagePreference";
 import { createLocalStorageUpdateJournal } from "@solid-memo/browser/localStorageUpdateJournal";
 import { createSolidInstanceCopier } from "@solid-memo/solid/solidInstanceCopier";
 import { createSolidRepairRepository } from "@solid-memo/solid/solidRepairRepository";
@@ -65,6 +66,7 @@ const useCases = createUseCases({
   repairRepository: createSolidRepairRepository({ fetch: podFetch }),
   instanceCopier: createSolidInstanceCopier({ fetch: podFetch }),
   updateJournal: createLocalStorageUpdateJournal(),
+  languagePreference: createLocalStorageLanguagePreference(),
   writeFence,
   digestRepository: createSolidDigestRepository({ fetch: podFetch, checkWrite }),
   ruleset: __SHAPES_RULESET__,

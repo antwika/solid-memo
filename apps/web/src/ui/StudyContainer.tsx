@@ -14,7 +14,7 @@ import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
 import { StudyScreen } from "./StudyScreen";
 import { deckHref } from "./router";
-import { readerText } from "./readerText";
+import { useI18n } from "./i18n";
 
 /**
  * Owns one study session. The queue is fetched once when the session
@@ -38,6 +38,7 @@ export function StudyContainer({
   /** Uniform [0, 1) source deciding where a failed card comes back. */
   random?: () => number;
 }) {
+  const { t, readerText } = useI18n();
   const queryClient = useQueryClient();
 
   const queueQuery = useQuery({
@@ -136,7 +137,7 @@ export function StudyContainer({
     return <p class="error">{errorMessage(queueQuery.error)}</p>;
   }
   if (session === null) {
-    return <Loading label="Preparing your study session…" />;
+    return <Loading label={t("study.preparing")} />;
   }
 
   const { prompts, position } = session;

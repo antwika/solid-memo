@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { DeckDetailScreen } from "./DeckDetailScreen";
+import { I18nProvider } from "./i18n";
 import type { Deck } from "@solid-memo/domain/deck";
 
 const deck: Deck = {
@@ -227,5 +228,28 @@ describe("DeckDetailScreen", () => {
   it("shows the deck's description when it has one", () => {
     renderScreen({ deck: { ...deck, description: { en: "The kanji of JLPT N5." } } });
     expect(screen.getByText("The kanji of JLPT N5.")).toBeInTheDocument();
+  });
+
+  it("speaks Swedish", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <DeckDetailScreen
+          deck={deck}
+          deckHref="#/deck?deck=d"
+          cardCount={3}
+          dueCount={2}
+          newCount={1}
+          studiedToday={0}
+          busy={false}
+          error={null}
+          onStudy={vi.fn()}
+          onPreferences={vi.fn()}
+          onBrowse={vi.fn()}
+          onResetDay={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByText("2 kort att repetera idag, och 1 nytt att introducera.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Studera" })).toBeInTheDocument();
   });
 });

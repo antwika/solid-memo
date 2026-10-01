@@ -1,13 +1,12 @@
 import { useState } from "preact/hooks";
 import { filterLibraryDecks, topicsOf, type LibraryDeck } from "@solid-memo/domain/library";
 import { LibraryIcon } from "./icons";
-import { cardCount } from "./studyCounts";
-import { readerText } from "./readerText";
+import { useI18n, type I18n } from "./i18n";
 
 /** "Import selected" until something is ticked, then the count. */
-function importLabel(count: number): string {
-  if (count === 0) return "Import selected";
-  return count === 1 ? "Import 1 deck" : `Import ${count} decks`;
+function importLabel(t: I18n["t"], count: number): string {
+  if (count === 0) return t("library.importSelected");
+  return t("library.importDecks", { count });
 }
 
 /**
@@ -43,6 +42,7 @@ export function LibraryScreen({
   error: string | null;
   onImport: (decks: LibraryDeck[]) => void;
 }) {
+  const { t, readerText } = useI18n();
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -75,28 +75,23 @@ export function LibraryScreen({
         <h2>
           <a href={libraryHref}>
             <LibraryIcon />
-            Deck library
+            {t("library.heading")}
           </a>
         </h2>
         <span class="hint">
           {shown.length === decks.length
-            ? decks.length === 1
-              ? "1 deck"
-              : `${decks.length} decks`
-            : `${shown.length} of ${decks.length} decks`}
+            ? t("library.deckCount", { count: decks.length })
+            : t("library.shownCount", { shown: shown.length, count: decks.length })}
         </span>
       </header>
-      <p>
-        Ready-made decks. Open one to read about it, or tick several and
-        import them into this instance as your own copies.
-      </p>
+      <p>{t("library.intro")}</p>
       {decks.length === 0 ? (
-        <p>The library has no decks yet.</p>
+        <p>{t("library.empty")}</p>
       ) : (
         <form onSubmit={handleSubmit}>
           {available.length > 0 && (
             <fieldset class="library-topics">
-              <legend>Topics</legend>
+              <legend>{t("library.topics")}</legend>
               {available.map((topic) => (
                 <label key={topic.iri} class="checkbox-option">
                   <input
@@ -109,15 +104,15 @@ export function LibraryScreen({
               ))}
             </fieldset>
           )}
-          <label for="library-search">Search</label>
+          <label for="library-search">{t("library.search")}</label>
           <input
             id="library-search"
             type="search"
             value={query}
-            placeholder="Name, description or keyword"
+            placeholder={t("library.searchPlaceholder")}
             onInput={(e) => setQuery(e.currentTarget.value)}
           />
-          {shown.length === 0 && <p>No deck matches.</p>}
+          {shown.length === 0 && <p>{t("library.noMatch")}</p>}
           <ul class="library-list">
             {shown.map((deck) => (
               <li key={deck.url}>
@@ -132,23 +127,23 @@ export function LibraryScreen({
                   {readerText(deck.title)}
                 </a>
                 <span class="library-deck-meta">
-                  <span class="hint">{cardCount(deck.cardCount)}</span>
+                  <span class="hint">{t("common.cardCount", { count: deck.cardCount })}</span>
                   {isImported(deck) && (
-                    <span class="hint library-imported">Already imported</span>
+                    <span class="hint library-imported">{t("library.alreadyImported")}</span>
                   )}
                 </span>
                 <a
                   class="button library-preview"
                   href={previewHref(deck)}
-                  aria-label={`Preview ${readerText(deck.title)}`}
+                  aria-label={t("library.previewDeck", { deck: readerText(deck.title) })}
                 >
-                  Preview
+                  {t("library.preview")}
                 </a>
               </li>
             ))}
           </ul>
           <button type="submit" disabled={busy || selected.length === 0}>
-            {busy ? "Importing…" : importLabel(selected.length)}
+            {busy ? t("library.importing") : importLabel(t, selected.length)}
           </button>
         </form>
       )}

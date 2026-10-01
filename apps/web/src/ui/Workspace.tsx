@@ -41,7 +41,7 @@ import {
 } from "./router";
 import { ValidationContainer } from "./ValidationContainer";
 import { WebIdDocumentContainer } from "./WebIdDocumentContainer";
-import { readerText } from "./readerText";
+import { useI18n } from "./i18n";
 
 export function Workspace({
   useCases,
@@ -50,6 +50,7 @@ export function Workspace({
   useCases: UseCases;
   session: Session;
 }) {
+  const { t, tx, readerText } = useI18n();
   const queryClient = useQueryClient();
   const { route, navigate, replace } = useHashRoute();
   const webId = session.webId;
@@ -296,20 +297,20 @@ export function Workspace({
     return <p class="error">{errorMessage(instancesQuery.error)}</p>;
   }
   if (route === null || instances === undefined) {
-    return <Loading label="Loading your Solid Memo instances…" />;
+    return <Loading label={t("workspace.loadingInstances")} />;
   }
   if (instanceUrl !== null && activeInstance === null) {
-    return <Loading label="Loading your Solid Memo instances…" />;
+    return <Loading label={t("workspace.loadingInstances")} />;
   }
   if (needsDeck) {
     if (decksQuery.error) {
       return <p class="error">{errorMessage(decksQuery.error)}</p>;
     }
     if (decksQuery.data === undefined) {
-      return <Loading label="Loading deck…" />;
+      return <Loading label={t("workspace.loadingDeck")} />;
     }
     if (activeDeck === null) {
-      return <Loading label="Loading deck…" />;
+      return <Loading label={t("workspace.loadingDeck")} />;
     }
   }
   if (needsCard) {
@@ -317,7 +318,7 @@ export function Workspace({
       return <p class="error">{errorMessage(cardsQuery.error)}</p>;
     }
     if (activeCard === null) {
-      return <Loading label="Loading card…" />;
+      return <Loading label={t("workspace.loadingCard")} />;
     }
   }
   if (needsLibraryDeck) {
@@ -325,7 +326,7 @@ export function Workspace({
       return <p class="error">{errorMessage(libraryQuery.error)}</p>;
     }
     if (activeLibraryDeck === null) {
-      return <Loading label="Loading the deck library…" />;
+      return <Loading label={t("workspace.loadingLibrary")} />;
     }
   }
   if (needsLibraryCard) {
@@ -333,7 +334,7 @@ export function Workspace({
       return <p class="error">{errorMessage(libraryCardsQuery.error)}</p>;
     }
     if (activeLibraryCard === null) {
-      return <Loading label="Loading card…" />;
+      return <Loading label={t("workspace.loadingCard")} />;
     }
   }
 
@@ -344,7 +345,7 @@ export function Workspace({
           return <p class="error">{errorMessage(storagesQuery.error)}</p>;
         }
         if (storagesQuery.data === undefined) {
-          return <Loading label="Discovering storages…" />;
+          return <Loading label={t("workspace.discoveringStorages")} />;
         }
         return (
           <StoragePicker
@@ -627,14 +628,16 @@ export function Workspace({
           );
         }
         return preferencesQuery.isPending ? (
-          <Loading label="Loading preferences…" />
+          <Loading label={t("workspace.loadingPreferences")} />
         ) : (
           <p class="hint">
-            Developer mode is off. Turn it on in{" "}
-            <a href={routeToHash({ screen: "preferences", instanceUrl: instanceUrl! })}>
-              Preferences
-            </a>{" "}
-            to check this instance against Solid Memo's shapes.
+            {tx("workspace.developerModeOff", {
+              preferences: (
+                <a href={routeToHash({ screen: "preferences", instanceUrl: instanceUrl! })}>
+                  {t("workspace.preferencesLink")}
+                </a>
+              ),
+            })}
           </p>
         );
     }
@@ -645,9 +648,9 @@ export function Workspace({
     (checkQuery.isPending || invalidReport !== null);
   const deckSetAside = activeDeck !== null && isSetAside(activeDeck);
   const shown = blocked ? (
-    invalidReport === null ? <Loading label="Checking this instance's data…" /> : null
+    invalidReport === null ? <Loading label={t("workspace.checkingData")} /> : null
   ) : deckSetAside ? (
-    <p class="hint">This deck is set aside: its data does not conform. Repair it above to use it again.</p>
+    <p class="hint">{t("workspace.deckSetAside")}</p>
   ) : (
     screen
   );
@@ -671,7 +674,7 @@ export function Workspace({
           />
           {checkQuery.error && (
             <p class="warning">
-              Could not check this instance's data: {errorMessage(checkQuery.error)}
+              {t("workspace.checkFailed", { error: errorMessage(checkQuery.error)! })}
             </p>
           )}
           {invalidReport !== null && (
@@ -691,12 +694,12 @@ export function Workspace({
           card: activeCard === null ? "" : cardLabel(activeCard),
           libraryDeck: activeLibraryDeck === null ? "" : readerText(activeLibraryDeck.title),
           libraryCard: activeLibraryCard === null ? "" : cardLabel(activeLibraryCard),
-        })}
+        }, t)}
       />
       {shown}
       {developerMode && activeInstance !== null && (
-        <nav class="developer-tools" aria-label="Developer tools">
-          <a href={validationHref(activeInstance.url)}>Validate this instance</a>
+        <nav class="developer-tools" aria-label={t("workspace.developerTools")}>
+          <a href={validationHref(activeInstance.url)}>{t("workspace.validateInstance")}</a>
         </nav>
       )}
       {developerMode && (

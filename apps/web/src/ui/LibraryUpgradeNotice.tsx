@@ -1,26 +1,45 @@
 import { activeCards } from "@solid-memo/domain/deck";
 import type { LibraryUpgradePlan } from "@solid-memo/domain/libraryUpgrade";
-import { DIRECTION_LABELS } from "./direction";
-import { cardCount } from "./studyCounts";
+import { useI18n, type I18n } from "./i18n";
 
 /**
  * "adds 1 card, changes 2 cards, retires 1 card and removes 1 card", of
  * what the plan does to the cards the user studies: a card that is added
  * or changed retired is out of sight.
  */
-export function describeChanges(plan: LibraryUpgradePlan): string {
+export function describeChanges(
+  plan: LibraryUpgradePlan,
+  { t, directionLabel }: Pick<I18n, "t" | "directionLabel">,
+): string {
   const added = activeCards(plan.add).length;
   const changed = activeCards(plan.change).length;
   const parts = [
-    ...(added > 0 ? [`adds ${cardCount(added)}`] : []),
-    ...(changed > 0 ? [`changes ${cardCount(changed)}`] : []),
-    ...(plan.retire.length > 0 ? [`retires ${cardCount(plan.retire.length)}`] : []),
-    ...(plan.restore.length > 0 ? [`brings back ${cardCount(plan.restore.length)}`] : []),
-    ...(plan.remove.length > 0 ? [`removes ${cardCount(plan.remove.length)}`] : []),
-    ...(plan.direction === undefined ? [] : [`studies it ${DIRECTION_LABELS[plan.direction].toLowerCase()}`]),
+    ...(added > 0 ? [t("libraryUpgradeNotice.adds", { count: added })] : []),
+    ...(changed > 0 ? [t("libraryUpgradeNotice.changes", { count: changed })] : []),
+    ...(plan.retire.length > 0 ? [t("libraryUpgradeNotice.retires", { count: plan.retire.length })] : []),
+    ...(plan.restore.length > 0 ? [t("libraryUpgradeNotice.bringsBack", { count: plan.restore.length })] : []),
+    ...(plan.remove.length > 0 ? [t("libraryUpgradeNotice.removes", { count: plan.remove.length })] : []),
+    ...(plan.direction === undefined
+      ? []
+      : [t("libraryUpgradeNotice.studies", { direction: directionLabel(plan.direction).toLowerCase() })]),
   ];
-  if (parts.length === 0) return "updates cards you no longer study";
-  return parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  if (parts.length === 0) return t("libraryUpgradeNotice.noStudiedChanges");
+  return parts.length === 1
+    ? parts[0]
+    : t("libraryUpgradeNotice.list", {
+        items: parts.slice(0, -1).join(t("libraryUpgradeNotice.listSeparator")),
+        last: parts[parts.length - 1],
+      });
+}
+
+/** "Your review history is kept…", with the exceptions the plan makes. */
+function historyKept(plan: LibraryUpgradePlan, t: I18n["t"]): string {
+  const removes = plan.remove.length > 0;
+  const retires = plan.retire.length > 0;
+  if (removes && retires) return t("libraryUpgradeNotice.historyKeptButRemovedRetired");
+  if (removes) return t("libraryUpgradeNotice.historyKeptButRemoved");
+  if (retires) return t("libraryUpgradeNotice.historyKeptRetired");
+  return t("libraryUpgradeNotice.historyKept");
 }
 
 /**
@@ -41,28 +60,32 @@ export function LibraryUpgradeNotice({
   error: string | null;
   onUpgrade: () => void;
 }) {
+  const i18n = useI18n();
+  const { t } = i18n;
   return (
-    <div class="warning migration" role="region" aria-label="Newer library release">
+    <div class="warning migration" role="region" aria-label={t("libraryUpgradeNotice.region")}>
       <p>
-        <strong>The deck library has a newer release of this deck.</strong>{" "}
-        {deckName} came from release {plan.fromVersion}; release {plan.toVersion} is out. Updating{" "}
-        {describeChanges(plan)}. Your review history is kept
-        {plan.remove.length > 0 ? ", but for the cards removed" : ""}
-        {plan.retire.length > 0 ? "; a retired card is kept, but no longer studied" : ""}.
-        {plan.kept.length > 0 &&
-          ` ${plan.kept.length === 1 ? "1 card you changed is" : `${plan.kept.length} cards you changed are`} left as you have ${plan.kept.length === 1 ? "it" : "them"}.`}
+        <strong>{t("libraryUpgradeNotice.heading")}</strong>{" "}
+        {t("libraryUpgradeNotice.body", {
+          deck: deckName,
+          from: plan.fromVersion,
+          to: plan.toVersion,
+          changes: describeChanges(plan, i18n),
+        })}{" "}
+        {historyKept(plan, t)}
+        {plan.kept.length > 0 && ` ${t("libraryUpgradeNotice.kept", { count: plan.kept.length })}`}
       </p>
       {plan.notes.length > 0 && (
         <ul>
           {plan.notes.map((note) => (
             <li key={note.version}>
-              Release {note.version}: {note.notes}
+              {t("libraryUpgradeNotice.releaseNote", { version: note.version, notes: note.notes })}
             </li>
           ))}
         </ul>
       )}
       <button class="primary" onClick={onUpgrade} disabled={busy}>
-        {busy ? "Updating…" : `Update to release ${plan.toVersion}`}
+        {busy ? t("libraryUpgradeNotice.updating") : t("libraryUpgradeNotice.update", { version: plan.toVersion })}
       </button>
       {error && <p class="error">{error}</p>}
     </div>

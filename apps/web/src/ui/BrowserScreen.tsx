@@ -8,10 +8,9 @@ import {
 import type { DeckAbout } from "@solid-memo/domain/deckAbout";
 import { CardThumbnail } from "./CardFace";
 import { DeckAboutSection } from "./DeckAboutSection";
-import { DIRECTION_LABELS } from "./direction";
 import { BrowserIcon, TrashIcon } from "./icons";
 import { Pager, paginate } from "./Pager";
-import { readerText } from "./readerText";
+import { useI18n } from "./i18n";
 import { RetiredTag, useRetiredCards } from "./RetiredCards";
 import { breakable } from "./breakable";
 
@@ -59,6 +58,7 @@ export function BrowserScreen({
   onRemoveCard: (card: Card) => void;
   onPageChange: (page: number) => void;
 }) {
+  const { t, tx, readerText, directionLabel } = useI18n();
   const { listed, toggle } = useRetiredCards(cards);
   const {
     pageCount,
@@ -69,9 +69,7 @@ export function BrowserScreen({
 
   function handleRemove(card: Card) {
     if (
-      window.confirm(
-        `Remove the card "${cardLabel(card)}"? This cannot be undone.`,
-      )
+      window.confirm(t("browser.removeConfirm", { card: cardLabel(card) }))
     ) {
       onRemoveCard(card);
     }
@@ -82,15 +80,17 @@ export function BrowserScreen({
       <header>
         <h2>
           <BrowserIcon />
-          Browser: <a href={deckHref}>{readerText(deck.title)}</a>
+          {tx("browser.heading", {
+            deck: <a href={deckHref}>{readerText(deck.title)}</a>,
+          })}
         </h2>
         <button onClick={onAddCard} disabled={busy}>
-          Add card
+          {t("browser.addCardButton")}
         </button>
       </header>
       <DeckAboutSection deck={deck} busy={busy} onSave={onDescribeDeck} />
       <fieldset>
-        <legend>Study direction</legend>
+        <legend>{t("browser.directionLegend")}</legend>
         {DECK_DIRECTIONS.map((direction) => (
           <label key={direction} class="radio-option">
             <input
@@ -101,33 +101,36 @@ export function BrowserScreen({
               onChange={() => onChangeDirection(direction)}
               disabled={busy}
             />
-            {DIRECTION_LABELS[direction]}
+            {directionLabel(direction)}
           </label>
         ))}
         <span class="hint">
           {deck.direction === "bidirectional"
-            ? "Every card is asked both ways, each way scheduled on its own."
-            : "Change it any time; what you have learnt each way is kept."}
+            ? t("browser.bidirectionalHint")
+            : t("browser.directionHint")}
         </span>
       </fieldset>
       {toggle}
       {cards.length === 0 ? (
-        <p>No cards in this deck yet.</p>
+        <p>{t("browser.empty")}</p>
       ) : listed.length === 0 ? (
-        <p>Every card in this deck is retired.</p>
+        <p>{t("browser.allRetired")}</p>
       ) : (
         <>
           <p class="hint">
             {pageCount > 1
-              ? `Cards ${firstIndex + 1}–${firstIndex + pageCards.length} of ${listed.length}. `
-              : ""}
-            Click a card to open it.
+              ? t("browser.pageHint", {
+                  first: firstIndex + 1,
+                  last: firstIndex + pageCards.length,
+                  total: listed.length,
+                })
+              : t("browser.openHint")}
           </p>
           <table class="card-table">
             <thead>
               <tr>
-                <th>Front</th>
-                <th>Back</th>
+                <th>{t("browser.frontColumn")}</th>
+                <th>{t("browser.backColumn")}</th>
                 <th />
               </tr>
             </thead>
@@ -150,8 +153,8 @@ export function BrowserScreen({
                   <td class="actions">
                     <button
                       class="danger icon"
-                      aria-label="Remove"
-                      title="Remove"
+                      aria-label={t("browser.removeButton")}
+                      title={t("browser.removeButton")}
                       onClick={() => handleRemove(card)}
                       disabled={busy}
                     >

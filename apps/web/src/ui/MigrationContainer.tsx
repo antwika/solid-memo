@@ -6,6 +6,7 @@ import type { UpdateOutcome, UpdateProgress } from "@solid-memo/domain/instanceU
 import { isPlanEmpty } from "@solid-memo/domain/migration";
 import type { Session } from "@solid-memo/domain/session";
 import { errorMessage } from "./errorMessage";
+import { useI18n } from "./i18n";
 import { InstanceUpdateConfirm, InstanceUpdateFailure, InstanceUpdateProgress } from "./InstanceUpdate";
 import { MigrationNotice } from "./MigrationNotice";
 
@@ -31,6 +32,7 @@ export function MigrationContainer({
   /** The update switched over: the instance now lives at a new address. */
   onUpdated: (instance: Instance) => void;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [progress, setProgress] = useState<UpdateProgress | null>(null);
@@ -86,13 +88,10 @@ export function MigrationContainer({
   }
   if (interrupted !== null) {
     return (
-      <div class="warning migration" role="region" aria-label="Interrupted update">
-        <p>
-          An update of {instance.name} was cut off before it finished; your data is as it was. A partial
-          copy remains at {interrupted}.
-        </p>
+      <div class="warning migration" role="region" aria-label={t("migration.interruptedRegion")}>
+        <p>{t("migration.interrupted", { name: instance.name, url: interrupted })}</p>
         <button onClick={() => cleanupMutation.mutate()} disabled={cleanupMutation.isPending}>
-          {cleanupMutation.isPending ? "Removing…" : "Remove it"}
+          {cleanupMutation.isPending ? t("migration.removing") : t("migration.removeIt")}
         </button>
         {cleanupMutation.error && <p class="error">{errorMessage(cleanupMutation.error)}</p>}
       </div>

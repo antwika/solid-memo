@@ -5,6 +5,7 @@ import type { StudyPreferences } from "@solid-memo/domain/preferences";
 import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
 import { PreferencesScreen } from "./PreferencesScreen";
+import { useI18n } from "./i18n";
 
 /** Owns the preferences query/mutation for one instance. */
 export function PreferencesContainer({
@@ -16,6 +17,7 @@ export function PreferencesContainer({
   instance: Instance;
   onBack: () => void;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const preferencesQuery = useQuery({
@@ -39,7 +41,7 @@ export function PreferencesContainer({
     return <p class="error">{errorMessage(preferencesQuery.error)}</p>;
   }
   if (preferencesQuery.data === undefined) {
-    return <Loading label="Loading preferences…" />;
+    return <Loading label={t("preferences.loading")} />;
   }
 
   return (

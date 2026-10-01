@@ -2,6 +2,7 @@ import type {
   RegistrationOptions,
   RegistrationTarget,
 } from "@solid-memo/domain/instance";
+import { useI18n } from "./i18n";
 
 /**
  * Choice between the private and public type index, with the
@@ -17,16 +18,12 @@ export function RegistrationTargetChooser({
   value: RegistrationTarget;
   onChange: (target: RegistrationTarget) => void;
 }) {
+  const { t } = useI18n();
   return (
     <fieldset>
-      <legend>Register in</legend>
+      <legend>{t("registrationTargetChooser.legend")}</legend>
       {options !== null && !options.privateIndexExists && (
-        <p class="warning">
-          Your profile has no private type index yet. Solid Memo can create
-          one (recommended), or register in your public type index instead —
-          public registrations are visible to anyone who can read your
-          profile.
-        </p>
+        <p class="warning">{t("registrationTargetChooser.noPrivateIndex")}</p>
       )}
       <label>
         <input
@@ -35,10 +32,9 @@ export function RegistrationTargetChooser({
           checked={value === "private"}
           onChange={() => onChange("private")}
         />
-        Private type index
         {options !== null && !options.privateIndexExists
-          ? " (will be created)"
-          : ""}
+          ? t("registrationTargetChooser.privateCreated")
+          : t("registrationTargetChooser.private")}
       </label>
       <label>
         <input
@@ -47,10 +43,9 @@ export function RegistrationTargetChooser({
           checked={value === "public"}
           onChange={() => onChange("public")}
         />
-        Public type index
         {options !== null && !options.publicIndexExists
-          ? " (will be created)"
-          : ""}
+          ? t("registrationTargetChooser.publicCreated")
+          : t("registrationTargetChooser.public")}
       </label>
     </fieldset>
   );

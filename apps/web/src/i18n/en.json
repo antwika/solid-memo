@@ -1,0 +1,643 @@
+{
+  "language": {
+    "label": "Language"
+  },
+  "common": {
+    "cardCount": {
+      "one": "{count} card",
+      "other": "{count} cards"
+    },
+    "toReview": {
+      "one": "{count} to review",
+      "other": "{count} to review"
+    },
+    "direction": {
+      "frontToBack": "Front → back",
+      "backToFront": "Back → front",
+      "bidirectional": "Both ways"
+    }
+  },
+  "footer": {
+    "createdBy": "Created by {author}",
+    "version": "Version {version}"
+  },
+  "addCardForm": {
+    "submitButton": "Add card"
+  },
+  "app": {
+    "restoringSession": "Restoring session…",
+    "illustrationAlt": "Solid Memo illustration",
+    "tagline": "Spaced-repetition flashcards that live in your own Solid Pod.",
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "logoAlt": "Solid Memo — back to start",
+    "loggedInAs": "Logged in as {name}",
+    "logOut": "Log out"
+  },
+  "backup": {
+    "heading": "Previous version",
+    "kept": "The last format update kept your data as it was before at {link}.",
+    "keptOn": "The last format update kept your data as it was before ({date}) at {link}.",
+    "restoreConfirm": "Go back to the previous version of {name}? What you studied since the update is lost with the updated version.",
+    "restore": "Restore previous version",
+    "restoring": "Restoring…",
+    "deleteConfirm": "Delete the previous version for good? This cannot be undone.",
+    "delete": "Delete backup",
+    "deleting": "Deleting…"
+  },
+  "breadcrumbs": {
+    "label": "Breadcrumb",
+    "instances": "Instances",
+    "storagePicker": "Choose a storage",
+    "instanceCreator": "New instance",
+    "decks": "Decks",
+    "deckCreator": "New deck",
+    "library": "Deck library",
+    "cards": "Cards",
+    "preview": "Preview",
+    "preferences": "Preferences",
+    "validation": "Validation",
+    "browser": "Browser",
+    "cardCreator": "New card",
+    "study": "Study"
+  },
+  "browser": {
+    "heading": "Browser: {deck}",
+    "addCardButton": "Add card",
+    "directionLegend": "Study direction",
+    "bidirectionalHint": "Every card is asked both ways, each way scheduled on its own.",
+    "directionHint": "Change it any time; what you have learnt each way is kept.",
+    "empty": "No cards in this deck yet.",
+    "allRetired": "Every card in this deck is retired.",
+    "pageHint": "Cards {first}–{last} of {total}. Click a card to open it.",
+    "openHint": "Click a card to open it.",
+    "frontColumn": "Front",
+    "backColumn": "Back",
+    "removeButton": "Remove",
+    "removeConfirm": "Remove the card \"{card}\"? This cannot be undone.",
+    "loading": "Loading cards…"
+  },
+  "card": {
+    "heading": "Card",
+    "saveButton": "Save",
+    "removeButton": "Remove card",
+    "removeConfirm": "Remove the card \"{card}\"? This cannot be undone.",
+    "saved": "Saved."
+  },
+  "cardContentFields": {
+    "front": "Front",
+    "frontPlaceholder": "Question or prompt",
+    "frontImage": "Front picture (URL)",
+    "imagePlaceholder": "https://… (optional)",
+    "frontNote": "Front note",
+    "frontNotePlaceholder": "Shown under the front once the answer is revealed (optional)",
+    "backLabel": "Label",
+    "backLabelPlaceholder": "Shown above the back, e.g. what kind of answer it is (optional)",
+    "back": "Back",
+    "backPlaceholder": "Answer",
+    "backImage": "Back picture (URL)",
+    "backNote": "Back note",
+    "backNotePlaceholder": "Shown under the back once the answer is revealed (optional)"
+  },
+  "cardCreator": {
+    "heading": "New card",
+    "backButton": "Back",
+    "addingTo": "Adding to \"{deck}\"."
+  },
+  "cardFace": {
+    "frontPictureAlt": "Picture on the front of the card",
+    "backPictureAlt": "Picture on the back of the card",
+    "notWebUrl": "Picture not shown: its address is not a web URL."
+  },
+  "dataCheckNotice": {
+    "region": "Data check",
+    "heading": "Some data in {name} does not conform to Solid Memo's shapes.",
+    "blockInstance": "Solid Memo will not use this instance until it is repaired.",
+    "restKeepsWorking": "The rest keeps working.",
+    "setAside": {
+      "one": "{names} is set aside until repaired; the rest keeps working.",
+      "other": "{names} are set aside until repaired; the rest keeps working."
+    },
+    "keepsWorking": "Solid Memo keeps working with it.",
+    "policyHint": "What happens with invalid data is set in {preferences}.",
+    "preferences": "Preferences",
+    "repair": "Repair"
+  },
+  "deckAbout": {
+    "label": "About this deck",
+    "topicsLine": "Topics: {topics}",
+    "keywordsLine": "Keywords: {keywords}",
+    "describeButton": "Describe deck",
+    "description": "Description",
+    "topics": "Topics",
+    "keywords": "Keywords",
+    "keywordsPlaceholder": "Separated by commas",
+    "saveButton": "Save description",
+    "cancelLabel": "Cancel describing",
+    "cancelButton": "Cancel"
+  },
+  "deckCreator": {
+    "heading": "New deck",
+    "nameLabel": "Name",
+    "namePlaceholder": "My new deck",
+    "createButton": "Create deck"
+  },
+  "deckDetail": {
+    "loading": "Loading cards…",
+    "preferencesLabel": "Deck preferences",
+    "preferencesButton": "Preferences",
+    "browseButton": "Browser",
+    "noCards": "This deck has no cards yet. Add some in the Browser.",
+    "allStudied": "All cards have been studied — nothing more to study today.",
+    "newOnly": {
+      "one": "No cards are due today; {count} new to introduce.",
+      "other": "No cards are due today; {count} new to introduce."
+    },
+    "dueOnly": "{due} due today.",
+    "dueAndNew": {
+      "one": "{due} due today, and {count} new to introduce.",
+      "other": "{due} due today, and {count} new to introduce."
+    },
+    "studyButton": "Study",
+    "studiedToday": "{studied} studied today.",
+    "resetButton": "Reset today's study",
+    "resetting": "Resetting…",
+    "resetConfirm": "Reset today's study of \"{title}\"? The {studied} you studied today will go back to how they were before, and today's answers will be discarded.",
+    "cardsInDeck": "{cards} in this deck. Add, edit or remove cards in the Browser."
+  },
+  "deckList": {
+    "loading": "Loading decks…",
+    "setAside": "Set aside: its data needs repair",
+    "heading": "Decks",
+    "deckCount": {
+      "one": "{count} deck",
+      "other": "{count} decks"
+    },
+    "empty": "No decks yet. Create your first deck below, or import one from the deck library.",
+    "createButton": "Create deck",
+    "libraryLink": "Deck library"
+  },
+  "deckPreferences": {
+    "loading": "Loading preferences…",
+    "heading": "Preferences: {deck}",
+    "renameButton": "Rename deck",
+    "removeButton": "Remove deck",
+    "removeConfirm": "Remove the deck \"{title}\" and all its cards? This cannot be undone.",
+    "deckName": "Deck name",
+    "saveName": "Save name",
+    "cancelRenamingLabel": "Cancel renaming",
+    "cancelButton": "Cancel",
+    "newCardsPerDay": "New cards per day",
+    "maxReviewsPerDay": "Max reviews per day",
+    "newCardsUnit": {
+      "one": "new card per day",
+      "other": "new cards per day"
+    },
+    "maxReviewsUnit": {
+      "one": "max review per day",
+      "other": "max reviews per day"
+    },
+    "emptyHint": "An empty field defaults to your {link}.",
+    "studyPreferencesLink": "study preferences",
+    "saveButton": "Save preferences"
+  },
+  "deckProvenance": {
+    "by": "By {authors}",
+    "updated": "Updated {date}"
+  },
+  "deckStudyAction": {
+    "checking": "Checking what is due",
+    "done": "Done for today",
+    "studyLabel": "Study {deck}",
+    "studyButton": "Study"
+  },
+  "instanceBar": {
+    "preferences": "Preferences",
+    "switch": "Switch instance"
+  },
+  "instanceCreator": {
+    "heading": "New Solid Memo instance",
+    "name": "Name",
+    "namePlaceholder": "My instance",
+    "location": "Location",
+    "create": "Create instance",
+    "back": "Back"
+  },
+  "instancePicker": {
+    "heading": "Choose a Solid Memo instance",
+    "empty": "No instances are registered yet.",
+    "deleteConfirm": "Delete the instance \"{name}\" and all its decks and cards? This cannot be undone.",
+    "deleteLabel": "Delete instance {name}",
+    "delete": "Delete…",
+    "newInstance": "New instance…",
+    "attachSummary": "Attach an existing instance by URL",
+    "attachUrl": "Instance container URL",
+    "attach": "Attach"
+  },
+  "instanceUpdate": {
+    "confirmRegion": "Start the update",
+    "confirmHeading": "How the update keeps your data safe.",
+    "confirmBody": "Solid Memo copies {name} into a new folder in your pod, updates the copy, and checks it. Only if every check passes does it switch over to the copy. Your current data is not changed: it is kept as a backup, which you can restore or delete in Preferences. Who you shared it with is copied along. The instance gets a new address, so bookmarks to it lead to the instance picker. If anything goes wrong, the copy is removed and nothing else changes.",
+    "start": "Start the update",
+    "notNow": "Not now",
+    "progressRegion": "Updating",
+    "running": "{step}…",
+    "runningCount": "{step}… ({done} of {total})",
+    "progressLabel": "Update progress",
+    "keepOpen": "Keep this page open until the update is done.",
+    "step": {
+      "stage": "Preparing a new copy",
+      "access": "Copying who may access it",
+      "copy": "Copying documents",
+      "upgrade": "Updating the copy's formats",
+      "validate": "Checking the new copy",
+      "verify": "Checking nothing changed meanwhile",
+      "switch": "Switching over to the new copy"
+    },
+    "failedRegion": "Update failed",
+    "failedWhile": "The update failed while {step}:",
+    "noChanges": "No changes were made to your data.",
+    "copyRemoved": "The partial copy was removed.",
+    "copyLeft": "The partial copy could not be removed; it is at {url}.",
+    "tryAgain": "Try removing it again",
+    "close": "Close"
+  },
+  "library": {
+    "heading": "Deck library",
+    "deckCount": {
+      "one": "{count} deck",
+      "other": "{count} decks"
+    },
+    "shownCount": {
+      "one": "{shown} of {count} deck",
+      "other": "{shown} of {count} decks"
+    },
+    "intro": "Ready-made decks. Open one to read about it, or tick several and import them into this instance as your own copies.",
+    "empty": "The library has no decks yet.",
+    "topics": "Topics",
+    "search": "Search",
+    "searchPlaceholder": "Name, description or keyword",
+    "noMatch": "No deck matches.",
+    "alreadyImported": "Already imported",
+    "preview": "Preview",
+    "previewDeck": "Preview {deck}",
+    "importSelected": "Import selected",
+    "importDecks": {
+      "one": "Import {count} deck",
+      "other": "Import {count} decks"
+    },
+    "importing": "Importing…",
+    "loading": "Loading the deck library…"
+  },
+  "libraryBrowser": {
+    "heading": "Cards: {deck}",
+    "empty": "This deck has no cards.",
+    "range": "Cards {first}–{last} of {total}.",
+    "count": {
+      "one": "{count} card.",
+      "other": "{count} cards."
+    },
+    "hint": "Click a card to open it. Import the deck to study or edit them.",
+    "front": "Front",
+    "back": "Back",
+    "loading": "Loading cards…"
+  },
+  "libraryCard": {
+    "heading": "Card",
+    "from": "From {deck}. Import the deck to study or edit its cards."
+  },
+  "libraryDeck": {
+    "browseCards": "Browse cards",
+    "size": "Size",
+    "studied": "Studied",
+    "bothWays": "{direction} — every card is asked both ways; change it after importing",
+    "topics": {
+      "one": "Topic",
+      "other": "Topics"
+    },
+    "keywords": "Keywords",
+    "release": "Release",
+    "version": "Version {version}",
+    "versionReleased": "Version {version}, released {date}",
+    "releaseNotes": "Release notes",
+    "authors": {
+      "one": "Author",
+      "other": "Authors"
+    },
+    "licence": "Licence",
+    "created": "Created",
+    "updated": "Updated",
+    "sources": {
+      "one": "Source",
+      "other": "Sources"
+    },
+    "import": "Import this deck",
+    "importing": "Importing…",
+    "preview": "Preview",
+    "alreadyImported": "Already imported"
+  },
+  "libraryPreview": {
+    "heading": "Preview: {deck}",
+    "back": "Back to library",
+    "empty": "This deck has no cards.",
+    "hint": "Random cards from the deck. Nothing is recorded: import the deck to study it.",
+    "nextCard": "Next card",
+    "reveal": "Reveal",
+    "loading": "Loading cards…"
+  },
+  "libraryUpgrade": {
+    "updated": "Updated to release {version} from the library."
+  },
+  "libraryUpgradeNotice": {
+    "region": "Newer library release",
+    "heading": "The deck library has a newer release of this deck.",
+    "body": "{deck} came from release {from}; release {to} is out. Updating {changes}.",
+    "adds": {
+      "one": "adds {count} card",
+      "other": "adds {count} cards"
+    },
+    "changes": {
+      "one": "changes {count} card",
+      "other": "changes {count} cards"
+    },
+    "retires": {
+      "one": "retires {count} card",
+      "other": "retires {count} cards"
+    },
+    "bringsBack": {
+      "one": "brings back {count} card",
+      "other": "brings back {count} cards"
+    },
+    "removes": {
+      "one": "removes {count} card",
+      "other": "removes {count} cards"
+    },
+    "studies": "studies it {direction}",
+    "noStudiedChanges": "updates cards you no longer study",
+    "list": "{items} and {last}",
+    "listSeparator": ", ",
+    "historyKept": "Your review history is kept.",
+    "historyKeptButRemoved": "Your review history is kept, but for the cards removed.",
+    "historyKeptRetired": "Your review history is kept; a retired card is kept, but no longer studied.",
+    "historyKeptButRemovedRetired": "Your review history is kept, but for the cards removed; a retired card is kept, but no longer studied.",
+    "kept": {
+      "one": "{count} card you changed is left as you have it.",
+      "other": "{count} cards you changed are left as you have them."
+    },
+    "releaseNote": "Release {version}: {notes}",
+    "update": "Update to release {version}",
+    "updating": "Updating…"
+  },
+  "migration": {
+    "interruptedRegion": "Interrupted update",
+    "interrupted": "An update of {name} was cut off before it finished; your data is as it was. A partial copy remains at {url}.",
+    "removing": "Removing…",
+    "removeIt": "Remove it"
+  },
+  "migrationNotice": {
+    "region": "Format update",
+    "heading": "Your data needs a format update.",
+    "stored": {
+      "one": "{outdated} is stored in an older format.",
+      "other": "{outdated} are stored in an older format."
+    },
+    "writes": "Solid Memo now writes {formats}.",
+    "howItWorks": "Updating makes an updated copy and switches over to it once it is checked, keeping your current data as a backup; deck names, card text, directions, your review history and your settings stay as they are, and a deck without a description gets a short one you can change.",
+    "listAnd": "{rest} and {last}",
+    "instanceRecord": "the instance record",
+    "instanceCatalogue": "the instance's catalogue",
+    "yourPreferences": "your preferences",
+    "deckEntries": {
+      "one": "{count} deck entry",
+      "other": "{count} deck entries"
+    },
+    "reviewStates": {
+      "one": "{count} review state",
+      "other": "{count} review states"
+    },
+    "inDecks": {
+      "one": "one deck",
+      "other": "{count} decks"
+    },
+    "countIn": "{what} in {decks}",
+    "instanceFormat": "instance format {version}",
+    "catalogueFormat": "a catalogue of each instance's decks, which other apps read as a DCAT catalogue",
+    "preferencesFormat": "preferences format {version}, which records the answer scale, developer mode and what to do with invalid data",
+    "deckFormat": "deck format {version}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages",
+    "cardFormat": "card format {version}, which adds pictures on cards and lets a library deck retire a card it no longer uses",
+    "reviewFormat": "review-state format {version}, which keeps each study direction's state and the day's undo snapshot",
+    "itemInstanceRecord": "Instance record",
+    "itemCatalogue": "Catalogue of the decks",
+    "itemPreferences": "Preferences",
+    "deckEntry": "deck entry",
+    "updating": "Updating…",
+    "updateButton": "Update {what}",
+    "buttonDecks": {
+      "one": "{count} deck",
+      "other": "{count} decks"
+    },
+    "buttonPreferences": "preferences",
+    "buttonInstanceRecord": "the instance record",
+    "buttonCatalogue": "the catalogue"
+  },
+  "onboardingFlow": {
+    "connectHeading": "Connect your Pod",
+    "providerHeading": "Or pick your provider",
+    "providerHint": "No WebID at hand? Choose where your Pod lives and log in there — your WebID comes back with the login.",
+    "setUpHeading": "Set up your Solid Pod",
+    "intro": "Your data is stored in a Solid Pod that you control. Create one with a Pod provider, or connect a Pod you already have.",
+    "createPodLabel": "Create a Pod with {provider} (opens in a new tab)",
+    "createPod": "Create a Pod ↗",
+    "createPodHint": "Creating a Pod happens on the provider's site, in a new tab. When you are done, come back here and connect it.",
+    "havePod": "I already have a Pod"
+  },
+  "pager": {
+    "label": "Card pages",
+    "previous": "Previous",
+    "page": "Page {page} of {pageCount}",
+    "next": "Next"
+  },
+  "podConnection": {
+    "discoveringHeading": "Discovering your Pod…",
+    "discoveringLabel": "Reading your WebID profile to find where your data lives.",
+    "errorHeading": "Could not discover your Pod",
+    "tryAgain": "Try again",
+    "logOut": "Log out",
+    "noPodHeading": "No Pod found",
+    "noPodWarning": "You are logged in as {name}, but your WebID profile does not link to a Pod storage, so Solid Memo cannot tell where to keep your data.",
+    "noPodHint": "Your Pod provider can add the storage link to your profile. You can also continue and point Solid Memo at a storage yourself.",
+    "continueAnyway": "Continue anyway",
+    "connectedHeading": "Your Pod is connected.",
+    "identityProvider": "Identity provider",
+    "continue": "Continue"
+  },
+  "preferences": {
+    "language": {
+      "legend": "Language",
+      "hint": "Takes effect right away, and is kept on this device rather than in your Pod."
+    },
+    "heading": "Study preferences",
+    "loading": "Loading preferences…",
+    "newCardsPerDay": "New cards per day",
+    "maxReviewsPerDay": "Max reviews per day",
+    "dayBoundaryHour": "Day starts at (hour)",
+    "answerScale": {
+      "legend": "Answer buttons",
+      "sm2": {
+        "label": "0 to 5 scale",
+        "hint": "The full SM-2 grades, from 0 (blackout) to 5 (easy)."
+      },
+      "minimal": {
+        "label": "Again · Hard · Good · Easy",
+        "hint": "Four buttons. Again repeats the card later in the session."
+      }
+    },
+    "policy": {
+      "legend": "When data does not conform",
+      "blockInstance": {
+        "label": "Block the instance",
+        "hint": "Any invalid data stops the app from using the instance until it is repaired. The default."
+      },
+      "blockSubject": {
+        "label": "Set invalid data aside",
+        "hint": "Decks with invalid data are set aside until they are repaired; everything else keeps working."
+      },
+      "warnOnly": {
+        "label": "Warn only",
+        "hint": "Invalid data is reported, and the app keeps working with it."
+      }
+    },
+    "developer": {
+      "legend": "Developer settings",
+      "mode": "Developer mode",
+      "hint": "Shows developer tools: your raw WebID document below the app, and a check of this instance's documents against Solid Memo's shapes."
+    },
+    "save": "Save"
+  },
+  "registrationTargetChooser": {
+    "legend": "Register in",
+    "noPrivateIndex": "Your profile has no private type index yet. Solid Memo can create one (recommended), or register in your public type index instead — public registrations are visible to anyone who can read your profile.",
+    "private": "Private type index",
+    "privateCreated": "Private type index (will be created)",
+    "public": "Public type index",
+    "publicCreated": "Public type index (will be created)"
+  },
+  "repair": {
+    "removeConfirm": "Remove <{url}> from your pod? This cannot be undone.",
+    "canRepair": "Solid Memo can repair these:",
+    "repairing": "Repairing…",
+    "repairButton": {
+      "one": "Repair {count} problem",
+      "other": "Repair {count} problems"
+    },
+    "needDecision": "These need your decision: fix them in the document, or remove them.",
+    "problem": "{subject} in {document}: {messages}",
+    "removeButton": "Remove",
+    "fullReport": "The full report",
+    "action": {
+      "describeDeck": "Give the deck the default description",
+      "directDeck": "Study the deck front to back",
+      "dropSnapshot": "Drop the review's half-written undo snapshot",
+      "recomputeDue": "Recompute the review's due day",
+      "nameAgent": "Name the person or organisation after their address",
+      "removeSubject": "Remove it"
+    }
+  },
+  "retiredCards": {
+    "showToggle": "Show retired cards",
+    "toggleHint": {
+      "one": "{count} card is retired: kept, with its review history, but no longer studied.",
+      "other": "{count} cards are retired: kept, with their review history, but no longer studied."
+    },
+    "tag": "Retired",
+    "notice": "This card is retired: the library deck no longer uses it. It is kept, with its review history, but no longer studied."
+  },
+  "storagePicker": {
+    "heading": "Choose a storage",
+    "empty": "No storage was found for your WebID. Enter your pod's root URL below.",
+    "source": {
+      "profile": "from your profile",
+      "linkHeader": "discovered from your pod server",
+      "manual": "entered manually"
+    },
+    "url": "Storage URL",
+    "use": "Use this storage"
+  },
+  "study": {
+    "heading": "Study: {deck}",
+    "endSession": "End session",
+    "nothingToday": "Nothing to study today — come back tomorrow!",
+    "finished": "Session finished — all cards reviewed.",
+    "position": "Card {position} of {total}",
+    "reveal": "Reveal",
+    "preparing": "Preparing your study session…",
+    "quality": {
+      "blackout": "0 — Blackout",
+      "wrong": "1 — Wrong",
+      "almost": "2 — Almost",
+      "hard": "3 — Hard",
+      "good": "4 — Good",
+      "easy": "5 — Easy"
+    },
+    "minimal": {
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
+    }
+  },
+  "validation": {
+    "heading": "Validation of {name}",
+    "validating": "Validating…",
+    "validateAgain": "Validate again",
+    "allConform": {
+      "one": "The {count} document conforms.",
+      "other": "All {count} documents conform."
+    },
+    "violationsIn": "{violations} in {documents}.",
+    "violationCount": {
+      "one": "{count} violation",
+      "other": "{count} violations"
+    },
+    "documentCount": {
+      "one": "{count} document",
+      "other": "{count} documents"
+    },
+    "notCreated": "Not created yet.",
+    "noSubjects": "No subjects.",
+    "untyped": "{name} — not a Solid Memo subject.",
+    "newer": "{name} — {shape} format {version} is newer than this app knows (up to {latest}); skipped.",
+    "profiled": "{name} — not a Solid Memo subject; DCAT-AP says:",
+    "conforms": "{name} — conforms to {shape} format {version}.",
+    "checked": "{name} — {shape} format {version}:",
+    "severity": "Severity",
+    "property": "Property",
+    "message": "Message",
+    "value": "Value",
+    "theSubject": "(the subject)"
+  },
+  "webIdDocument": {
+    "summary": "WebID document",
+    "loading": "Loading profile…"
+  },
+  "webIdForm": {
+    "help": "Your WebID is the web address that identifies you, given to you by your Pod provider. You will log in on your provider's own page — Solid Memo never sees your password.",
+    "redirecting": "Redirecting…",
+    "logIn": "Log in with Solid",
+    "back": "Back"
+  },
+  "workspace": {
+    "loadingInstances": "Loading your Solid Memo instances…",
+    "loadingDeck": "Loading deck…",
+    "loadingCard": "Loading card…",
+    "loadingLibrary": "Loading the deck library…",
+    "discoveringStorages": "Discovering storages…",
+    "loadingPreferences": "Loading preferences…",
+    "developerModeOff": "Developer mode is off. Turn it on in {preferences} to check this instance against Solid Memo's shapes.",
+    "preferencesLink": "Preferences",
+    "checkingData": "Checking this instance's data…",
+    "deckSetAside": "This deck is set aside: its data does not conform. Repair it above to use it again.",
+    "checkFailed": "Could not check this instance's data: {error}",
+    "developerTools": "Developer tools",
+    "validateInstance": "Validate this instance"
+  }
+}

@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import type { Card } from "@solid-memo/domain/deck";
 import type { LibraryUpgradePlan } from "@solid-memo/domain/libraryUpgrade";
+import { createI18n, I18nProvider } from "./i18n";
 import { describeChanges, LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
+
+const en = createI18n("en");
 
 const card = (id: string): Card => ({ id, url: `https://pod.example/d.ttl#${id}`, front: id, back: id, createdAt: "", formatVersion: 2 });
 const libraryCard = (id: string) => ({ id, front: id, back: id, formatVersion: 1 });
@@ -30,8 +33,8 @@ function renderNotice(overrides: Partial<Parameters<typeof LibraryUpgradeNotice>
 
 describe("describeChanges", () => {
   it("names what the update does, in a list", () => {
-    expect(describeChanges(plan)).toBe("adds 1 card, changes 2 cards and removes 1 card");
-    expect(describeChanges({ ...plan, add: [], change: [], remove: [], direction: "bidirectional" })).toBe(
+    expect(describeChanges(plan, en)).toBe("adds 1 card, changes 2 cards and removes 1 card");
+    expect(describeChanges({ ...plan, add: [], change: [], remove: [], direction: "bidirectional" }, en)).toBe(
       "studies it both ways",
     );
   });
@@ -39,9 +42,9 @@ describe("describeChanges", () => {
   it("counts retirements and cards brought back, not what is added or changed retired", () => {
     const retired = { ...libraryCard("yu"), retired: true as const };
     expect(
-      describeChanges({ ...plan, add: [retired], change: [retired], retire: [card("se")], restore: [card("dk"), card("fi")], remove: [] }),
+      describeChanges({ ...plan, add: [retired], change: [retired], retire: [card("se")], restore: [card("dk"), card("fi")], remove: [] }, en),
     ).toBe("retires 1 card and brings back 2 cards");
-    expect(describeChanges({ ...plan, add: [retired], change: [], remove: [] })).toBe("updates cards you no longer study");
+    expect(describeChanges({ ...plan, add: [retired], change: [], remove: [] }, en)).toBe("updates cards you no longer study");
   });
 });
 
@@ -75,6 +78,24 @@ describe("LibraryUpgradeNotice", () => {
     expect(screen.queryByRole("list")).toBeNull();
     renderNotice({ plan: { ...plan, remove: [], kept: [] } });
     expect(screen.getAllByRole("region")[1]).toHaveTextContent(/Your review history is kept\.Release 2/);
+  });
+
+  it("speaks Swedish, naming both removals and retirements", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <LibraryUpgradeNotice
+          deckName="Huvudstäder"
+          plan={{ ...plan, add: [], change: [], retire: [card("se")], kept: [] }}
+          busy={false}
+          error={null}
+          onUpgrade={() => undefined}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("region", { name: "Nyare utgåva i biblioteket" })).toHaveTextContent(
+      "Huvudstäder kom från utgåva 1; utgåva 3 finns nu. En uppdatering tar 1 kort ur bruk och tar bort 1 kort. Din repetitionshistorik behålls, utom för de borttagna korten; ett kort som tas ur bruk behålls, men studeras inte längre.",
+    );
+    expect(screen.getByRole("button", { name: "Uppdatera till utgåva 3" })).toBeEnabled();
   });
 
   it("shows progress and errors", () => {

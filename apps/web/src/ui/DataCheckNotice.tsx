@@ -2,6 +2,7 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { InvalidDataPolicy } from "@solid-memo/domain/invalidDataPolicy";
 import type { ValidationReport } from "@solid-memo/domain/validation";
+import { useI18n } from "./i18n";
 import { RepairContainer } from "./RepairContainer";
 import { routeToHash } from "./router";
 
@@ -25,26 +26,29 @@ export function DataCheckNotice({
   /** Names of the decks set aside, under "set invalid data aside". */
   setAside: string[];
 }) {
+  const { t, tx } = useI18n();
   const preferences = routeToHash({ screen: "preferences", instanceUrl: instance.url });
   const consequence =
     policy === "block-instance"
-      ? "Solid Memo will not use this instance until it is repaired."
+      ? t("dataCheckNotice.blockInstance")
       : policy === "block-subject"
         ? setAside.length === 0
-          ? "The rest keeps working."
-          : `${setAside.join(", ")} ${setAside.length === 1 ? "is" : "are"} set aside until repaired; the rest keeps working.`
-        : "Solid Memo keeps working with it.";
+          ? t("dataCheckNotice.restKeepsWorking")
+          : t("dataCheckNotice.setAside", { names: setAside.join(", "), count: setAside.length })
+        : t("dataCheckNotice.keepsWorking");
   return (
-    <div class="warning data-check" role="region" aria-label="Data check">
+    <div class="warning data-check" role="region" aria-label={t("dataCheckNotice.region")}>
       <p>
-        <strong>Some data in {instance.name} does not conform to Solid Memo's shapes.</strong>{" "}
-        {consequence} What happens with invalid data is set in <a href={preferences}>Preferences</a>.
+        <strong>{t("dataCheckNotice.heading", { name: instance.name })}</strong> {consequence}{" "}
+        {tx("dataCheckNotice.policyHint", {
+          preferences: <a href={preferences}>{t("dataCheckNotice.preferences")}</a>,
+        })}
       </p>
       {policy === "block-instance" ? (
         <RepairContainer useCases={useCases} instance={instance} report={report} />
       ) : (
         <details>
-          <summary>Repair</summary>
+          <summary>{t("dataCheckNotice.repair")}</summary>
           <RepairContainer useCases={useCases} instance={instance} report={report} />
         </details>
       )}

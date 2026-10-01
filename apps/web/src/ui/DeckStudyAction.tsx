@@ -4,8 +4,7 @@ import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import { CheckIcon } from "./icons";
 import { LoadingDots } from "./Loading";
-import { studyCountsSummary } from "./studyCounts";
-import { readerText } from "./readerText";
+import { useI18n } from "./i18n";
 
 /**
  * What a deck-list row offers for its deck today, with how much is left
@@ -29,21 +28,22 @@ export function DeckStudyAction({
   /** Start today's session over the deck. */
   onStudy: () => void;
 }) {
+  const { t } = useI18n();
   if (queue === undefined) {
     return loading ? (
       <>
         <span class="hint study-skeleton" aria-hidden="true" />
-        <span class="study-loading" role="status" aria-label="Checking what is due">
+        <span class="study-loading" role="status" aria-label={t("deckStudyAction.checking")}>
           <LoadingDots />
         </span>
       </>
     ) : null;
   }
-  const summary = studyCountsSummary(queue);
-  if (summary === null) {
+  const total = queue.dueCount + queue.newCount;
+  if (total === 0) {
     return (
       <>
-        <span class="hint">Done for today</span>
+        <span class="hint">{t("deckStudyAction.done")}</span>
         <span class="hint study-done">
           <CheckIcon />
         </span>
@@ -52,13 +52,13 @@ export function DeckStudyAction({
   }
   return (
     <>
-      <span class="hint study-counts">{summary}</span>
+      <span class="hint study-counts">{t("common.toReview", { count: total })}</span>
       <button
         class="primary"
-        aria-label={`Study ${deckName}`}
+        aria-label={t("deckStudyAction.studyLabel", { deck: deckName })}
         onClick={onStudy}
       >
-        Study
+        {t("deckStudyAction.studyButton")}
       </button>
     </>
   );
@@ -91,6 +91,7 @@ export function DeckStudyActionContainer({
   deck: Deck;
   onStudy: () => void;
 }) {
+  const { readerText } = useI18n();
   const queueQuery = useQuery(studyCountsQuery(useCases, instance.url, deck));
 
   return (

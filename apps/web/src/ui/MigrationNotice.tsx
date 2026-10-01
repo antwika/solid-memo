@@ -3,89 +3,70 @@ import { INSTANCE_FORMAT_VERSION } from "@solid-memo/domain/instance";
 import type { MigrationPlan } from "@solid-memo/domain/migration";
 import { PREFERENCES_FORMAT_VERSION } from "@solid-memo/domain/preferences";
 import { REVIEW_STATE_FORMAT_VERSION } from "@solid-memo/domain/review";
-import { cardCount as formatCardCount } from "./studyCounts";
-import { readerText } from "./readerText";
-
-/** "1 deck entry" / "n deck entries". */
-function deckEntries(count: number): string {
-  return count === 1 ? "1 deck entry" : `${count} deck entries`;
-}
-
-/** "1 review state" / "n review states". */
-function reviewStates(count: number): string {
-  return count === 1 ? "1 review state" : `${count} review states`;
-}
-
-function inDecks(count: number): string {
-  return count === 1 ? "one deck" : `${count} decks`;
-}
+import { useI18n, type I18n } from "./i18n";
 
 /** "a, b and c". */
-function list(parts: string[]): string {
+function list(parts: string[], t: I18n["t"]): string {
   return parts.length <= 1
     ? parts.join("")
-    : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+    : t("migrationNotice.listAnd", { rest: parts.slice(0, -1).join(", "), last: parts[parts.length - 1] });
 }
 
 /**
  * What is outdated, as a subject: "2 deck entries, 255 cards in 3 decks
  * and your preferences". Never empty for a plan the notice shows.
  */
-export function describeOutdated(plan: MigrationPlan): string {
+export function describeOutdated(plan: MigrationPlan, t: I18n["t"]): string {
   const parts: string[] = [];
-  if (plan.instanceOutdated) parts.push("the instance record");
-  if (plan.catalogMissing) parts.push("the instance's catalogue");
-  if (plan.preferencesOutdated) parts.push("your preferences");
-  if (plan.deckCount > 0) parts.push(deckEntries(plan.deckCount));
+  if (plan.instanceOutdated) parts.push(t("migrationNotice.instanceRecord"));
+  if (plan.catalogMissing) parts.push(t("migrationNotice.instanceCatalogue"));
+  if (plan.preferencesOutdated) parts.push(t("migrationNotice.yourPreferences"));
+  if (plan.deckCount > 0) parts.push(t("migrationNotice.deckEntries", { count: plan.deckCount }));
   if (plan.cardCount > 0) {
     const decks = plan.decks.filter(({ cardCount }) => cardCount > 0).length;
-    parts.push(`${formatCardCount(plan.cardCount)} in ${inDecks(decks)}`);
+    parts.push(
+      t("migrationNotice.countIn", {
+        what: t("common.cardCount", { count: plan.cardCount }),
+        decks: t("migrationNotice.inDecks", { count: decks }),
+      }),
+    );
   }
   if (plan.reviewCount > 0) {
     const decks = plan.decks.filter(({ reviewCount }) => reviewCount > 0).length;
-    parts.push(`${reviewStates(plan.reviewCount)} in ${inDecks(decks)}`);
+    parts.push(
+      t("migrationNotice.countIn", {
+        what: t("migrationNotice.reviewStates", { count: plan.reviewCount }),
+        decks: t("migrationNotice.inDecks", { count: decks }),
+      }),
+    );
   }
-  return list(parts);
+  return list(parts, t);
 }
 
 /** What each format this app writes added, for the formats the plan touches. */
-export function describeFormats(plan: MigrationPlan): string {
+export function describeFormats(plan: MigrationPlan, t: I18n["t"]): string {
   const parts: string[] = [];
-  if (plan.instanceOutdated) parts.push(`instance format ${INSTANCE_FORMAT_VERSION}`);
-  if (plan.catalogMissing) {
-    parts.push("a catalogue of each instance's decks, which other apps read as a DCAT catalogue");
-  }
+  if (plan.instanceOutdated) parts.push(t("migrationNotice.instanceFormat", { version: INSTANCE_FORMAT_VERSION }));
+  if (plan.catalogMissing) parts.push(t("migrationNotice.catalogueFormat"));
   if (plan.preferencesOutdated) {
-    parts.push(
-      `preferences format ${PREFERENCES_FORMAT_VERSION}, which records the answer scale, developer mode and what to do with invalid data`,
-    );
+    parts.push(t("migrationNotice.preferencesFormat", { version: PREFERENCES_FORMAT_VERSION }));
   }
-  if (plan.deckCount > 0) {
-    parts.push(
-      `deck format ${DECK_FORMAT_VERSION}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages`,
-    );
-  }
-  if (plan.cardCount > 0) {
-    parts.push(
-      `card format ${CARD_FORMAT_VERSION}, which adds pictures on cards and lets a library deck retire a card it no longer uses`,
-    );
-  }
+  if (plan.deckCount > 0) parts.push(t("migrationNotice.deckFormat", { version: DECK_FORMAT_VERSION }));
+  if (plan.cardCount > 0) parts.push(t("migrationNotice.cardFormat", { version: CARD_FORMAT_VERSION }));
   if (plan.reviewCount > 0) {
-    parts.push(
-      `review-state format ${REVIEW_STATE_FORMAT_VERSION}, which keeps each study direction's state and the day's undo snapshot`,
-    );
+    parts.push(t("migrationNotice.reviewFormat", { version: REVIEW_STATE_FORMAT_VERSION }));
   }
-  return list(parts);
+  return list(parts, t);
 }
 
 /** The button label: "Update 3 decks and preferences". */
-function updateLabel(plan: MigrationPlan): string {
+function updateLabel(plan: MigrationPlan, t: I18n["t"]): string {
   const parts: string[] = [];
-  if (plan.decks.length > 0) parts.push(inDecks(plan.decks.length).replace(/^one /, "1 "));
-  if (plan.preferencesOutdated) parts.push("preferences");
-  if (plan.instanceOutdated) parts.push("the instance record");
-  if (plan.catalogMissing) parts.push("the catalogue");
-  return `Update ${list(parts)}`;
+  if (plan.decks.length > 0) parts.push(t("migrationNotice.buttonDecks", { count: plan.decks.length }));
+  if (plan.preferencesOutdated) parts.push(t("migrationNotice.buttonPreferences"));
+  if (plan.instanceOutdated) parts.push(t("migrationNotice.buttonInstanceRecord"));
+  if (plan.catalogMissing) parts.push(t("migrationNotice.buttonCatalogue"));
+  return t("migrationNotice.updateButton", { what: list(parts, t) });
 }
 
 /**
@@ -104,6 +85,7 @@ export function MigrationNotice({
   error: string | null;
   onMigrate: () => void;
 }) {
+  const { t, readerText } = useI18n();
   const singular =
     plan.deckCount +
       plan.cardCount +
@@ -113,34 +95,29 @@ export function MigrationNotice({
       Number(plan.catalogMissing) ===
     1;
   return (
-    <div class="warning migration" role="region" aria-label="Format update">
+    <div class="warning migration" role="region" aria-label={t("migrationNotice.region")}>
       <p>
-        <strong>Your data needs a format update.</strong>{" "}
-        {describeOutdated(plan)} {singular ? "is" : "are"} stored in an
-        older format. Solid Memo now writes {describeFormats(plan)}.
-        Updating makes an updated copy and switches over to it once it is
-        checked, keeping your current data as a backup; deck names, card
-        text, directions, your review history and your settings stay as
-        they are, and a deck without a description gets a short one you can
-        change.
+        <strong>{t("migrationNotice.heading")}</strong>{" "}
+        {t("migrationNotice.stored", { count: singular ? 1 : 2, outdated: describeOutdated(plan, t) })}{" "}
+        {t("migrationNotice.writes", { formats: describeFormats(plan, t) })} {t("migrationNotice.howItWorks")}
       </p>
       <ul>
-        {plan.instanceOutdated && <li>Instance record</li>}
-        {plan.catalogMissing && <li>Catalogue of the decks</li>}
-        {plan.preferencesOutdated && <li>Preferences</li>}
+        {plan.instanceOutdated && <li>{t("migrationNotice.itemInstanceRecord")}</li>}
+        {plan.catalogMissing && <li>{t("migrationNotice.itemCatalogue")}</li>}
+        {plan.preferencesOutdated && <li>{t("migrationNotice.itemPreferences")}</li>}
         {plan.decks.map(({ deck, deckOutdated, cardCount, reviewCount }) => (
           <li key={deck.url}>
             {readerText(deck.title)} —{" "}
             {[
-              ...(deckOutdated ? ["deck entry"] : []),
-              ...(cardCount > 0 ? [formatCardCount(cardCount)] : []),
-              ...(reviewCount > 0 ? [reviewStates(reviewCount)] : []),
+              ...(deckOutdated ? [t("migrationNotice.deckEntry")] : []),
+              ...(cardCount > 0 ? [t("common.cardCount", { count: cardCount })] : []),
+              ...(reviewCount > 0 ? [t("migrationNotice.reviewStates", { count: reviewCount })] : []),
             ].join(", ")}
           </li>
         ))}
       </ul>
       <button class="primary" onClick={onMigrate} disabled={busy}>
-        {busy ? "Updating…" : updateLabel(plan)}
+        {busy ? t("migrationNotice.updating") : updateLabel(plan, t)}
       </button>
       {error && <p class="error">{error}</p>}
     </div>

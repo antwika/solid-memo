@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/preact";
-import { Breadcrumbs, breadcrumbsFor } from "./Breadcrumbs";
+import { Breadcrumbs, breadcrumbsFor as crumbsIn, type CrumbNames } from "./Breadcrumbs";
+import { createI18n, I18nProvider } from "./i18n";
 import { routeToHash, type RouteRef } from "./router";
+
+const breadcrumbsFor = (route: RouteRef, names: CrumbNames) => crumbsIn(route, names, createI18n("en").t);
 
 const instanceUrl = "https://pod.example/solid-memo/a/";
 const deckUrl = `${instanceUrl}catalog.ttl#deck-1`;
@@ -201,5 +204,18 @@ describe("Breadcrumbs", () => {
   it("copes with a deck named like another crumb", () => {
     render(<Breadcrumbs crumbs={breadcrumbsFor(browser, { deck: "Decks", card: "", libraryDeck: "" })} />);
     expect(screen.getAllByRole("link", { name: "Decks" })).toHaveLength(2);
+  });
+});
+
+describe("breadcrumbs in Swedish", () => {
+  it("names the steps and the trail in the reader's language", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <Breadcrumbs crumbs={crumbsIn(browser, { deck: "Kanji N5", card: "", libraryDeck: "" }, createI18n("sv").t)} />
+      </I18nProvider>,
+    );
+    const trail = screen.getByRole("navigation", { name: "Brödsmulor" });
+    expect(within(trail).getByRole("link", { name: "Kortlekar" })).toBeTruthy();
+    expect(within(trail).getByRole("link", { name: "Bläddra" })).toBeTruthy();
   });
 });

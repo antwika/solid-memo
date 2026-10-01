@@ -1,11 +1,24 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
-import { describeRepair, type Unrepairable } from "@solid-memo/domain/repair";
+import type { RepairKind, Unrepairable } from "@solid-memo/domain/repair";
 import type { ValidationReport } from "@solid-memo/domain/validation";
 import { errorMessage } from "./errorMessage";
 import { ExternalLink } from "./ExternalLink";
+import { useI18n, type I18n } from "./i18n";
 import { summaryOf, ValidationScreen } from "./ValidationScreen";
+
+/** What a repair does, for the user: "Give the deck the default description". */
+function repairLabels(t: I18n["t"]): Record<RepairKind, string> {
+  return {
+    "describe-deck": t("repair.action.describeDeck"),
+    "direct-deck": t("repair.action.directDeck"),
+    "drop-snapshot": t("repair.action.dropSnapshot"),
+    "recompute-due": t("repair.action.recomputeDue"),
+    "name-agent": t("repair.action.nameAgent"),
+    "remove-subject": t("repair.action.removeSubject"),
+  };
+}
 
 /**
  * What an instance check found, and the way out (see docs/validation.md):
@@ -22,6 +35,7 @@ export function RepairContainer({
   instance: Instance;
   report: ValidationReport;
 }) {
+  const { t, tx } = useI18n();
   const queryClient = useQueryClient();
   const plan = useCases.planRepair(report);
 
@@ -36,7 +50,7 @@ export function RepairContainer({
   });
 
   function remove(problem: Unrepairable) {
-    if (window.confirm(`Remove <${problem.subjectUrl}> from your pod? This cannot be undone.`)) {
+    if (window.confirm(t("repair.removeConfirm", { url: problem.subjectUrl }))) {
       repairMutation.mutate([
         { kind: "remove-subject", documentUrl: problem.documentUrl, subjectUrl: problem.subjectUrl, version: 1 },
       ]);
@@ -44,38 +58,38 @@ export function RepairContainer({
   }
 
   const busy = repairMutation.isPending;
+  const labels = repairLabels(t);
   return (
     <div class="repair">
-      <p>{summaryOf(report)}</p>
+      <p>{summaryOf(report, t)}</p>
       {plan.repairs.length > 0 && (
         <>
-          <p>Solid Memo can repair these:</p>
+          <p>{t("repair.canRepair")}</p>
           <ul>
             {plan.repairs.map((repair) => (
               <li key={`${repair.kind} ${repair.subjectUrl}`}>
-                {describeRepair(repair)}: <ExternalLink url={repair.subjectUrl} />
+                {labels[repair.kind]}: <ExternalLink url={repair.subjectUrl} />
               </li>
             ))}
           </ul>
           <button class="primary" onClick={() => repairMutation.mutate(plan.repairs)} disabled={busy}>
-            {busy
-              ? "Repairing…"
-              : plan.repairs.length === 1
-                ? "Repair 1 problem"
-                : `Repair ${plan.repairs.length} problems`}
+            {busy ? t("repair.repairing") : t("repair.repairButton", { count: plan.repairs.length })}
           </button>
         </>
       )}
       {plan.unrepairable.length > 0 && (
         <>
-          <p>These need your decision: fix them in the document, or remove them.</p>
+          <p>{t("repair.needDecision")}</p>
           <ul>
             {plan.unrepairable.map((problem) => (
               <li key={problem.subjectUrl}>
-                <ExternalLink url={problem.subjectUrl} /> in <ExternalLink url={problem.documentUrl} />:{" "}
-                {problem.messages.join(" ")}{" "}
+                {tx("repair.problem", {
+                  subject: <ExternalLink url={problem.subjectUrl} />,
+                  document: <ExternalLink url={problem.documentUrl} />,
+                  messages: problem.messages.join(" "),
+                })}{" "}
                 <button class="danger" onClick={() => remove(problem)} disabled={busy}>
-                  Remove
+                  {t("repair.removeButton")}
                 </button>
               </li>
             ))}
@@ -84,7 +98,7 @@ export function RepairContainer({
       )}
       {repairMutation.error && <p class="error">{errorMessage(repairMutation.error)}</p>}
       <details>
-        <summary>The full report</summary>
+        <summary>{t("repair.fullReport")}</summary>
         <ValidationScreen report={report} />
       </details>
     </div>

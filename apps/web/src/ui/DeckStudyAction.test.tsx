@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { DeckStudyAction } from "./DeckStudyAction";
+import { I18nProvider } from "./i18n";
 import type { Card, Prompt } from "@solid-memo/domain/deck";
 import type { StudyQueue } from "@solid-memo/domain/scheduling";
 
@@ -83,5 +84,17 @@ describe("DeckStudyAction", () => {
   it("offers nothing when the queue is unknown and not being fetched", () => {
     const { container } = renderAction(undefined);
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe("DeckStudyAction in Swedish", () => {
+  it("offers Studera with the count in Swedish", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <DeckStudyAction deckName="Kanji N5" queue={{ dueCount: 2, newCount: 0 }} loading={false} onStudy={vi.fn()} />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Studera Kanji N5" })).toHaveTextContent("Studera");
+    expect(screen.getByText("2 att repetera")).toBeInTheDocument();
   });
 });

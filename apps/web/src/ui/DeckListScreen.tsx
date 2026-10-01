@@ -1,7 +1,7 @@
 import type { ComponentChildren } from "preact";
 import type { Deck } from "@solid-memo/domain/deck";
 import { CollectionIcon, DeckIcon, LibraryIcon } from "./icons";
-import { readerText } from "./readerText";
+import { useI18n } from "./i18n";
 
 /** Decks to open or study. Decks are renamed and removed in the Browser. */
 export function DeckListScreen({
@@ -27,24 +27,22 @@ export function DeckListScreen({
   /** Navigate to the deck creator view. */
   onCreateDeck: () => void;
 }) {
+  const { t, readerText } = useI18n();
   return (
     <section>
       <header>
         <h2>
           <a href={decksHref}>
             <CollectionIcon />
-            Decks
+            {t("deckList.heading")}
           </a>
         </h2>
         <span class="hint">
-          {decks.length === 1 ? "1 deck" : `${decks.length} decks`}
+          {t("deckList.deckCount", { count: decks.length })}
         </span>
       </header>
       {decks.length === 0 ? (
-        <p>
-          No decks yet. Create your first deck below, or import one from
-          the deck library.
-        </p>
+        <p>{t("deckList.empty")}</p>
       ) : (
         <ul class="deck-list">
           {decks.map((deck) => (
@@ -60,11 +58,11 @@ export function DeckListScreen({
       )}
       <div class="actions">
         <button class="primary" onClick={onCreateDeck}>
-          Create deck
+          {t("deckList.createButton")}
         </button>
         <a class="button" href={libraryHref}>
           <LibraryIcon />
-          Deck library
+          {t("deckList.libraryLink")}
         </a>
       </div>
     </section>

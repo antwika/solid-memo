@@ -9,34 +9,50 @@ import {
 import { promptSides, type Prompt } from "@solid-memo/domain/deck";
 import type { ReviewQuality } from "@solid-memo/domain/review";
 import { CardFace } from "./CardFace";
+import { useI18n, type I18n } from "./i18n";
 
-const QUALITY_LABELS: Record<ReviewQuality, string> = {
-  0: "0 — Blackout",
-  1: "1 — Wrong",
-  2: "2 — Almost",
-  3: "3 — Hard",
-  4: "4 — Good",
-  5: "5 — Easy",
-};
+function qualityLabel(quality: ReviewQuality, t: I18n["t"]): string {
+  switch (quality) {
+    case 0:
+      return t("study.quality.blackout");
+    case 1:
+      return t("study.quality.wrong");
+    case 2:
+      return t("study.quality.almost");
+    case 3:
+      return t("study.quality.hard");
+    case 4:
+      return t("study.quality.good");
+    case 5:
+      return t("study.quality.easy");
+  }
+}
 
-const MINIMAL_LABELS: Record<MinimalAnswer, string> = {
-  again: "Again",
-  hard: "Hard",
-  good: "Good",
-  easy: "Easy",
-};
+function minimalLabel(answer: MinimalAnswer, t: I18n["t"]): string {
+  switch (answer) {
+    case "again":
+      return t("study.minimal.again");
+    case "hard":
+      return t("study.minimal.hard");
+    case "good":
+      return t("study.minimal.good");
+    case "easy":
+      return t("study.minimal.easy");
+  }
+}
 
 /** The grading buttons a scale shows, in display order. */
 function answerButtons(
   scale: AnswerScale,
+  t: I18n["t"],
 ): { label: string; quality: ReviewQuality }[] {
   return scale === "minimal"
     ? MINIMAL_ANSWERS.map((answer) => ({
-      label: MINIMAL_LABELS[answer],
+      label: minimalLabel(answer, t),
       quality: MINIMAL_ANSWER_QUALITY[answer],
     }))
     : SM2_QUALITIES.map((quality) => ({
-      label: QUALITY_LABELS[quality],
+      label: qualityLabel(quality, t),
       quality,
     }));
 }
@@ -68,28 +84,24 @@ export function StudyScreen({
   onAnswer: (quality: ReviewQuality) => void;
   onExit: () => void;
 }) {
+  const { t, tx } = useI18n();
   return (
     <section>
       <header>
-        <h2>
-          Study:{" "}
-          <a href={deckHref}>{deckName}</a>
-        </h2>
+        <h2>{tx("study.heading", { deck: <a href={deckHref}>{deckName}</a> })}</h2>
         <button onClick={onExit} disabled={busy}>
-          End session
+          {t("study.endSession")}
         </button>
       </header>
       {prompt === null ? (
         <p>
           {total === 0
-            ? "Nothing to study today — come back tomorrow!"
-            : "Session finished — all cards reviewed."}
+            ? t("study.nothingToday")
+            : t("study.finished")}
         </p>
       ) : (
         <>
-          <p class="hint">
-            Card {position} of {total}
-          </p>
+          <p class="hint">{t("study.position", { position, total })}</p>
           <StudyCard
             key={position}
             prompt={prompt}
@@ -120,6 +132,7 @@ function StudyCard({
   busy: boolean;
   onAnswer: (quality: ReviewQuality) => void;
 }) {
+  const { t } = useI18n();
   const [revealed, setRevealed] = useState(false);
   const { question, answer } = promptSides(prompt);
 
@@ -132,7 +145,7 @@ function StudyCard({
           <div
             class={`quality-buttons${answerScale === "minimal" ? " minimal" : ""}`}
           >
-            {answerButtons(answerScale).map(({ label, quality }) => (
+            {answerButtons(answerScale, t).map(({ label, quality }) => (
               <button
                 key={label}
                 data-grade={quality}
@@ -146,7 +159,7 @@ function StudyCard({
         </>
       ) : (
         <button onClick={() => setRevealed(true)} disabled={busy}>
-          Reveal
+          {t("study.reveal")}
         </button>
       )}
     </div>

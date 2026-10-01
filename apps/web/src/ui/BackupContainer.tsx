@@ -4,7 +4,7 @@ import type { Instance } from "@solid-memo/domain/instance";
 import type { Session } from "@solid-memo/domain/session";
 import { errorMessage } from "./errorMessage";
 import { ExternalLink } from "./ExternalLink";
-import { formatDate } from "./formatDate";
+import { useI18n } from "./i18n";
 
 /**
  * The previous version of an instance, kept by its last update as a
@@ -24,6 +24,7 @@ export function BackupContainer({
   /** Switched back: the instance lives at the backup's address again. */
   onRestored: (instance: Instance) => void;
 }) {
+  const { t, tx, formatDate } = useI18n();
   const queryClient = useQueryClient();
   const backupQuery = useQuery({
     queryKey: ["backup", instance.url],
@@ -47,19 +48,22 @@ export function BackupContainer({
   if (backup === undefined || backup === null) return null;
   const busy = restoreMutation.isPending || deleteMutation.isPending;
   return (
-    <section class="backup" aria-label="Previous version">
-      <h3>Previous version</h3>
+    <section class="backup" aria-label={t("backup.heading")}>
+      <h3>{t("backup.heading")}</h3>
       <p>
-        The last format update kept your data as it was before
-        {backup.replacedAt === undefined ? "" : ` (${formatDate(backup.replacedAt)})`} at{" "}
-        <ExternalLink url={backup.url} />.
+        {backup.replacedAt === undefined
+          ? tx("backup.kept", { link: <ExternalLink url={backup.url} /> })
+          : tx("backup.keptOn", {
+            date: formatDate(backup.replacedAt),
+            link: <ExternalLink url={backup.url} />,
+          })}
       </p>
       <div class="edit-actions">
         <button
           onClick={() => {
             if (
               window.confirm(
-                `Go back to the previous version of ${instance.name}? What you studied since the update is lost with the updated version.`,
+                t("backup.restoreConfirm", { name: instance.name }),
               )
             ) {
               restoreMutation.mutate();
@@ -67,18 +71,18 @@ export function BackupContainer({
           }}
           disabled={busy}
         >
-          {restoreMutation.isPending ? "Restoring…" : "Restore previous version"}
+          {restoreMutation.isPending ? t("backup.restoring") : t("backup.restore")}
         </button>
         <button
           class="danger"
           onClick={() => {
-            if (window.confirm("Delete the previous version for good? This cannot be undone.")) {
+            if (window.confirm(t("backup.deleteConfirm"))) {
               deleteMutation.mutate();
             }
           }}
           disabled={busy}
         >
-          {deleteMutation.isPending ? "Deleting…" : "Delete backup"}
+          {deleteMutation.isPending ? t("backup.deleting") : t("backup.delete")}
         </button>
       </div>
       {(restoreMutation.error || deleteMutation.error) && (

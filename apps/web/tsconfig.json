@@ -10,7 +10,8 @@
         "./node_modules/preact/compat",
         "../../node_modules/preact/compat"
       ]
-    }
+    },
+    "resolveJsonModule": true
   },
   "include": [
     "src",

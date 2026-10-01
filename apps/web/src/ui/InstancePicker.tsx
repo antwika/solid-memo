@@ -6,6 +6,7 @@ import type {
 } from "@solid-memo/domain/instance";
 import { RegistrationTargetChooser } from "./RegistrationTargetChooser";
 import { ExternalLink } from "./ExternalLink";
+import { useI18n } from "./i18n";
 
 export function InstancePicker({
   instances,
@@ -26,6 +27,7 @@ export function InstancePicker({
   onAttach: (url: string, target: RegistrationTarget) => void;
   onDelete: (instance: Instance) => void;
 }) {
+  const { t } = useI18n();
   const [attachUrl, setAttachUrl] = useState("");
   const [target, setTarget] = useState<RegistrationTarget>("private");
 
@@ -36,9 +38,7 @@ export function InstancePicker({
 
   function handleDelete(instance: Instance) {
     if (
-      window.confirm(
-        `Delete the instance "${instance.name}" and all its decks and cards? This cannot be undone.`,
-      )
+      window.confirm(t("instancePicker.deleteConfirm", { name: instance.name }))
     ) {
       onDelete(instance);
     }
@@ -46,9 +46,9 @@ export function InstancePicker({
 
   return (
     <section>
-      <h2>Choose a Solid Memo instance</h2>
+      <h2>{t("instancePicker.heading")}</h2>
       {instances.length === 0 ? (
-        <p>No instances are registered yet.</p>
+        <p>{t("instancePicker.empty")}</p>
       ) : (
         <ul class="instance-list">
           {instances.map((instance) => (
@@ -61,21 +61,21 @@ export function InstancePicker({
                 class="danger"
                 onClick={() => handleDelete(instance)}
                 disabled={busy}
-                aria-label={`Delete instance ${instance.name}`}
+                aria-label={t("instancePicker.deleteLabel", { name: instance.name })}
               >
-                Delete…
+                {t("instancePicker.delete")}
               </button>
             </li>
           ))}
         </ul>
       )}
       <button onClick={onNewInstance} disabled={busy}>
-        New instance…
+        {t("instancePicker.newInstance")}
       </button>
       <details>
-        <summary>Attach an existing instance by URL</summary>
+        <summary>{t("instancePicker.attachSummary")}</summary>
         <form onSubmit={handleAttach}>
-          <label for="attach-url">Instance container URL</label>
+          <label for="attach-url">{t("instancePicker.attachUrl")}</label>
           <input
             id="attach-url"
             type="url"
@@ -91,7 +91,7 @@ export function InstancePicker({
             onChange={setTarget}
           />
           <button type="submit" disabled={busy}>
-            Attach
+            {t("instancePicker.attach")}
           </button>
         </form>
       </details>

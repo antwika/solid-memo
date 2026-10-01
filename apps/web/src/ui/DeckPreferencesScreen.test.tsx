@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import type { Deck } from "@solid-memo/domain/deck";
 import { DeckPreferencesScreen } from "./DeckPreferencesScreen";
+import { I18nProvider } from "./i18n";
 
 const deck: Deck = {
   id: "deck-1",
@@ -122,5 +123,26 @@ describe("DeckPreferencesScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove deck" }));
     expect(props.onRemove).toHaveBeenCalledOnce();
     vi.unstubAllGlobals();
+  });
+
+  it("speaks Swedish", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <DeckPreferencesScreen
+          deck={deck}
+          deckHref="#/deck?deck=d"
+          preferences={{ newCardsPerDay: 1, maxReviewsPerDay: 200 }}
+          preferencesHref="#/preferences?instance=a"
+          busy={false}
+          error={null}
+          onSave={vi.fn()}
+          onRename={vi.fn()}
+          onRemove={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("heading", { name: "Inställningar: Kanji N5" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Nya kort per dag").nextElementSibling).toHaveTextContent("nytt kort per dag");
+    expect(screen.getByRole("link", { name: "studieinställningar" })).toBeInTheDocument();
   });
 });

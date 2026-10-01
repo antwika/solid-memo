@@ -4,8 +4,8 @@ import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { LibraryUpgradePlan } from "@solid-memo/domain/libraryUpgrade";
 import { errorMessage } from "./errorMessage";
+import { useI18n } from "./i18n";
 import { LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
-import { readerText } from "./readerText";
 
 /**
  * Checks whether the library has a newer release of an imported deck
@@ -23,6 +23,7 @@ export function LibraryUpgradeContainer({
   instance: Instance;
   deck: Deck;
 }) {
+  const { t, readerText } = useI18n();
   const queryClient = useQueryClient();
 
   const planQuery = useQuery({
@@ -53,7 +54,7 @@ export function LibraryUpgradeContainer({
   if (plan === undefined || plan === null) {
     return upgradeMutation.isSuccess ? (
       <p class="hint" role="status">
-        Updated to release {upgradeMutation.variables.toVersion} from the library.
+        {t("libraryUpgrade.updated", { version: upgradeMutation.variables.toVersion })}
       </p>
     ) : null;
   }

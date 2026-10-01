@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { PreferencesScreen } from "./PreferencesScreen";
+import { I18nProvider } from "./i18n";
 import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
 
 function renderScreen(
@@ -18,6 +19,20 @@ function renderScreen(
 }
 
 describe("PreferencesScreen", () => {
+  it("switches the language right away, without saving", () => {
+    const onChoose = vi.fn();
+    const onSave = vi.fn();
+    render(
+      <I18nProvider locale="en" onChoose={onChoose}>
+        <PreferencesScreen preferences={DEFAULT_PREFERENCES} busy={false} error={null} onSave={onSave} />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("radio", { name: "English" })).toBeChecked();
+    fireEvent.click(screen.getByRole("radio", { name: "Svenska" }));
+    expect(onChoose).toHaveBeenCalledWith("sv");
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   it("prefills the current preferences", () => {
     renderScreen({
       preferences: {
@@ -112,5 +127,16 @@ describe("PreferencesScreen", () => {
     expect(screen.getByLabelText("New cards per day")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     expect(screen.getByText("save failed")).toBeInTheDocument();
+  });
+
+  it("speaks Swedish", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <PreferencesScreen preferences={DEFAULT_PREFERENCES} busy={false} error={null} onSave={vi.fn()} />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("heading", { name: "Studieinställningar" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Nya kort per dag")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Spärra instansen/)).toBeChecked();
   });
 });

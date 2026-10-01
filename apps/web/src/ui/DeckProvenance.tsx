@@ -2,7 +2,7 @@ import type { ComponentChildren } from "preact";
 import { licenseLabel } from "@solid-memo/domain/license";
 import { AuthorNames } from "./AuthorName";
 import { ExternalLink } from "./ExternalLink";
-import { formatDate } from "./formatDate";
+import { useI18n } from "./i18n";
 import { linkify } from "./linkify";
 
 /**
@@ -25,19 +25,18 @@ export function DeckProvenance({
   modifiedAt?: string;
   description?: string;
 }) {
+  const { t, tx, formatDate } = useI18n();
   const parts: ComponentChildren[] = [];
   if (authors.length > 0) {
     parts.push(
-      <span>
-        By <AuthorNames authors={authors} />
-      </span>,
+      <span>{tx("deckProvenance.by", { authors: <AuthorNames authors={authors} /> })}</span>,
     );
   }
   if (license !== undefined) {
     parts.push(<ExternalLink url={license}>{licenseLabel(license)}</ExternalLink>);
   }
   if (modifiedAt !== undefined) {
-    parts.push(<span>Updated {formatDate(modifiedAt)}</span>);
+    parts.push(<span>{t("deckProvenance.updated", { date: formatDate(modifiedAt) })}</span>);
   }
   if (parts.length === 0 && description === undefined) return null;
   return (

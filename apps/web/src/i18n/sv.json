@@ -1,0 +1,640 @@
+{
+  "language": {
+    "label": "Språk"
+  },
+  "common": {
+    "cardCount": {
+      "one": "{count} kort",
+      "other": "{count} kort"
+    },
+    "toReview": {
+      "one": "{count} att repetera",
+      "other": "{count} att repetera"
+    },
+    "direction": {
+      "frontToBack": "Framsida → baksida",
+      "backToFront": "Baksida → framsida",
+      "bidirectional": "Åt båda hållen"
+    }
+  },
+  "footer": {
+    "createdBy": "Skapad av {author}",
+    "version": "Version {version}"
+  },
+  "addCardForm": {
+    "submitButton": "Lägg till kort"
+  },
+  "app": {
+    "restoringSession": "Återställer sessionen…",
+    "illustrationAlt": "Illustration för Solid Memo",
+    "tagline": "Flashcards med intervallrepetition som bor i din egen Solid Pod.",
+    "sessionExpired": "Din session har gått ut. Logga in igen.",
+    "logoAlt": "Solid Memo — tillbaka till start",
+    "loggedInAs": "Inloggad som {name}",
+    "logOut": "Logga ut"
+  },
+  "backup": {
+    "heading": "Föregående version",
+    "kept": "Den senaste formatuppdateringen sparade dina data som de var innan på {link}.",
+    "keptOn": "Den senaste formatuppdateringen sparade dina data som de var innan ({date}) på {link}.",
+    "restoreConfirm": "Gå tillbaka till den föregående versionen av {name}? Det du har studerat sedan uppdateringen försvinner med den uppdaterade versionen.",
+    "restore": "Återställ föregående version",
+    "restoring": "Återställer…",
+    "deleteConfirm": "Ta bort den föregående versionen för gott? Det går inte att ångra.",
+    "delete": "Ta bort säkerhetskopian",
+    "deleting": "Tar bort…"
+  },
+  "breadcrumbs": {
+    "label": "Brödsmulor",
+    "instances": "Instanser",
+    "storagePicker": "Välj lagringsplats",
+    "instanceCreator": "Ny instans",
+    "decks": "Kortlekar",
+    "deckCreator": "Ny kortlek",
+    "library": "Kortleksbiblioteket",
+    "cards": "Kort",
+    "preview": "Förhandsvisning",
+    "preferences": "Inställningar",
+    "validation": "Kontroll",
+    "browser": "Bläddra",
+    "cardCreator": "Nytt kort",
+    "study": "Studera"
+  },
+  "browser": {
+    "heading": "Bläddra: {deck}",
+    "addCardButton": "Lägg till kort",
+    "directionLegend": "Studieriktning",
+    "bidirectionalHint": "Varje kort frågas åt båda hållen, och varje riktning schemaläggs för sig.",
+    "directionHint": "Ändra när du vill; det du har lärt dig åt varje håll sparas.",
+    "empty": "Inga kort i den här kortleken än.",
+    "allRetired": "Alla kort i den här kortleken är ur bruk.",
+    "pageHint": "Kort {first}–{last} av {total}. Klicka på ett kort för att öppna det.",
+    "openHint": "Klicka på ett kort för att öppna det.",
+    "frontColumn": "Framsida",
+    "backColumn": "Baksida",
+    "removeButton": "Ta bort",
+    "removeConfirm": "Ta bort kortet ”{card}”? Det går inte att ångra.",
+    "loading": "Läser in kort…"
+  },
+  "card": {
+    "heading": "Kort",
+    "saveButton": "Spara",
+    "removeButton": "Ta bort kort",
+    "removeConfirm": "Ta bort kortet ”{card}”? Det går inte att ångra.",
+    "saved": "Sparat."
+  },
+  "cardContentFields": {
+    "front": "Framsida",
+    "frontPlaceholder": "Fråga eller uppmaning",
+    "frontImage": "Bild på framsidan (URL)",
+    "imagePlaceholder": "https://… (valfritt)",
+    "frontNote": "Anteckning på framsidan",
+    "frontNotePlaceholder": "Visas under framsidan när svaret har visats (valfritt)",
+    "backLabel": "Etikett",
+    "backLabelPlaceholder": "Visas ovanför baksidan, t.ex. vilken sorts svar det är (valfritt)",
+    "back": "Baksida",
+    "backPlaceholder": "Svar",
+    "backImage": "Bild på baksidan (URL)",
+    "backNote": "Anteckning på baksidan",
+    "backNotePlaceholder": "Visas under baksidan när svaret har visats (valfritt)"
+  },
+  "cardCreator": {
+    "heading": "Nytt kort",
+    "backButton": "Tillbaka",
+    "addingTo": "Lägger till i ”{deck}”."
+  },
+  "cardFace": {
+    "frontPictureAlt": "Bild på kortets framsida",
+    "backPictureAlt": "Bild på kortets baksida",
+    "notWebUrl": "Bilden visas inte: dess adress är ingen webbadress."
+  },
+  "dataCheckNotice": {
+    "region": "Datakontroll",
+    "heading": "Vissa data i {name} uppfyller inte Solid Memos former.",
+    "blockInstance": "Solid Memo använder inte den här instansen förrän den är reparerad.",
+    "restKeepsWorking": "Resten fungerar som vanligt.",
+    "setAside": {
+      "one": "{names} läggs åt sidan tills den är reparerad; resten fungerar som vanligt.",
+      "other": "{names} läggs åt sidan tills de är reparerade; resten fungerar som vanligt."
+    },
+    "keepsWorking": "Solid Memo fortsätter att använda dem.",
+    "policyHint": "Vad som händer med ogiltiga data ställer du in under {preferences}.",
+    "preferences": "Inställningar",
+    "repair": "Reparera"
+  },
+  "deckAbout": {
+    "label": "Om den här kortleken",
+    "topicsLine": "Ämnen: {topics}",
+    "keywordsLine": "Nyckelord: {keywords}",
+    "describeButton": "Beskriv kortleken",
+    "description": "Beskrivning",
+    "topics": "Ämnen",
+    "keywords": "Nyckelord",
+    "keywordsPlaceholder": "Separerade med kommatecken",
+    "saveButton": "Spara beskrivning",
+    "cancelLabel": "Avbryt beskrivningen",
+    "cancelButton": "Avbryt"
+  },
+  "deckCreator": {
+    "heading": "Ny kortlek",
+    "nameLabel": "Namn",
+    "namePlaceholder": "Min nya kortlek",
+    "createButton": "Skapa kortlek"
+  },
+  "deckDetail": {
+    "loading": "Läser in kort…",
+    "preferencesLabel": "Kortlekens inställningar",
+    "preferencesButton": "Inställningar",
+    "browseButton": "Bläddra",
+    "noCards": "Den här kortleken har inga kort än. Lägg till några under Bläddra.",
+    "allStudied": "Alla kort är studerade — inget mer att studera idag.",
+    "newOnly": {
+      "one": "Inga kort att repetera idag; {count} nytt att introducera.",
+      "other": "Inga kort att repetera idag; {count} nya att introducera."
+    },
+    "dueOnly": "{due} att repetera idag.",
+    "dueAndNew": {
+      "one": "{due} att repetera idag, och {count} nytt att introducera.",
+      "other": "{due} att repetera idag, och {count} nya att introducera."
+    },
+    "studyButton": "Studera",
+    "studiedToday": "{studied} studerade idag.",
+    "resetButton": "Återställ dagens studier",
+    "resetting": "Återställer…",
+    "resetConfirm": "Återställa dagens studier av ”{title}”? De {studied} du har studerat idag återgår till hur de var innan, och dagens svar kastas.",
+    "cardsInDeck": "{cards} i den här kortleken. Lägg till, redigera eller ta bort kort under Bläddra."
+  },
+  "deckList": {
+    "loading": "Läser in kortlekar…",
+    "setAside": "Lagd åt sidan: dess data behöver repareras",
+    "heading": "Kortlekar",
+    "deckCount": {
+      "one": "{count} kortlek",
+      "other": "{count} kortlekar"
+    },
+    "empty": "Inga kortlekar än. Skapa din första kortlek nedan, eller importera en från kortleksbiblioteket.",
+    "createButton": "Skapa kortlek",
+    "libraryLink": "Kortleksbiblioteket"
+  },
+  "deckPreferences": {
+    "loading": "Läser in inställningar…",
+    "heading": "Inställningar: {deck}",
+    "renameButton": "Byt namn på kortleken",
+    "removeButton": "Ta bort kortleken",
+    "removeConfirm": "Ta bort kortleken ”{title}” och alla dess kort? Det går inte att ångra.",
+    "deckName": "Kortlekens namn",
+    "saveName": "Spara namn",
+    "cancelRenamingLabel": "Avbryt namnbytet",
+    "cancelButton": "Avbryt",
+    "newCardsPerDay": "Nya kort per dag",
+    "maxReviewsPerDay": "Högst antal repetitioner per dag",
+    "newCardsUnit": {
+      "one": "nytt kort per dag",
+      "other": "nya kort per dag"
+    },
+    "maxReviewsUnit": "högst antal repetitioner per dag",
+    "emptyHint": "Ett tomt fält följer dina {link}.",
+    "studyPreferencesLink": "studieinställningar",
+    "saveButton": "Spara inställningar"
+  },
+  "deckProvenance": {
+    "by": "Av {authors}",
+    "updated": "Uppdaterad {date}"
+  },
+  "deckStudyAction": {
+    "checking": "Kollar vad som ska repeteras",
+    "done": "Klar för idag",
+    "studyLabel": "Studera {deck}",
+    "studyButton": "Studera"
+  },
+  "instanceBar": {
+    "preferences": "Inställningar",
+    "switch": "Byt instans"
+  },
+  "instanceCreator": {
+    "heading": "Ny instans av Solid Memo",
+    "name": "Namn",
+    "namePlaceholder": "Min instans",
+    "location": "Plats",
+    "create": "Skapa instans",
+    "back": "Tillbaka"
+  },
+  "instancePicker": {
+    "heading": "Välj en instans av Solid Memo",
+    "empty": "Inga instanser är registrerade än.",
+    "deleteConfirm": "Ta bort instansen ”{name}” med alla dess kortlekar och kort? Det går inte att ångra.",
+    "deleteLabel": "Ta bort instansen {name}",
+    "delete": "Ta bort…",
+    "newInstance": "Ny instans…",
+    "attachSummary": "Lägg till en befintlig instans via URL",
+    "attachUrl": "URL till instansens container",
+    "attach": "Lägg till"
+  },
+  "instanceUpdate": {
+    "confirmRegion": "Starta uppdateringen",
+    "confirmHeading": "Så skyddar uppdateringen dina data.",
+    "confirmBody": "Solid Memo kopierar {name} till en ny mapp i din Pod, uppdaterar kopian och kontrollerar den. Först när alla kontroller går igenom byter den till kopian. Dina nuvarande data ändras inte: de sparas som en säkerhetskopia, som du kan återställa eller ta bort under Inställningar. Vilka som har åtkomst till dem kopieras också. Instansen får en ny adress, så bokmärken till den leder till instansväljaren. Om något går fel tas kopian bort och inget annat ändras.",
+    "start": "Starta uppdateringen",
+    "notNow": "Inte nu",
+    "progressRegion": "Uppdaterar",
+    "running": "{step}…",
+    "runningCount": "{step}… ({done} av {total})",
+    "progressLabel": "Uppdateringens förlopp",
+    "keepOpen": "Håll sidan öppen tills uppdateringen är klar.",
+    "step": {
+      "stage": "Förbereder en ny kopia",
+      "access": "Kopierar vem som har åtkomst",
+      "copy": "Kopierar dokument",
+      "upgrade": "Uppdaterar kopians format",
+      "validate": "Kontrollerar den nya kopian",
+      "verify": "Kontrollerar att inget ändrats under tiden",
+      "switch": "Byter till den nya kopian"
+    },
+    "failedRegion": "Uppdateringen misslyckades",
+    "failedWhile": "Uppdateringen misslyckades i steget ”{step}”:",
+    "noChanges": "Inga ändringar gjordes i dina data.",
+    "copyRemoved": "Den ofullständiga kopian togs bort.",
+    "copyLeft": "Den ofullständiga kopian kunde inte tas bort; den finns på {url}.",
+    "tryAgain": "Försök ta bort den igen",
+    "close": "Stäng"
+  },
+  "library": {
+    "heading": "Kortleksbiblioteket",
+    "deckCount": {
+      "one": "{count} kortlek",
+      "other": "{count} kortlekar"
+    },
+    "shownCount": {
+      "one": "{shown} av {count} kortlek",
+      "other": "{shown} av {count} kortlekar"
+    },
+    "intro": "Färdiga kortlekar. Öppna en för att läsa om den, eller kryssa i flera och importera dem till den här instansen som egna kopior.",
+    "empty": "Biblioteket har inga kortlekar än.",
+    "topics": "Ämnen",
+    "search": "Sök",
+    "searchPlaceholder": "Namn, beskrivning eller nyckelord",
+    "noMatch": "Ingen kortlek matchar.",
+    "alreadyImported": "Redan importerad",
+    "preview": "Förhandsvisa",
+    "previewDeck": "Förhandsvisa {deck}",
+    "importSelected": "Importera markerade",
+    "importDecks": {
+      "one": "Importera {count} kortlek",
+      "other": "Importera {count} kortlekar"
+    },
+    "importing": "Importerar…",
+    "loading": "Läser in kortleksbiblioteket…"
+  },
+  "libraryBrowser": {
+    "heading": "Kort: {deck}",
+    "empty": "Kortleken har inga kort.",
+    "range": "Kort {first}–{last} av {total}.",
+    "count": {
+      "one": "{count} kort.",
+      "other": "{count} kort."
+    },
+    "hint": "Klicka på ett kort för att öppna det. Importera kortleken för att studera eller redigera korten.",
+    "front": "Framsida",
+    "back": "Baksida",
+    "loading": "Läser in kort…"
+  },
+  "libraryCard": {
+    "heading": "Kort",
+    "from": "Från {deck}. Importera kortleken för att studera eller redigera dess kort."
+  },
+  "libraryDeck": {
+    "browseCards": "Bläddra bland korten",
+    "size": "Storlek",
+    "studied": "Studeras",
+    "bothWays": "{direction} — varje kort frågas åt båda hållen; ändra det efter importen",
+    "topics": {
+      "one": "Ämne",
+      "other": "Ämnen"
+    },
+    "keywords": "Nyckelord",
+    "release": "Utgåva",
+    "version": "Version {version}",
+    "versionReleased": "Version {version}, utgiven {date}",
+    "releaseNotes": "Versionsanteckningar",
+    "authors": {
+      "one": "Upphovsperson",
+      "other": "Upphovspersoner"
+    },
+    "licence": "Licens",
+    "created": "Skapad",
+    "updated": "Uppdaterad",
+    "sources": {
+      "one": "Källa",
+      "other": "Källor"
+    },
+    "import": "Importera kortleken",
+    "importing": "Importerar…",
+    "preview": "Förhandsvisa",
+    "alreadyImported": "Redan importerad"
+  },
+  "libraryPreview": {
+    "heading": "Förhandsvisning: {deck}",
+    "back": "Tillbaka till biblioteket",
+    "empty": "Kortleken har inga kort.",
+    "hint": "Slumpade kort ur kortleken. Inget sparas: importera kortleken för att studera den.",
+    "nextCard": "Nästa kort",
+    "reveal": "Visa svar",
+    "loading": "Läser in kort…"
+  },
+  "libraryUpgrade": {
+    "updated": "Uppdaterad till utgåva {version} från biblioteket."
+  },
+  "libraryUpgradeNotice": {
+    "region": "Nyare utgåva i biblioteket",
+    "heading": "Kortleksbiblioteket har en nyare utgåva av den här kortleken.",
+    "body": "{deck} kom från utgåva {from}; utgåva {to} finns nu. En uppdatering {changes}.",
+    "adds": {
+      "one": "lägger till {count} kort",
+      "other": "lägger till {count} kort"
+    },
+    "changes": {
+      "one": "ändrar {count} kort",
+      "other": "ändrar {count} kort"
+    },
+    "retires": {
+      "one": "tar {count} kort ur bruk",
+      "other": "tar {count} kort ur bruk"
+    },
+    "bringsBack": {
+      "one": "tar tillbaka {count} kort",
+      "other": "tar tillbaka {count} kort"
+    },
+    "removes": {
+      "one": "tar bort {count} kort",
+      "other": "tar bort {count} kort"
+    },
+    "studies": "studerar den {direction}",
+    "noStudiedChanges": "uppdaterar kort som du inte längre studerar",
+    "list": "{items} och {last}",
+    "listSeparator": ", ",
+    "historyKept": "Din repetitionshistorik behålls.",
+    "historyKeptButRemoved": "Din repetitionshistorik behålls, utom för de borttagna korten.",
+    "historyKeptRetired": "Din repetitionshistorik behålls; ett kort som tas ur bruk behålls, men studeras inte längre.",
+    "historyKeptButRemovedRetired": "Din repetitionshistorik behålls, utom för de borttagna korten; ett kort som tas ur bruk behålls, men studeras inte längre.",
+    "kept": {
+      "one": "{count} kort som du har ändrat lämnas som det är.",
+      "other": "{count} kort som du har ändrat lämnas som de är."
+    },
+    "releaseNote": "Utgåva {version}: {notes}",
+    "update": "Uppdatera till utgåva {version}",
+    "updating": "Uppdaterar…"
+  },
+  "migration": {
+    "interruptedRegion": "Avbruten uppdatering",
+    "interrupted": "En uppdatering av {name} avbröts innan den blev klar; dina data är som de var. En ofullständig kopia finns kvar på {url}.",
+    "removing": "Tar bort…",
+    "removeIt": "Ta bort den"
+  },
+  "migrationNotice": {
+    "region": "Formatuppdatering",
+    "heading": "Dina data behöver en formatuppdatering.",
+    "stored": {
+      "one": "{outdated} sparas i ett äldre format.",
+      "other": "{outdated} sparas i ett äldre format."
+    },
+    "writes": "Solid Memo skriver nu {formats}.",
+    "howItWorks": "Uppdateringen gör en uppdaterad kopia och byter till den när den är kontrollerad, och behåller dina nuvarande data som säkerhetskopia; kortleksnamn, korttext, riktningar, din repetitionshistorik och dina inställningar förblir som de är, och en kortlek utan beskrivning får en kort beskrivning som du kan ändra.",
+    "listAnd": "{rest} och {last}",
+    "instanceRecord": "instansposten",
+    "instanceCatalogue": "instansens katalog",
+    "yourPreferences": "dina inställningar",
+    "deckEntries": {
+      "one": "{count} kortlekspost",
+      "other": "{count} kortleksposter"
+    },
+    "reviewStates": {
+      "one": "{count} repetitionstillstånd",
+      "other": "{count} repetitionstillstånd"
+    },
+    "inDecks": {
+      "one": "en kortlek",
+      "other": "{count} kortlekar"
+    },
+    "countIn": "{what} i {decks}",
+    "instanceFormat": "instansformat {version}",
+    "catalogueFormat": "en katalog över varje instans kortlekar, som andra appar läser som en DCAT-katalog",
+    "preferencesFormat": "inställningsformat {version}, som sparar svarsskalan, utvecklarläget och vad som ska hända med ogiltiga data",
+    "deckFormat": "kortleksformat {version}, som beskriver kortlekar med standarderna DCAT och SKOS, ger varje kortlek en beskrivning och låter en kortleks titel och beskrivning finnas på flera språk",
+    "cardFormat": "kortformat {version}, som lägger till bilder på kort och låter en bibliotekskortlek ta ur bruk ett kort den inte längre använder",
+    "reviewFormat": "repetitionstillståndsformat {version}, som sparar varje studieriktnings tillstånd och dagens ångra-ögonblicksbild",
+    "itemInstanceRecord": "Instanspost",
+    "itemCatalogue": "Katalog över kortlekarna",
+    "itemPreferences": "Inställningar",
+    "deckEntry": "kortlekspost",
+    "updating": "Uppdaterar…",
+    "updateButton": "Uppdatera {what}",
+    "buttonDecks": {
+      "one": "{count} kortlek",
+      "other": "{count} kortlekar"
+    },
+    "buttonPreferences": "inställningarna",
+    "buttonInstanceRecord": "instansposten",
+    "buttonCatalogue": "katalogen"
+  },
+  "onboardingFlow": {
+    "connectHeading": "Anslut din Pod",
+    "providerHeading": "Eller välj din leverantör",
+    "providerHint": "Har du inte ditt WebID till hands? Välj var din Pod finns och logga in där — ditt WebID följer med inloggningen.",
+    "setUpHeading": "Skaffa din Solid Pod",
+    "intro": "Dina data sparas i en Solid Pod som du själv styr över. Skapa en hos en Pod-leverantör, eller anslut en Pod som du redan har.",
+    "createPodLabel": "Skapa en Pod hos {provider} (öppnas i en ny flik)",
+    "createPod": "Skapa en Pod ↗",
+    "createPodHint": "Du skapar din Pod på leverantörens webbplats, i en ny flik. När du är klar kommer du tillbaka hit och ansluter den.",
+    "havePod": "Jag har redan en Pod"
+  },
+  "pager": {
+    "label": "Kortsidor",
+    "previous": "Föregående",
+    "page": "Sida {page} av {pageCount}",
+    "next": "Nästa"
+  },
+  "podConnection": {
+    "discoveringHeading": "Letar efter din Pod…",
+    "discoveringLabel": "Läser din WebID-profil för att ta reda på var dina data finns.",
+    "errorHeading": "Det gick inte att hitta din Pod",
+    "tryAgain": "Försök igen",
+    "logOut": "Logga ut",
+    "noPodHeading": "Ingen Pod hittades",
+    "noPodWarning": "Du är inloggad som {name}, men din WebID-profil länkar inte till någon lagringsplats i en Pod, så Solid Memo vet inte var dina data ska sparas.",
+    "noPodHint": "Din Pod-leverantör kan lägga till länken till lagringsplatsen i din profil. Du kan också fortsätta och själv ange en lagringsplats för Solid Memo.",
+    "continueAnyway": "Fortsätt ändå",
+    "connectedHeading": "Din Pod är ansluten.",
+    "identityProvider": "Identitetsleverantör",
+    "continue": "Fortsätt"
+  },
+  "preferences": {
+    "language": {
+      "legend": "Språk",
+      "hint": "Gäller direkt och sparas på den här enheten, inte i din Pod."
+    },
+    "heading": "Studieinställningar",
+    "loading": "Läser in inställningar…",
+    "newCardsPerDay": "Nya kort per dag",
+    "maxReviewsPerDay": "Högst antal repetitioner per dag",
+    "dayBoundaryHour": "Dagen börjar (timme)",
+    "answerScale": {
+      "legend": "Svarsknappar",
+      "sm2": {
+        "label": "Skala 0 till 5",
+        "hint": "Alla SM-2-betyg, från 0 (helt borta) till 5 (lätt)."
+      },
+      "minimal": {
+        "label": "Igen · Svårt · Bra · Lätt",
+        "hint": "Fyra knappar. Igen visar kortet på nytt senare i studiepasset."
+      }
+    },
+    "policy": {
+      "legend": "När data inte uppfyller formerna",
+      "blockInstance": {
+        "label": "Spärra instansen",
+        "hint": "All ogiltig data hindrar appen från att använda instansen tills den har reparerats. Standardvalet."
+      },
+      "blockSubject": {
+        "label": "Lägg ogiltig data åt sidan",
+        "hint": "Kortlekar med ogiltig data läggs åt sidan tills de har reparerats; allt annat fortsätter att fungera."
+      },
+      "warnOnly": {
+        "label": "Varna bara",
+        "hint": "Ogiltig data rapporteras, och appen fortsätter att arbeta med den."
+      }
+    },
+    "developer": {
+      "legend": "Utvecklarinställningar",
+      "mode": "Utvecklarläge",
+      "hint": "Visar utvecklarverktyg: ditt råa WebID-dokument under appen, och en kontroll av den här instansens dokument mot Solid Memos former."
+    },
+    "save": "Spara"
+  },
+  "registrationTargetChooser": {
+    "legend": "Registrera i",
+    "noPrivateIndex": "Din profil har inget privat typindex än. Solid Memo kan skapa ett (rekommenderas), eller registrera i ditt publika typindex i stället — publika registreringar syns för alla som kan läsa din profil.",
+    "private": "Privat typindex",
+    "privateCreated": "Privat typindex (skapas)",
+    "public": "Publikt typindex",
+    "publicCreated": "Publikt typindex (skapas)"
+  },
+  "repair": {
+    "removeConfirm": "Ta bort <{url}> från din Pod? Det går inte att ångra.",
+    "canRepair": "Solid Memo kan reparera de här:",
+    "repairing": "Reparerar…",
+    "repairButton": {
+      "one": "Reparera {count} problem",
+      "other": "Reparera {count} problem"
+    },
+    "needDecision": "De här behöver ditt beslut: rätta dem i dokumentet eller ta bort dem.",
+    "problem": "{subject} i {document}: {messages}",
+    "removeButton": "Ta bort",
+    "fullReport": "Hela rapporten",
+    "action": {
+      "describeDeck": "Ge kortleken standardbeskrivningen",
+      "directDeck": "Studera kortleken från framsida till baksida",
+      "dropSnapshot": "Ta bort repetitionens halvskrivna ångra-ögonblicksbild",
+      "recomputeDue": "Räkna om när kortet ska repeteras nästa gång",
+      "nameAgent": "Namnge personen eller organisationen efter dess adress",
+      "removeSubject": "Ta bort det"
+    }
+  },
+  "retiredCards": {
+    "showToggle": "Visa kort ur bruk",
+    "toggleHint": {
+      "one": "{count} kort är ur bruk: det sparas, med sin repetitionshistorik, men studeras inte längre.",
+      "other": "{count} kort är ur bruk: de sparas, med sin repetitionshistorik, men studeras inte längre."
+    },
+    "tag": "Ur bruk",
+    "notice": "Det här kortet är ur bruk: bibliotekskortleken använder det inte längre. Det sparas, med sin repetitionshistorik, men studeras inte längre."
+  },
+  "storagePicker": {
+    "heading": "Välj en lagringsplats",
+    "empty": "Ingen lagringsplats hittades för ditt WebID. Ange rot-URL:en till din Pod nedan.",
+    "source": {
+      "profile": "från din profil",
+      "linkHeader": "hittad via din Pod-server",
+      "manual": "angiven manuellt"
+    },
+    "url": "URL till lagringsplatsen",
+    "use": "Använd den här lagringsplatsen"
+  },
+  "study": {
+    "heading": "Studera: {deck}",
+    "endSession": "Avsluta studiepasset",
+    "nothingToday": "Inget att studera idag — kom tillbaka i morgon!",
+    "finished": "Studiepasset är klart — alla kort är repeterade.",
+    "position": "Kort {position} av {total}",
+    "reveal": "Visa svar",
+    "preparing": "Förbereder ditt studiepass…",
+    "quality": {
+      "blackout": "0 — Helt borta",
+      "wrong": "1 — Fel",
+      "almost": "2 — Nästan",
+      "hard": "3 — Svårt",
+      "good": "4 — Bra",
+      "easy": "5 — Lätt"
+    },
+    "minimal": {
+      "again": "Igen",
+      "hard": "Svårt",
+      "good": "Bra",
+      "easy": "Lätt"
+    }
+  },
+  "validation": {
+    "heading": "Kontroll av {name}",
+    "validating": "Kontrollerar…",
+    "validateAgain": "Kontrollera igen",
+    "allConform": {
+      "one": "Dokumentet ({count}) uppfyller formerna.",
+      "other": "Alla {count} dokument uppfyller formerna."
+    },
+    "violationsIn": "{violations} i {documents}.",
+    "violationCount": {
+      "one": "{count} överträdelse",
+      "other": "{count} överträdelser"
+    },
+    "documentCount": {
+      "one": "{count} dokument",
+      "other": "{count} dokument"
+    },
+    "notCreated": "Inte skapat än.",
+    "noSubjects": "Inga subjekt.",
+    "untyped": "{name} — inte ett Solid Memo-subjekt.",
+    "newer": "{name} — formatet {shape} {version} är nyare än vad appen känner till (upp till {latest}); hoppas över.",
+    "profiled": "{name} — inte ett Solid Memo-subjekt; DCAT-AP säger:",
+    "conforms": "{name} — uppfyller formatet {shape} {version}.",
+    "checked": "{name} — formatet {shape} {version}:",
+    "severity": "Allvarlighetsgrad",
+    "property": "Egenskap",
+    "message": "Meddelande",
+    "value": "Värde",
+    "theSubject": "(subjektet)"
+  },
+  "webIdDocument": {
+    "summary": "WebID-dokument",
+    "loading": "Läser in profilen…"
+  },
+  "webIdForm": {
+    "help": "Ditt WebID är webbadressen som identifierar dig, och du får den av din Pod-leverantör. Du loggar in på leverantörens egen sida — Solid Memo ser aldrig ditt lösenord.",
+    "redirecting": "Skickar dig vidare…",
+    "logIn": "Logga in med Solid",
+    "back": "Tillbaka"
+  },
+  "workspace": {
+    "loadingInstances": "Läser in dina Solid Memo-instanser…",
+    "loadingDeck": "Läser in kortleken…",
+    "loadingCard": "Läser in kortet…",
+    "loadingLibrary": "Läser in kortleksbiblioteket…",
+    "discoveringStorages": "Söker efter lagringsplatser…",
+    "loadingPreferences": "Läser in inställningar…",
+    "developerModeOff": "Utvecklarläget är av. Slå på det i {preferences} för att kontrollera den här instansen mot Solid Memos former.",
+    "preferencesLink": "Inställningar",
+    "checkingData": "Kontrollerar instansens data…",
+    "deckSetAside": "Kortleken är lagd åt sidan: dess data uppfyller inte formerna. Reparera den ovan för att använda den igen.",
+    "checkFailed": "Det gick inte att kontrollera instansens data: {error}",
+    "developerTools": "Utvecklarverktyg",
+    "validateInstance": "Kontrollera den här instansen"
+  }
+}
