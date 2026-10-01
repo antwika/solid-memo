@@ -4,9 +4,11 @@
  * what a visit learns is written to digest.ttl, and the next visit,
  * a new page with nothing in memory, asks the pod only whether each
  * document changed. Runs against each server globalSetup.ts starts.
- * node-solid-server 5.7.4 gives no ETag on a read, so there nothing can
+ * node-solid-server (5.x, 6.0.0) gives no ETag on a read, so there nothing can
  * be known to be unchanged: nothing is kept, every visit reads all, and
- * the counts are the same.
+ * the counts are the same. Community Solid Server 6 gives an ETag that an
+ * edit in the same second keeps: these tests edit within the second, so
+ * there they are skipped (docs/data-model.md#the-digest).
  */
 import { readFile } from "node:fs/promises";
 import { describe, expect, inject, it, vi } from "vitest";
@@ -23,6 +25,7 @@ import { createSolidRepairRepository } from "@solid-memo/solid/solidRepairReposi
 import { createSolidReviewStateRepository } from "@solid-memo/solid/solidReviewStateRepository";
 import { createSolidWebIdDocumentRepository } from "@solid-memo/solid/solidWebIdDocumentRepository";
 import { createWriteFence } from "@solid-memo/solid/writeFence";
+import { ETAG_OUTLIVES_EDITS, etagMarksEveryEdit } from "./serverTraits";
 
 const SERVERS = inject("solidServers");
 const SITE = "https://solid-memo.test/";
@@ -123,7 +126,15 @@ async function untilLearned(instanceUrl: string, deck: Deck): Promise<void> {
 }
 
 describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
-  it("lets the next visit count today's study and check the instance without downloading unchanged documents", async () => {
+  /** Whether this server gives no ETag on a read, or one that an edit within the second keeps. */
+  async function unreliableEtags(): Promise<boolean> {
+    const probe = new URL(`etag-${crypto.randomUUID()}.ttl`, server).href;
+    await fetch(probe, { method: "PUT", headers: { "content-type": "text/turtle" }, body: `<#a> <#b> "1" .` });
+    return (await versioned(probe)) && !(await etagMarksEveryEdit(server));
+  }
+
+  it("lets the next visit count today's study and check the instance without downloading unchanged documents", async (context) => {
+    if (await unreliableEtags()) context.skip(ETAG_OUTLIVES_EDITS);
     const { instanceUrl, deck } = await seed(server);
     const now = new Date();
     const etags = await versioned(deck.cardsDocumentUrl);
@@ -151,7 +162,8 @@ describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
     expect(second.requests.filter(isDocument(deck)).every((r) => [200, 304, 404].includes(r.status!))).toBe(true);
   });
 
-  it("counts a card added since the digest was written", async () => {
+  it("counts a card added since the digest was written", async (context) => {
+    if (await unreliableEtags()) context.skip(ETAG_OUTLIVES_EDITS);
     const { instanceUrl, deck } = await seed(server);
     const now = new Date();
     const first = page();
@@ -166,6 +178,7 @@ describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
   it("keeps what two pages learn at once", async (context) => {
     const { instanceUrl, deck } = await seed(server);
     if (!(await versioned(deck.cardsDocumentUrl))) context.skip("this server gives no ETag on a read, so nothing is kept");
+    if (await unreliableEtags()) context.skip(ETAG_OUTLIVES_EDITS);
     const [a, b] = [page(), page()];
     await Promise.all([a.useCases.getStudyCounts(instanceUrl, deck, new Date()), b.useCases.checkInstance(instanceUrl)]);
     await vi.waitFor(async () => {

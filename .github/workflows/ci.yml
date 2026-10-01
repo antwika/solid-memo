@@ -40,16 +40,28 @@ jobs:
       - run: pip install -r scripts/requirements-ci.txt
       - run: python scripts/shacl_crosscheck.py
 
-  # The app's use cases and Solid adapters against real Solid servers: a
-  # Community Solid Server in memory and node-solid-server 5.7.4, which the
-  # tests start on this runner (docs/testing.md).
+  # The app's use cases and Solid adapters against real Solid servers,
+  # one job per server (e2e/pod/servers.ts): each installs only its server,
+  # from its own lockfile, starts it on this runner and runs the whole
+  # suite (docs/testing.md). One server failing does not stop the others.
   pod:
+    name: pod (${{ matrix.server }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        server: [css-7, css-6, nss-6, nss-5]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            e2e/pod/servers/${{ matrix.server }}/package-lock.json
       - run: npm ci
+      - run: npm run servers -w @solid-memo/e2e-pod -- ${{ matrix.server }}
       - run: npm run test:pod
+        env:
+          SOLID_SERVERS: ${{ matrix.server }}

@@ -1,0 +1,11 @@
+{
+  "name": "@solid-memo/e2e-server-nss-6",
+  "private": true,
+  "description": "node-solid-server 6.x, for the end-to-end tests (e2e/pod/servers.ts); its own install, outside the workspace.",
+  "dependencies": {
+    "solid-server": "6.0.0"
+  },
+  "allowScripts": {
+    "@fastify/pre-commit": false
+  }
+}
