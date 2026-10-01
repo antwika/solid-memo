@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StudyContainer } from "./StudyContainer";
+import { DeckStudyActionContainer } from "./DeckStudyAction";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck, Prompt } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
@@ -424,5 +425,33 @@ describe("StudyContainer keeping the deck's schedule", () => {
     await waitFor(() => expect(useCases.recordReview).toHaveBeenCalledTimes(2));
     unmount();
     expect(useCases.refreshStudyDigest).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("StudyContainer leaving for the deck list", () => {
+  it("lets the deck list count afresh, not show the counts from before the session", async () => {
+    const useCases = makeUseCasesFake({
+      getStudyQueue: vi.fn(async () => ({ due: [makePrompt("card-a", "front-a")], newPrompts: [], studiedToday: 0 })),
+      getStudyCounts: vi.fn(async () => ({ dueCount: 0, newCount: 0 })),
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    // The list counted before the session: one due, fresh for a while yet.
+    queryClient.setQueryData(["studyQueue", deck.url, "counts"], { dueCount: 1, newCount: 0 });
+    const screenFor = (studying: boolean) => (
+      <QueryClientProvider client={queryClient}>
+        {studying ? (
+          <StudyContainer useCases={useCases} instance={instance} deck={deck} onExit={() => undefined} />
+        ) : (
+          <DeckStudyActionContainer useCases={useCases} instance={instance} deck={deck} onStudy={() => undefined} />
+        )}
+      </QueryClientProvider>
+    );
+    const view = render(screenFor(true));
+    await answer("4 — Good");
+    await waitFor(() => expect(useCases.recordReview).toHaveBeenCalledOnce());
+    view.rerender(screenFor(false));
+    expect(screen.queryByText("1 to review")).toBeNull();
+    expect(await screen.findByText("Done for today")).toBeInTheDocument();
+    expect(useCases.getStudyCounts).toHaveBeenCalled();
   });
 });
