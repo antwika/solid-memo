@@ -48,6 +48,18 @@ function pod({ etag = '"v1"', exists = new Set([DOC]) }: { etag?: string | null;
 const edited = <T extends Parameters<typeof setThing>[0]>(dataset: T) =>
   setThing(dataset, buildThing(createThing({ url: `${DOC}#new` })).addStringNoLocale("https://example.com/ns#n", "2").build());
 
+/**
+ * The dataset with an edit larger than MAX_PATCH_BYTES: 20 cards of 4 KiB
+ * each. Few Things, as a dataset is copied on every change.
+ */
+const large = <T extends Parameters<typeof setThing>[0]>(dataset: T) => {
+  let edited = dataset;
+  for (let i = 0; i < 20; i++) {
+    edited = setThing(edited, buildThing(createThing({ url: `${DOC}#card-${i}` })).addStringNoLocale("https://example.com/ns#back", "x".repeat(4096)).build());
+  }
+  return edited;
+};
+
 describe("saving with preconditions", () => {
   it("saves an edit only if the document is as it was read (If-Match: its ETag)", async () => {
     const server = pod();
@@ -97,24 +109,18 @@ describe("saving with preconditions", () => {
   it("writes an edit too large for one PATCH as one PUT of the whole document, still only if it is as it was read", async () => {
     const server = pod();
     let dataset = await readDataset(DOC, server.fetch);
-    for (let i = 0; i < 1000; i++) {
-      dataset = setThing(dataset, buildThing(createThing({ url: `${DOC}#card-${i}` })).addInteger("https://example.com/ns#formatVersion", 3).build());
-    }
+    dataset = large(dataset);
     await saveDataset(DOC, dataset, server.fetch);
     expect(server.writes).toEqual([{ method: "PUT", url: DOC, ifMatch: '"v1"', ifNoneMatch: null }]);
     expect(server.bodies[0].contentType).toBe("text/turtle");
-    expect(server.bodies[0].body).toContain("#card-999>");
+    expect(server.bodies[0].body).toContain("#card-19>");
     expect(server.bodies[0].body).toContain('"1"');
     expect(new TextEncoder().encode(server.bodies[0].body).length).toBeGreaterThan(MAX_PATCH_BYTES);
 
     const changed = pod();
     const read = await readDataset(DOC, changed.fetch);
     changed.changeElsewhere('"v2"');
-    let large = read;
-    for (let i = 0; i < 1000; i++) {
-      large = setThing(large, buildThing(createThing({ url: `${DOC}#card-${i}` })).addInteger("https://example.com/ns#formatVersion", 3).build());
-    }
-    await expect(saveDataset(DOC, large, changed.fetch)).rejects.toBeInstanceOf(PreconditionFailedError);
+    await expect(saveDataset(DOC, large(read), changed.fetch)).rejects.toBeInstanceOf(PreconditionFailedError);
   });
 
   it("passes on other failures", async () => {
