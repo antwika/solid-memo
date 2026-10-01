@@ -43,7 +43,16 @@ import {
   type MigrationPlan,
 } from "@solid-memo/domain/migration";
 import { ensureTrailingSlash, instanceDocumentUrls } from "@solid-memo/domain/instanceLayout";
-import { summarize, type ValidationReport } from "@solid-memo/domain/validation";
+import { summarize, type DocumentReport, type ValidationReport } from "@solid-memo/domain/validation";
+import {
+  emptyDigest,
+  scheduleOf,
+  studyCountsOf,
+  withReceipt,
+  withSchedule,
+  type DocumentReceipt,
+  type InstanceDigest,
+} from "@solid-memo/domain/studyDigest";
 import {
   DEFAULT_PREFERENCES,
   type StudyPreferences,
@@ -75,6 +84,7 @@ import type {
   StorageGateway,
   WebIdDocumentRepository,
   ShapeValidator,
+  DigestRepository,
   RepairRepository,
   InstanceCopier,
   UpdateJournal,
@@ -101,6 +111,12 @@ export interface UseCases {
    * Solid Memo's shapes (docs/validation.md). Reads only.
    */
   validateInstance(instanceUrl: string): Promise<ValidationReport>;
+  /**
+   * The check made when an instance is opened: validateInstance, but a
+   * document still at the version the instance's digest says conformed
+   * is not checked (nor downloaded) again.
+   */
+  checkInstance(instanceUrl: string): Promise<ValidationReport>;
   /** What the app can repair of what a check found, and what it leaves to the user. */
   planRepair(report: ValidationReport): RepairPlan;
   /** Apply repairs (the planned ones, or removals the user chose). */
@@ -214,6 +230,15 @@ export interface UseCases {
     now: Date,
   ): Promise<StudyQueue>;
   /**
+   * How many prompts today's queue would hold, as getStudyQueue counts
+   * them; from the deck's schedule in the instance's digest when neither
+   * of its documents changed since, else from its documents (and the
+   * digest is brought up to date).
+   */
+  getStudyCounts(instanceUrl: string, deck: Deck, now: Date): Promise<{ dueCount: number; newCount: number }>;
+  /** Keep the deck's schedule in the digest, as of now: when a study session ends. */
+  refreshStudyDigest(instanceUrl: string, deck: Deck): Promise<void>;
+  /**
    * Apply one SM-2 review: load the prompt's state (or start fresh),
    * transition it, persist it, and return the new state.
    */
@@ -254,10 +279,15 @@ export interface Dependencies {
   newId?: () => string;
   /** Keeps the instance an update copies read-only while it runs. */
   writeFence?: WriteFence;
+  /** Where each instance's digest is kept; by default none is. */
+  digestRepository?: DigestRepository;
+  /** Names the shapes documents are checked by; a receipt of other rules does not count. */
+  ruleset?: string;
 }
 
 const NO_JOURNAL: UpdateJournal = { begin: () => undefined, end: () => undefined, staging: () => null };
 const NO_FENCE: WriteFence = { hold: () => () => undefined };
+const NO_DIGESTS: DigestRepository = { readDigest: async () => null, updateDigest: async () => undefined };
 
 export function createUseCases({
   sessionGateway,
@@ -276,6 +306,8 @@ export function createUseCases({
   now = () => new Date(),
   newId = () => crypto.randomUUID(),
   writeFence = NO_FENCE,
+  digestRepository = NO_DIGESTS,
+  ruleset = "",
 }: Dependencies): UseCases {
   /** Normalized card content, or a throw naming what is missing. */
   function validContent(content: CardContent): CardContent {
@@ -340,6 +372,115 @@ export function createUseCases({
     }
   }
 
+  /**
+   * Each instance's digest as this page knows it: read once, then kept up
+   * to date with what the page learns, which is written back in the
+   * background (a failed write only means the next visit learns it again).
+   */
+  const digests = new Map<string, Promise<InstanceDigest>>();
+
+  function digestOf(instanceUrl: string): Promise<InstanceDigest> {
+    let digest = digests.get(instanceUrl);
+    if (digest === undefined) {
+      digest = digestRepository.readDigest(instanceUrl).then(
+        (stored) => stored ?? emptyDigest(),
+        () => emptyDigest(),
+      );
+      digests.set(instanceUrl, digest);
+    }
+    return digest;
+  }
+
+  function remember(instanceUrl: string, change: (digest: InstanceDigest) => InstanceDigest): void {
+    void digestOf(instanceUrl).then((digest) => {
+      digests.set(instanceUrl, Promise.resolve(change(digest)));
+      return digestRepository
+        .updateDigest(instanceUrl, (stored) => change(stored ?? emptyDigest()))
+        .catch(() => undefined);
+    });
+  }
+
+  function noting(document: string, version: string, facts: Pick<DocumentReceipt, "conformedTo" | "latestFormat">) {
+    return (digest: InstanceDigest) => withReceipt(digest, document, version, facts);
+  }
+
+  async function studyCountsAndSchedule(instanceUrl: string, deck: Deck, now: Date) {
+    const [prefs, digest] = await Promise.all([getPreferences(instanceUrl), digestOf(instanceUrl)]);
+    const studyPrefs = deckPreferences(prefs, deck);
+    const kept = digest.schedules[deck.url];
+    const [cardsSince, reviewsSince] = await Promise.all([
+      deckRepository.readCardsSince(deck, kept?.cardsVersion),
+      reviewStateRepository.readReviewStatesSince(deck, kept?.reviewsVersion),
+    ]);
+    if (kept !== undefined && cardsSince.unchanged && reviewsSince.unchanged) {
+      const counts = studyCountsOf(kept.schedule, { direction: deck.direction, prefs: studyPrefs, now });
+      if (counts !== null) return counts;
+    }
+    const [cards, reviews] = await Promise.all([
+      cardsSince.unchanged ? deckRepository.readCardsSince(deck, undefined) : cardsSince,
+      reviewsSince.unchanged ? reviewStateRepository.readReviewStatesSince(deck, undefined) : reviewsSince,
+    ]);
+    // A read without a version to compare is never "unchanged".
+    if (cards.unchanged || reviews.unchanged) throw new Error("A read without a version to compare came back unchanged.");
+    noteSchedule(instanceUrl, deck, cards, reviews, prefs.dayBoundaryHour, now);
+    const queue = buildStudyQueue({
+      cards: cards.value,
+      direction: deck.direction,
+      reviews: reviews.value,
+      prefs: studyPrefs,
+      now,
+      random,
+    });
+    return { dueCount: queue.due.length, newCount: queue.newPrompts.length };
+  }
+
+  function noteSchedule(
+    instanceUrl: string,
+    deck: Deck,
+    cards: { value: Card[]; version: string | null },
+    reviews: { value: ReviewState[]; version: string | null },
+    dayBoundaryHour: number,
+    now: Date,
+  ): void {
+    const { version: cardsVersion } = cards;
+    const { version: reviewsVersion } = reviews;
+    if (cardsVersion === null || reviewsVersion === null) return;
+    const schedule = scheduleOf({
+      cards: cards.value,
+      direction: deck.direction,
+      reviews: reviews.value,
+      dayBoundaryHour,
+      now,
+    });
+    remember(instanceUrl, (digest) => {
+      let next = withSchedule(digest, { deck: deck.url, cardsVersion, reviewsVersion, schedule });
+      if (!cards.value.some(isOutdated)) next = withReceipt(next, deck.cardsDocumentUrl, cardsVersion, { latestFormat: true });
+      if (!reviews.value.some(isReviewStateOutdated)) {
+        next = withReceipt(next, deck.reviewsDocumentUrl, reviewsVersion, { latestFormat: true });
+      }
+      return next;
+    });
+  }
+
+  async function checkInstance(instanceUrl: string): Promise<ValidationReport> {
+    const [decks, digest] = await Promise.all([deckRepository.listDecks(instanceUrl), digestOf(instanceUrl)]);
+    const documents = await Promise.all(
+      instanceDocumentUrls(instanceUrl, decks).map(async (url): Promise<DocumentReport> => {
+        const receipt = digest.receipts[url];
+        const since = await shapeValidator.validateDocumentSince(
+          url,
+          receipt?.conformedTo === ruleset ? receipt.version : undefined,
+        );
+        if (since.unchanged) return { url, status: "checked", subjects: [] };
+        if (since.version !== null && summarize(instanceUrl, [since.value]).conforms) {
+          remember(instanceUrl, noting(url, since.version, { conformedTo: ruleset }));
+        }
+        return since.value;
+      }),
+    );
+    return summarize(instanceUrl, documents);
+  }
+
   async function validateInstance(instanceUrl: string): Promise<ValidationReport> {
     const decks = await deckRepository.listDecks(instanceUrl);
     const documents = await Promise.all(
@@ -402,6 +543,7 @@ export function createUseCases({
       return repairRepository.applyRepairs(repairs);
     },
     validateInstance,
+    checkInstance,
     viewWebIdDocument(session) {
       return webIdDocumentRepository.fetchWebIdDocument(session.webId);
     },
@@ -515,19 +657,30 @@ export function createUseCases({
       return deckRepository.removeCard(deck, card);
     },
     async planMigration(instanceUrl) {
-      const [instance, preferences, catalog, decks] = await Promise.all([
+      const [instance, preferences, catalog, decks, digest] = await Promise.all([
         instanceRepository.readMeta(instanceUrl),
         preferencesRepository.getPreferences(instanceUrl),
         deckRepository.readCatalog(instanceUrl),
         deckRepository.listDecks(instanceUrl),
+        digestOf(instanceUrl),
       ]);
+      // A document still at a version with nothing outdated in it is not read again. Reads
+      // only: the digest's format notes are written by the deck list (getStudyCounts).
+      const latestVersion = (url: string) => {
+        const receipt = digest.receipts[url];
+        return receipt?.latestFormat === true ? receipt.version : undefined;
+      };
       const entries = await Promise.all(
         decks.map(async (deck) => {
           const [cards, reviews] = await Promise.all([
-            deckRepository.listCards(deck),
-            reviewStateRepository.listReviewStates(deck),
+            deckRepository.readCardsSince(deck, latestVersion(deck.cardsDocumentUrl)),
+            reviewStateRepository.readReviewStatesSince(deck, latestVersion(deck.reviewsDocumentUrl)),
           ]);
-          return { deck, cards, reviews };
+          return {
+            deck,
+            cards: cards.unchanged ? [] : cards.value,
+            reviews: reviews.unchanged ? [] : reviews.value,
+          };
         }),
       );
       return planMigration({ instance, preferences, catalog, entries });
@@ -680,6 +833,23 @@ export function createUseCases({
         now,
         random,
       });
+    },
+    getStudyCounts(instanceUrl, deck, now) {
+      return studyCountsAndSchedule(instanceUrl, deck, now);
+    },
+    async refreshStudyDigest(instanceUrl, deck) {
+      const [prefs, cards, reviews] = await Promise.all([
+        getPreferences(instanceUrl),
+        deckRepository.readCardsSince(deck, undefined),
+        reviewStateRepository.readReviewStatesSince(deck, undefined),
+      ]);
+      if (cards.unchanged || reviews.unchanged) return;
+      noteSchedule(instanceUrl, deck, cards, reviews, prefs.dayBoundaryHour, now());
+      // The session changed the reviews document: check it now (it is small), not at the next visit.
+      const checked = await shapeValidator.validateDocumentSince(deck.reviewsDocumentUrl, undefined);
+      if (!checked.unchanged && checked.version !== null && summarize(instanceUrl, [checked.value]).conforms) {
+        remember(instanceUrl, noting(deck.reviewsDocumentUrl, checked.version, { conformedTo: ruleset }));
+      }
     },
     async recordReview(instanceUrl, deck, prompt, quality, now) {
       const key = { cardId: prompt.card.id, direction: prompt.direction };

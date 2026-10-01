@@ -371,3 +371,58 @@ describe("StudyContainer", () => {
     expect(queryClient.getQueryData(queueKey)).toBeUndefined();
   });
 });
+
+describe("StudyContainer keeping the deck's schedule", () => {
+  const twoCards = () =>
+    makeUseCasesFake({
+      getStudyQueue: vi.fn(async () => ({
+        due: [makePrompt("card-a", "front-a"), makePrompt("card-b", "front-b")],
+        newPrompts: [],
+        studiedToday: 0,
+      })),
+    });
+
+  function hidePage(state: "hidden" | "visible") {
+    Object.defineProperty(document, "visibilityState", { value: state, configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  }
+
+  it("keeps it when a session that recorded answers ends, once", async () => {
+    const useCases = twoCards();
+    const { onExit } = renderContainer(useCases);
+    await answer("4 — Good");
+    await waitFor(() => expect(useCases.recordReview).toHaveBeenCalledOnce());
+    await screen.findByText("Card 2 of 2");
+    const end = screen.getByRole("button", { name: "End session" });
+    await waitFor(() => expect(end).toBeEnabled());
+    fireEvent.click(end);
+    await waitFor(() => expect(onExit).toHaveBeenCalled());
+    await waitFor(() => expect(useCases.refreshStudyDigest).toHaveBeenCalledExactlyOnceWith(instance.url, deck));
+  });
+
+  it("keeps nothing for a session without answers", async () => {
+    const useCases = twoCards();
+    const { unmount } = renderContainer(useCases);
+    await screen.findByRole("button", { name: "Reveal" });
+    fireEvent.click(screen.getByRole("button", { name: "End session" }));
+    hidePage("hidden");
+    unmount();
+    expect(useCases.refreshStudyDigest).not.toHaveBeenCalled();
+  });
+
+  it("keeps it when the page is hidden, and again for answers after, when the screen goes away", async () => {
+    const useCases = twoCards();
+    vi.mocked(useCases.refreshStudyDigest).mockRejectedValue(new Error("offline"));
+    const { unmount } = renderContainer(useCases);
+    await answer("4 — Good");
+    await screen.findByText("Card 2 of 2");
+    hidePage("visible");
+    expect(useCases.refreshStudyDigest).not.toHaveBeenCalled();
+    hidePage("hidden");
+    expect(useCases.refreshStudyDigest).toHaveBeenCalledOnce();
+    await answer("4 — Good");
+    await waitFor(() => expect(useCases.recordReview).toHaveBeenCalledTimes(2));
+    unmount();
+    expect(useCases.refreshStudyDigest).toHaveBeenCalledTimes(2);
+  });
+});

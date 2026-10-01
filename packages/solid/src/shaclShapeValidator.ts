@@ -10,6 +10,7 @@ import type { DatasetCore, Quad } from "@rdfjs/types";
 import type { ShapeValidator } from "@solid-memo/application/ports";
 import type { DocumentReport, SubjectReport, Violation } from "@solid-memo/domain/validation";
 import { getSolidDatasetOrNull } from "./datasets";
+import { readSince } from "./readSince";
 import { storedVersionOf } from "./records";
 import type { WriteCheck } from "./writeCheck";
 import { RDF } from "./vocab";
@@ -129,6 +130,54 @@ export function createShaclShapeValidator({
     return problems;
   }
 
+  /** The report on a document: each subject checked against its shape, the DCAT-AP profile where it applies. */
+  async function reportOf(url: string, dataset: SolidDataset | null): Promise<DocumentReport> {
+    if (dataset === null) return { url, status: "missing", subjects: [] };
+    const data = toRdfJsDataset(dataset);
+    const subjects: SubjectReport[] = [];
+    for (const thing of getThingAll(dataset)) {
+      const subject = asUrl(thing);
+      const version = storedVersionOf(thing);
+      const pick = pickShape(getUrlAll(thing, RDF.type), version, "pod");
+      if (pick.kind === "untyped") {
+        subjects.push({ url: subject, status: "untyped" });
+        continue;
+      }
+      if (pick.kind === "unknown-version") {
+        subjects.push({
+          url: subject,
+          status: "newer",
+          shape: pick.shape,
+          version: pick.version,
+          latest: pick.latest,
+        });
+        continue;
+      }
+      const engine = await engineFor(pick.descriptor);
+      subjects.push({
+        url: subject,
+        status: "checked",
+        shape: pick.descriptor.shape,
+        version: pick.descriptor.version,
+        violations: await engine.validateNode(data, subject, pick.descriptor.shapeIri),
+      });
+    }
+    const profiled = getThingAll(dataset).some((thing) =>
+      getUrlAll(thing, RDF.type).some((type) => PROFILED_CLASSES.includes(type)),
+    );
+    if (profiled) {
+      for (const [subject, violations] of await profileViolations(data)) {
+        const index = subjects.findIndex((s) => s.url === subject);
+        const report = subjects[index];
+        // Every subject already has a report: newer data is left alone,
+        // an untyped subject becomes a profiled one.
+        if (report?.status === "checked") report.violations.push(...violations);
+        else if (report?.status === "untyped") subjects[index] = { url: subject, status: "profiled", violations };
+      }
+    }
+    return { url, status: "checked", subjects };
+  }
+
   return {
     async checkSubjects(dataset, subjects) {
       const problems = await subjectViolations(dataset, subjects);
@@ -140,51 +189,12 @@ export function createShaclShapeValidator({
     },
 
     async validateDocument(url): Promise<DocumentReport> {
-      const dataset = await getSolidDatasetOrNull(url, fetch);
-      if (dataset === null) return { url, status: "missing", subjects: [] };
-      const data = toRdfJsDataset(dataset);
-      const subjects: SubjectReport[] = [];
-      for (const thing of getThingAll(dataset)) {
-        const subject = asUrl(thing);
-        const version = storedVersionOf(thing);
-        const pick = pickShape(getUrlAll(thing, RDF.type), version, "pod");
-        if (pick.kind === "untyped") {
-          subjects.push({ url: subject, status: "untyped" });
-          continue;
-        }
-        if (pick.kind === "unknown-version") {
-          subjects.push({
-            url: subject,
-            status: "newer",
-            shape: pick.shape,
-            version: pick.version,
-            latest: pick.latest,
-          });
-          continue;
-        }
-        const engine = await engineFor(pick.descriptor);
-        subjects.push({
-          url: subject,
-          status: "checked",
-          shape: pick.descriptor.shape,
-          version: pick.descriptor.version,
-          violations: await engine.validateNode(data, subject, pick.descriptor.shapeIri),
-        });
-      }
-      const profiled = getThingAll(dataset).some((thing) =>
-        getUrlAll(thing, RDF.type).some((type) => PROFILED_CLASSES.includes(type)),
-      );
-      if (profiled) {
-        for (const [subject, violations] of await profileViolations(data)) {
-          const index = subjects.findIndex((s) => s.url === subject);
-          const report = subjects[index];
-          // Every subject already has a report: newer data is left alone,
-          // an untyped subject becomes a profiled one.
-          if (report?.status === "checked") report.violations.push(...violations);
-          else if (report?.status === "untyped") subjects[index] = { url: subject, status: "profiled", violations };
-        }
-      }
-      return { url, status: "checked", subjects };
+      return reportOf(url, await getSolidDatasetOrNull(url, fetch));
+    },
+
+    async validateDocumentSince(url, version) {
+      const since = await readSince(url, version, fetch);
+      return since.unchanged ? since : { ...since, value: await reportOf(url, since.value) };
     },
   };
 }

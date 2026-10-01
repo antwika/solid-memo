@@ -101,7 +101,18 @@ kept, but never due and never new:
 The budgets count prompts, so a bidirectional deck spends two of the
 day's new-card budget on a card introduced both ways.
 
-Both budgets clamp at zero. The queue is a snapshot taken at session start;
+Both budgets clamp at zero.
+
+The deck list needs only the counts, which `getStudyCounts` takes from
+the deck's schedule in the instance's [digest](data-model.md#the-digest)
+while neither of its documents has changed (`studyCountsOf` in
+`domain/studyDigest.ts`, tested against `buildStudyQueue` for every
+direction and cap). A schedule holds its counts by study day, so it
+stays right as days pass: any review since it was computed would have
+changed the reviews document, so on a later day nothing was reviewed or
+introduced yet.
+
+The queue is a snapshot taken at session start;
 the session then owns its own order (below) and a refetch never reshuffles
 it.
 

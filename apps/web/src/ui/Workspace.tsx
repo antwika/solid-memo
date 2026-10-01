@@ -15,6 +15,7 @@ import { DeckCreatorContainer } from "./DeckCreatorContainer";
 import { DeckDetailContainer } from "./DeckDetailContainer";
 import { DeckPreferencesContainer } from "./DeckPreferencesContainer";
 import { DeckListContainer } from "./DeckListContainer";
+import { studyCountsQuery } from "./DeckStudyAction";
 import { errorMessage } from "./errorMessage";
 import { InstanceBar } from "./InstanceBar";
 import { InstanceCreator } from "./InstanceCreator";
@@ -193,10 +194,22 @@ export function Workspace({
   // are made, so the check runs again only after a repair or an update.
   const checkQuery = useQuery({
     queryKey: ["validation", instanceUrl],
-    queryFn: () => useCases.validateInstance(instanceUrl!),
+    queryFn: () => useCases.checkInstance(instanceUrl!),
     enabled: activeInstance !== null,
     staleTime: Infinity,
   });
+  // The deck list's counts are fetched while the instance is checked, not after.
+  const homeDecksQuery = useQuery({
+    queryKey: ["decks", instanceUrl],
+    queryFn: () => useCases.listDecks(instanceUrl!),
+    enabled: activeInstance !== null && route?.screen === "home",
+  });
+  useEffect(() => {
+    if (instanceUrl === null || homeDecksQuery.data === undefined) return;
+    for (const deck of homeDecksQuery.data) {
+      void queryClient.prefetchQuery(studyCountsQuery(useCases, instanceUrl, deck));
+    }
+  }, [homeDecksQuery.data, instanceUrl]);
   const policy = preferencesQuery.data?.invalidDataPolicy ?? DEFAULT_INVALID_DATA_POLICY;
   const invalidReport =
     checkQuery.data !== undefined && !checkQuery.data.conforms ? checkQuery.data : null;

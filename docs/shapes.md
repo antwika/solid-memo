@@ -12,6 +12,7 @@ shapes/deck/v1.ttl, v2.ttl    …/deck/v2.ttl#inPod  and  …/deck/v2.ttl#inLibr
 shapes/card/v1.ttl, v2.ttl
 shapes/review-state/v1.ttl, v2.ttl
 shapes/preferences/v1.ttl, v2.ttl
+shapes/document-receipt/v1.ttl, shapes/deck-schedule/v1.ttl   (the digest)
 ```
 
 The shape IRIs include `.ttl` on purpose: they dereference on a static
@@ -73,6 +74,8 @@ share the same named property shapes.
 | Catalog 1 | A `dcat:Catalog` (an instance's `catalog.ttl#catalog`, the library index): title, description, `dcterms:publisher` 1..1; licence, modification time 0..1; `dcat:themeTaxonomy`, `dcat:dataset` 0..n |
 | Agent 1 | A `foaf:Agent`: `foaf:name` 1..1, `foaf:mbox` 0..1 (a `mailto:` IRI) |
 | Distribution 1 | A `dcat:Distribution`: `dcat:accessURL` 1..1; `dcat:downloadURL`, `dcat:mediaType`, `dcterms:format` 0..1 |
+| Document receipt 1 | In an instance's [digest](data-model.md#the-digest): `sm:receiptOf` (the document) and `sm:documentVersion` (its ETag) 1..1; `sm:conformedTo` (the rules it conformed to) and `sm:latestFormat` 0..1 |
+| Deck schedule 1 | In an instance's digest: `sm:scheduleOf` (the deck), `sm:cardsVersion`, `sm:reviewsVersion` (`"absent"` for none), `sm:scheduledDirection` (a concept of `sm:StudyDirections`), `sm:scheduledDayBoundaryHour` (0–23), `sm:scheduledOn` (`YYYY-MM-DD`), `sm:unreviewedCount`, `sm:reviewedOnDayCount`, `sm:introducedOnDayCount` 1..1; `sm:dueOnDay` 0..n, `"YYYY-MM-DD count"` |
 
 The DCAT and FOAF classes' values (an agent is a `foaf:Agent`, a theme a
 `skos:Concept`, a licence a `dcterms:LicenseDocument`) are checked by the

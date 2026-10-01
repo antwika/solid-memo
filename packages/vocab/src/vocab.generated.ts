@@ -1,6 +1,6 @@
 /* Generated from vocab/v1.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
-/** Solid Memo's own vocabulary, version 1.8 (see docs/vocab.md). */
+/** Solid Memo's own vocabulary, version 1.9 (see docs/vocab.md). */
 export const SM_NS = "https://solid-memo.com/vocab/v1#";
 
 export const SM = {
@@ -14,6 +14,10 @@ export const SM = {
   ReviewState: `${SM_NS}ReviewState`,
   /** Study preferences of one instance: daily caps, the day boundary, the answer scale and developer mode. (Since 1.0.) */
   Preferences: `${SM_NS}Preferences`,
+  /** What Solid Memo found an instance document to be at one version of it (its ETag): that it conformed to the shapes, that nothing in it was in an older format. A subject of the instance's digest document; derived data, rebuilt whenever it does not hold. (Added in 1.9.) */
+  DocumentReceipt: `${SM_NS}DocumentReceipt`,
+  /** How many of a deck's prompts fall due on which study day and how many are still new, computed from given versions of its cards and reviews documents, so the deck list can count today's study without them. A subject of the instance's digest document; derived data, rebuilt whenever it does not hold. (Added in 1.9.) */
+  DeckSchedule: `${SM_NS}DeckSchedule`,
   /** Which version of its class's shape the subject conforms to. Absent means 1, the format that predates the field. Every subject Solid Memo writes carries it. (Since 1.0.) */
   formatVersion: `${SM_NS}formatVersion`,
   /** The document holding the deck's cards, one sm:Card per hash fragment. (Since 1.0.) */
@@ -78,6 +82,34 @@ export const SM = {
   developerMode: `${SM_NS}developerMode`,
   /** What the app does when data in the instance does not conform to its shapes: a concept of solid-memo:InvalidDataPolicies. (Added in 1.6 for preferences format 3.) */
   invalidDataPolicy: `${SM_NS}invalidDataPolicy`,
+  /** The document a receipt is about. (Added in 1.9.) */
+  receiptOf: `${SM_NS}receiptOf`,
+  /** The version of the document a receipt is about: its ETag, as the pod gave it. (Added in 1.9.) */
+  documentVersion: `${SM_NS}documentVersion`,
+  /** At that version the document conformed to Solid Memo's shapes; the value names the rules (a hash of the shapes) it was checked by. (Added in 1.9.) */
+  conformedTo: `${SM_NS}conformedTo`,
+  /** True when, at that version, nothing in the document was in an older format than the app that wrote the receipt knew. (Added in 1.9.) */
+  latestFormat: `${SM_NS}latestFormat`,
+  /** The deck a schedule is about. (Added in 1.9.) */
+  scheduleOf: `${SM_NS}scheduleOf`,
+  /** The version (ETag) of the deck's cards document the schedule was computed from. (Added in 1.9.) */
+  cardsVersion: `${SM_NS}cardsVersion`,
+  /** The version (ETag) of the deck's reviews document the schedule was computed from; "absent" when there was none. (Added in 1.9.) */
+  reviewsVersion: `${SM_NS}reviewsVersion`,
+  /** The study direction the schedule was computed for: a concept of solid-memo:StudyDirections. (Added in 1.9.) */
+  scheduledDirection: `${SM_NS}scheduledDirection`,
+  /** The day boundary hour the schedule's study days were counted with. (Added in 1.9.) */
+  scheduledDayBoundaryHour: `${SM_NS}scheduledDayBoundaryHour`,
+  /** The study day ("YYYY-MM-DD") the schedule was computed on. (Added in 1.9.) */
+  scheduledOn: `${SM_NS}scheduledOn`,
+  /** How many reviewed prompts fall due on one study day, as "YYYY-MM-DD count"; one value per day. (Added in 1.9.) */
+  dueOnDay: `${SM_NS}dueOnDay`,
+  /** How many of the deck's prompts (cards in use, in each direction studied) were never reviewed. (Added in 1.9.) */
+  unreviewedCount: `${SM_NS}unreviewedCount`,
+  /** How many reviews were made on the study day the schedule was computed on. (Added in 1.9.) */
+  reviewedOnDayCount: `${SM_NS}reviewedOnDayCount`,
+  /** How many prompts were first reviewed on the study day the schedule was computed on. (Added in 1.9.) */
+  introducedOnDayCount: `${SM_NS}introducedOnDayCount`,
   /** The ways a deck can be studied. (Added in 1.6.) */
   StudyDirections: `${SM_NS}StudyDirections`,
   /** Each card is shown by its front and answered with its back. (Added in 1.6.) */

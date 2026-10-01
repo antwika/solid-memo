@@ -37,6 +37,7 @@ import {
 import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import { reviewSubjectUrl } from "./mappers/reviewStateMapper";
 import { recordThing } from "./records";
+import { mapSince, readSince } from "./readSince";
 
 export interface SolidDeckRepositoryDeps {
   fetch: typeof globalThis.fetch;
@@ -124,6 +125,12 @@ export function createSolidDeckRepository({
       return getThingAll(dataset)
         .map(toCard)
         .filter((card): card is Card => card !== null);
+    },
+
+    async readCardsSince(deck, version) {
+      return mapSince(await readSince(deck.cardsDocumentUrl, version, fetch), (dataset) =>
+        dataset === null ? [] : getThingAll(dataset).map(toCard).filter((card): card is Card => card !== null),
+      );
     },
 
     async addCard(deck, content): Promise<Card> {

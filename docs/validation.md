@@ -30,6 +30,15 @@ flowchart LR
 - `validateInstance` (application) lists the decks, names every document
   the instance may hold and asks the `ShapeValidator` port about each;
   `summarize` (domain) counts the violations. It reads only.
+- **Opening an instance** runs `checkInstance` instead: the same check,
+  but a document still at a version the instance's
+  [digest](data-model.md#the-digest) says conformed, by the same rules,
+  is neither downloaded nor checked again (`validateDocumentSince`: a
+  304 is enough). A document that conforms is given a receipt. The rules
+  are named by a hash of every shape and vendored profile file, computed
+  when the site is built (`__SHAPES_RULESET__` in `apps/web/vite.config.ts`),
+  so a site with other shapes checks everything again. The developer
+  report and the format update always run the full `validateInstance`.
 - The [format update](migrations.md#the-pod-migration) runs the same
   check on its updated copy before switching over: a copy with any
   violation is deleted and the user's instance is left as it was.

@@ -25,11 +25,19 @@ server of your own instead, which must let anyone read and write (as
 ([migrations.md](migrations.md#proof-on-a-real-server)).
 
 The servers differ in what they enforce, and the tests ask each rather
-than assume: node-solid-server 5.7.4 gives no strong ETag, ignores
+than assume: node-solid-server 5.7.4 gives no ETag on a read, ignores
 `If-Match` and ignores `If-None-Match: *` on a PUT, so there an edit or
 creation cannot be made conditional, and the two tests that prove a
-precondition refuses a write are skipped, saying why. Everything else
-runs on both.
+precondition refuses a write are skipped, saying why. Without ETags no
+[digest](data-model.md#the-digest) is kept there either, so the test of
+two pages learning at once is skipped too, and the others check that
+every visit reads everything. Everything else runs on both.
+
+The Community Solid Server's in-memory store (the one these tests use)
+cuts a document short after a PATCH that adds characters outside ASCII
+(`å`, `ä`, `ö`): it stores as many bytes as there were characters. Its
+file store does not; keep test data that is patched ASCII, or measure on
+`-c @css:config/file.json -f <dir>`.
 
 The published library and vocabulary are also cross-checked by pySHACL
 in CI, after the build (`python3 scripts/shacl_crosscheck.py`; see

@@ -7,6 +7,7 @@ import { createSolidSessionGateway } from "@solid-memo/solid/solidSessionGateway
 import { createShaclShapeValidator } from "@solid-memo/solid/shaclShapeValidator";
 import { createSolidDeckLibrary } from "@solid-memo/solid/solidDeckLibrary";
 import { createSolidDeckRepository } from "@solid-memo/solid/solidDeckRepository";
+import { createSolidDigestRepository } from "@solid-memo/solid/solidDigestRepository";
 import { createSolidInstanceRepository } from "@solid-memo/solid/solidInstanceRepository";
 import { createSolidPreferencesRepository } from "@solid-memo/solid/solidPreferencesRepository";
 import { createLocalStorageUpdateJournal } from "@solid-memo/browser/localStorageUpdateJournal";
@@ -65,6 +66,8 @@ const useCases = createUseCases({
   instanceCopier: createSolidInstanceCopier({ fetch: podFetch }),
   updateJournal: createLocalStorageUpdateJournal(),
   writeFence,
+  digestRepository: createSolidDigestRepository({ fetch: podFetch, checkWrite }),
+  ruleset: __SHAPES_RULESET__,
 });
 
 const queryClient = new QueryClient();
