@@ -134,6 +134,26 @@ translations. Sources in format 3 (untagged text) stay valid.
   `--allow-uncommitted`, for drafts) or to overwrite a deck whose taxonomy
   versions no longer match their checksums.
 
+  **The weekly update.**
+  [.github/workflows/taxonomy-deck.yml](../.github/workflows/taxonomy-deck.yml)
+  runs every Monday (and on demand). The generator's `--check` asks the
+  taxonomy for its newest version (one small request) and compares it
+  with the newest one the deck's latest release covers. When there is a
+  newer one, the workflow regenerates the deck at the commit it runs on,
+  releases it with the notes the generator writes (`--notes-file`), runs
+  the full check itself (`npm run check`, the build and the pySHACL
+  cross-check: a pull request opened with the workflow's own token
+  starts no other workflow), and opens a pull request from
+  `deck/taxonomy-update`, or updates the open one. Merging it publishes
+  the release. A failure (a published taxonomy version that changed, a
+  taxonomy not as the script expects, a release that would not be valid)
+  opens an issue, or comments on the open one. It runs Python 3.14, the
+  version the deck records: card ids are slugs, which depend on the
+  Unicode version, so regenerate by hand with 3.14 too. Until the deck's
+  first release, made by hand, it does nothing. The repository must
+  allow GitHub Actions to create pull requests (Settings → Actions →
+  General → Workflow permissions).
+
 Every hand-written Turtle file in the repository — `packages/deck-library/decks/`, `packages/vocab/shapes/`,
 `packages/vocab/vocab/` and `packages/vocab/fixtures/` — follows one layout: `@base` first,
 prefixes aligned in a block, each subject on a line of its own, one
