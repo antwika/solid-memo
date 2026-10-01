@@ -11,17 +11,25 @@ package's own tests cover its own code — `npm test` fails below that.
 npm test          # every package's tests, with coverage thresholds (turbo)
 npm run check     # the same, plus typecheck, drift, formatting, boundaries
 npx vitest        # watch mode, inside one package's folder
-npm run test:pod  # the end-to-end tests, against a Solid server they start
+npm run test:pod  # the end-to-end tests, against the Solid servers they start
 npm run pod       # a Community Solid Server on :3999, in memory, to poke at by hand
 ```
 
-`npm run test:pod` runs `e2e/pod/`. Its global setup
-([globalSetup.ts](../e2e/pod/globalSetup.ts)) starts a Community Solid
-Server (a dependency of that package) in memory on a free port, and
-stops it after; set `SOLID_SERVER_URL` to run against a server of your
-own instead, which must let anyone read and write (as `npm run pod`
-does). CI runs them in a job of their own
+`npm run test:pod` runs `e2e/pod/` once against each of two servers,
+both dependencies of that package, which its global setup
+([globalSetup.ts](../e2e/pod/globalSetup.ts)) starts on free ports and
+stops after: a Community Solid Server, in memory, and node-solid-server
+5.7.4, in a temporary folder whose root ACL lets anyone read and write. Set `SOLID_SERVER_URL` to run against a
+server of your own instead, which must let anyone read and write (as
+`npm run pod` does). CI runs them in a job of their own
 ([migrations.md](migrations.md#proof-on-a-real-server)).
+
+The servers differ in what they enforce, and the tests ask each rather
+than assume: node-solid-server 5.7.4 gives no strong ETag, ignores
+`If-Match` and ignores `If-None-Match: *` on a PUT, so there an edit or
+creation cannot be made conditional, and the two tests that prove a
+precondition refuses a write are skipped, saying why. Everything else
+runs on both.
 
 The published library and vocabulary are also cross-checked by pySHACL
 in CI, after the build (`python3 scripts/shacl_crosscheck.py`; see
@@ -56,7 +64,7 @@ Dependency inversion gives every layer a seam that makes mocks trivial:
 | Infrastructure I/O shells | injected `fetch` + `vi.mock` | Mock `@inrupt/*` module functions; assert the shell orchestrates fetch → map → return. |
 | Shapes (`packages/shacl/`, `packages/solid/src/conformance.test.ts`) | the real engine | The real `rdf-validate-shacl` over the real `packages/vocab/shapes/` files: fixture documents under `packages/vocab/fixtures/` pass or fail as a table says; a record written through every descriptor, and every migration step's output, conforms (`conformance.test.ts`); every library deck passes. Shape documents are read through a fake `fetch` (a `Response` with its `url` set), exactly as the browser reads them. |
 | Generated code | drift test | `packages/vocab/tooling/generate.test.ts` renders the generators' output and compares it with the committed files; generated modules are data only, so importing them covers them (`packages/vocab/src/generated.test.ts`). |
-| End to end | a real Solid server | `e2e/pod/` wires the real use cases and Solid adapters as `main.tsx` does, over a fetch that records every request, against a Community Solid Server. |
+| End to end | real Solid servers | `e2e/pod/` wires the real use cases and Solid adapters as `main.tsx` does, over a fetch that records every request, against a Community Solid Server and node-solid-server 5.7.4. |
 
 ```mermaid
 graph LR

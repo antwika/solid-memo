@@ -40,9 +40,9 @@ jobs:
       - run: pip install -r scripts/requirements-ci.txt
       - run: python scripts/shacl_crosscheck.py
 
-  # The app's use cases and Solid adapters against a real Solid server: a
-  # Community Solid Server in memory, which the tests start on this runner
-  # (docs/testing.md).
+  # The app's use cases and Solid adapters against real Solid servers: a
+  # Community Solid Server in memory and node-solid-server 5.7.4, which the
+  # tests start on this runner (docs/testing.md).
   pod:
     runs-on: ubuntu-latest
     steps:

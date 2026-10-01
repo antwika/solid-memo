@@ -2,12 +2,17 @@
 /**
  * The format update against a real Solid server (docs/migrations.md): the
  * app's own use cases and Solid adapters, wired as in main.tsx, with every
- * HTTP request recorded. `npm run test:pod` starts a Community Solid
- * Server for them (globalSetup.ts), unless SOLID_SERVER_URL names one
- * (see docs/testing.md).
+ * HTTP request recorded. `npm run test:pod` runs them against each server
+ * globalSetup.ts starts — a Community Solid Server and node-solid-server
+ * 5.7.4 — unless SOLID_SERVER_URL names one (see docs/testing.md). What a
+ * server does with preconditions is asked of it, not assumed:
+ * node-solid-server 5.7.4 gives no strong ETag, ignores If-Match and
+ * ignores If-None-Match: * on a PUT, so there neither an edit nor a
+ * creation can be made conditional.
  */
 import { readFile } from "node:fs/promises";
-import { describe, expect, inject, it } from "vitest";
+import { beforeAll, describe, expect, inject, it } from "vitest";
+import { Parser, Writer } from "n3";
 import { VOCAB_ROOT } from "@solid-memo/vocab/tooling/root";
 import { createUseCases, type UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
@@ -21,7 +26,7 @@ import { createSolidReviewStateRepository } from "@solid-memo/solid/solidReviewS
 import { createSolidWebIdDocumentRepository } from "@solid-memo/solid/solidWebIdDocumentRepository";
 import { createWriteFence } from "@solid-memo/solid/writeFence";
 
-const SERVER = inject("solidServerUrl");
+const SERVERS = inject("solidServers");
 const SITE = "https://solid-memo.test/";
 const READS = new Set(["GET", "HEAD", "OPTIONS"]);
 const PREFIXES = `@prefix sm: <https://solid-memo.com/vocab/v1#> .
@@ -53,8 +58,8 @@ interface Recorded {
 }
 
 /** A user's pod in a fresh folder of the server: a profile, a private type index and a format-1/2 instance. */
-async function seedPod(): Promise<Pod> {
-  const base = new URL(`run-${crypto.randomUUID()}/`, SERVER).href;
+async function seedPod(server: string): Promise<Pod> {
+  const base = new URL(`run-${crypto.randomUUID()}/`, server).href;
   const webId = `${base}profile/card#me`;
   const typeIndex = `${base}settings/privateTypeIndex.ttl`;
   const source = `${base}solid-memo/main/`;
@@ -180,7 +185,8 @@ async function snapshot(container: string): Promise<Map<string, string>> {
     if (response.status === 404) return;
     const body = new Uint8Array(await response.arrayBuffer());
     result.set(url, `${response.headers.get("content-type")} ${response.headers.get("etag")} ${Buffer.from(body).toString("base64")}`);
-    const acl = /<([^>]+)>;\s*rel="acl"/.exec(response.headers.get("link") ?? "")?.[1];
+    const link = /<([^>]+)>;\s*rel="acl"/.exec(response.headers.get("link") ?? "")?.[1];
+    const acl = link === undefined ? undefined : new URL(link, url).href;
     if (acl !== undefined && !result.has(acl)) {
       const aclResponse = await fetch(acl);
       if (aclResponse.ok) result.set(acl, await aclResponse.text());
@@ -202,16 +208,47 @@ const under = (container: string) => (request: Recorded) => decodeURI(new URL(re
 
 /** A document as N-Triples: every IRI written out in full, whatever the server's Turtle abbreviates. */
 async function triples(url: string): Promise<string> {
-  return fetch(url, { headers: { accept: "application/n-triples" } }).then((response) => response.text());
+  const turtle = await fetch(url, { headers: { accept: "text/turtle" } }).then((response) => response.text());
+  return new Writer({ format: "N-Triples" }).quadsToString(new Parser({ baseIRI: url }).parse(turtle));
+}
+
+/** What a server does with the preconditions Solid Memo sends. */
+interface Preconditions {
+  /** It gives a strong ETag, and refuses (412) a PATCH whose If-Match names another version. */
+  edits: boolean;
+  /** It refuses (412) a PUT with If-None-Match: * where a document is. */
+  creations: boolean;
+}
+
+async function preconditionsOf(server: string): Promise<Preconditions> {
+  const url = new URL(`probe-${crypto.randomUUID()}.ttl`, server).href;
+  const put = () =>
+    fetch(url, { method: "PUT", headers: { "content-type": "text/turtle", "if-none-match": "*" }, body: `<#a> <#b> "c" .` });
+  await put();
+  const creations = (await put()).status === 412;
+  const etag = (await fetch(url)).headers.get("etag");
+  if (etag === null || etag.startsWith("W/")) return { edits: false, creations };
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers: { "content-type": "application/sparql-update", "if-match": '"another-version"' },
+    body: `INSERT DATA { <#d> <#e> "f" . };`,
+  });
+  return { edits: response.status === 412, creations };
 }
 
 async function registeredContainers(pod: Pod): Promise<string> {
   return triples(pod.typeIndex);
 }
 
-describe("the format update on a real Solid server", () => {
+describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
+  /** What this server does with preconditions (preconditionsOf). */
+  let conditional: Preconditions = { edits: false, creations: false };
+  beforeAll(async () => {
+    conditional = await preconditionsOf(server);
+  });
+
   it("writes nothing to the instance it updates: the copy is completed and checked before the type index moves", async () => {
-    const pod = await seedPod();
+    const pod = await seedPod(server);
     const before = await snapshot(pod.source);
     const indexBefore = await registeredContainers(pod);
     const { useCases, attempts, session } = app(pod);
@@ -243,12 +280,15 @@ describe("the format update on a real Solid server", () => {
     // (If-None-Match: *), an edit only of the version read (If-Match).
     for (const write of writes) {
       if (write.method === "PUT") expect(write.ifNoneMatch, `${write.method} ${write.url}`).toBe("*");
-      if (write.method === "PATCH") expect(write.ifMatch, `${write.method} ${write.url}`).toMatch(/^"/);
+      if (write.method === "PATCH" && conditional.edits) expect(write.ifMatch, `${write.method} ${write.url}`).toMatch(/^"/);
     }
-    // And the check that nothing changed asked the pod about each version copied, which said 304.
+    // And the check that nothing changed asked the pod about each version
+    // copied, which said 304; a server that ignores the condition (200)
+    // says its ETag, which the copier compares instead.
     const verified = attempts.filter((r) => r.method === "HEAD" && r.ifNoneMatch !== null && r.ifNoneMatch !== "*");
     expect(verified.length).toBeGreaterThan(0);
-    expect(verified.every((r) => r.status === 304 && under(pod.source)(r))).toBe(true);
+    const unchanged = conditional.edits ? [304] : [200, 304];
+    expect(verified.every((r) => unchanged.includes(r.status!) && under(pod.source)(r))).toBe(true);
 
     // The type index now names the copy, and the original is gone from it.
     const indexAfter = await registeredContainers(pod);
@@ -279,7 +319,7 @@ describe("the format update on a real Solid server", () => {
   }, 60_000);
 
   it("refuses, in this tab, any write to the original while the update runs", async () => {
-    const pod = await seedPod();
+    const pod = await seedPod(server);
     let refused: unknown = null;
     let tried = false;
     const { useCases, session, podFetch } = app(pod, {
@@ -303,7 +343,7 @@ describe("the format update on a real Solid server", () => {
     ["updating the copy", (target: string) => (r: Recorded) => r.method === "PATCH" && r.url.startsWith(`${target}reviews/`)],
     ["switching the type index", () => (r: Recorded) => isWrite(r) && r.url.includes("/settings/")],
   ])("leaves no trace when %s fails", async (_what, failOn) => {
-    const pod = await seedPod();
+    const pod = await seedPod(server);
     const before = await snapshot(pod.source);
     const indexBefore = await registeredContainers(pod);
     let target = "";
@@ -324,7 +364,7 @@ describe("the format update on a real Solid server", () => {
   }, 60_000);
 
   it("gives up, and leaves no trace, when another app changes what was already copied", async () => {
-    const pod = await seedPod();
+    const pod = await seedPod(server);
     const indexBefore = await registeredContainers(pod);
     let changed = false;
     const { useCases, session } = app(pod, {
@@ -349,8 +389,9 @@ describe("the format update on a real Solid server", () => {
     expect(await triples(`${pod.source}decks/deck-1.ttl`)).toContain("studied in another tab");
   }, 60_000);
 
-  it("refuses a copy where something appeared meanwhile, and leaves no trace", async () => {
-    const pod = await seedPod();
+  it("refuses a copy where something appeared meanwhile, where the server enforces If-None-Match, and leaves no trace", async (context) => {
+    if (!conditional.creations) context.skip("this server ignores If-None-Match: *, so a document that appeared meanwhile cannot be detected");
+    const pod = await seedPod(server);
     const before = await snapshot(pod.source);
     const indexBefore = await registeredContainers(pod);
     let squatted = "";
@@ -371,8 +412,34 @@ describe("the format update on a real Solid server", () => {
     expect(await registeredContainers(pod)).toBe(indexBefore);
   });
 
-  it("never overwrites a change made since the document was read: the save fails, the change stays", async () => {
-    const pod = await seedPod();
+  it("updates a large deck in one write of the whole document, still only of the version read", async () => {
+    const pod = await seedPod(server);
+    // 600 cards: updating each card's format makes an edit larger than
+    // node-solid-server reads in one PATCH (100 kB), as a real deck does.
+    const cards = Array.from({ length: 600 }, (_, i) => `<#card-${i}> a sm:Card ; sm:front "Front ${i}" ; sm:back "Back ${i}" ; sm:formatVersion 2 .`);
+    const response = await fetch(`${pod.source}decks/deck-1.ttl`, {
+      method: "PUT",
+      headers: { "content-type": "text/turtle" },
+      body: `${PREFIXES}${cards.join("\n")}`,
+    });
+    expect(response.ok).toBe(true);
+    const { useCases, attempts, session } = app(pod);
+
+    const outcome = await useCases.updateInstance(session, pod.instance);
+    expect(outcome, JSON.stringify(outcome)).toMatchObject({ ok: true });
+    const target = (outcome as { instanceUrl: string }).instanceUrl;
+    const deckWrites = attempts.filter(isWrite).filter((request) => request.url === `${target}decks/deck-1.ttl`);
+    // The copy's creation, then the update: one PUT of the whole document, If-Match the version read.
+    expect(deckWrites.map((request) => request.method)).toEqual(["PUT", "PUT"]);
+    if (conditional.edits) expect(deckWrites[1]!.ifMatch).toMatch(/^"/);
+    expect(await useCases.planMigration(target)).toMatchObject({ deckCount: 0, cardCount: 0, reviewCount: 0 });
+    expect((await useCases.validateInstance(target)).conforms).toBe(true);
+    expect(await triples(`${target}decks/deck-1.ttl`)).toContain(`<${target}decks/deck-1.ttl#card-599>`);
+  });
+
+  it("never overwrites a change made since the document was read, where the server enforces If-Match: the save fails, the change stays", async (context) => {
+    if (!conditional.edits) context.skip("this server ignores If-Match, so a change made elsewhere cannot be detected");
+    const pod = await seedPod(server);
     let interfered = false;
     const { useCases } = app(pod, {
       onRequest: async (request) => {
