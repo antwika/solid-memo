@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck, Prompt } from "@solid-memo/domain/deck";
@@ -67,13 +67,16 @@ export function StudyContainer({
 
   // A session that recorded answers ends by keeping the deck's schedule in the digest:
   // on exit, when the screen goes away, or (best effort) when the page is hidden.
+  // What happens when the screen goes away is a layout effect's cleanup: Preact 11
+  // runs those as the component unmounts, a plain effect's only after the next
+  // frame, when the screen that replaced it (the deck list) has already shown.
   const answered = useRef(0);
   function keepSchedule() {
     if (answered.current === 0) return;
     answered.current = 0;
     void useCases.refreshStudyDigest(instance.url, deck).catch(() => undefined);
   }
-  useEffect(() => {
+  useLayoutEffect(() => {
     const onHidden = () => {
       if (document.visibilityState === "hidden") keepSchedule();
     };
@@ -114,7 +117,7 @@ export function StudyContainer({
     },
   });
 
-  useEffect(
+  useLayoutEffect(
     () => () => {
       queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
     },
