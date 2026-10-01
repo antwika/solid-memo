@@ -55,6 +55,24 @@ previous session (`restorePreviousSession: true`). It returns a domain
 completed) and `"restored"` otherwise; the UI shows the "Pod connected"
 onboarding step only for the former.
 
+### Returning to the view
+
+Both trips to the identity provider — an interactive login and the
+silent restore a reload makes — come back to the bare page: a redirect
+URL cannot carry a fragment, and the view lives in the URL hash
+([routing.md](routing.md)). `restore()` puts the hash back before it
+returns, so the Workspace starts on the view the user left:
+
+- **Reload** — the library keeps the URL it left from and reports it in
+  its `SESSION_RESTORED` event.
+- **Login** — `login()` keeps the URL it starts from in session storage
+  (`solid-memo:loginStartedAt`), read once when the login completes. A
+  deep link opened while signed out, or a view whose session expired,
+  opens again after signing in. Without session storage the login still
+  works and lands on the default view.
+
+Only a URL of this same page is followed back.
+
 ## Authenticated requests
 
 Repositories receive `fetch` by injection. The composition root injects

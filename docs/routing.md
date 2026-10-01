@@ -92,3 +92,9 @@ ordinary hash navigation: Back/Forward, new-tab and keyboard use all work
 without extra code. Top-level screens (deck list, instance picker) show a
 single crumb, so "Decks" is on hand everywhere inside an instance. The
 masthead's logo and "Solid Memo" title both link to `#/`, the root.
+
+The one exception is the instance picker. It sits above every instance,
+so its trail is a single crumb and leads nowhere back. Its Back button
+returns to the last screen inside an instance, and is shown only while
+that instance still exists. `Workspace` keeps that screen in memory, not
+in the URL, so the picker opened directly or reloaded has no Back.

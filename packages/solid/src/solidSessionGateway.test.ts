@@ -17,16 +17,17 @@ const WEBID = "https://alice.example/profile/card#me";
 
 /** Minimal stand-in for the default session's event emitter. */
 function makeEmitter() {
-  const listeners = new Map<string, Set<() => void>>();
+  type Listener = (...args: string[]) => void;
+  const listeners = new Map<string, Set<Listener>>();
   return {
-    on: vi.fn((event: string, listener: () => void) => {
+    on: vi.fn((event: string, listener: Listener) => {
       listeners.set(event, (listeners.get(event) ?? new Set()).add(listener));
     }),
-    off: vi.fn((event: string, listener: () => void) => {
+    off: vi.fn((event: string, listener: Listener) => {
       listeners.get(event)?.delete(listener);
     }),
-    emit(event: string) {
-      listeners.get(event)?.forEach((listener) => listener());
+    emit(event: string, ...args: string[]) {
+      listeners.get(event)?.forEach((listener) => listener(...args));
     },
     count: (event: string) => listeners.get(event)?.size ?? 0,
   };
@@ -99,6 +100,90 @@ describe("createSolidSessionGateway", () => {
       });
       const gateway = createSolidSessionGateway("Test App");
       await expect(gateway.restore()).resolves.toBeNull();
+    });
+  });
+
+  describe("returning to the view the user was on", () => {
+    const page = () => `${window.location.origin}${window.location.pathname}`;
+    const loggedIn = { isLoggedIn: true, webId: WEBID, sessionId: "s" };
+
+    beforeEach(() => {
+      window.history.replaceState(null, "", window.location.pathname);
+      window.sessionStorage.clear();
+    });
+
+    it("puts the view back after a reload's silent restore", async () => {
+      const left = `${page()}#/study?deck=d`;
+      vi.mocked(handleIncomingRedirect).mockImplementation(async () => {
+        emitter.emit(EVENTS.SESSION_RESTORED, left);
+        return loggedIn;
+      });
+      await createSolidSessionGateway("Test App").restore();
+      expect(window.location.hash).toBe("#/study?deck=d");
+      expect(emitter.count(EVENTS.SESSION_RESTORED)).toBe(0);
+    });
+
+    it("puts the view back once after an interactive login", async () => {
+      window.history.replaceState(null, "", "#/deck?deck=d");
+      const gateway = createSolidSessionGateway("Test App");
+      await gateway.loginWithIssuer("https://login.inrupt.com");
+      // The identity provider sends the browser back to the bare page.
+      window.history.replaceState(null, "", window.location.pathname);
+      vi.mocked(handleIncomingRedirect).mockImplementation(async () => {
+        emitter.emit(EVENTS.LOGIN);
+        return loggedIn;
+      });
+
+      await gateway.restore();
+      expect(window.location.hash).toBe("#/deck?deck=d");
+
+      window.history.replaceState(null, "", window.location.pathname);
+      await gateway.restore();
+      expect(window.location.hash).toBe("");
+    });
+
+    it("stays on the default view after a login no view was kept for", async () => {
+      vi.mocked(handleIncomingRedirect).mockImplementation(async () => {
+        emitter.emit(EVENTS.LOGIN);
+        return loggedIn;
+      });
+      await createSolidSessionGateway("Test App").restore();
+      expect(window.location.hash).toBe("");
+    });
+
+    it.each([
+      ["another site", "https://elsewhere.example/#/study"],
+      ["another page", `${window.location.origin}/elsewhere#/study`],
+      ["no view", page()],
+    ])("ignores a URL of %s", async (_, left) => {
+      vi.mocked(handleIncomingRedirect).mockImplementation(async () => {
+        emitter.emit(EVENTS.SESSION_RESTORED, left);
+        return loggedIn;
+      });
+      await createSolidSessionGateway("Test App").restore();
+      expect(window.location.hash).toBe("");
+    });
+
+    it("logs in, and back, without session storage", async () => {
+      vi.spyOn(window.sessionStorage, "setItem").mockImplementation(() => {
+        throw new Error("denied");
+      });
+      vi.spyOn(window.sessionStorage, "getItem").mockImplementation(() => {
+        throw new Error("denied");
+      });
+      const gateway = createSolidSessionGateway("Test App");
+      await gateway.loginWithIssuer("https://login.inrupt.com");
+      expect(authnLogin).toHaveBeenCalled();
+
+      vi.mocked(handleIncomingRedirect).mockImplementation(async () => {
+        emitter.emit(EVENTS.LOGIN);
+        return loggedIn;
+      });
+      await expect(gateway.restore()).resolves.toEqual({
+        session: { webId: WEBID },
+        origin: "login",
+      });
+      vi.restoreAllMocks();
     });
   });
 

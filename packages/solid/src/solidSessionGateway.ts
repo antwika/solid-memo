@@ -13,6 +13,37 @@ import { SESSION_EXPIRED_EVENT } from "./authFetch";
 
 const SOLID_OIDC_ISSUER = "http://www.w3.org/ns/solid/terms#oidcIssuer";
 
+/** Where an interactive login started, kept for the trip to the identity provider. */
+const LOGIN_STARTED_AT_KEY = "solid-memo:loginStartedAt";
+
+/**
+ * Take the user back to the view they were on before a trip to the
+ * identity provider. Redirect URLs cannot carry a fragment, so the trip
+ * always returns to the bare page and the view — the URL hash
+ * (docs/routing.md) — is put back here, when the URL is this same page.
+ */
+function returnTo(url: string): void {
+  const target = new URL(url, window.location.href);
+  if (
+    target.origin === window.location.origin &&
+    target.pathname === window.location.pathname &&
+    target.hash !== ""
+  ) {
+    window.history.replaceState(null, "", target.hash);
+  }
+}
+
+/** The URL an interactive login started at, once; null when none was kept. */
+function takeLoginStartedAt(): string | null {
+  try {
+    const url = window.sessionStorage.getItem(LOGIN_STARTED_AT_KEY);
+    window.sessionStorage.removeItem(LOGIN_STARTED_AT_KEY);
+    return url;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Dereference a WebID (unauthenticated) and read the solid:oidcIssuer
  * triple from the profile so the user only needs to type their WebID.
@@ -43,6 +74,11 @@ async function discoverOidcIssuer(webId: string): Promise<string> {
 export function createSolidSessionGateway(clientName: string): SessionGateway {
   /** Redirects the browser to the identity provider; does not return. */
   async function startLogin(oidcIssuer: string): Promise<void> {
+    try {
+      window.sessionStorage.setItem(LOGIN_STARTED_AT_KEY, window.location.href);
+    } catch {
+      // Without session storage the login still works; it lands on the default view.
+    }
     await login({
       oidcIssuer,
       redirectUrl: new URL(
@@ -55,21 +91,34 @@ export function createSolidSessionGateway(clientName: string): SessionGateway {
 
   return {
     async restore() {
-      let origin: SessionOrigin = "restored";
+      // What the library announces while it handles the redirect: a
+      // completed login, or a silent restore (a reload) and the URL it left.
+      const seen: { origin: SessionOrigin; restoredFrom: string | null } = {
+        origin: "restored",
+        restoredFrom: null,
+      };
       const onLogin = () => {
-        origin = "login";
+        seen.origin = "login";
+      };
+      const onSessionRestored = (url: string) => {
+        seen.restoredFrom = url;
       };
       events().on(EVENTS.LOGIN, onLogin);
+      events().on(EVENTS.SESSION_RESTORED, onSessionRestored);
       try {
         const info = await handleIncomingRedirect({
           restorePreviousSession: true,
         });
         if (info?.isLoggedIn && info.webId) {
-          return { session: { webId: info.webId }, origin };
+          const startedAt =
+            seen.origin === "login" ? takeLoginStartedAt() : seen.restoredFrom;
+          if (startedAt !== null) returnTo(startedAt);
+          return { session: { webId: info.webId }, origin: seen.origin };
         }
         return null;
       } finally {
         events().off(EVENTS.LOGIN, onLogin);
+        events().off(EVENTS.SESSION_RESTORED, onSessionRestored);
       }
     },
 
