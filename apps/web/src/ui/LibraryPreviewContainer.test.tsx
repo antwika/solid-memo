@@ -84,6 +84,15 @@ describe("LibraryPreviewContainer", () => {
     expect(listLibraryCards).toHaveBeenCalledWith(capitals);
   });
 
+  it("shows the question's note only once the answer is revealed", async () => {
+    const noted = [{ ...card("Sweden", "Stockholm"), frontNote: { en: "A kingdom." } }];
+    renderContainer({ useCases: makeUseCasesFake({ listLibraryCards: vi.fn(async () => noted) }) });
+    await screen.findByRole("button", { name: "Reveal" });
+    expect(screen.queryByText("A kingdom.")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    expect(screen.getByText("A kingdom.")).toBeInTheDocument();
+  });
+
   it("reveals the answer, then moves on to another random card, unrevealed", async () => {
     renderContainer({ random: randomOf(0.5, 0, 0.99) });
     fireEvent.click(await screen.findByRole("button", { name: "Reveal" }));

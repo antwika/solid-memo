@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks";
 import { validateCardContent, type CardContent } from "@solid-memo/domain/deck";
-import { CardContentFields, EMPTY_DRAFT } from "./CardContentFields";
+import { CardContentFields, contentOf, EMPTY_DRAFT } from "./CardContentFields";
 
 /** Card entry form: text and an optional picture for each side. */
 export function AddCardForm({
@@ -15,7 +15,7 @@ export function AddCardForm({
 
   function handleSubmit(event: Event) {
     event.preventDefault();
-    const validation = validateCardContent(draft);
+    const validation = validateCardContent(contentOf(draft));
     if (!validation.ok) {
       setInvalid(validation.error);
       return;

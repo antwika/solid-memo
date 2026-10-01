@@ -5,7 +5,7 @@ import {
   type Card,
   type CardContent,
 } from "@solid-memo/domain/deck";
-import { CardContentFields, draftOf } from "./CardContentFields";
+import { CardContentFields, contentOf, draftOf } from "./CardContentFields";
 import { CardFace } from "./CardFace";
 import { CardIcon, TrashIcon } from "./icons";
 import { RetiredNotice } from "./RetiredCards";
@@ -32,7 +32,7 @@ export function CardScreen({
 
   function handleSubmit(event: Event) {
     event.preventDefault();
-    const validation = validateCardContent(draft);
+    const validation = validateCardContent(contentOf(draft, card));
     if (!validation.ok) {
       setInvalid(validation.error);
       return;
@@ -60,8 +60,14 @@ export function CardScreen({
         </h2>
       </header>
       <div class="practice-card">
-        <CardFace side="front" text={card.front} imageUrl={card.frontImageUrl} />
-        <CardFace side="back" text={card.back} imageUrl={card.backImageUrl} />
+        <CardFace side="front" text={card.front} imageUrl={card.frontImageUrl} note={card.frontNote} />
+        <CardFace
+          side="back"
+          text={card.back}
+          imageUrl={card.backImageUrl}
+          label={card.backLabel}
+          note={card.backNote}
+        />
       </div>
       {card.retired && <RetiredNotice />}
       <form onSubmit={handleSubmit} noValidate>

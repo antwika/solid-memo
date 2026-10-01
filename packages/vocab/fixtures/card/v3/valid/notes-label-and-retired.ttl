@@ -19,6 +19,10 @@
 <#yu>
     a solid-memo:Card ;
     solid-memo:front "Yugoslavia" ;
+    solid-memo:frontNote "Dissolved in 1992."@en ,
+                         "Upplöst 1992."@sv ;
+    solid-memo:backLabel "Capital"@en ;
     solid-memo:back "Belgrade" ;
+    solid-memo:backNote "The capital until the country broke up in 1992."@en ;
     solid-memo:formatVersion 3 ;
     owl:deprecated true .

@@ -187,6 +187,19 @@ describe("card records", () => {
     });
   });
 
+  it("round-trip the notes under each side and the label above the back", () => {
+    const content = {
+      front: "Aktiemäklare",
+      frontNote: { en: "Out of use" },
+      backLabel: { en: "Replaced by" },
+      back: "Finansmäklare",
+      backNote: { en: "Version 30." },
+    };
+    const record = cardToRecord(content, "");
+    expect(record).toEqual(content);
+    expect(cardFromRecord(`${CARDS}#a`, 3, record)).toMatchObject(content);
+  });
+
   it("round-trip a retired card, and leave the retirement out of a card in use", () => {
     const record = cardToRecord({ front: "Yugoslavia", back: "Belgrade", retired: true }, "");
     expect(record).toEqual({ front: "Yugoslavia", back: "Belgrade", deprecated: true });

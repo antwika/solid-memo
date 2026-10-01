@@ -1,9 +1,13 @@
 import { isHttpUrl } from "@solid-memo/domain/webId";
+import type { LangText } from "@solid-memo/domain/langText";
 import { breakable } from "./breakable";
+import { readerText } from "./readerText";
 
 /**
  * One side of a card as it looks in study: its picture (if any) above its
- * text (if any). A picture URL comes from pod data, so only http(s) URLs
+ * text (if any), with the back's label above its text and the side's
+ * note under it, both smaller. A question's note is passed only once the
+ * answer is revealed. A picture URL comes from pod data, so only http(s) URLs
  * are loaded; anything else is named rather than shown.
  *
  * The face is sized by its role — the question large, the answer under
@@ -16,11 +20,17 @@ export function CardFace({
   role = side === "front" ? "question" : "answer",
   text,
   imageUrl,
+  label,
+  note,
 }: {
   side: "front" | "back";
   role?: "question" | "answer";
   text: string;
   imageUrl?: string;
+  /** How the back relates to the front, e.g. "Replaced by", in the reader's language. */
+  label?: LangText;
+  /** What holds of this side, e.g. "Out of use", in the reader's language. */
+  note?: LangText;
 }) {
   return (
     <div class={`card-face card-${side} card-${role}`}>
@@ -34,7 +44,9 @@ export function CardFace({
         ) : (
           <p class="hint">Picture not shown: its address is not a web URL.</p>
         ))}
+      {label !== undefined && <p class="card-label">{breakable(readerText(label))}</p>}
       {text !== "" && <p>{breakable(text)}</p>}
+      {note !== undefined && <p class="card-note">{breakable(readerText(note))}</p>}
     </div>
   );
 }

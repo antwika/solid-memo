@@ -26,8 +26,14 @@ export function LibraryCardScreen({
         </h2>
       </header>
       <div class="practice-card">
-        <CardFace side="front" text={card.front} imageUrl={card.frontImageUrl} />
-        <CardFace side="back" text={card.back} imageUrl={card.backImageUrl} />
+        <CardFace side="front" text={card.front} imageUrl={card.frontImageUrl} note={card.frontNote} />
+        <CardFace
+          side="back"
+          text={card.back}
+          imageUrl={card.backImageUrl}
+          label={card.backLabel}
+          note={card.backNote}
+        />
       </div>
       {card.retired && <RetiredNotice />}
       <p class="hint">

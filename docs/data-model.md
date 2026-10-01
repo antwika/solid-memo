@@ -83,7 +83,9 @@ flowchart LR
 │                        foaf:Agent nodes of its creators (#agent-…)
 ├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn),
 │                        sm:front/back text and/or sm:frontImage/backImage
-│                        IRIs, each with sm:formatVersion; a retired card
+│                        IRIs, optional sm:frontNote/backNote under each
+│                        side and sm:backLabel above the back, each with
+│                        sm:formatVersion; a retired card
 │                        (owl:deprecated true) is kept but not studied
 └── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per card and
                           direction (fast churn) — #<cardId> front→back,

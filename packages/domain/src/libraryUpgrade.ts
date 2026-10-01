@@ -6,6 +6,7 @@ import {
   type DeckDirection,
 } from "./deck";
 import type { LibraryCard, LibraryDeckContent, LibraryRelease } from "./library";
+import { sameText } from "./langText";
 
 /**
  * Bringing an imported deck up to a newer release of its library deck
@@ -50,7 +51,10 @@ function sameContent(a: CardContent, b: CardContent): boolean {
     a.front === b.front &&
     a.back === b.back &&
     a.frontImageUrl === b.frontImageUrl &&
-    a.backImageUrl === b.backImageUrl
+    a.backImageUrl === b.backImageUrl &&
+    sameText(a.frontNote, b.frontNote) &&
+    sameText(a.backLabel, b.backLabel) &&
+    sameText(a.backNote, b.backNote)
   );
 }
 
