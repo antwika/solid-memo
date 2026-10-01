@@ -2,8 +2,7 @@ import type { ComponentChildren } from "preact";
 import type { Deck } from "@solid-memo/domain/deck";
 import { DeckProvenance } from "./DeckProvenance";
 import { DeckIcon } from "./icons";
-import { cardCount as formatCardCount } from "./studyCounts";
-import { readerText } from "./readerText";
+import { useI18n } from "./i18n";
 
 export function DeckDetailScreen({
   deck,
@@ -44,13 +43,14 @@ export function DeckDetailScreen({
   /** Anything to say about the deck before its study state, e.g. an offer. */
   notice?: ComponentChildren;
 }) {
+  const { t, readerText } = useI18n();
   const canStudy = dueCount + newCount > 0;
-  const studied = formatCardCount(studiedToday);
+  const studied = t("common.cardCount", { count: studiedToday });
 
   function handleResetDay() {
     if (
       window.confirm(
-        `Reset today's study of "${readerText(deck.title)}"? The ${studied} you studied today will go back to how they were before, and today's answers will be discarded.`,
+        t("deckDetail.resetConfirm", { title: readerText(deck.title), studied }),
       )
     ) {
       onResetDay();
@@ -67,10 +67,10 @@ export function DeckDetailScreen({
           </a>
         </h2>
         <div class="header-actions">
-          <button onClick={onPreferences} aria-label="Deck preferences">
-            Preferences
+          <button onClick={onPreferences} aria-label={t("deckDetail.preferencesLabel")}>
+            {t("deckDetail.preferencesButton")}
           </button>
-          <button onClick={onBrowse}>Browser</button>
+          <button onClick={onBrowse}>{t("deckDetail.browseButton")}</button>
         </div>
       </header>
       <DeckProvenance
@@ -83,39 +83,40 @@ export function DeckDetailScreen({
       {!canStudy && (
         <p>
           {cardCount === 0
-            ? "This deck has no cards yet. Add some in the Browser."
-            : "All cards have been studied — nothing more to study today."}
+            ? t("deckDetail.noCards")
+            : t("deckDetail.allStudied")}
         </p>
       )}
       {canStudy && (
         <p class="hint">
-          {dueCount > 0
-            ? `${formatCardCount(dueCount)} due today`
-            : "No cards are due today"}
-          {newCount > 0
-            ? `${dueCount > 0 ? ", and" : ";"} ${newCount} new to introduce.`
-            : "."}
+          {dueCount === 0
+            ? t("deckDetail.newOnly", { count: newCount })
+            : newCount === 0
+              ? t("deckDetail.dueOnly", { due: t("common.cardCount", { count: dueCount }) })
+              : t("deckDetail.dueAndNew", {
+                  due: t("common.cardCount", { count: dueCount }),
+                  count: newCount,
+                })}
         </p>
       )}
       <div class="session-actions">
         {canStudy && (
           <button class="primary" onClick={onStudy} disabled={busy}>
-            Study
+            {t("deckDetail.studyButton")}
           </button>
         )}
       </div>
       {studiedToday > 0 && (
         <div class="day-reset">
-          <span class="hint">{studied} studied today.</span>
+          <span class="hint">{t("deckDetail.studiedToday", { studied })}</span>
           <button onClick={handleResetDay} disabled={busy}>
-            {busy ? "Resetting…" : "Reset today's study"}
+            {busy ? t("deckDetail.resetting") : t("deckDetail.resetButton")}
           </button>
         </div>
       )}
       {error && <p class="error">{error}</p>}
       <p class="hint">
-        {formatCardCount(cardCount)} in this deck. Add, edit or remove cards
-        in the Browser.
+        {t("deckDetail.cardsInDeck", { cards: t("common.cardCount", { count: cardCount }) })}
       </p>
     </section>
   );

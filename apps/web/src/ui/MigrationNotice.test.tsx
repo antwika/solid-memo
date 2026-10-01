@@ -5,6 +5,7 @@ import {
   describeOutdated,
   MigrationNotice,
 } from "./MigrationNotice";
+import { createI18n, I18nProvider } from "./i18n";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { MigrationPlan } from "@solid-memo/domain/migration";
 
@@ -21,6 +22,8 @@ const deck: Deck = {
 };
 const capitals: Deck = { ...deck, id: "deck-2", url: `${deck.url}2`, title: { en: "Capitals" } };
 const verbs: Deck = { ...deck, id: "deck-3", url: `${deck.url}3`, title: { en: "Verbs" } };
+
+const { t } = createI18n("en");
 
 const nothing = { preferencesOutdated: false, instanceOutdated: false, catalogMissing: false };
 
@@ -52,7 +55,7 @@ function renderNotice(
 
 describe("describeOutdated", () => {
   it("names everything outdated, whichever there is", () => {
-    expect(describeOutdated(plan)).toBe(
+    expect(describeOutdated(plan, t)).toBe(
       "2 deck entries, 255 cards in 2 decks and 1 review state in one deck".replace(
         "1 review state",
         "30 review states",
@@ -65,7 +68,7 @@ describe("describeOutdated", () => {
         cardCount: 0,
         reviewCount: 0,
         ...nothing,
-      }),
+      }, t),
     ).toBe("1 deck entry");
     expect(
       describeOutdated({
@@ -76,7 +79,7 @@ describe("describeOutdated", () => {
         preferencesOutdated: true,
         instanceOutdated: true,
         catalogMissing: false,
-      }),
+      }, t),
     ).toBe(
       "the instance record, your preferences, 1 card in one deck and 1 review state in one deck",
     );
@@ -95,8 +98,8 @@ describe("a missing catalogue", () => {
   };
 
   it("is named in what is outdated, in the formats, on the list and on the button", () => {
-    expect(describeOutdated(catalogOnly)).toBe("the instance's catalogue");
-    expect(describeFormats(catalogOnly)).toBe(
+    expect(describeOutdated(catalogOnly, t)).toBe("the instance's catalogue");
+    expect(describeFormats(catalogOnly, t)).toBe(
       "a catalogue of each instance's decks, which other apps read as a DCAT catalogue",
     );
     renderNotice({ plan: catalogOnly });
@@ -108,7 +111,7 @@ describe("a missing catalogue", () => {
 
 describe("describeFormats", () => {
   it("names the formats the plan touches, with what each added", () => {
-    expect(describeFormats(plan)).toBe(
+    expect(describeFormats(plan, t)).toBe(
       "deck format 4, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages, card format 3, which adds pictures on cards and lets a library deck retire a card it no longer uses and review-state format 2, which keeps each study direction's state and the day's undo snapshot",
     );
     expect(
@@ -120,7 +123,7 @@ describe("describeFormats", () => {
         preferencesOutdated: true,
         instanceOutdated: true,
         catalogMissing: false,
-      }),
+      }, t),
     ).toBe(
       "instance format 2 and preferences format 3, which records the answer scale, developer mode and what to do with invalid data",
     );
@@ -207,5 +210,18 @@ describe("MigrationNotice", () => {
     renderNotice({ busy: true, error: "write refused" });
     expect(screen.getByRole("button", { name: "Updating…" })).toBeDisabled();
     expect(screen.getByText("write refused")).toBeInTheDocument();
+  });
+
+  it("speaks Swedish", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <MigrationNotice plan={plan} busy={false} error={null} onMigrate={vi.fn()} />
+      </I18nProvider>,
+    );
+    const region = screen.getByRole("region", { name: "Formatuppdatering" });
+    expect(region).toHaveTextContent(
+      "2 kortleksposter, 255 kort i 2 kortlekar och 30 repetitionstillstånd i en kortlek sparas i ett äldre format.",
+    );
+    expect(screen.getByRole("button", { name: "Uppdatera 3 kortlekar" })).toBeEnabled();
   });
 });

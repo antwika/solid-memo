@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/preact";
+import { createI18n, I18nProvider } from "./i18n";
 import { summaryOf, ValidationScreen } from "./ValidationScreen";
 import type { ValidationReport } from "@solid-memo/domain/validation";
+
+const { t } = createI18n("en");
 
 const INSTANCE = "https://pod.example/solid-memo/a/";
 
@@ -46,17 +49,17 @@ const report: ValidationReport = {
 
 describe("summaryOf", () => {
   it("counts violations and the documents they are in, or says everything conforms", () => {
-    expect(summaryOf(report)).toBe("2 violations in 1 document.");
-    expect(summaryOf({ ...report, violationCount: 1 })).toBe("1 violation in 1 document.");
+    expect(summaryOf(report, t)).toBe("2 violations in 1 document.");
+    expect(summaryOf({ ...report, violationCount: 1 }, t)).toBe("1 violation in 1 document.");
     const another = { ...report.documents[2], url: `${INSTANCE}decks/deck-1.ttl` };
     expect(
-      summaryOf({ ...report, violationCount: 4, documents: [...report.documents, another] }),
+      summaryOf({ ...report, violationCount: 4, documents: [...report.documents, another] }, t),
     ).toBe("4 violations in 2 documents.");
     expect(
-      summaryOf({ instanceUrl: INSTANCE, violationCount: 0, conforms: true, documents: report.documents }),
+      summaryOf({ instanceUrl: INSTANCE, violationCount: 0, conforms: true, documents: report.documents }, t),
     ).toBe("All 2 documents conform.");
     expect(
-      summaryOf({ instanceUrl: INSTANCE, violationCount: 0, conforms: true, documents: [report.documents[1]] }),
+      summaryOf({ instanceUrl: INSTANCE, violationCount: 0, conforms: true, documents: [report.documents[1]] }, t),
     ).toBe("The 1 document conforms.");
   });
 });
@@ -115,5 +118,17 @@ describe("ValidationScreen", () => {
     );
     expect(screen.getByRole("status")).toHaveTextContent("The 1 document conforms.");
     expect(screen.getByRole("status")).toHaveClass("hint");
+  });
+
+  it("speaks Swedish", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <ValidationScreen report={report} />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("2 överträdelser i 1 dokument.");
+    expect(screen.getByText("Inte skapat än.")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")[2]).toHaveTextContent("formatet deck 3 är nyare än vad appen känner till");
+    expect(screen.getAllByRole("columnheader")[0]).toHaveTextContent("Allvarlighetsgrad");
   });
 });

@@ -1,7 +1,7 @@
 import { isHttpUrl } from "@solid-memo/domain/webId";
 import type { LangText } from "@solid-memo/domain/langText";
 import { breakable } from "./breakable";
-import { readerText } from "./readerText";
+import { useI18n } from "./i18n";
 
 /**
  * One side of a card as it looks in study: its picture (if any) above its
@@ -32,6 +32,7 @@ export function CardFace({
   /** What holds of this side, e.g. "Out of use", in the reader's language. */
   note?: LangText;
 }) {
+  const { t, readerText } = useI18n();
   return (
     <div class={`card-face card-${side} card-${role}`}>
       {imageUrl !== undefined &&
@@ -39,10 +40,16 @@ export function CardFace({
           <img
             class="card-image"
             src={imageUrl}
-            alt={text === "" ? `Picture on the ${side} of the card` : ""}
+            alt={
+              text === ""
+                ? side === "front"
+                  ? t("cardFace.frontPictureAlt")
+                  : t("cardFace.backPictureAlt")
+                : ""
+            }
           />
         ) : (
-          <p class="hint">Picture not shown: its address is not a web URL.</p>
+          <p class="hint">{t("cardFace.notWebUrl")}</p>
         ))}
       {label !== undefined && <p class="card-label">{breakable(readerText(label))}</p>}
       {text !== "" && <p>{breakable(text)}</p>}

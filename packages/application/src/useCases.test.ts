@@ -194,6 +194,29 @@ function makeDeps() {
 }
 
 describe("createUseCases", () => {
+  describe("language", () => {
+    it("speaks the chosen language, and keeps a new choice", () => {
+      let chosen: "en" | "sv" | null = "sv";
+      const languagePreference = {
+        chosen: () => chosen,
+        choose: vi.fn((locale: "en" | "sv") => {
+          chosen = locale;
+        }),
+      };
+      const useCases = createUseCases({ ...makeDeps(), languagePreference });
+      expect(useCases.language(["en-US"])).toBe("sv");
+      useCases.chooseLanguage("en");
+      expect(languagePreference.choose).toHaveBeenCalledWith("en");
+      expect(useCases.language(["sv-SE"])).toBe("en");
+    });
+
+    it("speaks the browser's language when none is kept", () => {
+      const useCases = createUseCases(makeDeps());
+      useCases.chooseLanguage("en");
+      expect(useCases.language(["sv-SE"])).toBe("sv");
+    });
+  });
+
   it("restoreSession delegates to the session gateway", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);

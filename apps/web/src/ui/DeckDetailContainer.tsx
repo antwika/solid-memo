@@ -7,6 +7,7 @@ import { errorMessage } from "./errorMessage";
 import { LibraryUpgradeContainer } from "./LibraryUpgradeContainer";
 import { Loading } from "./Loading";
 import { deckHref } from "./router";
+import { useI18n } from "./i18n";
 
 /** Owns the card count, today's study queue and the day reset for one deck. */
 export function DeckDetailContainer({
@@ -24,6 +25,7 @@ export function DeckDetailContainer({
   onPreferences: () => void;
   onBrowse: () => void;
 }) {
+  const { t } = useI18n();
   const cardsQuery = useQuery({
     queryKey: ["cards", deck.cardsDocumentUrl],
     queryFn: () => useCases.listCards(deck),
@@ -59,7 +61,7 @@ export function DeckDetailContainer({
     queueQuery.data === undefined ||
     (queueQuery.isFetching && !resetDayMutation.isPending)
   ) {
-    return <Loading label="Loading cards…" />;
+    return <Loading label={t("deckDetail.loading")} />;
   }
 
   return (

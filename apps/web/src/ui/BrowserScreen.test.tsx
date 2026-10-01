@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { BrowserScreen, CARDS_PER_PAGE } from "./BrowserScreen";
 import type { Card, Deck } from "@solid-memo/domain/deck";
+import { I18nProvider } from "./i18n";
 
 const deck: Deck = {
   id: "deck-1",
@@ -304,5 +305,34 @@ describe("BrowserScreen pagination", () => {
 
     renderScreen({ cards, page: 0 });
     expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
+  });
+});
+
+describe("BrowserScreen in Swedish", () => {
+  it("speaks Swedish, the retired cards and their toggle too", () => {
+    const retired: Card = { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, retired: true };
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <BrowserScreen
+          deck={deck}
+          deckHref="#/deck?deck=d"
+          cards={[card, retired]}
+          page={1}
+          busy={false}
+          error={null}
+          onDescribeDeck={vi.fn()}
+          onChangeDirection={vi.fn()}
+          onAddCard={vi.fn()}
+          cardHref={(c) => `#/card?card=${c.id}`}
+          onRemoveCard={vi.fn()}
+          onPageChange={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("heading", { name: "Bläddra: Kanji N5" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lägg till kort" })).toBeInTheDocument();
+    expect(screen.getByText("Framsida → baksida")).toBeInTheDocument();
+    expect(screen.getByText(/1 kort är ur bruk: det sparas/)).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Framsida" })).toBeInTheDocument();
   });
 });

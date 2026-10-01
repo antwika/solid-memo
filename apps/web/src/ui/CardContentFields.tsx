@@ -1,5 +1,6 @@
 import type { CardContent } from "@solid-memo/domain/deck";
 import { editedText, withEnglish } from "@solid-memo/domain/langText";
+import { useI18n } from "./i18n";
 
 /**
  * The fields of a card as typed; all strings, empty when unset. The notes
@@ -72,6 +73,7 @@ export function CardContentFields({
   busy: boolean;
   onChange: (draft: CardDraft) => void;
 }) {
+  const { t } = useI18n();
   const field = (key: keyof CardDraft) => ({
     value: draft[key],
     onInput: (e: { currentTarget: { value: string } }) =>
@@ -80,53 +82,53 @@ export function CardContentFields({
   });
   return (
     <>
-      <label for="card-front">Front</label>
+      <label for="card-front">{t("cardContentFields.front")}</label>
       <input
         id="card-front"
         type="text"
-        placeholder="Question or prompt"
+        placeholder={t("cardContentFields.frontPlaceholder")}
         {...field("front")}
       />
-      <label for="card-front-image">Front picture (URL)</label>
+      <label for="card-front-image">{t("cardContentFields.frontImage")}</label>
       <input
         id="card-front-image"
         type="url"
-        placeholder="https://… (optional)"
+        placeholder={t("cardContentFields.imagePlaceholder")}
         {...field("frontImageUrl")}
       />
-      <label for="card-front-note">Front note</label>
+      <label for="card-front-note">{t("cardContentFields.frontNote")}</label>
       <input
         id="card-front-note"
         type="text"
-        placeholder="Shown under the front once the answer is revealed (optional)"
+        placeholder={t("cardContentFields.frontNotePlaceholder")}
         {...field("frontNote")}
       />
-      <label for="card-back-label">Label</label>
+      <label for="card-back-label">{t("cardContentFields.backLabel")}</label>
       <input
         id="card-back-label"
         type="text"
-        placeholder="Shown above the back, e.g. what kind of answer it is (optional)"
+        placeholder={t("cardContentFields.backLabelPlaceholder")}
         {...field("backLabel")}
       />
-      <label for="card-back">Back</label>
+      <label for="card-back">{t("cardContentFields.back")}</label>
       <input
         id="card-back"
         type="text"
-        placeholder="Answer"
+        placeholder={t("cardContentFields.backPlaceholder")}
         {...field("back")}
       />
-      <label for="card-back-image">Back picture (URL)</label>
+      <label for="card-back-image">{t("cardContentFields.backImage")}</label>
       <input
         id="card-back-image"
         type="url"
-        placeholder="https://… (optional)"
+        placeholder={t("cardContentFields.imagePlaceholder")}
         {...field("backImageUrl")}
       />
-      <label for="card-back-note">Back note</label>
+      <label for="card-back-note">{t("cardContentFields.backNote")}</label>
       <input
         id="card-back-note"
         type="text"
-        placeholder="Shown under the back once the answer is revealed (optional)"
+        placeholder={t("cardContentFields.backNotePlaceholder")}
         {...field("backNote")}
       />
     </>

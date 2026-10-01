@@ -1,3 +1,5 @@
+import { useI18n } from "./i18n";
+
 /** One page of a list, clamped to the pages there are. */
 export interface Page<T> {
   pageCount: number;
@@ -35,19 +37,20 @@ export function Pager({
   pageCount: number;
   onPageChange: (page: number) => void;
 }) {
+  const { t } = useI18n();
   return (
-    <nav class="pager" aria-label="Card pages">
+    <nav class="pager" aria-label={t("pager.label")}>
       <button onClick={() => onPageChange(page - 1)} disabled={page === 1}>
-        Previous
+        {t("pager.previous")}
       </button>
       <span aria-current="page">
-        Page {page} of {pageCount}
+        {t("pager.page", { page, pageCount })}
       </span>
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page === pageCount}
       >
-        Next
+        {t("pager.next")}
       </button>
     </nav>
   );

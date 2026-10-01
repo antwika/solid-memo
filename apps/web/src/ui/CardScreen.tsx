@@ -7,6 +7,7 @@ import {
 } from "@solid-memo/domain/deck";
 import { CardContentFields, contentOf, draftOf } from "./CardContentFields";
 import { CardFace } from "./CardFace";
+import { useI18n } from "./i18n";
 import { CardIcon, TrashIcon } from "./icons";
 import { RetiredNotice } from "./RetiredCards";
 
@@ -27,6 +28,7 @@ export function CardScreen({
   onSave: (content: CardContent) => void;
   onRemove: () => void;
 }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState(() => draftOf(card));
   const [invalid, setInvalid] = useState<string | null>(null);
 
@@ -43,9 +45,7 @@ export function CardScreen({
 
   function handleRemove() {
     if (
-      window.confirm(
-        `Remove the card "${cardLabel(card)}"? This cannot be undone.`,
-      )
+      window.confirm(t("card.removeConfirm", { card: cardLabel(card) }))
     ) {
       onRemove();
     }
@@ -56,7 +56,7 @@ export function CardScreen({
       <header>
         <h2>
           <CardIcon />
-          Card
+          {t("card.heading")}
         </h2>
       </header>
       <div class="practice-card">
@@ -79,13 +79,13 @@ export function CardScreen({
         )}
         <div class="edit-actions">
           <button type="submit" disabled={busy}>
-            Save
+            {t("card.saveButton")}
           </button>
           <button
             type="button"
             class="danger icon"
-            aria-label="Remove card"
-            title="Remove card"
+            aria-label={t("card.removeButton")}
+            title={t("card.removeButton")}
             onClick={handleRemove}
             disabled={busy}
           >
@@ -95,7 +95,7 @@ export function CardScreen({
       </form>
       {saved && (
         <p class="hint" role="status">
-          Saved.
+          {t("card.saved")}
         </p>
       )}
       {error && <p class="error">{error}</p>}

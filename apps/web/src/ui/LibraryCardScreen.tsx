@@ -1,5 +1,6 @@
 import type { LibraryCard } from "@solid-memo/domain/library";
 import { CardFace } from "./CardFace";
+import { useI18n } from "./i18n";
 import { CardIcon } from "./icons";
 import { RetiredNotice } from "./RetiredCards";
 
@@ -17,12 +18,13 @@ export function LibraryCardScreen({
   /** URL of the deck's page; its name links there. */
   deckHref: string;
 }) {
+  const { t, tx } = useI18n();
   return (
     <section>
       <header>
         <h2>
           <CardIcon />
-          Card
+          {t("libraryCard.heading")}
         </h2>
       </header>
       <div class="practice-card">
@@ -37,8 +39,7 @@ export function LibraryCardScreen({
       </div>
       {card.retired && <RetiredNotice />}
       <p class="hint">
-        From <a href={deckHref}>{deckName}</a>. Import the deck to study or
-        edit its cards.
+        {tx("libraryCard.from", { deck: <a href={deckHref}>{deckName}</a> })}
       </p>
     </section>
   );

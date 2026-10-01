@@ -1,4 +1,5 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
+import type { Locale } from "@solid-memo/domain/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import { POD_PROVIDERS } from "@solid-memo/domain/podProvider";
@@ -7,23 +8,48 @@ import illustrationUrl from "../assets/illustration.svg";
 import { errorMessage } from "./errorMessage";
 import { ExternalLink } from "./ExternalLink";
 import { Footer } from "./Footer";
+import { I18nProvider, useI18n } from "./i18n";
+import { LanguageSelector } from "./LanguageSelector";
 import { Loading } from "./Loading";
 import { OnboardingFlow } from "./onboarding/OnboardingFlow";
 import { PodConnectionScreen } from "./onboarding/PodConnectionScreen";
 import { Workspace } from "./Workspace";
 
-/** The app in whichever state it is in, above the site-wide footer. */
+/**
+ * The app in whichever state it is in, between the language choice on
+ * top and the site-wide footer, in the language the user chose (else
+ * their browser's, else English).
+ */
 export function App({ useCases }: { useCases: UseCases }) {
+  const [locale, setLocale] = useState<Locale>(() => useCases.language(navigator.languages));
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
+  function chooseLocale(chosen: Locale) {
+    useCases.chooseLanguage(chosen);
+    setLocale(chosen);
+  }
+
   return (
-    <>
+    <I18nProvider locale={locale} onChoose={chooseLocale}>
+      <div class="top-bar">
+        <LanguageSelector />
+      </div>
       <AppContent useCases={useCases} />
       <Footer />
-    </>
+    </I18nProvider>
   );
 }
 
 function AppContent({ useCases }: { useCases: UseCases }) {
   const queryClient = useQueryClient();
+  const { t, tx } = useI18n();
+  // The session can expire long after the effect below subscribed, in
+  // whatever language the user reads by then.
+  const latestT = useRef(t);
+  latestT.current = t;
   const [checkingSession, setCheckingSession] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [connecting, setConnecting] = useState(false);
@@ -52,7 +78,7 @@ function AppContent({ useCases }: { useCases: UseCases }) {
       setSession(null);
       setConnecting(false);
       setReturning(true);
-      setAuthError("Your session has expired. Please log in again.");
+      setAuthError(latestT.current("app.sessionExpired"));
       queryClient.clear();
     });
   }, [useCases, queryClient]);
@@ -87,7 +113,7 @@ function AppContent({ useCases }: { useCases: UseCases }) {
   if (checkingSession) {
     return (
       <main>
-        <Loading label="Restoring session…" />
+        <Loading label={t("app.restoringSession")} />
       </main>
     );
   }
@@ -98,13 +124,11 @@ function AppContent({ useCases }: { useCases: UseCases }) {
         <img
           class="hero"
           src={illustrationUrl}
-          alt="Solid Memo illustration"
+          alt={t("app.illustrationAlt")}
           width={640}
           height={427}
         />
-        <p class="tagline">
-          Spaced-repetition flashcards that live in your own Solid Pod.
-        </p>
+        <p class="tagline">{t("app.tagline")}</p>
         <OnboardingFlow
           providers={POD_PROVIDERS}
           busy={busy}
@@ -129,7 +153,7 @@ function AppContent({ useCases }: { useCases: UseCases }) {
         <img
           class="hero"
           src={illustrationUrl}
-          alt="Solid Memo illustration"
+          alt={t("app.illustrationAlt")}
           width={640}
           height={427}
         />
@@ -152,7 +176,7 @@ function AppContent({ useCases }: { useCases: UseCases }) {
           <img
             class="logo"
             src={illustrationUrl}
-            alt="Solid Memo — back to start"
+            alt={t("app.logoAlt")}
             width={60}
             height={40}
           />
@@ -164,13 +188,16 @@ function AppContent({ useCases }: { useCases: UseCases }) {
             </a>
           </h1>
           <p class="session-line">
-            Logged in as{" "}
-            <ExternalLink url={session.webId}>
-              {accountQuery.data?.name}
-            </ExternalLink>
+            {tx("app.loggedInAs", {
+              name: (
+                <ExternalLink url={session.webId}>
+                  {accountQuery.data?.name}
+                </ExternalLink>
+              ),
+            })}
           </p>
         </div>
-        <button onClick={handleLogout}>Log out</button>
+        <button onClick={handleLogout}>{t("app.logOut")}</button>
       </header>
       <Workspace useCases={useCases} session={session} />
     </main>

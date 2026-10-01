@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import { errorMessage } from "./errorMessage";
+import { useI18n } from "./i18n";
 import { Loading } from "./Loading";
 import { ValidationScreen } from "./ValidationScreen";
 
@@ -17,6 +18,7 @@ export function ValidationContainer({
   useCases: UseCases;
   instance: Instance;
 }) {
+  const { t } = useI18n();
   const reportQuery = useQuery({
     queryKey: ["validation", instance.url],
     queryFn: () => useCases.validateInstance(instance.url),
@@ -25,16 +27,16 @@ export function ValidationContainer({
 
   return (
     <>
-      <h2>Validation of {instance.name}</h2>
+      <h2>{t("validation.heading", { name: instance.name })}</h2>
       <p>
         <button
           onClick={() => reportQuery.refetch()}
           disabled={reportQuery.isFetching}
         >
-          {reportQuery.isFetching ? "Validating…" : "Validate again"}
+          {reportQuery.isFetching ? t("validation.validating") : t("validation.validateAgain")}
         </button>
       </p>
-      {reportQuery.isPending && <Loading label="Validating…" />}
+      {reportQuery.isPending && <Loading label={t("validation.validating")} />}
       {reportQuery.error && (
         <p class="error">{errorMessage(reportQuery.error)}</p>
       )}

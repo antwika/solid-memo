@@ -5,6 +5,7 @@ import type { Instance } from "@solid-memo/domain/instance";
 import { DeckListScreen } from "./DeckListScreen";
 import { DeckStudyActionContainer } from "./DeckStudyAction";
 import { errorMessage } from "./errorMessage";
+import { useI18n } from "./i18n";
 import { Loading } from "./Loading";
 import { deckHref, decksHref, libraryHref } from "./router";
 
@@ -25,6 +26,7 @@ export function DeckListContainer({
   onStudyDeck: (deck: Deck) => void;
   onCreateDeck: () => void;
 }) {
+  const { t } = useI18n();
   const decksQuery = useQuery({
     queryKey: ["decks", instance.url],
     queryFn: () => useCases.listDecks(instance.url),
@@ -34,7 +36,7 @@ export function DeckListContainer({
     return <p class="error">{errorMessage(decksQuery.error)}</p>;
   }
   if (decksQuery.data === undefined) {
-    return <Loading label="Loading decks…" />;
+    return <Loading label={t("deckList.loading")} />;
   }
 
   return (
@@ -45,7 +47,7 @@ export function DeckListContainer({
       deckHref={(deck) => deckHref(instance.url, deck.url)}
       renderStudyAction={(deck) =>
         isSetAside(deck) ? (
-          <span class="hint">Set aside: its data needs repair</span>
+          <span class="hint">{t("deckList.setAside")}</span>
         ) : (
           <DeckStudyActionContainer
             useCases={useCases}

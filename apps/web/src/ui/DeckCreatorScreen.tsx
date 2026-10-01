@@ -1,4 +1,5 @@
 import { useState } from "preact/hooks";
+import { useI18n } from "./i18n";
 
 export function DeckCreatorScreen({
   busy,
@@ -9,6 +10,7 @@ export function DeckCreatorScreen({
   error: string | null;
   onCreate: (name: string) => void;
 }) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
 
   function handleSubmit(event: Event) {
@@ -19,21 +21,21 @@ export function DeckCreatorScreen({
   return (
     <section>
       <header>
-        <h2>New deck</h2>
+        <h2>{t("deckCreator.heading")}</h2>
       </header>
       <form onSubmit={handleSubmit}>
-        <label for="deck-name">Name</label>
+        <label for="deck-name">{t("deckCreator.nameLabel")}</label>
         <input
           id="deck-name"
           type="text"
-          placeholder="My new deck"
+          placeholder={t("deckCreator.namePlaceholder")}
           value={name}
           onInput={(e) => setName(e.currentTarget.value)}
           required
           disabled={busy}
         />
         <button type="submit" disabled={busy}>
-          Create deck
+          {t("deckCreator.createButton")}
         </button>
       </form>
       {error && <p class="error">{error}</p>}

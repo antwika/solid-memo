@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { validateCardContent, type CardContent } from "@solid-memo/domain/deck";
 import { CardContentFields, contentOf, EMPTY_DRAFT } from "./CardContentFields";
+import { useI18n } from "./i18n";
 
 /** Card entry form: text and an optional picture for each side. */
 export function AddCardForm({
@@ -10,6 +11,7 @@ export function AddCardForm({
   busy: boolean;
   onAdd: (content: CardContent) => void;
 }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [invalid, setInvalid] = useState<string | null>(null);
 
@@ -34,7 +36,7 @@ export function AddCardForm({
         </p>
       )}
       <button type="submit" disabled={busy}>
-        Add card
+        {t("addCardForm.submitButton")}
       </button>
     </form>
   );

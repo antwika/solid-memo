@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { validateWebId } from "@solid-memo/domain/webId";
+import { useI18n } from "../i18n";
 
 export function WebIdForm({
   busy,
@@ -14,6 +15,7 @@ export function WebIdForm({
   onSubmit: (webId: string) => void;
   onBack: () => void;
 }) {
+  const { t } = useI18n();
   const [webId, setWebId] = useState("");
   const [invalid, setInvalid] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -60,16 +62,14 @@ export function WebIdForm({
         </p>
       )}
       <p id="webid-help" class="hint">
-        Your WebID is the web address that identifies you, given to you by
-        your Pod provider. You will log in on your provider's own page —
-        Solid Memo never sees your password.
+        {t("webIdForm.help")}
       </p>
       <div class="onboarding-actions">
         <button type="submit" disabled={busy}>
-          {busy ? "Redirecting…" : "Log in with Solid"}
+          {busy ? t("webIdForm.redirecting") : t("webIdForm.logIn")}
         </button>
         <button type="button" onClick={onBack} disabled={busy}>
-          Back
+          {t("webIdForm.back")}
         </button>
       </div>
     </form>

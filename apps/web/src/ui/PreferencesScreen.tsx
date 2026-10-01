@@ -1,35 +1,63 @@
 import { useState } from "preact/hooks";
 import type { AnswerScale } from "@solid-memo/domain/answerScale";
-import { INVALID_DATA_POLICIES as POLICY_SCHEME } from "@solid-memo/vocab/concepts.generated";
-import { conceptByNotation } from "@solid-memo/domain/concepts";
 import {
   INVALID_DATA_POLICIES,
   type InvalidDataPolicy,
 } from "@solid-memo/domain/invalidDataPolicy";
+import { LOCALES } from "@solid-memo/domain/locale";
 import type { StudyPreferences } from "@solid-memo/domain/preferences";
+import { useI18n, type I18n } from "./i18n";
+import { LANGUAGE_NAMES } from "./LanguageSelector";
 
-const ANSWER_SCALE_OPTIONS: {
+/** The answer scales on offer, each with its label and meaning. */
+function answerScaleOptions(t: I18n["t"]): {
   value: AnswerScale;
   label: string;
   hint: string;
-}[] = [
-  {
-    value: "sm2",
-    label: "0 to 5 scale",
-    hint: "The full SM-2 grades, from 0 (blackout) to 5 (easy).",
-  },
-  {
-    value: "minimal",
-    label: "Again · Hard · Good · Easy",
-    hint: "Four buttons. Again repeats the card later in the session.",
-  },
-];
+}[] {
+  return [
+    {
+      value: "sm2",
+      label: t("preferences.answerScale.sm2.label"),
+      hint: t("preferences.answerScale.sm2.hint"),
+    },
+    {
+      value: "minimal",
+      label: t("preferences.answerScale.minimal.label"),
+      hint: t("preferences.answerScale.minimal.hint"),
+    },
+  ];
+}
 
-/** Each policy with its label and meaning, from the vocabulary's concept scheme. */
-const POLICY_OPTIONS = INVALID_DATA_POLICIES.map((value) => {
-  const concept = conceptByNotation(POLICY_SCHEME, value)!;
-  return { value, label: concept.label, hint: concept.definition };
-});
+/**
+ * Each policy with its label and meaning, in the user's language; the
+ * English ones are the vocabulary concept scheme's labels and definitions.
+ */
+function policyOption(
+  value: InvalidDataPolicy,
+  t: I18n["t"],
+): { value: InvalidDataPolicy; label: string; hint: string } {
+  switch (value) {
+    case "block-instance":
+      return {
+        value,
+        label: t("preferences.policy.blockInstance.label"),
+        hint: t("preferences.policy.blockInstance.hint"),
+      };
+    case "block-subject":
+      return {
+        value,
+        label: t("preferences.policy.blockSubject.label"),
+        hint: t("preferences.policy.blockSubject.hint"),
+      };
+    case "warn-only":
+      return {
+        value,
+        label: t("preferences.policy.warnOnly.label"),
+        hint: t("preferences.policy.warnOnly.hint"),
+      };
+  }
+}
 
 export function PreferencesScreen({
   preferences,
@@ -42,6 +70,7 @@ export function PreferencesScreen({
   error: string | null;
   onSave: (preferences: StudyPreferences) => void;
 }) {
+  const { t, locale, chooseLocale } = useI18n();
   const [newCardsPerDay, setNewCardsPerDay] = useState(
     String(preferences.newCardsPerDay),
   );
@@ -77,10 +106,26 @@ export function PreferencesScreen({
   return (
     <section>
       <header>
-        <h2>Study preferences</h2>
+        <h2>{t("preferences.heading")}</h2>
       </header>
       <form onSubmit={handleSubmit}>
-        <label for="pref-new">New cards per day</label>
+        <fieldset>
+          <legend>{t("preferences.language.legend")}</legend>
+          {LOCALES.map((option) => (
+            <label key={option} class="radio-option" lang={option}>
+              <input
+                type="radio"
+                name="language"
+                value={option}
+                checked={locale === option}
+                onChange={() => chooseLocale(option)}
+              />
+              {LANGUAGE_NAMES[option]}
+            </label>
+          ))}
+          <p class="hint">{t("preferences.language.hint")}</p>
+        </fieldset>
+        <label for="pref-new">{t("preferences.newCardsPerDay")}</label>
         <input
           id="pref-new"
           type="number"
@@ -90,7 +135,7 @@ export function PreferencesScreen({
           required
           disabled={busy}
         />
-        <label for="pref-max">Max reviews per day</label>
+        <label for="pref-max">{t("preferences.maxReviewsPerDay")}</label>
         <input
           id="pref-max"
           type="number"
@@ -100,7 +145,7 @@ export function PreferencesScreen({
           required
           disabled={busy}
         />
-        <label for="pref-boundary">Day starts at (hour)</label>
+        <label for="pref-boundary">{t("preferences.dayBoundaryHour")}</label>
         <input
           id="pref-boundary"
           type="number"
@@ -112,8 +157,8 @@ export function PreferencesScreen({
           disabled={busy}
         />
         <fieldset>
-          <legend>Answer buttons</legend>
-          {ANSWER_SCALE_OPTIONS.map((option) => (
+          <legend>{t("preferences.answerScale.legend")}</legend>
+          {answerScaleOptions(t).map((option) => (
             <label key={option.value} class="radio-option">
               <input
                 type="radio"
@@ -129,8 +174,8 @@ export function PreferencesScreen({
           ))}
         </fieldset>
         <fieldset>
-          <legend>When data does not conform</legend>
-          {POLICY_OPTIONS.map((option) => (
+          <legend>{t("preferences.policy.legend")}</legend>
+          {INVALID_DATA_POLICIES.map((value) => policyOption(value, t)).map((option) => (
             <label key={option.value} class="radio-option">
               <input
                 type="radio"
@@ -146,7 +191,7 @@ export function PreferencesScreen({
           ))}
         </fieldset>
         <fieldset>
-          <legend>Developer settings</legend>
+          <legend>{t("preferences.developer.legend")}</legend>
           <label>
             <input
               type="checkbox"
@@ -154,16 +199,12 @@ export function PreferencesScreen({
               onChange={(e) => setDeveloperMode(e.currentTarget.checked)}
               disabled={busy}
             />
-            Developer mode
+            {t("preferences.developer.mode")}
           </label>
-          <p class="hint">
-            Shows developer tools: your raw WebID document below the app,
-            and a check of this instance's documents against Solid Memo's
-            shapes.
-          </p>
+          <p class="hint">{t("preferences.developer.hint")}</p>
         </fieldset>
         <button type="submit" disabled={busy}>
-          Save
+          {t("preferences.save")}
         </button>
       </form>
       {error && <p class="error">{error}</p>}

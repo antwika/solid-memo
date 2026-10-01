@@ -1,11 +1,17 @@
 import { useState } from "preact/hooks";
 import type { Storage } from "@solid-memo/domain/storage";
+import { useI18n, type I18n } from "./i18n";
 
-const SOURCE_LABEL: Record<Storage["source"], string> = {
-  profile: "from your profile",
-  linkHeader: "discovered from your pod server",
-  manual: "entered manually",
-};
+function sourceLabel(source: Storage["source"], t: I18n["t"]): string {
+  switch (source) {
+    case "profile":
+      return t("storagePicker.source.profile");
+    case "linkHeader":
+      return t("storagePicker.source.linkHeader");
+    case "manual":
+      return t("storagePicker.source.manual");
+  }
+}
 
 export function StoragePicker({
   storages,
@@ -20,6 +26,7 @@ export function StoragePicker({
   onSelect: (storage: Storage) => void;
   onAddManual: (url: string) => void;
 }) {
+  const { t } = useI18n();
   const [manualUrl, setManualUrl] = useState("");
 
   function handleSubmit(event: Event) {
@@ -29,12 +36,9 @@ export function StoragePicker({
 
   return (
     <section>
-      <h2>Choose a storage</h2>
+      <h2>{t("storagePicker.heading")}</h2>
       {storages.length === 0 ? (
-        <p>
-          No storage was found for your WebID. Enter your pod's root URL
-          below.
-        </p>
+        <p>{t("storagePicker.empty")}</p>
       ) : (
         <ul class="storage-list">
           {storages.map((storage) => (
@@ -42,13 +46,13 @@ export function StoragePicker({
               <button onClick={() => onSelect(storage)} disabled={busy}>
                 {storage.url}
               </button>{" "}
-              <span class="hint">({SOURCE_LABEL[storage.source]})</span>
+              <span class="hint">({sourceLabel(storage.source, t)})</span>
             </li>
           ))}
         </ul>
       )}
       <form onSubmit={handleSubmit}>
-        <label for="storage-url">Storage URL</label>
+        <label for="storage-url">{t("storagePicker.url")}</label>
         <input
           id="storage-url"
           type="url"
@@ -59,7 +63,7 @@ export function StoragePicker({
           disabled={busy}
         />
         <button type="submit" disabled={busy}>
-          Use this storage
+          {t("storagePicker.use")}
         </button>
       </form>
       {error && <p class="error">{error}</p>}

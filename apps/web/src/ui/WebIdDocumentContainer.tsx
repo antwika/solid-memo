@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Session } from "@solid-memo/domain/session";
 import { errorMessage } from "./errorMessage";
+import { useI18n } from "./i18n";
 import { Loading } from "./Loading";
 import { WebIdDocumentView } from "./WebIdDocumentView";
 
@@ -17,6 +18,7 @@ export function WebIdDocumentContainer({
   useCases: UseCases;
   session: Session;
 }) {
+  const { t } = useI18n();
   const documentQuery = useQuery({
     queryKey: ["webIdDocument", session.webId],
     queryFn: () => useCases.viewWebIdDocument(session),
@@ -24,8 +26,8 @@ export function WebIdDocumentContainer({
 
   return (
     <details>
-      <summary>WebID document</summary>
-      {documentQuery.isPending && <Loading label="Loading profile…" />}
+      <summary>{t("webIdDocument.summary")}</summary>
+      {documentQuery.isPending && <Loading label={t("webIdDocument.loading")} />}
       {documentQuery.error && (
         <p class="error">{errorMessage(documentQuery.error)}</p>
       )}

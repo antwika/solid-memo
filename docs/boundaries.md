@@ -32,7 +32,7 @@ configs may also use the shared test tooling of the root `package.json`.
 | `application` | `domain`, `vocab` | |
 | `shacl` | `domain`, `vocab`, `turtle` | `turtle`: `node/` only |
 | `solid` | `application`, `domain`, `vocab`, `shacl` | |
-| `browser` | `application` | |
+| `browser` | `application`, `domain` | |
 | `deck-library` | `vocab`, `shacl`, `turtle` | |
 | `web` | `application`, `domain`, `vocab`, `solid`, `browser`, `deck-library` | `solid`, `browser`: `src/main.tsx` only; `deck-library`: `vite.config.ts` only |
 | `e2e-pod` | `application`, `domain`, `vocab`, `solid` | |

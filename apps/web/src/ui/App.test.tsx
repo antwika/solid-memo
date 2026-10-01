@@ -41,6 +41,26 @@ function renderApp(useCases: UseCases) {
 }
 
 describe("App", () => {
+  it("speaks the language the use cases pick from the browser's", async () => {
+    const useCases = makeUseCases({ language: vi.fn(() => "sv" as const) });
+    renderApp(useCases);
+    expect(useCases.language).toHaveBeenCalledWith(navigator.languages);
+    expect(await screen.findByText(/Skapad av/)).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("sv");
+  });
+
+  it("switches language, and keeps the choice", async () => {
+    const useCases = makeUseCases();
+    renderApp(useCases);
+    fireEvent.click(await screen.findByRole("button", { name: "Svenska" }));
+    expect(useCases.chooseLanguage).toHaveBeenCalledWith("sv");
+    expect(await screen.findByText(/Skapad av/)).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("sv");
+    fireEvent.click(screen.getByRole("button", { name: "English" }));
+    expect(await screen.findByText(/Created by/)).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("en");
+  });
+
   it("shows a restoring indicator while the session check is pending", () => {
     renderApp(
       makeUseCases({

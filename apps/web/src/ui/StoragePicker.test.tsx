@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
+import { I18nProvider } from "./i18n";
 import { StoragePicker } from "./StoragePicker";
 import type { Storage } from "@solid-memo/domain/storage";
 
@@ -73,5 +74,23 @@ describe("StoragePicker", () => {
   it("shows an error message when given one", () => {
     renderPicker({ error: "Cannot access storage" });
     expect(screen.getByText("Cannot access storage")).toBeInTheDocument();
+  });
+
+  it("speaks Swedish, naming a manually entered storage", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <StoragePicker
+          storages={[{ url: "https://pod.example/", source: "manual" }]}
+          busy={false}
+          error={null}
+          onSelect={vi.fn()}
+          onAddManual={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    expect(
+      screen.getByRole("heading", { name: "Välj en lagringsplats" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("(angiven manuellt)")).toBeInTheDocument();
   });
 });

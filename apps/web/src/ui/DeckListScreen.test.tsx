@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { DeckListScreen } from "./DeckListScreen";
+import { I18nProvider } from "./i18n";
 import type { Deck } from "@solid-memo/domain/deck";
 
 const deck: Deck = {
@@ -110,5 +111,25 @@ describe("DeckListScreen", () => {
     expect(button).toHaveClass("primary");
     fireEvent.click(button);
     expect(props.onCreateDeck).toHaveBeenCalledOnce();
+  });
+});
+
+describe("DeckListScreen in Swedish", () => {
+  it("speaks Swedish inside a Swedish provider", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <DeckListScreen
+          decks={[deck]}
+          decksHref="#/decks?instance=a"
+          libraryHref="#/library?instance=a"
+          deckHref={(d) => `#/deck?deck=${d.id}`}
+          renderStudyAction={() => null}
+          onCreateDeck={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("heading", { name: "Kortlekar" })).toBeInTheDocument();
+    expect(screen.getByText("1 kortlek")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Skapa kortlek" })).toBeInTheDocument();
   });
 });

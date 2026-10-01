@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import type { PodProvider } from "@solid-memo/domain/podProvider";
+import { useI18n } from "../i18n";
 import { WebIdForm } from "./WebIdForm";
 
 type Step = "choose" | "webId";
@@ -23,6 +24,7 @@ export function OnboardingFlow({
   onLogin: (webId: string) => void;
   onLoginWithProvider: (provider: PodProvider) => void;
 }) {
+  const { t } = useI18n();
   const [step, setStep] = useState<Step>(returning ? "webId" : "choose");
   const [cameFromChoice, setCameFromChoice] = useState(false);
 
@@ -33,7 +35,7 @@ export function OnboardingFlow({
   if (step === "webId") {
     return (
       <section class="onboarding">
-        <h2>Connect your Pod</h2>
+        <h2>{t("onboardingFlow.connectHeading")}</h2>
         <WebIdForm
           busy={busy}
           autoFocus={cameFromChoice}
@@ -41,11 +43,8 @@ export function OnboardingFlow({
           onBack={() => setStep("choose")}
         />
         <div class="provider-login">
-          <h3>Or pick your provider</h3>
-          <p class="hint">
-            No WebID at hand? Choose where your Pod lives and log in there —
-            your WebID comes back with the login.
-          </p>
+          <h3>{t("onboardingFlow.providerHeading")}</h3>
+          <p class="hint">{t("onboardingFlow.providerHint")}</p>
           <div class="onboarding-actions">
             {providers.map((provider) => (
               <button
@@ -64,11 +63,8 @@ export function OnboardingFlow({
 
   return (
     <section class="onboarding">
-      <h2>Set up your Solid Pod</h2>
-      <p>
-        Your data is stored in a Solid Pod that you control. Create one with
-        a Pod provider, or connect a Pod you already have.
-      </p>
+      <h2>{t("onboardingFlow.setUpHeading")}</h2>
+      <p>{t("onboardingFlow.intro")}</p>
       <ul class="provider-list">
         {signUpProviders.map((provider) => (
           <li key={provider.id}>
@@ -78,17 +74,14 @@ export function OnboardingFlow({
               href={provider.signUpUrl}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`Create a Pod with ${provider.name} (opens in a new tab)`}
+              aria-label={t("onboardingFlow.createPodLabel", { provider: provider.name })}
             >
-              Create a Pod ↗
+              {t("onboardingFlow.createPod")}
             </a>
           </li>
         ))}
       </ul>
-      <p class="hint">
-        Creating a Pod happens on the provider's site, in a new tab. When you
-        are done, come back here and connect it.
-      </p>
+      <p class="hint">{t("onboardingFlow.createPodHint")}</p>
       <div class="onboarding-actions">
         <button
           onClick={() => {
@@ -96,7 +89,7 @@ export function OnboardingFlow({
             setStep("webId");
           }}
         >
-          I already have a Pod
+          {t("onboardingFlow.havePod")}
         </button>
       </div>
     </section>

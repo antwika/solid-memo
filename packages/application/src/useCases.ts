@@ -3,6 +3,7 @@ import { defaultCatalogDescription, type Catalog } from "@solid-memo/domain/cata
 import { withAbout, type DeckAbout } from "@solid-memo/domain/deckAbout";
 import { deckPreferences, withPace, type DeckPace } from "@solid-memo/domain/deckPace";
 import { isCopyOf } from "@solid-memo/domain/library";
+import { pickLocale, type Locale } from "@solid-memo/domain/locale";
 import { planRepair, type Repair, type RepairPlan } from "@solid-memo/domain/repair";
 import {
   rebaseIri,
@@ -87,6 +88,7 @@ import type {
   DigestRepository,
   RepairRepository,
   InstanceCopier,
+  LanguagePreference,
   UpdateJournal,
   WriteFence,
 } from "./ports";
@@ -100,6 +102,13 @@ export interface UseCases {
   logout(): Promise<void>;
   /** Subscribe to session expiry; returns an unsubscribe function. */
   onSessionExpired(listener: () => void): () => void;
+  /**
+   * The language to speak: the one the user chose, else the first of the
+   * browser's `preferred` languages the app speaks, else English.
+   */
+  language(preferred: readonly string[]): Locale;
+  /** Speak this language from now on, on this device. */
+  chooseLanguage(locale: Locale): void;
   /**
    * The account behind a session: its Pod, discovered through the WebID
    * profile's storage link, its identity provider and its foaf:name.
@@ -273,6 +282,8 @@ export interface Dependencies {
   instanceCopier: InstanceCopier;
   /** A note of updates in progress; by default none is kept. */
   updateJournal?: UpdateJournal;
+  /** The language the user chose; by default none is kept. */
+  languagePreference?: LanguagePreference;
   /** The clock; injected for tests. */
   now?: () => Date;
   /** Fresh identifiers (the UUID of an update's copy); injected for tests. */
@@ -285,6 +296,7 @@ export interface Dependencies {
   ruleset?: string;
 }
 
+const NO_LANGUAGE_PREFERENCE: LanguagePreference = { chosen: () => null, choose: () => undefined };
 const NO_JOURNAL: UpdateJournal = { begin: () => undefined, end: () => undefined, staging: () => null };
 const NO_FENCE: WriteFence = { hold: () => () => undefined };
 const NO_DIGESTS: DigestRepository = { readDigest: async () => null, updateDigest: async () => undefined };
@@ -303,6 +315,7 @@ export function createUseCases({
   repairRepository,
   instanceCopier,
   updateJournal = NO_JOURNAL,
+  languagePreference = NO_LANGUAGE_PREFERENCE,
   now = () => new Date(),
   newId = () => crypto.randomUUID(),
   writeFence = NO_FENCE,
@@ -503,6 +516,12 @@ export function createUseCases({
   return {
     restoreSession() {
       return sessionGateway.restore();
+    },
+    language(preferred) {
+      return pickLocale(languagePreference.chosen(), preferred);
+    },
+    chooseLanguage(locale) {
+      languagePreference.choose(locale);
     },
     async loginWithWebId(webId) {
       const validation = validateWebId(webId);

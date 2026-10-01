@@ -5,6 +5,7 @@ import {
   type StudyDirection,
 } from "@solid-memo/domain/deck";
 import { CardFace } from "./CardFace";
+import { useI18n } from "./i18n";
 
 /** A library card, seen from one side. */
 export interface PreviewPrompt {
@@ -35,22 +36,20 @@ export function LibraryPreviewScreen({
   onNext: () => void;
   onExit: () => void;
 }) {
+  const { t, tx } = useI18n();
   return (
     <section>
       <header>
         <h2>
-          Preview: <a href={deckHref}>{deckName}</a>
+          {tx("libraryPreview.heading", { deck: <a href={deckHref}>{deckName}</a> })}
         </h2>
-        <button onClick={onExit}>Back to library</button>
+        <button onClick={onExit}>{t("libraryPreview.back")}</button>
       </header>
       {prompt === null ? (
-        <p>This deck has no cards.</p>
+        <p>{t("libraryPreview.empty")}</p>
       ) : (
         <>
-          <p class="hint">
-            Random cards from the deck. Nothing is recorded: import the deck
-            to study it.
-          </p>
+          <p class="hint">{t("libraryPreview.hint")}</p>
           <PreviewCard key={turn} prompt={prompt} onNext={onNext} />
         </>
       )}
@@ -66,6 +65,7 @@ function PreviewCard({
   prompt: PreviewPrompt;
   onNext: () => void;
 }) {
+  const { t } = useI18n();
   const [revealed, setRevealed] = useState(false);
   const { question, answer } = promptSides(prompt);
 
@@ -76,11 +76,11 @@ function PreviewCard({
         <>
           <CardFace {...answer} role="answer" />
           <button class="primary" onClick={onNext}>
-            Next card
+            {t("libraryPreview.nextCard")}
           </button>
         </>
       ) : (
-        <button onClick={() => setRevealed(true)}>Reveal</button>
+        <button onClick={() => setRevealed(true)}>{t("libraryPreview.reveal")}</button>
       )}
     </div>
   );

@@ -2,9 +2,8 @@ import type { LibraryCard, LibraryDeck } from "@solid-memo/domain/library";
 import { CARDS_PER_PAGE } from "./BrowserScreen";
 import { CardThumbnail } from "./CardFace";
 import { BrowserIcon } from "./icons";
+import { useI18n } from "./i18n";
 import { Pager, paginate } from "./Pager";
-import { cardCount } from "./studyCounts";
-import { readerText } from "./readerText";
 import { RetiredTag, useRetiredCards } from "./RetiredCards";
 import { breakable } from "./breakable";
 
@@ -31,6 +30,7 @@ export function LibraryBrowserScreen({
   page: number;
   onPageChange: (page: number) => void;
 }) {
+  const { t, tx, readerText } = useI18n();
   const { listed, toggle } = useRetiredCards(cards);
   const {
     pageCount,
@@ -44,25 +44,31 @@ export function LibraryBrowserScreen({
       <header>
         <h2>
           <BrowserIcon />
-          Cards: <a href={deckHref}>{readerText(deck.title)}</a>
+          {tx("libraryBrowser.heading", {
+            deck: <a href={deckHref}>{readerText(deck.title)}</a>,
+          })}
         </h2>
       </header>
       {toggle}
       {listed.length === 0 ? (
-        <p>This deck has no cards.</p>
+        <p>{t("libraryBrowser.empty")}</p>
       ) : (
         <>
           <p class="hint">
             {pageCount > 1
-              ? `Cards ${firstIndex + 1}–${firstIndex + pageCards.length} of ${listed.length}. `
-              : `${cardCount(listed.length)}. `}
-            Click a card to open it. Import the deck to study or edit them.
+              ? t("libraryBrowser.range", {
+                  first: firstIndex + 1,
+                  last: firstIndex + pageCards.length,
+                  total: listed.length,
+                })
+              : t("libraryBrowser.count", { count: listed.length })}{" "}
+            {t("libraryBrowser.hint")}
           </p>
           <table class="card-table">
             <thead>
               <tr>
-                <th>Front</th>
-                <th>Back</th>
+                <th>{t("libraryBrowser.front")}</th>
+                <th>{t("libraryBrowser.back")}</th>
               </tr>
             </thead>
             <tbody>

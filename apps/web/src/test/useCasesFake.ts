@@ -10,6 +10,8 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     loginWithProvider: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),
     onSessionExpired: vi.fn(() => () => undefined),
+    language: vi.fn(() => "en" as const),
+    chooseLanguage: vi.fn(),
     discoverAccount: vi.fn(async (session) => ({
       webId: session.webId,
       podUrl: "https://pod.example/",

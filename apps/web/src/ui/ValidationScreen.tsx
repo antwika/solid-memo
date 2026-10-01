@@ -5,19 +5,12 @@ import type {
   Violation,
 } from "@solid-memo/domain/validation";
 import { ExternalLink } from "./ExternalLink";
-
-function documentsOf(count: number): string {
-  return count === 1 ? "1 document" : `${count} documents`;
-}
+import { useI18n, type I18n } from "./i18n";
 
 /** The summary line: "All 9 documents conform" or "3 violations in 2 documents". */
-export function summaryOf(report: ValidationReport): string {
+export function summaryOf(report: ValidationReport, t: I18n["t"]): string {
   const checked = report.documents.filter((d) => d.status === "checked");
-  if (report.conforms) {
-    return checked.length === 1
-      ? "The 1 document conforms."
-      : `All ${checked.length} documents conform.`;
-  }
+  if (report.conforms) return t("validation.allConform", { count: checked.length });
   const failing = checked.filter((d) =>
     d.subjects.some(
       (s) =>
@@ -25,14 +18,18 @@ export function summaryOf(report: ValidationReport): string {
         s.violations.some((v) => v.severity === "violation"),
     ),
   ).length;
-  return `${report.violationCount === 1 ? "1 violation" : `${report.violationCount} violations`} in ${documentsOf(failing)}.`;
+  return t("validation.violationsIn", {
+    violations: t("validation.violationCount", { count: report.violationCount }),
+    documents: t("validation.documentCount", { count: failing }),
+  });
 }
 
 export function ValidationScreen({ report }: { report: ValidationReport }) {
+  const { t } = useI18n();
   return (
     <div class="validation">
       <p class={report.conforms ? "hint" : "warning"} role="status">
-        {summaryOf(report)}
+        {summaryOf(report, t)}
       </p>
       {report.documents.map((document) => (
         <DocumentView key={document.url} document={document} />
@@ -42,15 +39,16 @@ export function ValidationScreen({ report }: { report: ValidationReport }) {
 }
 
 function DocumentView({ document }: { document: DocumentReport }) {
+  const { t } = useI18n();
   return (
     <section class="thing">
       <h3>
         <ExternalLink url={document.url} />
       </h3>
       {document.status === "missing" ? (
-        <p class="hint">Not created yet.</p>
+        <p class="hint">{t("validation.notCreated")}</p>
       ) : document.subjects.length === 0 ? (
-        <p class="hint">No subjects.</p>
+        <p class="hint">{t("validation.noSubjects")}</p>
       ) : (
         <ul>
           {document.subjects.map((subject) => (
@@ -65,35 +63,36 @@ function DocumentView({ document }: { document: DocumentReport }) {
 }
 
 function SubjectView({ subject }: { subject: SubjectReport }) {
+  const { tx } = useI18n();
   const name = <ExternalLink url={subject.url} />;
   switch (subject.status) {
     case "untyped":
-      return <>{name} — not a Solid Memo subject.</>;
+      return <>{tx("validation.untyped", { name })}</>;
     case "newer":
       return (
         <>
-          {name} — {subject.shape} format {subject.version} is newer than
-          this app knows (up to {subject.latest}); skipped.
+          {tx("validation.newer", {
+            name,
+            shape: subject.shape,
+            version: subject.version,
+            latest: subject.latest,
+          })}
         </>
       );
     case "profiled":
       return (
         <>
-          {name} — not a Solid Memo subject; DCAT-AP says:
+          {tx("validation.profiled", { name })}
           <ViolationTable violations={subject.violations} />
         </>
       );
     case "checked":
       if (subject.violations.length === 0) {
-        return (
-          <>
-            {name} — conforms to {subject.shape} format {subject.version}.
-          </>
-        );
+        return <>{tx("validation.conforms", { name, shape: subject.shape, version: subject.version })}</>;
       }
       return (
         <>
-          {name} — {subject.shape} format {subject.version}:
+          {tx("validation.checked", { name, shape: subject.shape, version: subject.version })}
           <ViolationTable violations={subject.violations} />
         </>
       );
@@ -102,14 +101,15 @@ function SubjectView({ subject }: { subject: SubjectReport }) {
 
 /** One row per result; a DCAT-AP result says so before its message. */
 function ViolationTable({ violations }: { violations: Violation[] }) {
+  const { t } = useI18n();
   return (
     <table>
       <thead>
         <tr>
-          <th scope="col">Severity</th>
-          <th scope="col">Property</th>
-          <th scope="col">Message</th>
-          <th scope="col">Value</th>
+          <th scope="col">{t("validation.severity")}</th>
+          <th scope="col">{t("validation.property")}</th>
+          <th scope="col">{t("validation.message")}</th>
+          <th scope="col">{t("validation.value")}</th>
         </tr>
       </thead>
       <tbody>
@@ -118,7 +118,7 @@ function ViolationTable({ violations }: { violations: Violation[] }) {
             <td>{violation.severity}</td>
             <td>
               {violation.path === undefined ? (
-                "(the subject)"
+                t("validation.theSubject")
               ) : (
                 <ExternalLink url={violation.path} />
               )}

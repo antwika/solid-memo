@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BackupContainer } from "./BackupContainer";
+import { I18nProvider } from "./i18n";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import { makeUseCasesFake } from "../test/useCasesFake";
@@ -91,5 +92,21 @@ describe("BackupContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete backup" }));
     await waitFor(() => expect(container).toBeEmptyDOMElement());
     expect(useCases.deleteBackup).toHaveBeenCalledWith(instance);
+  });
+
+  it("speaks Swedish", async () => {
+    const useCases = makeUseCasesFake({
+      readBackup: vi.fn(async () => ({ url: previous.url, replacedAt: "2026-09-28T10:00:00.000Z" })),
+    });
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <BackupContainer useCases={useCases} session={session} instance={instance} onRestored={vi.fn()} />
+        </QueryClientProvider>
+      </I18nProvider>,
+    );
+    const section = await screen.findByRole("region", { name: "Föregående version" });
+    expect(section).toHaveTextContent("(28 september 2026)");
+    expect(screen.getByRole("button", { name: "Ta bort säkerhetskopian" })).toBeInTheDocument();
   });
 });

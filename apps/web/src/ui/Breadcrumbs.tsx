@@ -1,3 +1,4 @@
+import { useI18n, type I18n } from "./i18n";
 import { routeToHash, type RouteRef } from "./router";
 
 /** One step of the trail. The last crumb is the current page. */
@@ -20,33 +21,33 @@ export interface CrumbNames {
 
 /**
  * The trail from the top of the app down to a route. Every screen has
- * one — a top-level screen's is a single crumb — so "Decks" (the list of
+ * one — a top-level screen's is a single crumb — so t("breadcrumbs.decks") (the list of
  * all decks) is on hand wherever the user is inside an instance.
  */
-export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
+export function breadcrumbsFor(route: RouteRef, names: CrumbNames, t: I18n["t"]): Crumb[] {
   const instances: Crumb = {
-    label: "Instances",
+    label: t("breadcrumbs.instances"),
     route: { screen: "instancePicker" },
   };
   switch (route.screen) {
     case "instancePicker":
       return [instances];
     case "storagePicker":
-      return [instances, { label: "Choose a storage", route }];
+      return [instances, { label: t("breadcrumbs.storagePicker"), route }];
     case "instanceCreator":
-      return [instances, { label: "New instance", route }];
+      return [instances, { label: t("breadcrumbs.instanceCreator"), route }];
   }
 
   const decks: Crumb = {
-    label: "Decks",
+    label: t("breadcrumbs.decks"),
     route: { screen: "home", instanceUrl: route.instanceUrl },
   };
   if (route.screen === "home") return [decks];
   if (route.screen === "deckCreator") {
-    return [decks, { label: "New deck", route }];
+    return [decks, { label: t("breadcrumbs.deckCreator"), route }];
   }
   const library: Crumb = {
-    label: "Deck library",
+    label: t("breadcrumbs.library"),
     route: { screen: "library", instanceUrl: route.instanceUrl },
   };
   if (route.screen === "library") return [decks, library];
@@ -67,7 +68,7 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
     if (route.screen === "libraryDeck") return [decks, library, libraryDeck];
     if (route.screen === "libraryCard") {
       const cards: Crumb = {
-        label: "Cards",
+        label: t("breadcrumbs.cards"),
         route: {
           screen: "libraryBrowser",
           instanceUrl: route.instanceUrl,
@@ -80,14 +81,14 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
       decks,
       library,
       libraryDeck,
-      { label: route.screen === "libraryBrowser" ? "Cards" : "Preview", route },
+      { label: route.screen === "libraryBrowser" ? t("breadcrumbs.cards") : t("breadcrumbs.preview"), route },
     ];
   }
   if (route.screen === "preferences") {
-    return [decks, { label: "Preferences", route }];
+    return [decks, { label: t("breadcrumbs.preferences"), route }];
   }
   if (route.screen === "validation") {
-    return [decks, { label: "Validation", route }];
+    return [decks, { label: t("breadcrumbs.validation"), route }];
   }
 
   const deck: Crumb = {
@@ -99,7 +100,7 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
     },
   };
   const browser: Crumb = {
-    label: "Browser",
+    label: t("breadcrumbs.browser"),
     route: {
       screen: "browser",
       instanceUrl: route.instanceUrl,
@@ -110,21 +111,22 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames): Crumb[] {
     case "deckDetail":
       return [decks, deck];
     case "deckPreferences":
-      return [decks, deck, { label: "Preferences", route }];
+      return [decks, deck, { label: t("breadcrumbs.preferences"), route }];
     case "browser":
       return [decks, deck, browser];
     case "cardCreator":
-      return [decks, deck, browser, { label: "New card", route }];
+      return [decks, deck, browser, { label: t("breadcrumbs.cardCreator"), route }];
     case "card":
       return [decks, deck, browser, { label: names.card, route }];
     case "study":
-      return [decks, deck, { label: "Study", route }];
+      return [decks, deck, { label: t("breadcrumbs.study"), route }];
   }
 }
 
 export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
+  const { t } = useI18n();
   return (
-    <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <nav class="breadcrumbs" aria-label={t("breadcrumbs.label")}>
       <ol>
         {crumbs.map((crumb, index) => (
           <li key={index}>

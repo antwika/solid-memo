@@ -4,6 +4,7 @@ import type {
   RegistrationTarget,
 } from "@solid-memo/domain/instance";
 import type { Storage } from "@solid-memo/domain/storage";
+import { useI18n } from "./i18n";
 import { RegistrationTargetChooser } from "./RegistrationTargetChooser";
 
 export function InstanceCreator({
@@ -25,6 +26,7 @@ export function InstanceCreator({
   }) => void;
   onBack: () => void;
 }) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [containerUrl, setContainerUrl] = useState(
     `${storage.url}solid-memo/main/`,
@@ -42,19 +44,19 @@ export function InstanceCreator({
 
   return (
     <section>
-      <h2>New Solid Memo instance</h2>
+      <h2>{t("instanceCreator.heading")}</h2>
       <form onSubmit={handleSubmit}>
-        <label for="instance-name">Name</label>
+        <label for="instance-name">{t("instanceCreator.name")}</label>
         <input
           id="instance-name"
           type="text"
-          placeholder="My instance"
+          placeholder={t("instanceCreator.namePlaceholder")}
           value={name}
           onInput={(e) => setName(e.currentTarget.value)}
           required
           disabled={busy}
         />
-        <label for="instance-container">Location</label>
+        <label for="instance-container">{t("instanceCreator.location")}</label>
         <input
           id="instance-container"
           type="url"
@@ -69,10 +71,10 @@ export function InstanceCreator({
           onChange={setTarget}
         />
         <button type="submit" disabled={busy}>
-          Create instance
+          {t("instanceCreator.create")}
         </button>
         <button type="button" onClick={onBack} disabled={busy}>
-          Back
+          {t("instanceCreator.back")}
         </button>
       </form>
       {error && <p class="error">{error}</p>}

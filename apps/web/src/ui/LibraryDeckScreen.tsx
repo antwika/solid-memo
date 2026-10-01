@@ -1,13 +1,10 @@
 import { licenseLabel } from "@solid-memo/domain/license";
 import { topicLabels, type LibraryDeck, type LibrarySource } from "@solid-memo/domain/library";
 import { AuthorNames } from "./AuthorName";
-import { DIRECTION_LABELS } from "./direction";
 import { ExternalLink } from "./ExternalLink";
-import { formatDate } from "./formatDate";
+import { useI18n } from "./i18n";
 import { LibraryIcon } from "./icons";
 import { linkify } from "./linkify";
-import { cardCount } from "./studyCounts";
-import { readerText } from "./readerText";
 
 /**
  * One library deck in full — its blurb, what it is about, who made it
@@ -41,6 +38,7 @@ export function LibraryDeckScreen({
   onBrowse: () => void;
   onImport: () => void;
 }) {
+  const { t, readerText, formatDate, directionLabel } = useI18n();
   const topics = topicLabels(deck.themes);
   const current = deck.releases.find((release) => release.url === deck.url);
   return (
@@ -52,46 +50,50 @@ export function LibraryDeckScreen({
             {readerText(deck.title)}
           </a>
         </h2>
-        <button onClick={onBrowse}>Browse cards</button>
+        <button onClick={onBrowse}>{t("libraryDeck.browseCards")}</button>
       </header>
       {deck.description !== undefined && (
         <p class="deck-description">{linkify(readerText(deck.description))}</p>
       )}
       <dl class="facts">
-        <dt>Size</dt>
-        <dd>{cardCount(deck.cardCount)}</dd>
-        <dt>Studied</dt>
+        <dt>{t("libraryDeck.size")}</dt>
+        <dd>{t("common.cardCount", { count: deck.cardCount })}</dd>
+        <dt>{t("libraryDeck.studied")}</dt>
         <dd>
-          {DIRECTION_LABELS[deck.direction]}
-          {deck.direction === "bidirectional" &&
-            " — every card is asked both ways; change it after importing"}
+          {deck.direction === "bidirectional"
+            ? t("libraryDeck.bothWays", { direction: directionLabel(deck.direction) })
+            : directionLabel(deck.direction)}
         </dd>
         {topics.length > 0 && (
           <>
-            <dt>{topics.length === 1 ? "Topic" : "Topics"}</dt>
+            <dt>{t("libraryDeck.topics", { count: topics.length })}</dt>
             <dd>{topics.join(", ")}</dd>
           </>
         )}
         {deck.keywords.length > 0 && (
           <>
-            <dt>Keywords</dt>
+            <dt>{t("libraryDeck.keywords")}</dt>
             <dd>{deck.keywords.join(", ")}</dd>
           </>
         )}
-        <dt>Release</dt>
+        <dt>{t("libraryDeck.release")}</dt>
         <dd>
-          Version {deck.version}
-          {current?.issued !== undefined && `, released ${formatDate(current.issued)}`}
+          {current?.issued === undefined
+            ? t("libraryDeck.version", { version: deck.version })
+            : t("libraryDeck.versionReleased", {
+                version: deck.version,
+                date: formatDate(current.issued),
+              })}
         </dd>
         {deck.versionNotes !== undefined && (
           <>
-            <dt>Release notes</dt>
+            <dt>{t("libraryDeck.releaseNotes")}</dt>
             <dd>{deck.versionNotes}</dd>
           </>
         )}
         {deck.authors.length > 0 && (
           <>
-            <dt>{deck.authors.length === 1 ? "Author" : "Authors"}</dt>
+            <dt>{t("libraryDeck.authors", { count: deck.authors.length })}</dt>
             <dd>
               <AuthorNames authors={deck.authors} />
             </dd>
@@ -99,7 +101,7 @@ export function LibraryDeckScreen({
         )}
         {deck.license !== undefined && (
           <>
-            <dt>Licence</dt>
+            <dt>{t("libraryDeck.licence")}</dt>
             <dd>
               <ExternalLink url={deck.license}>
                 {licenseLabel(deck.license)}
@@ -109,19 +111,19 @@ export function LibraryDeckScreen({
         )}
         {deck.createdAt !== undefined && (
           <>
-            <dt>Created</dt>
+            <dt>{t("libraryDeck.created")}</dt>
             <dd>{formatDate(deck.createdAt)}</dd>
           </>
         )}
         {deck.modifiedAt !== undefined && (
           <>
-            <dt>Updated</dt>
+            <dt>{t("libraryDeck.updated")}</dt>
             <dd>{formatDate(deck.modifiedAt)}</dd>
           </>
         )}
         {deck.sources.length > 0 && (
           <>
-            <dt>{deck.sources.length === 1 ? "Source" : "Sources"}</dt>
+            <dt>{t("libraryDeck.sources", { count: deck.sources.length })}</dt>
             <dd>
               <ul class="sources">
                 {deck.sources.map((source) => (
@@ -136,13 +138,13 @@ export function LibraryDeckScreen({
       </dl>
       <div class="actions">
         <button class="primary" onClick={onImport} disabled={busy}>
-          {busy ? "Importing…" : "Import this deck"}
+          {busy ? t("libraryDeck.importing") : t("libraryDeck.import")}
         </button>
         <a class="button" href={previewHref}>
-          Preview
+          {t("libraryDeck.preview")}
         </a>
         {imported && (
-          <span class="hint library-imported">Already imported</span>
+          <span class="hint library-imported">{t("libraryDeck.alreadyImported")}</span>
         )}
       </div>
       {error && <p class="error">{error}</p>}

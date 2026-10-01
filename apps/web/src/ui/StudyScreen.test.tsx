@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { StudyScreen } from "./StudyScreen";
+import { I18nProvider } from "./i18n";
 import type { Card, Prompt } from "@solid-memo/domain/deck";
 
 const card: Card = {
@@ -165,5 +166,28 @@ describe("StudyScreen", () => {
     renderScreen({ busy: true, error: "review failed" });
     expect(screen.getByRole("button", { name: "Reveal" })).toBeDisabled();
     expect(screen.getByText("review failed")).toBeInTheDocument();
+  });
+
+  it("speaks Swedish", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <StudyScreen
+          deckName="Kanji N5"
+          deckHref="#/deck?deck=d"
+          prompt={{ card, direction: "front-to-back" }}
+          position={1}
+          total={3}
+          answerScale="minimal"
+          busy={false}
+          error={null}
+          onAnswer={vi.fn()}
+          onExit={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("heading", { name: "Studera: Kanji N5" })).toBeInTheDocument();
+    expect(screen.getByText("Kort 1 av 3")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Visa svar" }));
+    expect(screen.getByRole("button", { name: "Igen" })).toBeInTheDocument();
   });
 });
