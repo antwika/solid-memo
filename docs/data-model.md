@@ -259,6 +259,19 @@ every dataset.
   node-solid-server's parser fails on a triple whose closing `.` touches
   the term before it (`<#a> <#b> 1.}`), which is how
   `@inrupt/solid-client` writes every patch.
+- **A document is downloaded once while it is unchanged.** A screen asks
+  for the same document several times (a deck's cards for its study
+  queue, the format check and the data check): a read already under way
+  is shared, and a document read before is asked for with
+  `If-None-Match: <its ETag>`; on 304 the dataset read then is returned
+  (datasets are immutable). A write to the document forgets both. This is
+  memory only, for the open page: nothing is stored in the browser.
+  Logged in, the browser's own cache does not do this, so without it a
+  login downloaded every deck three times.
+- Reading builds the dataset in one pass
+  ([linearDataset.ts](../packages/solid/src/linearDataset.ts)):
+  `@inrupt/solid-client` copies the whole graph for every quad, which
+  took 9 s for a deck of 3,000 cards.
 - 404 is a normal state for not-yet-created documents; repositories treat it
   as empty, not as an error.
 - No `.acl`/`.acr` resource is ever written except as a rebased copy of

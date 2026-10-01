@@ -63,18 +63,82 @@ export class PreconditionFailedError extends Error {
   }
 }
 
-/** Fetch a dataset, remembering its ETag for a later conditional write. */
-export async function readDataset(url: string, fetch: typeof globalThis.fetch): Promise<Dataset> {
-  let etag: string | null = null;
-  const dataset = await getSolidDatasetLinear(url, {
-    fetch: async (input, init) => {
-      const response = await fetch(input, init);
-      etag = response.headers.get("ETag");
-      return response;
-    },
+/**
+ * What has been read through each fetch, by URL. A screen asks for the
+ * same document several times (a deck's cards for its study queue, the
+ * format check and the data check), at once and again later:
+ *
+ * - a read already under way is shared rather than made again;
+ * - a document read before is asked for with `If-None-Match: <its ETag>`,
+ *   and on 304 the dataset read then is returned: datasets are immutable,
+ *   so it is as good as a new one, without downloading the document again.
+ *
+ * A write to the URL forgets both, so no read after it gets what was
+ * there before.
+ */
+const READS = new WeakMap<
+  typeof globalThis.fetch,
+  { inFlight: Map<string, Promise<Dataset>>; known: Map<string, { etag: string; dataset: Dataset }> }
+>();
+
+function readsOf(fetch: typeof globalThis.fetch) {
+  let reads = READS.get(fetch);
+  if (reads === undefined) {
+    reads = { inFlight: new Map(), known: new Map() };
+    READS.set(fetch, reads);
+  }
+  return reads;
+}
+
+/** Fetch a dataset, remembering its ETag for a later conditional write; see READS. */
+export function readDataset(url: string, fetch: typeof globalThis.fetch): Promise<Dataset> {
+  const { inFlight, known } = readsOf(fetch);
+  const shared = inFlight.get(url);
+  if (shared !== undefined) return shared;
+  const read = fetchDataset(url, fetch, known).finally(() => {
+    if (inFlight.get(url) === read) inFlight.delete(url);
   });
+  inFlight.set(url, read);
+  return read;
+}
+
+/** A write is about to change the document: reads from now on fetch it again. */
+function forgetRead(url: string, fetch: typeof globalThis.fetch): void {
+  const reads = READS.get(fetch);
+  reads?.inFlight.delete(url);
+  reads?.known.delete(url);
+}
+
+async function fetchDataset(
+  url: string,
+  fetch: typeof globalThis.fetch,
+  known: Map<string, { etag: string; dataset: Dataset }>,
+): Promise<Dataset> {
+  const before = known.get(url);
+  let etag: string | null = null;
+  let notModified = false;
+  let dataset: Dataset;
+  try {
+    dataset = await getSolidDatasetLinear(url, {
+      fetch: async (input, init) => {
+        const headers = new Headers(init?.headers);
+        if (before !== undefined) headers.set("If-None-Match", before.etag);
+        const response = await fetch(input, { ...init, headers });
+        // @inrupt/solid-client fails on a 304 without saying its status: noted here.
+        notModified = response.status === 304;
+        etag = response.headers.get("ETag");
+        return response;
+      },
+    });
+  } catch (error) {
+    if (before !== undefined && notModified) return before.dataset;
+    known.delete(url);
+    throw error;
+  }
   const info = resourceInfoOf(dataset);
   if (etag !== null && info !== undefined) ETAGS.set(info, etag);
+  if (etag !== null) known.set(url, { etag, dataset });
+  else known.delete(url);
   return dataset;
 }
 
@@ -107,6 +171,7 @@ export async function saveDataset<T extends SolidDataset>(
   const info = resourceInfoOf(dataset);
   const isEdit = info !== undefined && info.sourceIri === url;
   const etag = isEdit ? strong(ETAGS.get(info)) : undefined;
+  forgetRead(url, fetch);
   try {
     await saveSolidDatasetAt(url, dataset, { fetch: ownPatches(withIfMatch(fetch, etag), dataset) });
   } catch (error) {
@@ -125,6 +190,7 @@ export async function deleteDataset(
 ): Promise<void> {
   const info = resourceInfoOf(dataset);
   const etag = info !== undefined && info.sourceIri === url ? strong(ETAGS.get(info)) : undefined;
+  forgetRead(url, fetch);
   try {
     await deleteSolidDataset(url, { fetch: withIfMatch(fetch, etag) });
   } catch (error) {
