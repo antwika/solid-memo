@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Card, Deck } from "./deck";
 import type { LibraryCard, LibraryDeckContent } from "./library";
-import { applyLibraryUpgrade, planLibraryUpgrade } from "./libraryUpgrade";
+import { applyLibraryUpgrade, planLibraryUpgrade, upgradedCards } from "./libraryUpgrade";
 
 const DECKS = "https://solid-memo.com/decks/";
 const CARDS = "https://pod.example/solid-memo/a/decks/deck-1.ttl";
@@ -77,6 +77,8 @@ describe("planLibraryUpgrade", () => {
       notes: [{ version: "3", notes: "Norway, and Sweden fixed." }],
       add: [libraryCard("no", "Oslo")],
       change: [libraryCard("se", "Stockholm")],
+      retire: [],
+      restore: [],
       remove: [podCard("is", "Reykjavik")],
       kept: [podCard("fi", "Helsinki, my note"), podCard("lv", "Riga, mine")],
     });
@@ -98,11 +100,62 @@ describe("planLibraryUpgrade", () => {
     expect(planLibraryUpgrade({ deck, cards, from, to: release(3, [libraryCard("x", "y", 9)]), releases })).toBeNull();
     expect(planLibraryUpgrade({ deck, cards, from, to: release(2, from.cards), releases })).toBeNull();
   });
+
+  it("retires and brings back cards whatever the user did to them, keeping them and their review state", () => {
+    const retired = (card: LibraryCard): LibraryCard => ({ ...card, retired: true });
+    const was = release(1, [libraryCard("se", "Stockholm"), libraryCard("dk", "Copenhagen"), retired(libraryCard("yu", "Belgrade"))]);
+    const now = release(2, [retired(libraryCard("se", "Stockholm")), libraryCard("dk", "Copenhagen"), libraryCard("yu", "Belgrade")]);
+    const mine = [podCard("se", "Stockholm, my note"), podCard("dk", "Copenhagen"), { ...podCard("yu", "Belgrade"), retired: true as const }];
+    expect(planLibraryUpgrade({ deck, cards: mine, from: was, to: now, releases })).toMatchObject({
+      add: [],
+      change: [],
+      retire: [podCard("se", "Stockholm, my note")],
+      restore: [{ ...podCard("yu", "Belgrade"), retired: true }],
+      remove: [],
+      kept: [],
+    });
+  });
+
+  it("adds a card the release has retired already, retired, so a later release can bring it back", () => {
+    const now = release(2, [...from.cards, { ...libraryCard("yu", "Belgrade"), retired: true }]);
+    expect(planLibraryUpgrade({ deck, cards, from, to: now, releases })?.add).toEqual([
+      { ...libraryCard("yu", "Belgrade"), retired: true },
+    ]);
+  });
+
+  it("takes a retirement the copy already has as done", () => {
+    const now = release(2, from.cards.map((card) => (card.id === "dk" ? { ...card, retired: true as const } : card)));
+    const mine = cards.map((card) => (card.id === "dk" ? { ...card, retired: true as const } : card));
+    expect(planLibraryUpgrade({ deck, cards: mine, from, to: now, releases })).toBeNull();
+  });
+});
+
+describe("upgradedCards", () => {
+  it("writes the added and changed cards as released, and the retired and restored ones as the copy has them", () => {
+    const plan = planLibraryUpgrade({
+      deck,
+      cards: [podCard("se", "Stockholm?"), podCard("dk", "Copenhagen, mine"), { ...podCard("yu", "Belgrade"), retired: true }],
+      from: release(1, [libraryCard("se", "Stockholm?"), libraryCard("dk", "Copenhagen"), { ...libraryCard("yu", "Belgrade"), retired: true }]),
+      to: release(2, [
+        { ...libraryCard("se", "Stockholm"), retired: true },
+        { ...libraryCard("dk", "Copenhagen"), retired: true },
+        libraryCard("yu", "Belgrade"),
+        libraryCard("no", "Oslo"),
+      ]),
+      releases,
+    })!;
+    expect(upgradedCards(plan)).toEqual([
+      libraryCard("no", "Oslo"),
+      { ...libraryCard("se", "Stockholm"), retired: true },
+      { ...podCard("dk", "Copenhagen, mine"), retired: true },
+      podCard("yu", "Belgrade"),
+    ]);
+  });
 });
 
 describe("applyLibraryUpgrade", () => {
   it("moves the copy to the newer release, and to its direction when that changes", () => {
-    const plan = { fromVersion: "1", toVersion: "3", releaseUrl: `${DECKS}capitals/3.ttl`, notes: [], add: [], change: [], remove: [], kept: [] };
+    const plan = { fromVersion: "1", toVersion: "3", releaseUrl: `${DECKS}capitals/3.ttl`, notes: [], add: [], change: [], retire: [], restore: [], remove: [], kept: [] };
     expect(applyLibraryUpgrade(deck, plan)).toEqual({ ...deck, sourceUrl: `${DECKS}capitals/3.ttl` });
     expect(applyLibraryUpgrade(deck, { ...plan, direction: "bidirectional" })).toEqual({
       ...deck,

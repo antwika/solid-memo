@@ -12,6 +12,7 @@ import { DIRECTION_LABELS } from "./direction";
 import { BrowserIcon, TrashIcon } from "./icons";
 import { Pager, paginate } from "./Pager";
 import { readerText } from "./readerText";
+import { RetiredTag, useRetiredCards } from "./RetiredCards";
 import { breakable } from "./breakable";
 
 /** Cards per Browser page: a short list, so paging is quick to scan. */
@@ -21,8 +22,9 @@ export const CARDS_PER_PAGE = 10;
  * Management view for one deck: describe it (description, topics,
  * keywords), choose which way it is studied, add
  * cards, and open any card's own page (where it
- * is edited) by clicking it. Long decks are paged; the page is route
- * state, so it survives a round trip to a card's page.
+ * is edited) by clicking it. Retired cards are listed only when asked.
+ * Long decks are paged; the page is route state, so it survives a round
+ * trip to a card's page.
  */
 export function BrowserScreen({
   deck,
@@ -57,12 +59,13 @@ export function BrowserScreen({
   onRemoveCard: (card: Card) => void;
   onPageChange: (page: number) => void;
 }) {
+  const { listed, toggle } = useRetiredCards(cards);
   const {
     pageCount,
     currentPage,
     firstIndex,
     items: pageCards,
-  } = paginate(cards, page, CARDS_PER_PAGE);
+  } = paginate(listed, page, CARDS_PER_PAGE);
 
   function handleRemove(card: Card) {
     if (
@@ -107,13 +110,16 @@ export function BrowserScreen({
             : "Change it any time; what you have learnt each way is kept."}
         </span>
       </fieldset>
+      {toggle}
       {cards.length === 0 ? (
         <p>No cards in this deck yet.</p>
+      ) : listed.length === 0 ? (
+        <p>Every card in this deck is retired.</p>
       ) : (
         <>
           <p class="hint">
             {pageCount > 1
-              ? `Cards ${firstIndex + 1}–${firstIndex + pageCards.length} of ${cards.length}. `
+              ? `Cards ${firstIndex + 1}–${firstIndex + pageCards.length} of ${listed.length}. `
               : ""}
             Click a card to open it.
           </p>
@@ -127,11 +133,12 @@ export function BrowserScreen({
             </thead>
             <tbody>
               {pageCards.map((card) => (
-                <tr key={card.url}>
+                <tr key={card.url} class={card.retired ? "retired" : undefined}>
                   <td class="clickable">
                     <a href={cardHref(card)}>
                       <CardThumbnail imageUrl={card.frontImageUrl} />
                       {breakable(card.front)}
+                      {card.retired && <RetiredTag />}
                     </a>
                   </td>
                   <td class="clickable">

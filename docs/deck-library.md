@@ -95,6 +95,13 @@ translations. Sources in format 3 (untagged text) stay valid.
   text (`sm:front` / `sm:back`), a picture (`sm:frontImage` /
   `sm:backImage`, always an IRI — the [world flags deck](../packages/deck-library/decks/world-flags.ttl)
   shows the flag alone on the front) or both on each side.
+- **A released card is never removed, but retired**: to stop using a
+  card, keep it and add `owl:deprecated true` (card format 3). Copies of
+  the deck keep it and its review history, but no longer study it, and
+  the app lists it only under "Show retired cards"; a later release can
+  bring it back by leaving the flag out. The build refuses a release that
+  drops a card of the release before it. `sm:cardCount` in the index
+  counts the cards in use.
 - `dcterms:created` and `dcterms:modified` are optional; bump
   `dcterms:modified` when the content changes.
 - The file name is the deck's name, `decks/<name>.ttl`: lower-case

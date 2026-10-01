@@ -28,6 +28,7 @@ import type { LibraryCard, LibraryDeck } from "@solid-memo/domain/library";
 import {
   applyLibraryUpgrade,
   planLibraryUpgrade,
+  upgradedCards,
   type LibraryUpgradePlan,
 } from "@solid-memo/domain/libraryUpgrade";
 import {
@@ -485,7 +486,7 @@ export function createUseCases({
     },
     async applyLibraryUpgrade(deck, plan) {
       await deckRepository.applyCardChanges(deck, {
-        save: [...plan.add, ...plan.change],
+        save: upgradedCards(plan),
         remove: plan.remove.map((card) => card.id),
       });
       if (plan.remove.length > 0) {

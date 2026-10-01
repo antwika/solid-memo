@@ -1,5 +1,6 @@
 import { LATEST_VERSION, type LatestRecord, type ShapeName, type VersionedRecord } from "@solid-memo/vocab/types.generated";
 import { CARD_1_TO_2 } from "./card/1-to-2";
+import { CARD_2_TO_3 } from "./card/2-to-3";
 import { DECK_1_TO_2 } from "./deck/1-to-2";
 import { DECK_2_TO_3 } from "./deck/2-to-3";
 import { DECK_3_TO_4 } from "./deck/3-to-4";
@@ -22,6 +23,7 @@ export type { MigrationContext };
  */
 export const MIGRATIONS: readonly AnyMigrationStep[] = [
   CARD_1_TO_2,
+  CARD_2_TO_3,
   DECK_1_TO_2,
   DECK_2_TO_3,
   DECK_3_TO_4,

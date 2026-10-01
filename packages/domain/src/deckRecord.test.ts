@@ -8,6 +8,7 @@ import {
   deckDistribution,
   deckFromRecord,
   deckToRecord,
+  libraryCardFromRecord,
   libraryDeckFromRecord,
 } from "./deckRecord";
 
@@ -186,10 +187,31 @@ describe("card records", () => {
     });
   });
 
+  it("round-trip a retired card, and leave the retirement out of a card in use", () => {
+    const record = cardToRecord({ front: "Yugoslavia", back: "Belgrade", retired: true }, "");
+    expect(record).toEqual({ front: "Yugoslavia", back: "Belgrade", deprecated: true });
+    expect(cardFromRecord(`${CARDS}#yu`, 3, record)).toMatchObject({ id: "yu", retired: true });
+    expect(cardFromRecord(`${CARDS}#yu`, 3, { ...record, deprecated: false })).not.toHaveProperty("retired");
+    expect(cardToRecord({ front: "Sweden", back: "Stockholm" }, "")).not.toHaveProperty("deprecated");
+  });
+
   it("have no content when a side has neither text nor a picture", () => {
     expect(cardContentFromRecord({ back: "Sweden" })).toBeNull();
     expect(cardContentFromRecord({ front: "Sweden" })).toBeNull();
     expect(cardFromRecord(`${CARDS}#se`, 2, { front: "x" })).toBeNull();
+    expect(libraryCardFromRecord(`${CARDS}#se`, 2, { front: "x" })).toBeNull();
+  });
+
+  it("read a library card, retired or not, keeping its fragment id", () => {
+    expect(libraryCardFromRecord("https://solid-memo.com/decks/x/2.ttl#se", 3, { front: "Sweden", back: "Stockholm" })).toEqual({
+      id: "se",
+      front: "Sweden",
+      back: "Stockholm",
+      formatVersion: 3,
+    });
+    expect(
+      libraryCardFromRecord("https://solid-memo.com/decks/x/2.ttl#yu", 3, { front: "Yugoslavia", back: "Belgrade", deprecated: true }),
+    ).toEqual({ id: "yu", front: "Yugoslavia", back: "Belgrade", formatVersion: 3, retired: true });
   });
 });
 

@@ -22,7 +22,7 @@ import {
 import { cardToRecord } from "@solid-memo/domain/deckRecord";
 import { catalogUrlOf, ensureTrailingSlash } from "@solid-memo/domain/instanceLayout";
 import { documentUrlOf } from "@solid-memo/domain/subjectUrl";
-import { CARD_V2 } from "@solid-memo/vocab/descriptors.generated";
+import { CARD_V3 } from "@solid-memo/vocab/descriptors.generated";
 import { deleteDataset, getSolidDatasetOrNull, saveDataset } from "./datasets";
 import { DCTERMS } from "./vocab";
 import {
@@ -163,6 +163,7 @@ export function createSolidDeckRepository({
         createdAt: card.createdAt,
         ...content,
         formatVersion: CARD_FORMAT_VERSION,
+        ...(card.retired === true ? { retired: true } : {}),
       };
       await save(
         deck.cardsDocumentUrl,
@@ -314,12 +315,12 @@ export function createSolidDeckRepository({
    */
   function cardThing(
     deck: Deck,
-    card: CardContent & { id: string; createdAt?: string },
+    card: CardContent & { id: string; createdAt?: string; retired?: true },
     existing: ThingPersisted | null,
   ): ThingPersisted {
     return recordThing(
       `${deck.cardsDocumentUrl}#${card.id}`,
-      CARD_V2,
+      CARD_V3,
       cardToRecord(card, card.createdAt ?? now().toISOString()),
       existing,
     );

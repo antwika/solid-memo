@@ -66,7 +66,9 @@ export function describeFormats(plan: MigrationPlan): string {
     );
   }
   if (plan.cardCount > 0) {
-    parts.push(`card format ${CARD_FORMAT_VERSION}, which adds pictures on cards`);
+    parts.push(
+      `card format ${CARD_FORMAT_VERSION}, which adds pictures on cards and lets a library deck retire a card it no longer uses`,
+    );
   }
   if (plan.reviewCount > 0) {
     parts.push(

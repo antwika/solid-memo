@@ -22,6 +22,8 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "card/v2/invalid/image-as-literal.ttl": { path: `${SM}frontImage`, message: "A picture is an IRI" },
   "card/v2/invalid/side-without-content.ttl": { message: "Each side of a card needs text or a picture." },
   "card/v2/invalid/untyped-version.ttl": { path: `${SM}formatVersion`, message: "Card format 2 states its format version, 2." },
+  "card/v3/invalid/deprecated-as-string.ttl": { path: "http://www.w3.org/2002/07/owl#deprecated", message: "A retired card states owl:deprecated true" },
+  "card/v3/invalid/side-without-content.ttl": { message: "Each side of a card needs text or a picture." },
   "deck/v1/invalid/missing-title.ttl": { path: `${DC}title`, message: "Less than 1 values" },
   "deck/v2/invalid/bad-direction.ttl": { path: `${SM}direction`, message: "A format-2 deck states its direction" },
   "deck/v2/invalid/missing-direction.ttl": { path: `${SM}direction`, message: "A format-2 deck states its direction" },
@@ -101,7 +103,7 @@ describe("the shapes over the fixtures", async () => {
     await expect(
       validateTurtleDocument("x.ttl", parseTurtle(turtle, base("x.ttl")), engine, "pod"),
     ).rejects.toThrow(
-      "x.ttl:\n  <https://pod.example/x.ttl#se> is card format 3; this app knows formats 1–2.",
+      "x.ttl:\n  <https://pod.example/x.ttl#se> is card format 4; this app knows formats 1–3.",
     );
   });
 

@@ -196,6 +196,12 @@ describe("buildIndex", () => {
     expect(of(`${current}#se`, `${SM}front`)).toEqual([]);
   });
 
+  it("counts only the cards in use, not the retired ones", () => {
+    const retired = release("capitals", 3, NORWAY.replace('    solid-memo:front "Norway" ;', '    solid-memo:front "Norway" ;\n    owl:deprecated true ;').replace("@prefix", "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix"));
+    const quads = parseTurtle(buildIndex([...CAPITALS, retired]), INDEX);
+    expect(quads.filter((q) => q.subject.value === `${DECKS}capitals/3.ttl` && q.predicate.value === `${SM}cardCount`).map((q) => q.object.value)).toEqual(["1"]);
+  });
+
   it("writes library IRIs relative to the index, so the library works wherever it is hosted", () => {
     expect(index).toContain("<capitals/2.ttl>");
     expect(index).toContain("<#capitals>");
@@ -233,6 +239,22 @@ describe("validateLibrary", () => {
     await expect(validateLibrary([moved], buildIndex([]), validators)).rejects.toThrow(
       `releases/capitals/3.ttl: states version 1 of <${INDEX}#capitals>; its path says version 3 of <${INDEX}#capitals>.`,
     );
+  });
+
+  it("refuses a release that drops a card of the release before it, and accepts one that retires it", async () => {
+    const dropped = release("capitals", 3, SOURCE);
+    await expect(validateLibrary([...CAPITALS, dropped], buildIndex([...CAPITALS, dropped]), validators)).rejects.toThrow(
+      "releases/capitals/3.ttl: drops <#no>, which release 2 has. A card is never removed: retire it (owl:deprecated true)",
+    );
+    const retired = release(
+      "capitals",
+      3,
+      NORWAY.replace('    solid-memo:formatVersion 1 ;\n    solid-memo:front "Norway" ;', '    solid-memo:formatVersion 3 ;\n    solid-memo:front "Norway" ;\n    owl:deprecated true ;').replace(
+        "@prefix",
+        "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix",
+      ),
+    );
+    await expect(validateLibrary([...CAPITALS, retired], buildIndex([...CAPITALS, retired]), validators)).resolves.toBeUndefined();
   });
 
   it("names a release that breaks a shape", async () => {

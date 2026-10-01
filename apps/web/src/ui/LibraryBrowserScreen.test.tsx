@@ -78,6 +78,15 @@ describe("LibraryBrowserScreen", () => {
     );
   });
 
+  it("hides retired cards until asked, counting only the others", () => {
+    renderScreen({ cards: [card(1), { ...card(2), retired: true }] });
+    expect(screen.getByText(/^1 card\./)).toBeInTheDocument();
+    expect(screen.queryByText("Front 2")).toBeNull();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Show retired cards" }));
+    expect(screen.getByText("Front 2")).toBeInTheDocument();
+    expect(screen.getByText("Retired")).toBeInTheDocument();
+  });
+
   it("says so when the deck is empty", () => {
     renderScreen({ cards: [] });
     expect(screen.getByText("This deck has no cards.")).toBeInTheDocument();

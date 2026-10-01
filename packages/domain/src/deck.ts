@@ -24,6 +24,11 @@ import { isHttpUrl } from "./webId";
  * concept (`sm:studyDirection`), a description is required, creators
  * are foaf:Agent nodes, and topics and keywords may be stated. A
  * format-2 reader would find no `sm:direction` and drop the deck.
+ *
+ * Card format 3 lets a card be retired (`owl:deprecated true`): a library
+ * deck keeps a card it no longer uses rather than removing it, so a copy
+ * keeps the card and its review state. A format-2 reader would go on studying a retired
+ * card, which is why the version moved.
  */
 export const DECK_FORMAT_VERSION: number = LATEST_VERSION.deck;
 export const CARD_FORMAT_VERSION: number = LATEST_VERSION.card;
@@ -173,6 +178,17 @@ export interface Card extends CardContent {
   /** ISO dateTime. */
   createdAt: string;
   formatVersion: number;
+  /**
+   * Set when the card is retired (card format 3, owl:deprecated): the
+   * library deck it came from no longer uses it. It is kept, with its
+   * review state, but not studied, and the Browser hides it unless asked.
+   */
+  retired?: true;
+}
+
+/** The cards in use: all but the retired ones, which are kept but never studied. */
+export function activeCards<T extends { retired?: true }>(cards: readonly T[]): T[] {
+  return cards.filter((card) => card.retired !== true);
 }
 
 /** Outcome of validating card content as entered. */

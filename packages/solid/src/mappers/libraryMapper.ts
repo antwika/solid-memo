@@ -13,7 +13,7 @@ import {
 } from "@inrupt/solid-client";
 import { directionOfConcept } from "@solid-memo/domain/concepts";
 import { agentUrlOf } from "@solid-memo/domain/agentRecord";
-import { cardContentFromRecord, libraryDeckFromRecord } from "@solid-memo/domain/deckRecord";
+import { libraryCardFromRecord, libraryDeckFromRecord } from "@solid-memo/domain/deckRecord";
 import type {
   LibraryCard,
   LibraryDeck,
@@ -22,7 +22,6 @@ import type {
 } from "@solid-memo/domain/library";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { migrate } from "@solid-memo/domain/shapes/migrations";
-import { fragmentIdOf } from "@solid-memo/domain/subjectUrl";
 import { readVersioned, storedVersionOf } from "../records";
 import { agentNamesOf } from "./deckMapper";
 import { ADMS, DCAT, DCTERMS, RDF, SM } from "../vocab";
@@ -167,7 +166,5 @@ function toLibraryCard(url: string, thing: Thing): LibraryCard | null {
   }
   const read = readVersioned(thing, "card");
   if (read === null) return null;
-  const content = cardContentFromRecord(migrate("card", read.record, { subject: asUrl(thing) }));
-  if (content === null) return null;
-  return { id: fragmentIdOf(asUrl(thing)), ...content, formatVersion };
+  return libraryCardFromRecord(asUrl(thing), formatVersion, migrate("card", read.record, { subject: asUrl(thing) }));
 }

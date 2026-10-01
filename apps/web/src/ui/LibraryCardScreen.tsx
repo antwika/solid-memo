@@ -1,6 +1,7 @@
 import type { LibraryCard } from "@solid-memo/domain/library";
 import { CardFace } from "./CardFace";
 import { CardIcon } from "./icons";
+import { RetiredNotice } from "./RetiredCards";
 
 /**
  * One card of a library deck, both sides as study shows them, read-only:
@@ -28,6 +29,7 @@ export function LibraryCardScreen({
         <CardFace side="front" text={card.front} imageUrl={card.frontImageUrl} />
         <CardFace side="back" text={card.back} imageUrl={card.backImageUrl} />
       </div>
+      {card.retired && <RetiredNotice />}
       <p class="hint">
         From <a href={deckHref}>{deckName}</a>. Import the deck to study or
         edit its cards.

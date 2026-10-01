@@ -57,6 +57,7 @@ const TURTLE = "text/turtle; charset=utf-8";
 const INDEX_FILE = "index.ttl";
 const DATA_THEMES = "http://publications.europa.eu/resource/authority/data-theme";
 const TOPICS = "https://solid-memo.com/vocab/topics";
+const OWL_DEPRECATED = "http://www.w3.org/2002/07/owl#deprecated";
 
 /** One frozen release of a deck, as the build reads it. */
 export interface DeckRelease {
@@ -147,6 +148,24 @@ function quadsOf(release: DeckRelease): Quad[] {
   return parseTurtle(release.turtle, releaseUrlOf(release.deck, release.version));
 }
 
+/** A release's cards by subject, each with whether it is retired (owl:deprecated true). */
+function cardsOf(quads: readonly Quad[]): Map<string, boolean> {
+  const cards = quads
+    .filter((q) => q.predicate.value === RDF_TYPE && q.object.value === `${SM_NS}Card`)
+    .map((q) => q.subject.value);
+  const retired = new Set(
+    quads
+      .filter((q) => q.predicate.value === OWL_DEPRECATED && q.object.termType === "Literal" && q.object.value === "true")
+      .map((q) => q.subject.value),
+  );
+  return new Map(cards.map((subject) => [subject, retired.has(subject)]));
+}
+
+/** The fragment ids of a release's cards: a card's identity from one release to the next. */
+function cardIdsOf(quads: readonly Quad[]): string[] {
+  return [...cardsOf(quads).keys()].map((subject) => subject.slice(subject.indexOf("#") + 1));
+}
+
 function literalOf(quads: readonly Quad[], subject: string, predicate: string): Quad_Object | undefined {
   return objectsOf(quads, subject, predicate).find((o) => o.termType === "Literal");
 }
@@ -170,7 +189,8 @@ function textOf(quads: readonly Quad[], subject: string, predicate: string): Qua
  * which are its versions too; every release is described (a
  * dcat:Dataset with its title, description, version, issue time and
  * notes), the current one in full — everything but its cards, plus
- * sm:cardCount — so the library can be listed from the index alone.
+ * sm:cardCount, the cards it has in use (retired ones not counted) — so
+ * the library can be listed from the index alone.
  * IRIs under the library are written relative to the index, so the
  * library works wherever the site is hosted.
  */
@@ -237,13 +257,10 @@ export function buildIndex(releases: readonly DeckRelease[]): string {
       }
     }
 
-    const cards = new Set(
-      latestQuads
-        .filter((q) => q.predicate.value === RDF_TYPE && q.object.value === `${SM_NS}Card`)
-        .map((q) => q.subject.value),
-    );
+    const cards = cardsOf(latestQuads);
     out.push(...latestQuads.filter((q) => !cards.has(q.subject.value)));
-    add(latestUrl, `${SM_NS}cardCount`, literal(String(cards.size), iri(`${XSD}integer`)));
+    const inUse = [...cards.values()].filter((retired) => !retired).length;
+    add(latestUrl, `${SM_NS}cardCount`, literal(String(inUse), iri(`${XSD}integer`)));
   }
   return writeRelative(out);
 }
@@ -294,7 +311,10 @@ export async function loadValidators(vocabRoot: string = VOCAB_ROOT): Promise<Li
  * conform: to Solid Memo's shapes, to DCAT-AP (a release with the index
  * beside it, where its series and publisher are described), and to what
  * the shapes cannot say — a release is exactly one deck, the document
- * itself, numbered and placed as its path says.
+ * itself, numbered and placed as its path says, and it keeps every card
+ * of the release before it: a card the deck no longer uses is retired
+ * (owl:deprecated true), never removed, so the copies that have it keep
+ * it and its review history.
  */
 export async function validateLibrary(
   releases: readonly DeckRelease[],
@@ -320,6 +340,16 @@ export async function validateLibrary(
     const series = objectsOf(quads, url, `${DCAT}inSeries`)[0]?.value;
     if (version !== String(release.version) || series !== seriesUrlOf(release.deck)) {
       throw new Error(`${label}: states version ${version} of <${series}>; its path says version ${release.version} of <${seriesUrlOf(release.deck)}>.`);
+    }
+    const before = releases.find((r) => r.deck === release.deck && r.version === release.version - 1);
+    if (before !== undefined) {
+      const cards = new Set(cardIdsOf(quads));
+      const dropped = cardIdsOf(quadsOf(before)).filter((id) => !cards.has(id));
+      if (dropped.length > 0) {
+        throw new Error(
+          `${label}: drops ${dropped.map((id) => `<#${id}>`).join(", ")}, which release ${before.version} has. A card is never removed: retire it (owl:deprecated true), so the copies that have it keep it and its review history.`,
+        );
+      }
     }
     await validateTurtleDocument(label, quads, validators.shapes, "library");
     await validateProfile(label, quads, validators.dcatAp, [...validators.reference, ...indexQuads]);

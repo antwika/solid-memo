@@ -137,10 +137,10 @@ describe("planMigration", () => {
       planMigration({
         ...nothingElse,
         entries: [
-          { deck, cards: [card("a", 1), card("b", 2), card("c", 1)], reviews: [review("a", 1)] },
+          { deck, cards: [card("a", 1), card("b", CARD_FORMAT_VERSION), card("c", 1)], reviews: [review("a", 1)] },
           { deck: other, cards: [card("d", 1)], reviews: [] },
-          { deck: oldEntry, cards: [card("e", 2)], reviews: [review("e", 2)] },
-          { deck: upToDate, cards: [card("f", 2)], reviews: [] },
+          { deck: oldEntry, cards: [card("e", CARD_FORMAT_VERSION)], reviews: [review("e", 2)] },
+          { deck: upToDate, cards: [card("f", CARD_FORMAT_VERSION)], reviews: [] },
           { deck: oldReviews, cards: [], reviews: [review("g", 1), review("h", 1)] },
         ],
       }),
@@ -184,7 +184,7 @@ describe("planMigration", () => {
   it("is empty when everything is current or absent", () => {
     const plan = planMigration({
       ...nothingElse,
-      entries: [{ deck, cards: [card("a", 2)], reviews: [review("a", 2)] }],
+      entries: [{ deck, cards: [card("a", CARD_FORMAT_VERSION)], reviews: [review("a", 2)] }],
     });
     expect(plan).toEqual({
       decks: [],

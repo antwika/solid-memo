@@ -151,12 +151,12 @@ export interface DeckRepository {
   saveCards(deck: Deck, cards: Card[]): Promise<void>;
   /**
    * Write cards by fragment id, new or existing (an existing card keeps
-   * its creation time and triples this app does not know), and remove
-   * others, in one write of the cards document.
+   * its creation time and triples this app does not know), retired or
+   * not, and remove others, in one write of the cards document.
    */
   applyCardChanges(
     deck: Deck,
-    changes: { save: (CardContent & { id: string })[]; remove: string[] },
+    changes: { save: (CardContent & { id: string; retired?: true })[]; remove: string[] },
   ): Promise<void>;
 }
 

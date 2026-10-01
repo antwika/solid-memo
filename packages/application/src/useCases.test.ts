@@ -13,7 +13,7 @@ import type {
   InstanceCopier,
 } from "./ports";
 import { createUseCases } from "./useCases";
-import { DECK_FORMAT_VERSION, type Card, type Deck } from "@solid-memo/domain/deck";
+import { CARD_FORMAT_VERSION, DECK_FORMAT_VERSION, type Card, type Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "@solid-memo/domain/library";
 import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
@@ -534,7 +534,7 @@ describe("createUseCases", () => {
       url: `${deck.cardsDocumentUrl}#${id}`,
       formatVersion: 1,
     });
-    const current = (id: string): Card => ({ ...old(id), formatVersion: 2 });
+    const current = (id: string): Card => ({ ...old(id), formatVersion: CARD_FORMAT_VERSION });
 
     const oldReview = (cardId: string): ReviewState => ({
       cardId,
@@ -1056,6 +1056,7 @@ describe("createUseCases", () => {
   it("applyLibraryUpgrade writes the cards, drops the removed cards' review states, and moves the deck to the release", async () => {
     const deps = makeDeps();
     const copy: Deck = { ...deck, sourceUrl: libraryDeck.url };
+    const retired = { ...card, id: "yugoslavia" };
     const plan = {
       fromVersion: "1",
       toVersion: "2",
@@ -1063,6 +1064,8 @@ describe("createUseCases", () => {
       notes: [],
       add: [{ id: "norway", front: "Norway", back: "Oslo", formatVersion: 1 }],
       change: [{ id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 }],
+      retire: [retired],
+      restore: [],
       remove: [card],
       kept: [],
     };
@@ -1071,7 +1074,7 @@ describe("createUseCases", () => {
       sourceUrl: plan.releaseUrl,
     });
     expect(deps.deckRepository.applyCardChanges).toHaveBeenCalledWith(copy, {
-      save: [...plan.add, ...plan.change],
+      save: [...plan.add, ...plan.change, { ...retired, retired: true }],
       remove: [card.id],
     });
     expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledWith(copy, {
