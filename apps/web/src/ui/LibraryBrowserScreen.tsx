@@ -5,6 +5,7 @@ import { BrowserIcon } from "./icons";
 import { Pager, paginate } from "./Pager";
 import { cardCount } from "./studyCounts";
 import { readerText } from "./readerText";
+import { breakable } from "./breakable";
 
 /**
  * A library deck's cards, to look through before importing it: the
@@ -67,13 +68,13 @@ export function LibraryBrowserScreen({
                   <td class="clickable">
                     <a href={cardHref(card)}>
                       <CardThumbnail imageUrl={card.frontImageUrl} />
-                      {card.front}
+                      {breakable(card.front)}
                     </a>
                   </td>
                   <td class="clickable">
                     <a href={cardHref(card)} tabIndex={-1} aria-hidden="true">
                       <CardThumbnail imageUrl={card.backImageUrl} />
-                      {card.back}
+                      {breakable(card.back)}
                     </a>
                   </td>
                 </tr>

@@ -1,4 +1,5 @@
 import { isHttpUrl } from "@solid-memo/domain/webId";
+import { breakable } from "./breakable";
 
 /**
  * One side of a card as it looks in study: its picture (if any) above its
@@ -33,7 +34,7 @@ export function CardFace({
         ) : (
           <p class="hint">Picture not shown: its address is not a web URL.</p>
         ))}
-      {text !== "" && <p>{text}</p>}
+      {text !== "" && <p>{breakable(text)}</p>}
     </div>
   );
 }
