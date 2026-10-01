@@ -224,13 +224,20 @@ every dataset.
 - Mutations always follow read → modify → save
   ([datasets.ts](../packages/solid/src/datasets.ts): `readDataset` or
   `getSolidDatasetOrNull`, then `saveDataset`), which issues a PATCH of the
-  delta — never a clobbering PUT. Only brand-new documents are saved from
-  `createSolidDataset()`.
+  delta, or for a large edit one PUT of the whole document as read and
+  edited (below), so unknown triples survive either way. Only brand-new
+  documents are saved from `createSolidDataset()`.
 - **Every write states what it expects to find**, as an HTTP precondition,
   so a write never silently undoes someone else's (another tab, device or
   app):
   - an edit is sent with `If-Match: <the ETag the document was read with>`;
-    had it changed since, the pod answers 412 and nothing is written;
+    had it changed since, the pod answers 412 and nothing is written. An
+    edit is a PATCH or, when the PATCH would be larger than 64 KiB, one
+    PUT of the whole document: node-solid-server reads at most 100 kB of a
+    PATCH and fails past that, which an edit of every card of a large deck
+    (a format update) exceeds. Without `If-Match` (no strong ETag, below),
+    such a PUT would undo a change made elsewhere since the read, where a
+    PATCH keeps it;
   - a creation is sent with `If-None-Match: *` (by
     `@inrupt/solid-client` for datasets and containers, by the copier for
     files); had something appeared there meanwhile, 412;
@@ -241,8 +248,17 @@ every dataset.
   own. Weak ETags (`W/"…"`) are never sent in `If-Match`, whose
   comparison is strong; a document the pod gives no ETag, or one saved
   since it was read (pods need not return the new ETag), is written
-  without `If-Match`. The end-to-end tests hold all of this against a
-  real server ([testing.md](testing.md)).
+  without `If-Match`. node-solid-server 5.7.4 gives no strong ETag and
+  ignores both `If-Match` and `If-None-Match: *`, so there no write is
+  conditional: a PATCH still keeps a change made elsewhere, a large
+  edit's PUT does not. The end-to-end tests hold all of this
+  against real servers, that one included ([testing.md](testing.md)).
+- **An edit's PATCH body is written by Solid Memo** (`patchBody` in
+  [datasets.ts](../packages/solid/src/datasets.ts)), not by
+  `@inrupt/solid-client`: one triple a line, a space before each `.`.
+  node-solid-server's parser fails on a triple whose closing `.` touches
+  the term before it (`<#a> <#b> 1.}`), which is how
+  `@inrupt/solid-client` writes every patch.
 - 404 is a normal state for not-yet-created documents; repositories treat it
   as empty, not as an error.
 - No `.acl`/`.acr` resource is ever written except as a rebased copy of

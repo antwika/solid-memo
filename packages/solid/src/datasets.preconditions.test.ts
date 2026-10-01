@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildThing, createSolidDataset, createThing, setThing } from "@inrupt/solid-client";
-import { deleteDataset, getSolidDatasetOrNull, PreconditionFailedError, readDataset, saveDataset } from "./datasets";
+import { deleteDataset, getSolidDatasetOrNull, MAX_PATCH_BYTES, PreconditionFailedError, readDataset, saveDataset } from "./datasets";
 
 /**
  * The preconditions through the real @inrupt/solid-client, against a fake
@@ -12,6 +12,7 @@ const NEW = "https://pod.example/new.ttl";
 
 function pod({ etag = '"v1"', exists = new Set([DOC]) }: { etag?: string | null; exists?: Set<string> } = {}) {
   const writes: { method: string; url: string; ifMatch: string | null; ifNoneMatch: string | null }[] = [];
+  const bodies: { contentType: string | null; body: string }[] = [];
   let current = etag;
   const fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
@@ -26,6 +27,7 @@ function pod({ etag = '"v1"', exists = new Set([DOC]) }: { etag?: string | null;
       return response;
     }
     writes.push({ method, url, ifMatch: headers.get("If-Match"), ifNoneMatch: headers.get("If-None-Match") });
+    bodies.push({ contentType: headers.get("Content-Type"), body: String(init?.body ?? "") });
     const ifMatch = headers.get("If-Match");
     if (ifMatch !== null && (!exists.has(url) || ifMatch !== current)) return new Response("", { status: 412 });
     if (headers.get("If-None-Match") === "*" && exists.has(url)) return new Response("", { status: 412 });
@@ -35,6 +37,7 @@ function pod({ etag = '"v1"', exists = new Set([DOC]) }: { etag?: string | null;
   return {
     fetch,
     writes,
+    bodies,
     /** Someone else writes the document: it gets a new version. */
     changeElsewhere(next: string) {
       current = next;
@@ -89,6 +92,29 @@ describe("saving with preconditions", () => {
     const server = pod();
     await saveDataset(NEW, await readDataset(DOC, server.fetch), server.fetch);
     expect(server.writes[0]).toMatchObject({ url: NEW, ifMatch: null, ifNoneMatch: "*" });
+  });
+
+  it("writes an edit too large for one PATCH as one PUT of the whole document, still only if it is as it was read", async () => {
+    const server = pod();
+    let dataset = await readDataset(DOC, server.fetch);
+    for (let i = 0; i < 1000; i++) {
+      dataset = setThing(dataset, buildThing(createThing({ url: `${DOC}#card-${i}` })).addInteger("https://example.com/ns#formatVersion", 3).build());
+    }
+    await saveDataset(DOC, dataset, server.fetch);
+    expect(server.writes).toEqual([{ method: "PUT", url: DOC, ifMatch: '"v1"', ifNoneMatch: null }]);
+    expect(server.bodies[0].contentType).toBe("text/turtle");
+    expect(server.bodies[0].body).toContain("#card-999>");
+    expect(server.bodies[0].body).toContain('"1"');
+    expect(new TextEncoder().encode(server.bodies[0].body).length).toBeGreaterThan(MAX_PATCH_BYTES);
+
+    const changed = pod();
+    const read = await readDataset(DOC, changed.fetch);
+    changed.changeElsewhere('"v2"');
+    let large = read;
+    for (let i = 0; i < 1000; i++) {
+      large = setThing(large, buildThing(createThing({ url: `${DOC}#card-${i}` })).addInteger("https://example.com/ns#formatVersion", 3).build());
+    }
+    await expect(saveDataset(DOC, large, changed.fetch)).rejects.toBeInstanceOf(PreconditionFailedError);
   });
 
   it("passes on other failures", async () => {

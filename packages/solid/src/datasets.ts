@@ -2,9 +2,13 @@ import {
   deleteSolidDataset,
   getSolidDataset,
   saveSolidDatasetAt,
+  solidDatasetAsTurtle,
   type SolidDataset,
+  type WithChangeLog,
   type WithServerResourceInfo,
 } from "@inrupt/solid-client";
+
+import type { Literal, Quad } from "@rdfjs/types";
 
 type Dataset = Awaited<ReturnType<typeof getSolidDataset>>;
 
@@ -21,6 +25,17 @@ type Dataset = Awaited<ReturnType<typeof getSolidDataset>>;
  *   with `If-None-Match: *`: had the document appeared meanwhile, 412;
  * - deleting a document read before sends `If-Match` too.
  *
+ * An edit's PATCH body is written here (patchBody), not by
+ * @inrupt/solid-client: node-solid-server's parser fails on a triple whose
+ * closing "." touches the term before it (`<#a> <#b> 1.}`), which is how
+ * @inrupt/solid-client writes every patch, so no edit could be saved
+ * there. Ours has one triple a line, a space before each ".". An edit too
+ * large for one PATCH (MAX_PATCH_BYTES) is written as one PUT of the whole
+ * document instead, with the same If-Match: node-solid-server reads a
+ * PATCH body of at most 100 kB, and past that parses "[object Object]"
+ * and fails, so an edit of every card of a large deck (a format update)
+ * could not be saved there.
+ *
  * A 412 becomes a PreconditionFailedError naming the document. Weak
  * ETags (`W/"…"`) are never sent in `If-Match`, where the comparison is
  * strong and would always fail; a document without an ETag, or one saved
@@ -28,6 +43,9 @@ type Dataset = Awaited<ReturnType<typeof getSolidDataset>>;
  * without `If-Match`.
  */
 const ETAGS = new WeakMap<object, string>();
+
+/** The largest PATCH body sent; a larger edit is a PUT of the whole document. Well under 100 kB. */
+export const MAX_PATCH_BYTES = 64 * 1024;
 
 /** The pod refused a write because the document is not as Solid Memo last saw it. */
 export class PreconditionFailedError extends Error {
@@ -89,7 +107,7 @@ export async function saveDataset<T extends SolidDataset>(
   const isEdit = info !== undefined && info.sourceIri === url;
   const etag = isEdit ? strong(ETAGS.get(info)) : undefined;
   try {
-    await saveSolidDatasetAt(url, dataset, { fetch: withIfMatch(fetch, etag) });
+    await saveSolidDatasetAt(url, dataset, { fetch: ownPatches(withIfMatch(fetch, etag), dataset) });
   } catch (error) {
     if (statusOf(error) === 412) throw new PreconditionFailedError(url, isEdit ? "unchanged" : "absent");
     throw error;
@@ -122,6 +140,66 @@ function withIfMatch(fetch: typeof globalThis.fetch, etag: string | undefined): 
     headers.set("If-Match", etag);
     return fetch(input, { ...init, headers });
   };
+}
+
+/**
+ * The fetch, with the PATCH @inrupt/solid-client sends given our body
+ * (patchBody), or sent as a PUT of the whole dataset (its every triple,
+ * the edit applied) when that body is larger than MAX_PATCH_BYTES; other
+ * headers kept. @inrupt/solid-client takes the answer as its PATCH's.
+ */
+function ownPatches(fetch: typeof globalThis.fetch, dataset: SolidDataset): typeof globalThis.fetch {
+  return async (input, init) => {
+    if (init?.method !== "PATCH") return fetch(input, init);
+    const body = patchBody(dataset) ?? init.body;
+    if (typeof body !== "string" || new TextEncoder().encode(body).length <= MAX_PATCH_BYTES) {
+      return fetch(input, { ...init, body });
+    }
+    const headers = new Headers(init.headers);
+    headers.set("Content-Type", "text/turtle");
+    return fetch(input, { ...init, method: "PUT", headers, body: await solidDatasetAsTurtle(dataset) });
+  };
+}
+
+/** Where @inrupt/solid-client names a Thing that has no URL yet: `<#name>` in the document. */
+const LOCAL_NODE = "https://inrupt.com/.well-known/sdk-local-node/";
+const XSD_STRING = "http://www.w3.org/2001/XMLSchema#string";
+
+/**
+ * The SPARQL Update of a dataset's changes, one triple a line in
+ * N-Triples form, every triple closed by " .": what every Solid server
+ * parses, node-solid-server's too. Null when a change has a blank node,
+ * which DELETE DATA cannot name; then @inrupt/solid-client's body is sent.
+ */
+export function patchBody(dataset: SolidDataset): string | null {
+  const changes = (dataset as Partial<WithChangeLog>).internal_changeLog;
+  if (changes === undefined) return null;
+  const block = (operation: string, quads: readonly Quad[]): string | null => {
+    const triples = quads.map(tripleLine);
+    if (triples.includes(null)) return null;
+    return triples.length === 0 ? "" : `${operation} {\n${triples.join("\n")}\n};\n`;
+  };
+  const deletions = block("DELETE DATA", changes.deletions);
+  const additions = block("INSERT DATA", changes.additions);
+  return deletions === null || additions === null ? null : deletions + additions;
+}
+
+function tripleLine(quad: Quad): string | null {
+  const { subject, predicate, object } = quad;
+  if (subject.termType !== "NamedNode" || (object.termType !== "NamedNode" && object.termType !== "Literal")) {
+    return null;
+  }
+  return `${iri(subject.value)} ${iri(predicate.value)} ${object.termType === "Literal" ? literal(object) : iri(object.value)} .`;
+}
+
+function iri(value: string): string {
+  return value.startsWith(LOCAL_NODE) ? `<#${value.slice(LOCAL_NODE.length)}>` : `<${value}>`;
+}
+
+function literal(term: Literal): string {
+  const text = `"${term.value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r")}"`;
+  if (term.language !== "") return `${text}@${term.language}`;
+  return term.datatype.value === XSD_STRING ? text : `${text}^^<${term.datatype.value}>`;
 }
 
 function strong(etag: string | undefined): string | undefined {
