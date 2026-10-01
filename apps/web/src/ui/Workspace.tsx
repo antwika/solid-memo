@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import { cardLabel, type Deck } from "@solid-memo/domain/deck";
@@ -37,6 +37,7 @@ import {
   libraryDeckHref,
   routeToHash,
   useHashRoute,
+  type RouteRef,
   validationHref,
 } from "./router";
 import { ValidationContainer } from "./ValidationContainer";
@@ -66,6 +67,13 @@ export function Workspace({
     instanceUrl === null
       ? null
       : (instances?.find((i) => i.url === instanceUrl) ?? null);
+
+  // The last screen inside an instance, for the instance picker's Back.
+  // Kept in memory only: a reload of the picker forgets it.
+  const lastInstanceRoute = useRef<RouteRef | null>(null);
+  useEffect(() => {
+    if (instanceUrl !== null) lastInstanceRoute.current = route;
+  }, [route]);
 
   const deckUrl = route !== null && "deckUrl" in route ? route.deckUrl : null;
   const needsDeck = deckUrl !== null && activeInstance !== null;
@@ -337,6 +345,14 @@ export function Workspace({
     }
   }
 
+  const backRoute = lastInstanceRoute.current;
+  const backFromPicker =
+    backRoute !== null &&
+    "instanceUrl" in backRoute &&
+    instances.some((i) => i.url === backRoute.instanceUrl)
+      ? () => navigate(backRoute)
+      : undefined;
+
   const screen = (() => {
     switch (route.screen) {
       case "storagePicker":
@@ -382,6 +398,7 @@ export function Workspace({
               attachInstanceMutation.mutate({ url, target })
             }
             onDelete={(instance) => deleteInstanceMutation.mutate(instance)}
+            onBack={backFromPicker}
           />
         );
       case "instanceCreator":

@@ -16,6 +16,7 @@ export function InstancePicker({
   onNewInstance,
   onAttach,
   onDelete,
+  onBack,
 }: {
   instances: Instance[];
   options: RegistrationOptions | null;
@@ -25,6 +26,8 @@ export function InstancePicker({
   onNewInstance: () => void;
   onAttach: (url: string, target: RegistrationTarget) => void;
   onDelete: (instance: Instance) => void;
+  /** Back to where the user switched from; absent when there is none. */
+  onBack?: () => void;
 }) {
   const [attachUrl, setAttachUrl] = useState("");
   const [target, setTarget] = useState<RegistrationTarget>("private");
@@ -72,6 +75,14 @@ export function InstancePicker({
       <button onClick={onNewInstance} disabled={busy}>
         New instance…
       </button>
+      {onBack && (
+        <>
+          {" "}
+          <button type="button" onClick={onBack} disabled={busy}>
+            Back
+          </button>
+        </>
+      )}
       <details>
         <summary>Attach an existing instance by URL</summary>
         <form onSubmit={handleAttach}>

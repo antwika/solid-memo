@@ -54,6 +54,18 @@ describe("InstancePicker", () => {
     }
   });
 
+  it("goes back when there is somewhere to go back to", () => {
+    const onBack = vi.fn();
+    renderPicker({ onBack });
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(onBack).toHaveBeenCalledOnce();
+  });
+
+  it("offers no Back when there is nowhere to go back to", () => {
+    renderPicker();
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+  });
+
   it("starts the new-instance flow", () => {
     const { props } = renderPicker();
     fireEvent.click(screen.getByRole("button", { name: "New instance…" }));

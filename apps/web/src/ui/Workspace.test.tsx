@@ -486,6 +486,72 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
+  it("goes back from the instance picker to where the switch started", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      routeToHash({ screen: "preferences", instanceUrl: instanceA.url }),
+    );
+    renderWorkspace(
+      makeUseCases({ listInstances: vi.fn(async () => [instanceA, instanceB]) }),
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Switch instance" }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Back" }));
+
+    await waitFor(() => {
+      expect(window.location.hash).toBe(
+        routeToHash({ screen: "preferences", instanceUrl: instanceA.url }),
+      );
+    });
+  });
+
+  it("offers no Back on an instance picker opened directly", async () => {
+    window.history.replaceState(null, "", routeToHash({ screen: "instancePicker" }));
+    renderWorkspace(
+      makeUseCases({ listInstances: vi.fn(async () => [instanceA, instanceB]) }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Choose a Solid Memo instance" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+  });
+
+  it("offers no Back once the instance switched from is deleted", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    let deleted = false;
+    window.history.replaceState(
+      null,
+      "",
+      routeToHash({ screen: "home", instanceUrl: instanceB.url }),
+    );
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () =>
+          deleted ? [instanceA] : [instanceA, instanceB],
+        ),
+        deleteInstance: vi.fn(async () => {
+          deleted = true;
+        }),
+      }),
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Switch instance" }),
+    );
+    expect(await screen.findByRole("button", { name: "Back" })).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Delete instance Deck set B" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+    });
+  });
+
   it("opens the updated instance at its new address once a format update switched over", async () => {
     let instances = [instanceA];
     renderWorkspace(

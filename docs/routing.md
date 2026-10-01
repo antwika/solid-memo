@@ -42,6 +42,14 @@ full URLs, carried URL-encoded in hash query parameters.
 | `#/preferences?instance=…` | preferences |
 | `#/validate?instance=…` | developer tool: the instance's documents checked against the shapes ([validation.md](validation.md)); shows how to turn developer mode on when it is off |
 
+## Reloads and logins
+
+A reload, and a login, each take the browser to the identity provider
+and back, which drops the hash. The session gateway puts it back before
+the Workspace mounts ([authentication.md](authentication.md#returning-to-the-view)),
+so F5 and a deep link opened while signed out land on their own view,
+not the default route.
+
 ## Resolution and fallbacks
 
 The hash carries identifiers only; `Workspace` resolves them to domain
