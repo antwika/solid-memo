@@ -8,4 +8,19 @@
     ],
     automerge: true,
     automergeType: 'branch',
+    packageRules: [
+        // The end-to-end tests run against two majors of each Solid server,
+        // each from its own project in e2e/pod/servers/ (docs/testing.md):
+        // the older ones stay on their major.
+        {
+            matchFileNames: ['e2e/pod/servers/css-6/package.json'],
+            matchDepNames: ['@solid/community-server'],
+            allowedVersions: '<7',
+        },
+        {
+            matchFileNames: ['e2e/pod/servers/nss-5/package.json'],
+            matchDepNames: ['solid-server'],
+            allowedVersions: '<6',
+        },
+    ],
 }

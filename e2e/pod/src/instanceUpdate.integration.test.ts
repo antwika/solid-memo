@@ -4,11 +4,11 @@
  * app's own use cases and Solid adapters, wired as in main.tsx, with every
  * HTTP request recorded. `npm run test:pod` runs them against each server
  * globalSetup.ts starts — a Community Solid Server and node-solid-server
- * 5.7.4 — unless SOLID_SERVER_URL names one (see docs/testing.md). What a
+ * — unless SOLID_SERVER_URL names one (see docs/testing.md). What a
  * server does with preconditions is asked of it, not assumed:
- * node-solid-server 5.7.4 gives no strong ETag, ignores If-Match and
- * ignores If-None-Match: * on a PUT, so there neither an edit nor a
- * creation can be made conditional.
+ * node-solid-server gives no ETag on a read and ignores If-Match, so
+ * there no edit can be made conditional; 5.7.4 also ignored
+ * If-None-Match: * on a PUT, which 5.8.8 and 6.0.0 enforce.
  */
 import { readFile } from "node:fs/promises";
 import { beforeAll, describe, expect, inject, it } from "vitest";
@@ -25,6 +25,7 @@ import { createSolidRepairRepository } from "@solid-memo/solid/solidRepairReposi
 import { createSolidReviewStateRepository } from "@solid-memo/solid/solidReviewStateRepository";
 import { createSolidWebIdDocumentRepository } from "@solid-memo/solid/solidWebIdDocumentRepository";
 import { createWriteFence } from "@solid-memo/solid/writeFence";
+import { ETAG_OUTLIVES_EDITS, etagMarksEveryEdit } from "./serverTraits";
 
 const SERVERS = inject("solidServers");
 const SITE = "https://solid-memo.test/";
@@ -243,8 +244,11 @@ async function registeredContainers(pod: Pod): Promise<string> {
 describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
   /** What this server does with preconditions (preconditionsOf). */
   let conditional: Preconditions = { edits: false, creations: false };
+  /** Whether its ETag changes on every edit (etagMarksEveryEdit). */
+  let everyEdit = false;
   beforeAll(async () => {
     conditional = await preconditionsOf(server);
+    everyEdit = await etagMarksEveryEdit(server);
   });
 
   it("writes nothing to the instance it updates: the copy is completed and checked before the type index moves", async () => {
@@ -363,7 +367,9 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
     expect(await fetch(target).then((r) => r.status)).toBe(404);
   }, 60_000);
 
-  it("gives up, and leaves no trace, when another app changes what was already copied", async () => {
+  it("gives up, and leaves no trace, when another app changes what was already copied", async (context) => {
+    // The change is made in the same second as the copy, which such a server's ETag does not tell apart.
+    if (conditional.edits && !everyEdit) context.skip(ETAG_OUTLIVES_EDITS);
     const pod = await seedPod(server);
     const indexBefore = await registeredContainers(pod);
     let changed = false;
@@ -439,6 +445,7 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
 
   it("never overwrites a change made since the document was read, where the server enforces If-Match: the save fails, the change stays", async (context) => {
     if (!conditional.edits) context.skip("this server ignores If-Match, so a change made elsewhere cannot be detected");
+    if (!everyEdit) context.skip(ETAG_OUTLIVES_EDITS);
     const pod = await seedPod(server);
     let interfered = false;
     const { useCases } = app(pod, {

@@ -183,8 +183,9 @@ flowchart TD
 ### Proof on a real server
 
 `npm run test:pod` runs the update — the app's own use cases and Solid
-adapters, wired as in `main.tsx` — against a real Solid server, recording
-every HTTP request ([instanceUpdate.integration.test.ts](../e2e/pod/src/instanceUpdate.integration.test.ts)).
+adapters, wired as in `main.tsx` — against real Solid servers (each the
+[tests start](testing.md#commands): two majors each of the Community Solid
+Server and node-solid-server), recording every HTTP request ([instanceUpdate.integration.test.ts](../e2e/pod/src/instanceUpdate.integration.test.ts)).
 It seeds an old-format instance with an unknown file and shared access,
 and checks that:
 

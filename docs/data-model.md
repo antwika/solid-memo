@@ -272,7 +272,12 @@ sequenceDiagram
   (and so relearned). The digest is not one of the documents an instance
   is [checked](validation.md) by: it is derived, and an invalid copy must
   not block the instance.
-- **A pod without ETags gains nothing.** node-solid-server 5.7.4 gives no
+- **It is as good as the pod's ETags.** Community Solid Server 6 stamps
+  its ETags in whole seconds, so a document changed elsewhere in the
+  same second as Solid Memo read it keeps its ETag, and the digest takes
+  it for unchanged until it changes again (7 stamps milliseconds). The
+  same holds for `If-Match` (below).
+- **A pod without ETags gains nothing.** node-solid-server (5.x, 6.0.0) gives no
   ETag on a read: nothing can be known to be unchanged, so nothing is
   kept, and every visit reads everything, as before.
 - The [format update](migrations.md#the-pod-migration) copies the digest
@@ -308,10 +313,12 @@ sequenceDiagram
   own. Weak ETags (`W/"…"`) are never sent in `If-Match`, whose
   comparison is strong; a document the pod gives no ETag, or one saved
   since it was read (pods need not return the new ETag), is written
-  without `If-Match`. node-solid-server 5.7.4 gives no strong ETag and
-  ignores both `If-Match` and `If-None-Match: *`, so there no write is
-  conditional: a PATCH still keeps a change made elsewhere, a large
-  edit's PUT does not. The end-to-end tests hold all of this
+  without `If-Match`. node-solid-server gives no ETag on a read and
+  ignores `If-Match` (5.7.4 also `If-None-Match: *`; 5.8.8 and 6.0.0
+  enforce that), so there no edit is conditional: a PATCH still keeps a change
+  made elsewhere, a large edit's PUT does not. Community Solid Server 6's
+  ETag only changes from one second to the next, so it misses a change
+  made in the same second as the read. The end-to-end tests hold all of this
   against real servers, that one included ([testing.md](testing.md)).
 - **An edit's PATCH body is written by Solid Memo** (`patchBody` in
   [datasets.ts](../packages/solid/src/datasets.ts)), not by
