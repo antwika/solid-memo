@@ -18,7 +18,8 @@ export interface PodProvider {
 /**
  * Providers suggested during onboarding. Add an entry to suggest another.
  * Issuers are the exact values each provider advertises in its
- * /.well-known/openid-configuration (checked 2026-09-22).
+ * /.well-known/openid-configuration (checked 2026-09-22; solidweb.me
+ * 2026-10-01).
  */
 export const POD_PROVIDERS: readonly PodProvider[] = [
   {
@@ -39,7 +40,7 @@ export const POD_PROVIDERS: readonly PodProvider[] = [
   },
   {
     id: "solidweb",
-    name: "solidweb.org",
-    oidcIssuer: "https://solidweb.org",
+    name: "solidweb.me",
+    oidcIssuer: "https://solidweb.me/",
   },
 ];
