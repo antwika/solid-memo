@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
-import type { StudyQueue } from "@solid-memo/domain/scheduling";
 import { CheckIcon } from "./icons";
 import { LoadingDots } from "./Loading";
 import { studyCountsSummary } from "./studyCounts";
@@ -23,8 +22,8 @@ export function DeckStudyAction({
   onStudy,
 }: {
   deckName: string;
-  /** Today's queue; undefined while it is unknown (loading or unreadable). */
-  queue: StudyQueue | undefined;
+  /** How many prompts today's queue holds; undefined while unknown (loading or unreadable). */
+  queue: { dueCount: number; newCount: number } | undefined;
   /** The queue is being fetched and nothing is known yet. */
   loading: boolean;
   /** Start today's session over the deck. */
@@ -40,10 +39,7 @@ export function DeckStudyAction({
       </>
     ) : null;
   }
-  const summary = studyCountsSummary({
-    dueCount: queue.due.length,
-    newCount: queue.newPrompts.length,
-  });
+  const summary = studyCountsSummary(queue);
   if (summary === null) {
     return (
       <>
@@ -68,7 +64,22 @@ export function DeckStudyAction({
   );
 }
 
-/** Owns one deck's queue query for its deck-list row. */
+/**
+ * A deck's study counts for its deck-list row. Under the deck's queue
+ * key, so whatever drops the queue drops them too; fresh for a little
+ * while, so counts fetched while the instance is checked (Workspace)
+ * serve the list that follows.
+ */
+export function studyCountsQuery(useCases: UseCases, instanceUrl: string, deck: Deck) {
+  return {
+    queryKey: ["studyQueue", deck.url, "counts"],
+    queryFn: () => useCases.getStudyCounts(instanceUrl, deck, new Date()),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  };
+}
+
+/** Owns one deck's counts query for its deck-list row. */
 export function DeckStudyActionContainer({
   useCases,
   instance,
@@ -80,13 +91,7 @@ export function DeckStudyActionContainer({
   deck: Deck;
   onStudy: () => void;
 }) {
-  const queueQuery = useQuery({
-    queryKey: ["studyQueue", deck.url],
-    queryFn: () => useCases.getStudyQueue(instance.url, deck, new Date()),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: "always",
-  });
+  const queueQuery = useQuery(studyCountsQuery(useCases, instance.url, deck));
 
   return (
     <DeckStudyAction

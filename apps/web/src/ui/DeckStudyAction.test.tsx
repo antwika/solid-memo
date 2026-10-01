@@ -19,7 +19,7 @@ function renderAction(queue: StudyQueue | undefined, loading = false) {
   const view = render(
     <DeckStudyAction
       deckName="Kanji N5"
-      queue={queue}
+      queue={queue && { dueCount: queue.due.length, newCount: queue.newPrompts.length }}
       loading={loading}
       onStudy={onStudy}
     />,

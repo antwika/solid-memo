@@ -87,12 +87,16 @@ flowchart LR
 │                        side and sm:backLabel above the back, each with
 │                        sm:formatVersion; a retired card
 │                        (owl:deprecated true) is kept but not studied
-└── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per card and
-                          direction (fast churn) — #<cardId> front→back,
-                          #<cardId>@back-to-front the other way; optional
-                          sm:previous* snapshot = state before the day's
-                          first review (restored by "reset the day");
-                          sm:formatVersion 2
+├── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per card and
+│                        direction (fast churn) — #<cardId> front→back,
+│                        #<cardId>@back-to-front the other way; optional
+│                        sm:previous* snapshot = state before the day's
+│                        first review (restored by "reset the day");
+│                        sm:formatVersion 2
+└── digest.ttl      derived data (below): a sm:DocumentReceipt per document
+                         (#receipt-<path>) and a sm:DeckSchedule per deck
+                         (#schedule-<path>), each stamped with the versions
+                         it was learned from; sm:formatVersion 1
 ```
 
 ## Decks and cards
@@ -218,6 +222,62 @@ conforms to DCAT-AP (a test holds what the app writes to it).
 A deck's description, topics and keywords are edited in its Browser
 ("Describe deck"); the description is required, as DCAT-AP asks of
 every dataset.
+
+## The digest
+
+`digest.ttl` lets a visit skip what has not changed since the last one.
+It holds only what Solid Memo learned of the other documents, each fact
+stamped with the version (ETag) of the document it was learned from
+([studyDigest.ts](../packages/domain/src/studyDigest.ts)):
+
+- a **receipt** per document: at that version it conformed to the shapes
+  (`sm:conformedTo` names the rules, a hash of the shape files the site
+  was built with) and/or nothing in it was in an older format
+  (`sm:latestFormat`);
+- a **schedule** per deck, from given versions of its cards and reviews
+  documents: prompts due by study day (`sm:dueOnDay "2026-10-01 12"`),
+  prompts never reviewed, and the reviews and introductions of the day it
+  was computed on. With today's preferences that gives the deck list the
+  same counts as `buildStudyQueue` ([srs.md](srs.md#study-days-and-the-queue)).
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Pod
+    App->>Pod: GET digest.ttl
+    App->>Pod: GET decks/d.ttl If-None-Match: <its version in the digest>
+    alt unchanged
+        Pod-->>App: 304 — counts from the schedule, no check
+    else changed (or no digest yet)
+        Pod-->>App: 200 + the document — counts and check from it
+        App->>Pod: PATCH digest.ttl (in the background)
+    end
+```
+
+- **A stale digest is never wrong, only slow.** Every fact is used only
+  after the pod says its document is still at the stamped version; a
+  document changed elsewhere (another device, another app) is read and
+  checked in full, and the digest is repaired with what that read
+  learned. So nothing else keeps it up to date: a write anywhere simply
+  makes the facts about that document stale.
+- **When a study session ends** (End session, leaving the screen, or the
+  page being hidden) the deck's schedule and its reviews document's
+  receipt are brought up to date, so the next visit finds them current.
+- **Writes** are edits like any other (If-Match; [write check](validation.md#the-write-check)).
+  Changes learned while a write is under way go in the next one; if the
+  digest changed elsewhere meanwhile (412), it is read and changed again,
+  up to three times. A failed write is dropped: the next visit learns it
+  again.
+- **Read leniently.** A subject that does not fit its shape is left out
+  (and so relearned). The digest is not one of the documents an instance
+  is [checked](validation.md) by: it is derived, and an invalid copy must
+  not block the instance.
+- **A pod without ETags gains nothing.** node-solid-server 5.7.4 gives no
+  ETag on a read: nothing can be known to be unchanged, so nothing is
+  kept, and every visit reads everything, as before.
+- The [format update](migrations.md#the-pod-migration) copies the digest
+  with the rest; the copy's documents have other versions, so it is
+  relearned on the first visit.
 
 ## Write discipline
 

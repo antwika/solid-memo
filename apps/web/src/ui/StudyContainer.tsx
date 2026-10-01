@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck, Prompt } from "@solid-memo/domain/deck";
@@ -65,6 +65,25 @@ export function StudyContainer({
     setSession({ prompts: interleave(due, newPrompts), position: 0 });
   }, [session, queueQuery.data]);
 
+  // A session that recorded answers ends by keeping the deck's schedule in the digest:
+  // on exit, when the screen goes away, or (best effort) when the page is hidden.
+  const answered = useRef(0);
+  function keepSchedule() {
+    if (answered.current === 0) return;
+    answered.current = 0;
+    void useCases.refreshStudyDigest(instance.url, deck).catch(() => undefined);
+  }
+  useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") keepSchedule();
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden);
+      keepSchedule();
+    };
+  }, [instance.url, deck.url]);
+
   const answerMutation = useMutation({
     mutationFn: (args: { prompt: Prompt; quality: ReviewQuality }) =>
       useCases.recordReview(
@@ -75,6 +94,7 @@ export function StudyContainer({
         new Date(),
       ),
     onSuccess: (state, { prompt, quality }) => {
+      answered.current++;
       queryClient.setQueryData(
         ["reviews", deck.reviewsDocumentUrl, state.cardId, state.direction],
         state,
@@ -102,6 +122,7 @@ export function StudyContainer({
   );
 
   async function handleExit() {
+    keepSchedule();
     await queryClient.invalidateQueries({
       queryKey: ["reviews", deck.reviewsDocumentUrl],
     });

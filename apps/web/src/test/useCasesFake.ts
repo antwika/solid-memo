@@ -4,7 +4,7 @@ import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
 
 /** A complete UseCases fake; override the methods a test cares about. */
 export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
-  return {
+  const fake: UseCases = {
     restoreSession: vi.fn(async () => null),
     loginWithWebId: vi.fn(async () => undefined),
     loginWithProvider: vi.fn(async () => undefined),
@@ -108,6 +108,14 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       lastReviewedAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 2,
     })),
+    // As the real ones relate to them: the counts of the queue, the check of the full check.
+    getStudyCounts: vi.fn(async (instanceUrl, deck, now) => {
+      const queue = await fake.getStudyQueue(instanceUrl, deck, now);
+      return { dueCount: queue.due.length, newCount: queue.newPrompts.length };
+    }),
+    checkInstance: vi.fn((instanceUrl) => fake.validateInstance(instanceUrl)),
+    refreshStudyDigest: vi.fn(async () => undefined),
     ...overrides,
   };
+  return fake;
 }

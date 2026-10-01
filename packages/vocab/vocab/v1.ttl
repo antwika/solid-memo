@@ -16,9 +16,9 @@
     a owl:Ontology ;
     dcterms:title "Solid Memo vocabulary, v1" ;
     dcterms:description "Terms for spaced-repetition flashcards stored in a Solid pod: instances, decks, cards, SM-2 review state and study preferences." ;
-    owl:versionInfo "1.8" ;
+    owl:versionInfo "1.9" ;
     rdfs:seeAlso <https://solid-memo.com/vocab/v1.ttl> ;
-    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3)." .
+    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed." .
 
 #################### Classes ####################
 
@@ -56,6 +56,20 @@ solid-memo:Preferences
     rdfs:comment "Study preferences of one instance: daily caps, the day boundary, the answer scale and developer mode." ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Since 1.0." .
+
+solid-memo:DocumentReceipt
+    a owl:Class ;
+    rdfs:label "Document receipt" ;
+    rdfs:comment "What Solid Memo found an instance document to be at one version of it (its ETag): that it conformed to the shapes, that nothing in it was in an older format. A subject of the instance's digest document; derived data, rebuilt whenever it does not hold." ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:DeckSchedule
+    a owl:Class ;
+    rdfs:label "Deck schedule" ;
+    rdfs:comment "How many of a deck's prompts fall due on which study day and how many are still new, computed from given versions of its cards and reviews documents, so the deck list can count today's study without them. A subject of the instance's digest document; derived data, rebuilt whenever it does not hold." ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
 
 #################### Shared ####################
 
@@ -355,6 +369,134 @@ solid-memo:invalidDataPolicy
     rdfs:range skos:Concept ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.6 for preferences format 3." .
+
+#################### Digest ####################
+
+solid-memo:receiptOf
+    a owl:ObjectProperty ;
+    rdfs:label "receipt of" ;
+    rdfs:comment "The document a receipt is about." ;
+    rdfs:domain solid-memo:DocumentReceipt ;
+    rdfs:range rdfs:Resource ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:documentVersion
+    a owl:DatatypeProperty ;
+    rdfs:label "document version" ;
+    rdfs:comment "The version of the document a receipt is about: its ETag, as the pod gave it." ;
+    rdfs:domain solid-memo:DocumentReceipt ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:conformedTo
+    a owl:DatatypeProperty ;
+    rdfs:label "conformed to" ;
+    rdfs:comment "At that version the document conformed to Solid Memo's shapes; the value names the rules (a hash of the shapes) it was checked by." ;
+    rdfs:domain solid-memo:DocumentReceipt ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:latestFormat
+    a owl:DatatypeProperty ;
+    rdfs:label "latest format" ;
+    rdfs:comment "True when, at that version, nothing in the document was in an older format than the app that wrote the receipt knew." ;
+    rdfs:domain solid-memo:DocumentReceipt ;
+    rdfs:range xsd:boolean ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:scheduleOf
+    a owl:ObjectProperty ;
+    rdfs:label "schedule of" ;
+    rdfs:comment "The deck a schedule is about." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range solid-memo:Deck ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:cardsVersion
+    a owl:DatatypeProperty ;
+    rdfs:label "cards version" ;
+    rdfs:comment "The version (ETag) of the deck's cards document the schedule was computed from." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:reviewsVersion
+    a owl:DatatypeProperty ;
+    rdfs:label "reviews version" ;
+    rdfs:comment "The version (ETag) of the deck's reviews document the schedule was computed from; \"absent\" when there was none." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:scheduledDirection
+    a owl:ObjectProperty ;
+    rdfs:label "scheduled direction" ;
+    rdfs:comment "The study direction the schedule was computed for: a concept of solid-memo:StudyDirections." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range skos:Concept ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:scheduledDayBoundaryHour
+    a owl:DatatypeProperty ;
+    rdfs:label "scheduled day boundary hour" ;
+    rdfs:comment "The day boundary hour the schedule's study days were counted with." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range xsd:integer ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:scheduledOn
+    a owl:DatatypeProperty ;
+    rdfs:label "scheduled on" ;
+    rdfs:comment "The study day (\"YYYY-MM-DD\") the schedule was computed on." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:dueOnDay
+    a owl:DatatypeProperty ;
+    rdfs:label "due on day" ;
+    rdfs:comment "How many reviewed prompts fall due on one study day, as \"YYYY-MM-DD count\"; one value per day." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:unreviewedCount
+    a owl:DatatypeProperty ;
+    rdfs:label "unreviewed count" ;
+    rdfs:comment "How many of the deck's prompts (cards in use, in each direction studied) were never reviewed." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range xsd:integer ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:reviewedOnDayCount
+    a owl:DatatypeProperty ;
+    rdfs:label "reviewed on day count" ;
+    rdfs:comment "How many reviews were made on the study day the schedule was computed on." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range xsd:integer ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
+
+solid-memo:introducedOnDayCount
+    a owl:DatatypeProperty ;
+    rdfs:label "introduced on day count" ;
+    rdfs:comment "How many prompts were first reviewed on the study day the schedule was computed on." ;
+    rdfs:domain solid-memo:DeckSchedule ;
+    rdfs:range xsd:integer ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.9." .
 
 #################### Concept schemes ####################
 

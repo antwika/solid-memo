@@ -9,6 +9,7 @@ import type { ReviewStateRepository } from "@solid-memo/application/ports";
 import type { ReviewState } from "@solid-memo/domain/review";
 import { getSolidDatasetOrNull, saveDataset } from "./datasets";
 import { noWriteCheck, type WriteCheck } from "./writeCheck";
+import { mapSince, readSince } from "./readSince";
 import {
   reviewSubjectUrl,
   toReviewState,
@@ -35,6 +36,14 @@ export function createSolidReviewStateRepository({
       return getThingAll(dataset)
         .map(toReviewState)
         .filter((state): state is ReviewState => state !== null);
+    },
+
+    async readReviewStatesSince(deck, version) {
+      return mapSince(await readSince(deck.reviewsDocumentUrl, version, fetch), (dataset) =>
+        dataset === null
+          ? []
+          : getThingAll(dataset).map(toReviewState).filter((state): state is ReviewState => state !== null),
+      );
     },
 
     async getReviewState(deck, key): Promise<ReviewState | null> {

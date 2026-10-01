@@ -7,7 +7,7 @@
 export type LangText = Readonly<Record<string, string>>;
 
 /** The record kinds the shapes describe (see docs/shapes.md). */
-export type ShapeName = "agent" | "card" | "catalog" | "deck" | "distribution" | "instance" | "libraryDeck" | "libraryDeckSeries" | "preferences" | "reviewState";
+export type ShapeName = "agent" | "card" | "catalog" | "deck" | "deckSchedule" | "distribution" | "documentReceipt" | "instance" | "libraryDeck" | "libraryDeckSeries" | "preferences" | "reviewState";
 
 /** The shape version this app writes for each kind. */
 export const LATEST_VERSION = {
@@ -15,7 +15,9 @@ export const LATEST_VERSION = {
   card: 3,
   catalog: 1,
   deck: 4,
+  deckSchedule: 1,
   distribution: 1,
+  documentReceipt: 1,
   instance: 2,
   libraryDeck: 4,
   libraryDeckSeries: 2,
@@ -133,12 +135,34 @@ export interface DeckV4 {
   readonly maxReviewsPerDay?: number;
 }
 
+/** Deck schedule format 1: the deck, the versions of its two documents it was computed from, the direction and day boundary it was computed with, the study day it was computed on, the prompts due by day, the new ones, and that day's reviews and introductions. */
+export interface DeckScheduleV1 {
+  readonly deck: string;
+  readonly cardsVersion: string;
+  readonly reviewsVersion: string;
+  readonly direction: "https://solid-memo.com/vocab/v1#frontToBack" | "https://solid-memo.com/vocab/v1#backToFront" | "https://solid-memo.com/vocab/v1#bidirectional";
+  readonly dayBoundaryHour: number;
+  readonly studyDay: string;
+  readonly dueOnDay: readonly string[];
+  readonly unreviewed: number;
+  readonly reviewedOnDay: number;
+  readonly introducedOnDay: number;
+}
+
 /** A deck's cards as a file: a dcat:Distribution. */
 export interface DistributionV1 {
   readonly accessUrl: string;
   readonly downloadUrl?: string;
   readonly mediaType?: string;
   readonly format?: string;
+}
+
+/** Document receipt format 1: the document and its version; that it conformed to the shapes (under named rules), and that nothing in it was in an older format, each when so. */
+export interface DocumentReceiptV1 {
+  readonly document: string;
+  readonly version: string;
+  readonly conformedTo?: string;
+  readonly latestFormat?: boolean;
 }
 
 /** Instance format 1: a title and a creation time. */
@@ -313,7 +337,9 @@ export type AgentRecord = { version: 1; data: AgentV1 };
 export type CardRecord = { version: 1; data: CardV1 } | { version: 2; data: CardV2 } | { version: 3; data: CardV3 };
 export type CatalogRecord = { version: 1; data: CatalogV1 };
 export type DeckRecord = { version: 1; data: DeckV1 } | { version: 2; data: DeckV2 } | { version: 3; data: DeckV3 } | { version: 4; data: DeckV4 };
+export type DeckScheduleRecord = { version: 1; data: DeckScheduleV1 };
 export type DistributionRecord = { version: 1; data: DistributionV1 };
+export type DocumentReceiptRecord = { version: 1; data: DocumentReceiptV1 };
 export type InstanceRecord = { version: 1; data: InstanceV1 } | { version: 2; data: InstanceV2 };
 export type LibraryDeckRecord = { version: 1; data: LibraryDeckV1 } | { version: 2; data: LibraryDeckV2 } | { version: 3; data: LibraryDeckV3 } | { version: 4; data: LibraryDeckV4 };
 export type LibraryDeckSeriesRecord = { version: 1; data: LibraryDeckSeriesV1 } | { version: 2; data: LibraryDeckSeriesV2 };
@@ -326,7 +352,9 @@ export type VersionedRecord = {
   card: CardRecord;
   catalog: CatalogRecord;
   deck: DeckRecord;
+  deckSchedule: DeckScheduleRecord;
   distribution: DistributionRecord;
+  documentReceipt: DocumentReceiptRecord;
   instance: InstanceRecord;
   libraryDeck: LibraryDeckRecord;
   libraryDeckSeries: LibraryDeckSeriesRecord;
@@ -340,7 +368,9 @@ export type LatestRecord = {
   card: CardV3;
   catalog: CatalogV1;
   deck: DeckV4;
+  deckSchedule: DeckScheduleV1;
   distribution: DistributionV1;
+  documentReceipt: DocumentReceiptV1;
   instance: InstanceV2;
   libraryDeck: LibraryDeckV4;
   libraryDeckSeries: LibraryDeckSeriesV2;

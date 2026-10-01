@@ -84,6 +84,23 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
     2: { newCardsPerDay: 20, maxReviewsPerDay: 200, dayBoundaryHour: 4, answerScale: "sm2", developerMode: false },
     3: { newCardsPerDay: 20, maxReviewsPerDay: 200, dayBoundaryHour: 4, answerScale: "sm2", developerMode: false, invalidDataPolicy: `${SM_NS}warnOnly` },
   },
+  documentReceipt: {
+    1: { document: "https://pod.example/solid-memo/a/decks/d.ttl", version: '"v1"', conformedTo: "0123abcd", latestFormat: true },
+  },
+  deckSchedule: {
+    1: {
+      deck: "https://pod.example/solid-memo/a/catalog.ttl#deck-1",
+      cardsVersion: '"c1"',
+      reviewsVersion: "absent",
+      direction: `${SM_NS}bidirectional`,
+      dayBoundaryHour: 4,
+      studyDay: "2026-10-01",
+      dueOnDay: ["2026-10-01 12", "2026-10-03 1"],
+      unreviewed: 466,
+      reviewedOnDay: 3,
+      introducedOnDay: 1,
+    },
+  },
 };
 
 async function violationsOf(shape: ShapeName, version: number, record: object) {

@@ -11,7 +11,9 @@ import type {
   DeckV2,
   DeckV3,
   DeckV4,
+  DeckScheduleV1,
   DistributionV1,
+  DocumentReceiptV1,
   InstanceV1,
   InstanceV2,
   LibraryDeckV1,
@@ -218,6 +220,29 @@ export const DECK_V4: ShapeDescriptor<DeckV4> = {
   ],
 };
 
+export const DECK_SCHEDULE_V1: ShapeDescriptor<DeckScheduleV1> = {
+  shape: "deckSchedule",
+  version: 1,
+  targetClass: "https://solid-memo.com/vocab/v1#DeckSchedule",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/deck-schedule/v1.ttl#shape",
+  shapeDocument: "deck-schedule/v1.ttl",
+  context: "any",
+  fields: [
+    { name: "deck", predicate: "https://solid-memo.com/vocab/v1#scheduleOf", kind: "iri", cardinality: "one" },
+    { name: "cardsVersion", predicate: "https://solid-memo.com/vocab/v1#cardsVersion", kind: "string", cardinality: "one" },
+    { name: "reviewsVersion", predicate: "https://solid-memo.com/vocab/v1#reviewsVersion", kind: "string", cardinality: "one" },
+    { name: "direction", predicate: "https://solid-memo.com/vocab/v1#scheduledDirection", kind: "iriEnum", cardinality: "one", values: ["https://solid-memo.com/vocab/v1#frontToBack","https://solid-memo.com/vocab/v1#backToFront","https://solid-memo.com/vocab/v1#bidirectional"] },
+    { name: "dayBoundaryHour", predicate: "https://solid-memo.com/vocab/v1#scheduledDayBoundaryHour", kind: "integer", cardinality: "one" },
+    { name: "studyDay", predicate: "https://solid-memo.com/vocab/v1#scheduledOn", kind: "string", cardinality: "one" },
+    { name: "dueOnDay", predicate: "https://solid-memo.com/vocab/v1#dueOnDay", kind: "string", cardinality: "many" },
+    { name: "unreviewed", predicate: "https://solid-memo.com/vocab/v1#unreviewedCount", kind: "integer", cardinality: "one" },
+    { name: "reviewedOnDay", predicate: "https://solid-memo.com/vocab/v1#reviewedOnDayCount", kind: "integer", cardinality: "one" },
+    { name: "introducedOnDay", predicate: "https://solid-memo.com/vocab/v1#introducedOnDayCount", kind: "integer", cardinality: "one" },
+  ],
+};
+
 export const DISTRIBUTION_V1: ShapeDescriptor<DistributionV1> = {
   shape: "distribution",
   version: 1,
@@ -232,6 +257,23 @@ export const DISTRIBUTION_V1: ShapeDescriptor<DistributionV1> = {
     { name: "downloadUrl", predicate: "http://www.w3.org/ns/dcat#downloadURL", kind: "iri", cardinality: "optional" },
     { name: "mediaType", predicate: "http://www.w3.org/ns/dcat#mediaType", kind: "iri", cardinality: "optional" },
     { name: "format", predicate: "http://purl.org/dc/terms/format", kind: "iri", cardinality: "optional" },
+  ],
+};
+
+export const DOCUMENT_RECEIPT_V1: ShapeDescriptor<DocumentReceiptV1> = {
+  shape: "documentReceipt",
+  version: 1,
+  targetClass: "https://solid-memo.com/vocab/v1#DocumentReceipt",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/document-receipt/v1.ttl#shape",
+  shapeDocument: "document-receipt/v1.ttl",
+  context: "any",
+  fields: [
+    { name: "document", predicate: "https://solid-memo.com/vocab/v1#receiptOf", kind: "iri", cardinality: "one" },
+    { name: "version", predicate: "https://solid-memo.com/vocab/v1#documentVersion", kind: "string", cardinality: "one" },
+    { name: "conformedTo", predicate: "https://solid-memo.com/vocab/v1#conformedTo", kind: "string", cardinality: "optional" },
+    { name: "latestFormat", predicate: "https://solid-memo.com/vocab/v1#latestFormat", kind: "boolean", cardinality: "optional" },
   ],
 };
 
@@ -526,7 +568,9 @@ export const SHAPES = {
   card: { 1: CARD_V1, 2: CARD_V2, 3: CARD_V3 },
   catalog: { 1: CATALOG_V1 },
   deck: { 1: DECK_V1, 2: DECK_V2, 3: DECK_V3, 4: DECK_V4 },
+  deckSchedule: { 1: DECK_SCHEDULE_V1 },
   distribution: { 1: DISTRIBUTION_V1 },
+  documentReceipt: { 1: DOCUMENT_RECEIPT_V1 },
   instance: { 1: INSTANCE_V1, 2: INSTANCE_V2 },
   libraryDeck: { 1: LIBRARY_DECK_V1, 2: LIBRARY_DECK_V2, 3: LIBRARY_DECK_V3, 4: LIBRARY_DECK_V4 },
   libraryDeckSeries: { 1: LIBRARY_DECK_SERIES_V1, 2: LIBRARY_DECK_SERIES_V2 },
@@ -545,7 +589,9 @@ export const ALL_SHAPES: readonly ShapeDescriptor[] = [
   DECK_V2,
   DECK_V3,
   DECK_V4,
+  DECK_SCHEDULE_V1,
   DISTRIBUTION_V1,
+  DOCUMENT_RECEIPT_V1,
   INSTANCE_V1,
   INSTANCE_V2,
   LIBRARY_DECK_V1,

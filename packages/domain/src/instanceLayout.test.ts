@@ -3,6 +3,8 @@ import type { Deck } from "./deck";
 import {
   catalogNodeUrlOf,
   catalogUrlOf,
+  digestSubjectOf,
+  digestUrlOf,
   ensureTrailingSlash,
   instanceDocumentUrls,
   metaUrlOf,
@@ -38,5 +40,28 @@ describe("instance layout", () => {
 describe("catalogNodeUrlOf", () => {
   it("names the catalogue subject of the instance's catalog document", () => {
     expect(catalogNodeUrlOf(INSTANCE)).toBe(`${INSTANCE}/catalog.ttl#catalog`);
+  });
+});
+
+describe("the digest", () => {
+  const instance = "https://pod.example/solid-memo/main";
+
+  it("is digest.ttl in the instance's container", () => {
+    expect(digestUrlOf(instance)).toBe("https://pod.example/solid-memo/main/digest.ttl");
+  });
+
+  it("names its subjects by where their document or deck is under the instance", () => {
+    expect(digestSubjectOf(instance, "receipt", `${instance}/decks/deck-1.ttl`)).toBe(
+      "https://pod.example/solid-memo/main/digest.ttl#receipt-decks-deck-1.ttl",
+    );
+    expect(digestSubjectOf(instance, "schedule", `${instance}/catalog.ttl#deck-1`)).toBe(
+      "https://pod.example/solid-memo/main/digest.ttl#schedule-catalog.ttl-deck-1",
+    );
+  });
+
+  it("names a subject about a document elsewhere by its whole URL", () => {
+    expect(digestSubjectOf(instance, "receipt", "https://other.example/d.ttl")).toBe(
+      "https://pod.example/solid-memo/main/digest.ttl#receipt-https---other.example-d.ttl",
+    );
   });
 });

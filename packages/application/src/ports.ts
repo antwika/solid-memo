@@ -13,6 +13,7 @@ import type { ReviewKey, ReviewState } from "@solid-memo/domain/review";
 import type { EstablishedSession } from "@solid-memo/domain/session";
 import type { Storage } from "@solid-memo/domain/storage";
 import type { DocumentReport } from "@solid-memo/domain/validation";
+import type { InstanceDigest } from "@solid-memo/domain/studyDigest";
 import type { WebIdDocument } from "@solid-memo/domain/webIdDocument";
 
 /**
@@ -110,6 +111,13 @@ export interface InstanceRepository {
 }
 
 /** Driven port: decks and their cards inside one instance. */
+/**
+ * A document's contents as of now, with the version (ETag) they are at,
+ * or word that it is still at the version the caller knew (a document
+ * there is none of is at ABSENT_VERSION, domain/studyDigest.ts).
+ */
+export type Since<T> = { unchanged: true } | { unchanged: false; value: T; version: string | null };
+
 export interface DeckRepository {
   listDecks(instanceUrl: string): Promise<Deck[]>;
   /** The instance's catalogue (catalog.ttl#catalog); null when it has none yet. */
@@ -134,6 +142,8 @@ export interface DeckRepository {
    */
   importDeck(instanceUrl: string, content: LibraryDeckContent): Promise<Deck>;
   listCards(deck: Deck): Promise<Card[]>;
+  /** The deck's cards unless its cards document is still at `version` (undefined: read them). */
+  readCardsSince(deck: Deck, version: string | undefined): Promise<Since<Card[]>>;
   addCard(deck: Deck, content: CardContent): Promise<Card>;
   /**
    * Replaces the card's content, writing it in this app's format; review
@@ -171,6 +181,8 @@ export interface DeckLibrary {
 /** Driven port: SM-2 review state, stored separately from card content. */
 export interface ReviewStateRepository {
   listReviewStates(deck: Deck): Promise<ReviewState[]>;
+  /** The deck's review states unless its reviews document is still at `version` (undefined: read them). */
+  readReviewStatesSince(deck: Deck, version: string | undefined): Promise<Since<ReviewState[]>>;
   /** null when the card has never been reviewed in that direction. */
   getReviewState(deck: Deck, key: ReviewKey): Promise<ReviewState | null>;
   saveReviewState(deck: Deck, state: ReviewState): Promise<void>;
@@ -202,8 +214,21 @@ export interface PreferencesRepository {
  * (docs/validation.md). A document that does not exist is reported as
  * missing, not failed; any other failure to read it throws.
  */
+/**
+ * Driven port: each instance's digest (domain/studyDigest.ts), kept in
+ * the pod so every device can rely on it.
+ */
+export interface DigestRepository {
+  /** null when the instance has none, or one this app cannot read. */
+  readDigest(instanceUrl: string): Promise<InstanceDigest | null>;
+  /** Change the stored digest: read, change, write only if unchanged meanwhile (else again). */
+  updateDigest(instanceUrl: string, change: (stored: InstanceDigest | null) => InstanceDigest): Promise<void>;
+}
+
 export interface ShapeValidator {
   validateDocument(url: string): Promise<DocumentReport>;
+  /** The document's report unless it is still at `version` (undefined: check it). */
+  validateDocumentSince(url: string, version: string | undefined): Promise<Since<DocumentReport>>;
 }
 
 /** Where an update moves an instance: every IRI under `from` becomes one under `to`. */

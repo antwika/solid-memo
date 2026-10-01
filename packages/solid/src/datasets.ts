@@ -105,16 +105,70 @@ export function readDataset(url: string, fetch: typeof globalThis.fetch): Promis
 /** A write is about to change the document: reads from now on fetch it again. */
 function forgetRead(url: string, fetch: typeof globalThis.fetch): void {
   const reads = READS.get(fetch);
-  reads?.inFlight.delete(url);
-  reads?.known.delete(url);
+  if (reads === undefined) return;
+  for (const key of reads.inFlight.keys()) {
+    // Plain reads are keyed by the URL, reads since a version by the URL, a newline and the version.
+    if (key === url || key.startsWith(`${url}\n`)) reads.inFlight.delete(key);
+  }
+  reads.known.delete(url);
+}
+
+/** A conditional read's answer: the document is still at the version asked about. */
+export const UNCHANGED = "unchanged" as const;
+
+/**
+ * Read a document unless it is still at `version` (a version an earlier
+ * visit learned, kept in the instance's digest): UNCHANGED on 304,
+ * without a download; else the dataset, as readDataset gives it, or null
+ * when there is none. Reads of the same document at the same version
+ * under way at once are shared.
+ */
+export function readDatasetSince(
+  url: string,
+  version: string,
+  fetch: typeof globalThis.fetch,
+): Promise<Dataset | typeof UNCHANGED | null> {
+  const { inFlight, known } = readsOf(fetch);
+  const key = `${url}\n${version}`;
+  const shared = inFlight.get(key);
+  if (shared !== undefined) return shared as Promise<Dataset | typeof UNCHANGED | null>;
+  const read = fetchDataset(url, fetch, known, version)
+    .catch((error: unknown) => {
+      if (statusOf(error) === 404) return null;
+      throw error;
+    })
+    .finally(() => {
+      if (inFlight.get(key) === read) inFlight.delete(key);
+    });
+  inFlight.set(key, read as Promise<Dataset>);
+  return read;
+}
+
+/** The version (ETag) a dataset was read at; undefined when the pod gave none. */
+export function versionOf(dataset: object): string | undefined {
+  const info = resourceInfoOf(dataset);
+  return info === undefined ? undefined : ETAGS.get(info);
 }
 
 async function fetchDataset(
   url: string,
   fetch: typeof globalThis.fetch,
   known: Map<string, { etag: string; dataset: Dataset }>,
-): Promise<Dataset> {
+): Promise<Dataset>;
+async function fetchDataset(
+  url: string,
+  fetch: typeof globalThis.fetch,
+  known: Map<string, { etag: string; dataset: Dataset }>,
+  since: string,
+): Promise<Dataset | typeof UNCHANGED>;
+async function fetchDataset(
+  url: string,
+  fetch: typeof globalThis.fetch,
+  known: Map<string, { etag: string; dataset: Dataset }>,
+  since?: string,
+): Promise<Dataset | typeof UNCHANGED> {
   const before = known.get(url);
+  const asked = since ?? before?.etag;
   let etag: string | null = null;
   let notModified = false;
   let dataset: Dataset;
@@ -122,7 +176,7 @@ async function fetchDataset(
     dataset = await getSolidDatasetLinear(url, {
       fetch: async (input, init) => {
         const headers = new Headers(init?.headers);
-        if (before !== undefined) headers.set("If-None-Match", before.etag);
+        if (asked !== undefined) headers.set("If-None-Match", asked);
         const response = await fetch(input, { ...init, headers });
         // @inrupt/solid-client fails on a 304 without saying its status: noted here.
         notModified = response.status === 304;
@@ -131,7 +185,8 @@ async function fetchDataset(
       },
     });
   } catch (error) {
-    if (before !== undefined && notModified) return before.dataset;
+    if (notModified && since !== undefined) return UNCHANGED;
+    if (notModified && before !== undefined) return before.dataset;
     known.delete(url);
     throw error;
   }

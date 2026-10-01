@@ -1,4 +1,7 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { defineConfig } from "vitest/config";
 import preact from "@preact/preset-vite";
 import { deckLibraryPlugin } from "@solid-memo/deck-library/deckLibrary";
@@ -21,9 +24,29 @@ function commitSha(): string | null {
   }
 }
 
+/**
+ * Names the rules pod documents are checked by: a hash of every shape
+ * and vendored profile file. A check receipt in an instance's digest
+ * counts only under the same rules.
+ */
+function shapesRuleset(): string {
+  const hash = createHash("sha256");
+  const visit = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) visit(path);
+      else hash.update(path.slice(VOCAB_ROOT.length)).update(readFileSync(path));
+    }
+  };
+  visit(`${VOCAB_ROOT}shapes`);
+  visit(`${VOCAB_ROOT}vendor`);
+  return hash.digest("hex").slice(0, 16);
+}
+
 export default defineConfig({
   define: {
     __COMMIT_SHA__: JSON.stringify(commitSha()),
+    __SHAPES_RULESET__: JSON.stringify(shapesRuleset()),
   },
   base: "./",
   plugins: [

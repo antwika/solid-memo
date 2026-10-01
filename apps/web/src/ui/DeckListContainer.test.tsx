@@ -129,17 +129,13 @@ describe("DeckListContainer", () => {
     );
   });
 
-  it("shows a cached queue at once while a fresh one is fetched", async () => {
+  it("shows stale counts at once while fresh ones are fetched", async () => {
     const useCases = makeUseCasesFake({
       listDecks: vi.fn(async () => [deck]),
       getStudyQueue: vi.fn(() => new Promise<StudyQueue>(() => { })),
     });
     renderContainer(useCases, (queryClient) =>
-      queryClient.setQueryData(["studyQueue", deck.url], {
-        due: [prompt, prompt],
-        newPrompts: [],
-        studiedToday: 0,
-      }),
+      queryClient.setQueryData(["studyQueue", deck.url, "counts"], { dueCount: 2, newCount: 0 }, { updatedAt: 0 }),
     );
 
     expect(

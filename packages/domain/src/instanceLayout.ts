@@ -23,6 +23,25 @@ export function catalogUrlOf(instanceUrl: string): string {
   return `${ensureTrailingSlash(instanceUrl)}catalog.ttl`;
 }
 
+/**
+ * The instance's digest document: derived data (domain/studyDigest.ts),
+ * not one of the documents an instance is checked by.
+ */
+export function digestUrlOf(instanceUrl: string): string {
+  return `${ensureTrailingSlash(instanceUrl)}digest.ttl`;
+}
+
+/**
+ * The digest subject about a document or deck, `#<kind>-<where>`: where
+ * it is under the instance, else its whole URL, with every character
+ * but letters, digits, ".", "_" and "-" made a "-".
+ */
+export function digestSubjectOf(instanceUrl: string, kind: "receipt" | "schedule", target: string): string {
+  const container = ensureTrailingSlash(instanceUrl);
+  const where = target.startsWith(container) ? target.slice(container.length) : target;
+  return `${digestUrlOf(instanceUrl)}#${kind}-${where.replace(/[^A-Za-z0-9._-]/g, "-")}`;
+}
+
 /** The instance's catalogue: the dcat:Catalog subject of its catalog document. */
 export function catalogNodeUrlOf(instanceUrl: string): string {
   return `${catalogUrlOf(instanceUrl)}#catalog`;
