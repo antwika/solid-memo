@@ -9,6 +9,7 @@ import {
 } from "@inrupt/solid-client";
 
 import type { Literal, Quad } from "@rdfjs/types";
+import { getSolidDatasetLinear } from "./linearDataset";
 
 type Dataset = Awaited<ReturnType<typeof getSolidDataset>>;
 
@@ -65,7 +66,7 @@ export class PreconditionFailedError extends Error {
 /** Fetch a dataset, remembering its ETag for a later conditional write. */
 export async function readDataset(url: string, fetch: typeof globalThis.fetch): Promise<Dataset> {
   let etag: string | null = null;
-  const dataset = await getSolidDataset(url, {
+  const dataset = await getSolidDatasetLinear(url, {
     fetch: async (input, init) => {
       const response = await fetch(input, init);
       etag = response.headers.get("ETag");
