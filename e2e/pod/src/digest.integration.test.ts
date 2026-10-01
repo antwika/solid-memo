@@ -11,7 +11,7 @@
  * there they are skipped (docs/data-model.md#the-digest).
  */
 import { readFile } from "node:fs/promises";
-import { describe, expect, inject, it, vi } from "vitest";
+import { beforeAll, describe, expect, inject, it, vi } from "vitest";
 import { VOCAB_ROOT } from "@solid-memo/vocab/tooling/root";
 import { createUseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
@@ -126,15 +126,16 @@ async function untilLearned(instanceUrl: string, deck: Deck): Promise<void> {
 }
 
 describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
-  /** Whether this server gives no ETag on a read, or one that an edit within the second keeps. */
-  async function unreliableEtags(): Promise<boolean> {
+  /** Whether this server gives an ETag on a read that an edit within the second keeps; asked once (serverTraits.ts). */
+  let unreliableEtags = false;
+  beforeAll(async () => {
     const probe = new URL(`etag-${crypto.randomUUID()}.ttl`, server).href;
     await fetch(probe, { method: "PUT", headers: { "content-type": "text/turtle" }, body: `<#a> <#b> "1" .` });
-    return (await versioned(probe)) && !(await etagMarksEveryEdit(server));
-  }
+    unreliableEtags = (await versioned(probe)) && !(await etagMarksEveryEdit(server));
+  });
 
   it("lets the next visit count today's study and check the instance without downloading unchanged documents", async (context) => {
-    if (await unreliableEtags()) context.skip(ETAG_OUTLIVES_EDITS);
+    if (unreliableEtags) context.skip(ETAG_OUTLIVES_EDITS);
     const { instanceUrl, deck } = await seed(server);
     const now = new Date();
     const etags = await versioned(deck.cardsDocumentUrl);
@@ -163,7 +164,7 @@ describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
   });
 
   it("counts a card added since the digest was written", async (context) => {
-    if (await unreliableEtags()) context.skip(ETAG_OUTLIVES_EDITS);
+    if (unreliableEtags) context.skip(ETAG_OUTLIVES_EDITS);
     const { instanceUrl, deck } = await seed(server);
     const now = new Date();
     const first = page();
@@ -178,7 +179,7 @@ describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
   it("keeps what two pages learn at once", async (context) => {
     const { instanceUrl, deck } = await seed(server);
     if (!(await versioned(deck.cardsDocumentUrl))) context.skip("this server gives no ETag on a read, so nothing is kept");
-    if (await unreliableEtags()) context.skip(ETAG_OUTLIVES_EDITS);
+    if (unreliableEtags) context.skip(ETAG_OUTLIVES_EDITS);
     const [a, b] = [page(), page()];
     await Promise.all([a.useCases.getStudyCounts(instanceUrl, deck, new Date()), b.useCases.checkInstance(instanceUrl)]);
     await vi.waitFor(async () => {
