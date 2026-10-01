@@ -12,6 +12,7 @@ import { DIRECTION_LABELS } from "./direction";
 import { BrowserIcon, TrashIcon } from "./icons";
 import { Pager, paginate } from "./Pager";
 import { readerText } from "./readerText";
+import { breakable } from "./breakable";
 
 /** Cards per Browser page: a short list, so paging is quick to scan. */
 export const CARDS_PER_PAGE = 10;
@@ -130,13 +131,13 @@ export function BrowserScreen({
                   <td class="clickable">
                     <a href={cardHref(card)}>
                       <CardThumbnail imageUrl={card.frontImageUrl} />
-                      {card.front}
+                      {breakable(card.front)}
                     </a>
                   </td>
                   <td class="clickable">
                     <a href={cardHref(card)} tabIndex={-1} aria-hidden="true">
                       <CardThumbnail imageUrl={card.backImageUrl} />
-                      {card.back}
+                      {breakable(card.back)}
                     </a>
                   </td>
                   <td class="actions">

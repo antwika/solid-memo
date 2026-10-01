@@ -1291,6 +1291,10 @@ form.card-edit {
 .card-face p {
   margin: 0;
   overflow-wrap: anywhere;
+  /* Fredoka kerns "A" into "V", "T", "Y"…, and "Å" and "Ä" share those pairs,
+     so at card sizes the ring or dots land on the next letter ("ÅVC"). Card
+     text is any language's, so it is set without kerning. */
+  font-kerning: none;
 }
 
 .card-question p {
