@@ -106,6 +106,22 @@ async function digestOf(instanceUrl: string): Promise<string> {
   return response.ok ? response.text() : "";
 }
 
+/**
+ * Until the pod's digest holds what the next visit relies on: the deck's
+ * schedule and the receipt of its cards document by these rules. Pages
+ * write what they learn in the background, in more than one write.
+ */
+async function untilLearned(instanceUrl: string, deck: Deck): Promise<void> {
+  await vi.waitFor(
+    async () => {
+      const digest = await createSolidDigestRepository({ fetch }).readDigest(instanceUrl);
+      expect(digest?.schedules[deck.url]).toBeDefined();
+      expect(digest?.receipts[deck.cardsDocumentUrl]?.conformedTo).toBe(RULESET);
+    },
+    { timeout: 10_000 },
+  );
+}
+
 describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
   it("lets the next visit count today's study and check the instance without downloading unchanged documents", async () => {
     const { instanceUrl, deck } = await seed(server);
@@ -116,13 +132,7 @@ describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
     const counts = await first.useCases.getStudyCounts(instanceUrl, deck, now);
     expect(counts).toEqual({ dueCount: 0, newCount: 3 });
     expect((await first.useCases.checkInstance(instanceUrl)).conforms).toBe(true);
-    if (etags) {
-      await vi.waitFor(async () => {
-        const digest = await digestOf(instanceUrl);
-        expect(digest).toContain("DeckSchedule");
-        expect(digest).toContain(RULESET);
-      });
-    }
+    if (etags) await untilLearned(instanceUrl, deck);
 
     const second = page();
     expect(await second.useCases.getStudyCounts(instanceUrl, deck, now)).toEqual(counts);
@@ -131,7 +141,9 @@ describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
     if (etags) {
       // Asked about with the version the digest names, and not sent again.
       expect(cards.length).toBeGreaterThan(0);
-      expect(cards.every((r) => r.ifNoneMatch !== null && r.status === 304)).toBe(true);
+      expect(cards.map((r) => ({ conditional: r.ifNoneMatch !== null, status: r.status }))).toEqual(
+        cards.map(() => ({ conditional: true, status: 304 })),
+      );
     } else {
       expect(await digestOf(instanceUrl)).not.toContain("DeckSchedule");
       expect(cards.every((r) => r.status === 200)).toBe(true);
