@@ -43,6 +43,12 @@
       "sha256": "f5a162c7905fcb0e2f221db7ccc96f533c8ee1c44552c444c7f75dc6d3d97606"
     },
     {
+      "deck": "network-ports",
+      "version": 2,
+      "issued": "2026-10-02T21:54:58Z",
+      "sha256": "e91fdd820b8bb069b7749f92bdbcb62869f544342fd42e1579fcfef820fdb612"
+    },
+    {
       "deck": "periodic-table",
       "version": 1,
       "issued": "2026-09-28T17:02:14Z",
