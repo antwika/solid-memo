@@ -11,7 +11,7 @@ import {
   type Thing,
 } from "@inrupt/solid-client";
 import type { RepairRepository } from "@solid-memo/application/ports";
-import { defaultDeckDescription } from "@solid-memo/domain/dcat";
+import { defaultDeckDescription, defaultDeckDescriptionText } from "@solid-memo/domain/dcat";
 import type { Repair, RepairKind } from "@solid-memo/domain/repair";
 import { getSolidDatasetOrNull, saveDataset } from "./datasets";
 import { DCTERMS, SM } from "./vocab";
@@ -64,10 +64,16 @@ function repairedThing(
   const builder = buildThing(thing);
   switch (repair.kind) {
     case "describe-deck": {
-      // Format 4 states text language-tagged, the app's own in English.
+      // Format 4 states text language-tagged, the app's own in English and Swedish.
       if (repair.version >= 4) {
-        const title = getStringWithLocale(thing, DCTERMS.title, "en") ?? "a deck";
-        return builder.setStringWithLocale(DCTERMS.description, defaultDeckDescription(title), "en").build();
+        const en = getStringWithLocale(thing, DCTERMS.title, "en") ?? "a deck";
+        const sv = getStringWithLocale(thing, DCTERMS.title, "sv");
+        const description = defaultDeckDescriptionText(sv === null ? { en } : { en, sv });
+        builder.removeAll(DCTERMS.description);
+        for (const [language, text] of Object.entries(description)) {
+          builder.addStringWithLocale(DCTERMS.description, text, language);
+        }
+        return builder.build();
       }
       const title = getStringNoLocale(thing, DCTERMS.title) ?? "a deck";
       return builder.setStringNoLocale(DCTERMS.description, defaultDeckDescription(title)).build();

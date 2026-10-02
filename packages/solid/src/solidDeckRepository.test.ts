@@ -262,6 +262,7 @@ describe("createDeck", () => {
     const thing = getThing(saved as SolidDataset, created.url)!;
     expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe("Kanji N5");
     expect(getStringWithLocale(thing, DCTERMS.description, "en")).toBe("Flashcards: Kanji N5.");
+    expect(getStringWithLocale(thing, DCTERMS.description, "sv")).toBe("Kortlek: Kanji N5.");
     expect(getInteger(thing, SM.formatVersion)).toBe(4);
     expect(getUrl(thing, SM.studyDirection)).toBe(SM.frontToBack);
     expect(getUrlAll(thing, DCTERMS.creator)).toEqual([]);
