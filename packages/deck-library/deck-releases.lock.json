@@ -55,6 +55,12 @@
       "sha256": "fcac1a51c6d931e5e6e1a6d0ad65aa7acb50cb6fbe30e9e176427355bfe0d018"
     },
     {
+      "deck": "periodic-table",
+      "version": 2,
+      "issued": "2026-10-02T21:59:12Z",
+      "sha256": "095f7e205dd0504f481ce18566025df0f541932ad8a812f5d28e766c4afa00eb"
+    },
+    {
       "deck": "swedish-adjectives",
       "version": 1,
       "issued": "2026-09-28T17:02:15Z",

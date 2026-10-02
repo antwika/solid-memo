@@ -1,4 +1,4 @@
-@base <https://solid-memo.com/decks/periodic-table> .
+@base <https://solid-memo.com/decks/periodic-table/2.ttl> .
 
 @prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
 @prefix dcterms:    <http://purl.org/dc/terms/> .
@@ -7,6 +7,7 @@
 @prefix foaf:       <http://xmlns.com/foaf/0.1/> .
 @prefix topic:      <https://solid-memo.com/vocab/topics#> .
 @prefix prov:       <http://www.w3.org/ns/prov#> .
+@prefix adms:       <http://www.w3.org/ns/adms#> .
 
 <>
     a solid-memo:Deck ,
@@ -32,7 +33,16 @@
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 4 ;
+    dcat:version "2" ;
+    dcterms:issued "2026-10-02T21:59:12Z"^^xsd:dateTime ;
+    adms:versionNotes "Every element named in Swedish as well as English, and the title, description and keywords too." ;
+    dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
+    dcat:inSeries <https://solid-memo.com/decks/index.ttl#periodic-table> ;
+    dcat:isVersionOf <https://solid-memo.com/decks/index.ttl#periodic-table> ;
+    dcat:prev <https://solid-memo.com/decks/periodic-table/1.ttl> ;
+    dcat:previousVersion <https://solid-memo.com/decks/periodic-table/1.ttl> ;
+    dcat:distribution <#turtle> .
 
 <#anton-wiklund>
     a foaf:Agent ;
@@ -994,3 +1004,10 @@
     solid-memo:back "Oganesson"@en ,
                     "Oganesson"@sv ;
     solid-memo:front "Og" .
+
+<#turtle>
+    a dcat:Distribution ;
+    dcat:accessURL <> ;
+    dcat:downloadURL <> ;
+    dcat:mediaType <https://www.iana.org/assignments/media-types/text/turtle> ;
+    dcterms:format <http://publications.europa.eu/resource/authority/file-type/RDF_TURTLE> .
