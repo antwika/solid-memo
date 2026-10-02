@@ -28,7 +28,7 @@ export function CardScreen({
   onSave: (content: CardContent) => void;
   onRemove: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, readerText } = useI18n();
   const [draft, setDraft] = useState(() => draftOf(card));
   const [invalid, setInvalid] = useState<string | null>(null);
 
@@ -45,7 +45,7 @@ export function CardScreen({
 
   function handleRemove() {
     if (
-      window.confirm(t("card.removeConfirm", { card: cardLabel(card) }))
+      window.confirm(t("card.removeConfirm", { card: cardLabel(card, readerText) }))
     ) {
       onRemove();
     }

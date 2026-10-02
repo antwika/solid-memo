@@ -62,6 +62,7 @@ share the same named property shapes.
 | Card 1 | `sm:front`, `sm:back` 1..1 |
 | Card 2 | `sm:front`, `sm:back` 0..1; `sm:frontImage`, `sm:backImage` 0..1 IRI; each side has text or a picture |
 | Card 3 | Card 2 + `sm:frontNote` and `sm:backNote`, a note under that side's text, shown once the answer is revealed (never while asking), and `sm:backLabel`, a caption above the back's text saying how the answer relates to the front (shown with the back, whichever way the card is studied): each optional, language-tagged text as a deck-4 title is, one value per language and, when present, exactly one of them English (a node-level `sh:or`, since SHACL cannot say "if any value" on the property); the app shows the reader's language and edits the English; `owl:deprecated` 0..1 boolean: `true` on a retired card, kept with its review states but never studied, and listed in the Browser only when asked; left out on a card in use |
+| Card 4 | Card 3, but a side's text (`sm:front`, `sm:back`) is either one untagged literal, its language unknown (what the app writes for text typed in it), or language-tagged text, at most one value per language (`sh:or` of `xsd:string` and `rdf:langString`, `sh:uniqueLang`, at most one untagged value), never both (a node-level `sh:or`). English is not required: a Swedish vocabulary deck's back is Swedish. The app shows the reader's language, else the English, else the untagged text; it edits the English, else the untagged or only text, and keeps the other languages |
 | Review state 1 | `sm:easeFactor` decimal, `sm:intervalDays`, `sm:repetitions` integer, `sm:due` `YYYY-MM-DD`, `sm:firstReviewedAt`, `sm:lastReviewedAt` dateTime, all 1..1; the five `sm:previous*` 0..1 each (unversioned pods already hold snapshots); subject named per direction |
 | Review state 2 | Review state 1 with the snapshot all or nothing |
 | Preferences 1 | `sm:newCardsPerDay`, `sm:maxReviewsPerDay`, `sm:dayBoundaryHour` (0–23) integer 0..1; `sm:answerScale` 0..1, `sm2` or `minimal`; `sm:developerMode` 0..1 boolean |
@@ -114,6 +115,7 @@ only.
 | `xsd:dateTime` | ISO 8601 `string` | `dateTime` |
 | `sh:nodeKind sh:IRI` | `string` | `iri` |
 | `rdf:langString` | `LangText`: language tag (lower case) → text; one field however many languages, required with `sh:minCount 1` | `text` |
+| `sh:or ( [ sh:datatype xsd:string ] [ sh:datatype rdf:langString ] )` | `LangText`, the untagged literal under the empty tag (`""`) | `anyText` |
 | no `sh:minCount` | optional (`?:`) | `optional` |
 | `sh:minCount 1 ; sh:maxCount 1` | required | `one` |
 | no `sh:maxCount` (strings and IRIs only) | `readonly string[]` | `many` |

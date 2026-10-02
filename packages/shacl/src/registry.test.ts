@@ -31,11 +31,11 @@ describe("pickShape", () => {
   });
 
   it("reports a version it does not know, with the latest it does", () => {
-    expect(pickShape([SM.Card], 4, "pod")).toEqual({
+    expect(pickShape([SM.Card], 5, "pod")).toEqual({
       kind: "unknown-version",
       shape: "card",
-      version: 4,
-      latest: 3,
+      version: 5,
+      latest: 4,
     });
     expect(pickShape([SM.Instance], 0, "pod")).toEqual({
       kind: "unknown-version",

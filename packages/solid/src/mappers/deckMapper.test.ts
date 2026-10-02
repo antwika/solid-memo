@@ -208,8 +208,8 @@ describe("toCard", () => {
     expect(toCard(thing)).toEqual({
       id: "card-1",
       url: `${CARDS_DOC}#card-1`,
-      front: "水",
-      back: "water (mizu)",
+      front: { "": "水" },
+      back: { "": "water (mizu)" },
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
     });
@@ -247,8 +247,8 @@ describe("toCard", () => {
         .addInteger(SM.formatVersion, 2),
     );
     expect(toCard(thing)).toMatchObject({
-      front: "",
-      back: "Afghanistan",
+      front: {},
+      back: { "": "Afghanistan" },
       frontImageUrl: FLAG,
       backImageUrl: MAP,
       formatVersion: 2,

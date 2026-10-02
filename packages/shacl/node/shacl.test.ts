@@ -27,6 +27,11 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "card/v3/invalid/two-english-labels.ttl": { path: `${SM}backLabel`, message: "A label above the back is language-tagged text" },
   "card/v3/invalid/front-note-without-english.ttl": { message: "Each side of a card needs text or a picture, and a note or label" },
   "card/v3/invalid/side-without-content.ttl": { message: "Each side of a card needs text or a picture, and a note or label" },
+  "card/v3/invalid/tagged-back.ttl": { path: `${SM}back`, message: "Value does not have datatype" },
+  "card/v4/invalid/tagged-and-untagged-back.ttl": { message: "Each side of a card needs text or a picture, its text either untagged or language-tagged, never both" },
+  "card/v4/invalid/two-untagged-fronts.ttl": { path: `${SM}front`, message: "A side's text is one untagged text" },
+  "card/v4/invalid/two-english-backs.ttl": { path: `${SM}back`, message: 'Language "en" has been used by 2 values' },
+  "card/v4/invalid/back-as-iri.ttl": { path: `${SM}back`, message: "A side's text is one untagged text" },
   "deck/v1/invalid/missing-title.ttl": { path: `${DC}title`, message: "Less than 1 values" },
   "deck/v2/invalid/bad-direction.ttl": { path: `${SM}direction`, message: "A format-2 deck states its direction" },
   "deck/v2/invalid/missing-direction.ttl": { path: `${SM}direction`, message: "A format-2 deck states its direction" },
@@ -106,7 +111,7 @@ describe("the shapes over the fixtures", async () => {
     await expect(
       validateTurtleDocument("x.ttl", parseTurtle(turtle, base("x.ttl")), engine, "pod"),
     ).rejects.toThrow(
-      "x.ttl:\n  <https://pod.example/x.ttl#se> is card format 4; this app knows formats 1–3.",
+      "x.ttl:\n  <https://pod.example/x.ttl#se> is card format 5; this app knows formats 1–4.",
     );
   });
 

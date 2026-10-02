@@ -6,8 +6,8 @@ import { applyLibraryUpgrade, planLibraryUpgrade, upgradedCards } from "./librar
 const DECKS = "https://solid-memo.com/decks/";
 const CARDS = "https://pod.example/solid-memo/a/decks/deck-1.ttl";
 
-const libraryCard = (id: string, back: string, formatVersion = 1): LibraryCard => ({ id, front: id, back, formatVersion });
-const podCard = (id: string, back: string): Card => ({ id, url: `${CARDS}#${id}`, front: id, back, createdAt: "", formatVersion: 2 });
+const libraryCard = (id: string, back: string, formatVersion = 1): LibraryCard => ({ id, front: { "": id }, back: { "": back }, formatVersion });
+const podCard = (id: string, back: string): Card => ({ id, url: `${CARDS}#${id}`, front: { "": id }, back: { "": back }, createdAt: "", formatVersion: 2 });
 
 function release(version: number, cards: LibraryCard[], direction: Deck["direction"] = "front-to-back"): LibraryDeckContent {
   return {

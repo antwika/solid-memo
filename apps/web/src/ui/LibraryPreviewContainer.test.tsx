@@ -18,7 +18,7 @@ const capitals: LibraryDeck = {
 };
 
 function card(front: string, back: string): LibraryCard {
-  return { id: front.toLowerCase(), front, back, formatVersion: 1 };
+  return { id: front.toLowerCase(), front: { "": front }, back: { "": back }, formatVersion: 1 };
 }
 
 const CARDS = [

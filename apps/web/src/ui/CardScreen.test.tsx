@@ -6,8 +6,8 @@ import type { Card } from "@solid-memo/domain/deck";
 const card: Card = {
   id: "card-1",
   url: "https://pod.example/solid-memo/a/decks/deck-1.ttl#card-1",
-  front: "水",
-  back: "water",
+  front: { "": "水" },
+  back: { "": "water" },
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };
@@ -57,7 +57,18 @@ describe("CardScreen", () => {
       target: { value: " fire  " },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(props.onSave).toHaveBeenCalledWith({ front: "火", back: "fire" });
+    expect(props.onSave).toHaveBeenCalledWith({ front: { "": "火" }, back: { "": "fire" } });
+  });
+
+  it("edits a side's English and keeps its other languages, and keeps untagged text untagged", () => {
+    const { props } = renderScreen({
+      card: { ...card, front: { "": "水" }, back: { en: "water", ja: "みず" } },
+    });
+    expect(screen.getByLabelText("Back")).toHaveValue("water");
+    fireEvent.input(screen.getByLabelText("Front"), { target: { value: " 火 " } });
+    fireEvent.input(screen.getByLabelText("Back"), { target: { value: "fire" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(props.onSave).toHaveBeenCalledWith({ front: { "": "火" }, back: { en: "fire", ja: "みず" } });
   });
 
   it("edits a note's English and keeps its other languages; clearing the English clears the note", () => {
@@ -69,8 +80,8 @@ describe("CardScreen", () => {
     fireEvent.input(screen.getByLabelText("Label"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(props.onSave).toHaveBeenCalledWith({
-      front: "水",
-      back: "water",
+      front: { "": "水" },
+      back: { "": "water" },
       backNote: { en: "One of the five elements.", sv: "Ett element." },
     });
   });
@@ -89,10 +100,10 @@ describe("CardScreen", () => {
     fireEvent.input(screen.getByLabelText("Back note"), { target: { value: " One of the five elements. " } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(props.onSave).toHaveBeenCalledWith({
-      front: "水",
+      front: { "": "水" },
       frontNote: { en: "N5" },
       backLabel: { en: "Meaning" },
-      back: "water",
+      back: { "": "water" },
       backNote: { en: "One of the five elements." },
     });
   });
@@ -101,9 +112,9 @@ describe("CardScreen", () => {
     const { container } = renderScreen({
       card: {
         ...card,
-        front: "",
+        front: {},
         frontImageUrl: FLAG,
-        back: "Afghanistan",
+        back: { "": "Afghanistan" },
         backImageUrl: MAP,
       },
     });
@@ -131,8 +142,8 @@ describe("CardScreen", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(props.onSave).toHaveBeenCalledWith({
-      front: "水",
-      back: "water",
+      front: { "": "水" },
+      back: { "": "water" },
       frontImageUrl: FLAG,
     });
   });
@@ -151,7 +162,7 @@ describe("CardScreen", () => {
     const confirm = vi.fn(() => false);
     vi.stubGlobal("confirm", confirm);
     renderScreen({
-      card: { ...card, front: "", frontImageUrl: FLAG, back: "Afghanistan" },
+      card: { ...card, front: {}, frontImageUrl: FLAG, back: { "": "Afghanistan" } },
     });
     fireEvent.click(screen.getByRole("button", { name: "Remove card" }));
     expect(confirm).toHaveBeenCalledWith(

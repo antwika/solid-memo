@@ -28,8 +28,8 @@ const instance: Instance = {
 const card: Card = {
   id: "card-1",
   url: `${deck.cardsDocumentUrl}#card-1`,
-  front: "水",
-  back: "water",
+  front: { "": "水" },
+  back: { "": "water" },
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };

@@ -423,7 +423,7 @@
     "catalogueFormat": "a catalogue of each instance's decks, which other apps read as a DCAT catalogue",
     "preferencesFormat": "preferences format {version}, which records the answer scale, developer mode and what to do with invalid data",
     "deckFormat": "deck format {version}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages",
-    "cardFormat": "card format {version}, which adds pictures on cards and lets a library deck retire a card it no longer uses",
+    "cardFormat": "card format {version}, which adds pictures on cards, lets a library deck retire a card it no longer uses and lets a card's text state its language",
     "reviewFormat": "review-state format {version}, which keeps each study direction's state and the day's undo snapshot",
     "itemInstanceRecord": "Instance record",
     "itemCatalogue": "Catalogue of the decks",

@@ -48,8 +48,8 @@ export interface LibraryUpgradePlan {
 
 function sameContent(a: CardContent, b: CardContent): boolean {
   return (
-    a.front === b.front &&
-    a.back === b.back &&
+    sameText(a.front, b.front) &&
+    sameText(a.back, b.back) &&
     a.frontImageUrl === b.frontImageUrl &&
     a.backImageUrl === b.backImageUrl &&
     sameText(a.frontNote, b.frontNote) &&

@@ -19,8 +19,8 @@ const deck: Deck = {
 const card: Card = {
   id: "card-1",
   url: `${deck.cardsDocumentUrl}#card-1`,
-  front: "水",
-  back: "water",
+  front: { "": "水" },
+  back: { "": "water" },
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };
@@ -157,7 +157,7 @@ describe("BrowserScreen", () => {
   });
 
   it("hides retired cards until asked, then lists them marked", () => {
-    const retired: Card = { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, front: "火", retired: true };
+    const retired: Card = { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, front: { "": "火" }, retired: true };
     const { container } = renderScreen({ cards: [card, retired] });
     expect(screen.queryByText("火")).toBeNull();
     expect(screen.getByText(/1 card is retired: kept, with its review history, but no longer studied\./)).toBeInTheDocument();
@@ -211,7 +211,7 @@ describe("BrowserScreen", () => {
     vi.stubGlobal("confirm", confirm);
     const flag = "https://flagcdn.com/af.svg";
     const { props, container } = renderScreen({
-      cards: [{ ...card, front: "", frontImageUrl: flag, back: "Afghanistan" }],
+      cards: [{ ...card, front: {}, frontImageUrl: flag, back: { "": "Afghanistan" } }],
     });
     const thumbnail = container.querySelector("td a img.card-thumbnail")!;
     expect(thumbnail).toHaveAttribute("src", flag);
@@ -248,8 +248,8 @@ describe("BrowserScreen pagination", () => {
       ...card,
       id: `card-${i + 1}`,
       url: `${deck.cardsDocumentUrl}#card-${i + 1}`,
-      front: `Card ${i + 1}`,
-      back: `Back ${i + 1}`,
+      front: { "": `Card ${i + 1}` },
+      back: { "": `Back ${i + 1}` },
     }));
   }
 

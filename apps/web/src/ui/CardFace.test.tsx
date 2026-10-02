@@ -7,7 +7,7 @@ const FLAG = "https://flagcdn.com/af.svg";
 
 describe("CardFace", () => {
   it("shows text alone", () => {
-    const { container } = render(<CardFace side="front" text="水" />);
+    const { container } = render(<CardFace side="front" text={{ "": "水" }} />);
     expect(container.querySelector(".card-face.card-front")).toHaveTextContent(
       "水",
     );
@@ -15,7 +15,7 @@ describe("CardFace", () => {
   });
 
   it("shows a label above the text", () => {
-    const { container } = render(<CardFace side="back" text="Finansmäklare" label={{ en: "Out of use · replaced by" }} />);
+    const { container } = render(<CardFace side="back" text={{ "": "Finansmäklare" }} label={{ en: "Out of use · replaced by" }} />);
     const [label, text] = container.querySelectorAll(".card-back p");
     expect(label).toHaveClass("card-label");
     expect(label).toHaveTextContent("Out of use · replaced by");
@@ -23,7 +23,7 @@ describe("CardFace", () => {
   });
 
   it("shows a note under the text", () => {
-    const { container } = render(<CardFace side="back" text="Finansmäklare" note={{ en: "Replaced in version 30." }} />);
+    const { container } = render(<CardFace side="back" text={{ "": "Finansmäklare" }} note={{ en: "Replaced in version 30." }} />);
     expect(container.querySelector(".card-back p.card-note")).toHaveTextContent("Replaced in version 30.");
   });
 
@@ -32,7 +32,7 @@ describe("CardFace", () => {
       <I18nProvider locale="sv" onChoose={() => undefined}>
         <CardFace
           side="back"
-          text="Finansmäklare"
+          text={{ "": "Finansmäklare" }}
           label={{ en: "Replaced by", sv: "Ersatt av" }}
           note={{ en: "In taxonomy version 30.", sv: "I taxonomiversion 30." }}
         />
@@ -42,8 +42,24 @@ describe("CardFace", () => {
     expect(container.querySelector(".card-note")).toHaveTextContent("I taxonomiversion 30.");
   });
 
+  it("shows the text in the reader's language, else in English", () => {
+    const text = { en: "The Starry Night — Vincent van Gogh, 1889", sv: "Stjärnenatt — Vincent van Gogh, 1889" };
+    const { container, rerender } = render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <CardFace side="back" text={text} />
+      </I18nProvider>,
+    );
+    expect(container.querySelector(".card-back")).toHaveTextContent("Stjärnenatt — Vincent van Gogh, 1889");
+    rerender(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <CardFace side="back" text={{ en: "Mona Lisa — Leonardo da Vinci, 1500s" }} />
+      </I18nProvider>,
+    );
+    expect(container.querySelector(".card-back")).toHaveTextContent("Mona Lisa — Leonardo da Vinci, 1500s");
+  });
+
   it("shows a picture alone, described for screen readers", () => {
-    render(<CardFace side="back" text="" imageUrl={FLAG} />);
+    render(<CardFace side="back" text={{ "": "" }} imageUrl={FLAG} />);
     const image = screen.getByRole("img", {
       name: "Picture on the back of the card",
     });
@@ -53,7 +69,7 @@ describe("CardFace", () => {
 
   it("shows a picture above its text, the text being the description", () => {
     const { container } = render(
-      <CardFace side="front" text="Afghanistan" imageUrl={FLAG} />,
+      <CardFace side="front" text={{ "": "Afghanistan" }} imageUrl={FLAG} />,
     );
     const [image, text] = container.querySelector(".card-face")!.children;
     expect(image.tagName).toBe("IMG");
@@ -63,7 +79,7 @@ describe("CardFace", () => {
 
   it("names, rather than loads, a picture that is not a web URL", () => {
     const { container } = render(
-      <CardFace side="front" text="" imageUrl="javascript:alert(1)" />,
+      <CardFace side="front" text={{ "": "" }} imageUrl="javascript:alert(1)" />,
     );
     expect(container.querySelector("img")).toBeNull();
     expect(

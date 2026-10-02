@@ -19,7 +19,13 @@ export type TermKind =
   /** An IRI from a fixed list (sh:in over IRIs): a concept of a SKOS scheme. */
   | "iriEnum"
   /** Language-tagged literals (rdf:langString), at most one per language: a LangText. */
-  | "text";
+  | "text"
+  /**
+   * Untagged text (xsd:string), its language unknown, or language-tagged
+   * text, at most one per language, never both: a LangText whose empty
+   * tag ("") holds the untagged text.
+   */
+  | "anyText";
 
 /** "one" = exactly one; "optional" = at most one; "many" = any number. */
 export type Cardinality = "one" | "optional" | "many";

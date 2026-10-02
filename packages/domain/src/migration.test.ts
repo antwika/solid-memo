@@ -37,8 +37,8 @@ function card(id: string, formatVersion: number): Card {
   return {
     id,
     url: `${deck.cardsDocumentUrl}#${id}`,
-    front: id,
-    back: `${id} back`,
+    front: { "": id },
+    back: { "": `${id} back` },
     createdAt: "2026-09-21T10:00:00.000Z",
     formatVersion,
   };

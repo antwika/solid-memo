@@ -74,6 +74,7 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
     1: { front: "Sweden", back: "Stockholm" },
     2: { frontImage: "https://flagcdn.com/se.svg", back: "Sweden" },
     3: { front: "Yugoslavia", frontNote: { en: "Dissolved in 1992." }, backLabel: { en: "Capital" }, back: "Belgrade", backNote: { en: "The capital until 1992." }, deprecated: true },
+    4: { front: { en: "Mona Lisa", sv: "Mona Lisa" }, back: { "": "Leonardo da Vinci" }, frontNote: { en: "In the Louvre." } },
   },
   reviewState: {
     1: { easeFactor: 2.5, intervalDays: 1, repetitions: 1, due: "2026-09-22", firstReviewedAt: "2026-09-21T10:00:00.000Z", lastReviewedAt: "2026-09-21T10:00:00.000Z", previousDue: "2026-09-21" },
@@ -104,7 +105,7 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
 };
 
 async function violationsOf(shape: ShapeName, version: number, record: object) {
-  const descriptor = (SHAPES[shape] as Record<number, (typeof SHAPES)["card"][1]>)[version];
+  const descriptor = (SHAPES[shape] as unknown as Record<number, (typeof SHAPES)["card"][1]>)[version];
   const thing = recordThing(URL_, descriptor, record, null);
   const data = toRdfJsDataset(setThing(mockSolidDatasetFrom("https://pod.example/solid-memo/a/doc.ttl"), thing));
   const engine = createEngine(await loader.load(descriptor));

@@ -21,8 +21,8 @@ const deck: Deck = {
 const card: Card = {
   id: "card-1",
   url: `${deck.cardsDocumentUrl}#card-1`,
-  front: "水",
-  back: "water",
+  front: { "": "水" },
+  back: { "": "water" },
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };
@@ -49,7 +49,7 @@ function renderContainer(useCases: UseCases) {
 describe("CardContainer", () => {
   it("saves an edit, refreshes the deck's cards and confirms", async () => {
     const useCases = makeUseCasesFake({
-      updateCard: vi.fn(async () => ({ ...card, back: "water (mizu)" })),
+      updateCard: vi.fn(async () => ({ ...card, back: { "": "water (mizu)" } })),
     });
     const { invalidate, queryClient } = renderContainer(useCases);
     const queueKey = ["studyQueue", deck.url];
@@ -62,8 +62,8 @@ describe("CardContainer", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent("Saved.");
     expect(useCases.updateCard).toHaveBeenCalledWith(deck, card, {
-      front: "水",
-      back: "water (mizu)",
+      front: { "": "水" },
+      back: { "": "water (mizu)" },
     });
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["cards", deck.cardsDocumentUrl],

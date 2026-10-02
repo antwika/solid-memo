@@ -1,0 +1,8 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+
+<#se>
+    a solid-memo:Card ;
+    solid-memo:front "Sweden" ;
+    solid-memo:back "Stockholm"@en ,
+                    "Stockholm, the capital"@en ;
+    solid-memo:formatVersion 4 .

@@ -223,11 +223,11 @@ describe("toLibraryDeckContent", () => {
       themes: [EDUC],
       keywords: [],
       cards: [
-        { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+        { id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 },
         {
           id: "afghanistan",
-          front: "",
-          back: "Afghanistan",
+          front: {},
+          back: { "": "Afghanistan" },
           frontImageUrl: FLAG,
           formatVersion: 2,
         },
@@ -259,7 +259,7 @@ describe("toLibraryDeckContent", () => {
       seriesUrl: SERIES,
       themes: [EDUC],
       keywords: [],
-      cards: [{ id: "se", front: "Sweden", back: "Stockholm", formatVersion: 1 }],
+      cards: [{ id: "se", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 }],
     });
   });
 
@@ -321,11 +321,11 @@ describe("toLibraryDeckContent", () => {
           .addIri(RDF.type, SM.Card)
           .addStringNoLocale(SM.front, "Sweden")
           .addStringNoLocale(SM.back, "Stockholm")
-          .addInteger(SM.formatVersion, 4),
+          .addInteger(SM.formatVersion, 5),
       ),
     );
     expect(() => toLibraryDeckContent(DOC, dataset)).toThrow(
-      `<${CANONICAL}#se> in <${DOC}> is in card format 4, newer than this app supports (3).`,
+      `<${CANONICAL}#se> in <${DOC}> is in card format 5, newer than this app supports (4).`,
     );
   });
 

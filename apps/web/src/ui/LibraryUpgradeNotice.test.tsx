@@ -7,8 +7,8 @@ import { describeChanges, LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
 
 const en = createI18n("en");
 
-const card = (id: string): Card => ({ id, url: `https://pod.example/d.ttl#${id}`, front: id, back: id, createdAt: "", formatVersion: 2 });
-const libraryCard = (id: string) => ({ id, front: id, back: id, formatVersion: 1 });
+const card = (id: string): Card => ({ id, url: `https://pod.example/d.ttl#${id}`, front: { "": id }, back: { "": id }, createdAt: "", formatVersion: 2 });
+const libraryCard = (id: string) => ({ id, front: { "": id }, back: { "": id }, formatVersion: 1 });
 const plan: LibraryUpgradePlan = {
   fromVersion: "1",
   toVersion: "3",

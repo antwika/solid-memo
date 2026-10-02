@@ -729,8 +729,8 @@ describe("Workspace", () => {
     const libraryUrl = "https://solid-memo.com/decks/capitals.ttl";
     const cards = Array.from({ length: CARDS_PER_PAGE + 1 }, (_, i) => ({
       id: `card-${i + 1}`,
-      front: `Front ${i + 1}`,
-      back: `Back ${i + 1}`,
+      front: { "": `Front ${i + 1}` },
+      back: { "": `Back ${i + 1}` },
       formatVersion: 1,
     }));
     renderWorkspace(
@@ -782,7 +782,7 @@ describe("Workspace", () => {
           { url: libraryUrl, ...firstRelease(libraryUrl), title: { en: "Capitals" }, cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => [
-          { id: "se", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+          { id: "se", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 },
         ]),
       }),
     );
@@ -826,7 +826,7 @@ describe("Workspace", () => {
           { url: libraryUrl, ...firstRelease(libraryUrl), title: { en: "Capitals" }, cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => [
-          { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+          { id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 },
         ]),
       }),
     );
@@ -867,7 +867,7 @@ describe("Workspace", () => {
           { url: libraryUrl, ...firstRelease(libraryUrl), title: { en: "Capitals" }, cardCount: 1, authors: [], direction: "front-to-back" as const, sources: [] },
         ]),
         listLibraryCards: vi.fn(async () => [
-          { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+          { id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 },
         ]),
       }),
     );
@@ -1074,8 +1074,8 @@ describe("Workspace", () => {
     const cards: Card[] = Array.from({ length: CARDS_PER_PAGE + 1 }, (_, i) => ({
       id: `card-${i + 1}`,
       url: `${deck.cardsDocumentUrl}#card-${i + 1}`,
-      front: `Country ${i + 1}`,
-      back: `Capital ${i + 1}`,
+      front: { "": `Country ${i + 1}` },
+      back: { "": `Capital ${i + 1}` },
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
     }));
@@ -1270,8 +1270,8 @@ describe("Workspace", () => {
               card: {
                 id: "card-1",
                 url: `${deck.cardsDocumentUrl}#card-1`,
-                front: "水",
-                back: "water",
+                front: { "": "水" },
+                back: { "": "water" },
                 createdAt: "2026-09-21T10:00:00.000Z",
                 formatVersion: 1,
               } satisfies Card,
@@ -1301,8 +1301,8 @@ describe("Workspace", () => {
   const dueCard: Card = {
     id: "card-1",
     url: `${instanceA.url}decks/deck-1.ttl#card-1`,
-    front: "水",
-    back: "water",
+    front: { "": "水" },
+    back: { "": "water" },
     createdAt: "2026-09-21T10:00:00.000Z",
     formatVersion: 1,
   };
@@ -1432,8 +1432,8 @@ describe("Workspace", () => {
     const card: Card = {
       id: "card-1",
       url: `${deck.cardsDocumentUrl}#card-1`,
-      front: "水",
-      back: "water",
+      front: { "": "水" },
+      back: { "": "water" },
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
     };

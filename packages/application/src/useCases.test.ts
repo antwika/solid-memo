@@ -55,8 +55,8 @@ const deck: Deck = {
 const card: Card = {
   id: "card-1",
   url: `${deck.cardsDocumentUrl}#card-1`,
-  front: "水",
-  back: "water",
+  front: { "": "水" },
+  back: { "": "water" },
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };
@@ -81,7 +81,7 @@ const libraryContent: LibraryDeckContent = {
   seriesUrl: "https://solid-memo.com/decks/index.ttl#capitals",
   themes: [],
   keywords: [],
-  cards: [{ id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 }],
+  cards: [{ id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 }],
 };
 
 function makeDeps() {
@@ -518,21 +518,21 @@ describe("createUseCases", () => {
     await expect(useCases.listCards(deck)).resolves.toEqual([card]);
     expect(deps.deckRepository.listCards).toHaveBeenCalledWith(deck);
 
-    await useCases.addCard(deck, { front: " 火 ", back: " fire " });
+    await useCases.addCard(deck, { front: { "": " 火 " }, back: { "": " fire " } });
     expect(deps.deckRepository.addCard).toHaveBeenCalledWith(deck, {
-      front: "火",
-      back: "fire",
+      front: { "": "火" },
+      back: { "": "fire" },
     });
 
     await useCases.updateCard(deck, card, {
-      front: " 水 ",
-      back: " water (mizu) ",
+      front: { "": " 水 " },
+      back: { "": " water (mizu) " },
       frontImageUrl: " https://img.example/water.png ",
       backImageUrl: "",
     });
     expect(deps.deckRepository.updateCard).toHaveBeenCalledWith(deck, card, {
-      front: "水",
-      back: "water (mizu)",
+      front: { "": "水" },
+      back: { "": "water (mizu)" },
       frontImageUrl: "https://img.example/water.png",
     });
 
@@ -544,12 +544,12 @@ describe("createUseCases", () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
     await expect(
-      useCases.addCard(deck, { front: "", back: "fire" }),
+      useCases.addCard(deck, { front: {}, back: { "": "fire" } }),
     ).rejects.toThrow("The front needs text or an image.");
     await expect(
       useCases.updateCard(deck, card, {
-        front: "f",
-        back: "b",
+        front: { "": "f" },
+        back: { "": "b" },
         backImageUrl: "javascript:alert(1)",
       }),
     ).rejects.toThrow("The back image must be an http(s) URL.");
@@ -1067,7 +1067,7 @@ describe("createUseCases", () => {
     ]);
     vi.mocked(deps.deckLibrary.fetchLibraryDeck).mockImplementation(async (url) =>
       url === current.url
-        ? { ...libraryContent, url, version: "2", cards: [...libraryContent.cards, { id: "norway", front: "Norway", back: "Oslo", formatVersion: 1 }] }
+        ? { ...libraryContent, url, version: "2", cards: [...libraryContent.cards, { id: "norway", front: { "": "Norway" }, back: { "": "Oslo" }, formatVersion: 1 }] }
         : libraryContent,
     );
     vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
@@ -1098,8 +1098,8 @@ describe("createUseCases", () => {
       toVersion: "2",
       releaseUrl: "https://solid-memo.com/decks/capitals/2.ttl",
       notes: [],
-      add: [{ id: "norway", front: "Norway", back: "Oslo", formatVersion: 1 }],
-      change: [{ id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 }],
+      add: [{ id: "norway", front: { "": "Norway" }, back: { "": "Oslo" }, formatVersion: 1 }],
+      change: [{ id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 }],
       retire: [retired],
       restore: [],
       remove: [card],

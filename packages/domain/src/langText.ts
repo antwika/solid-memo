@@ -47,9 +47,42 @@ export function shown(text: LangText, languages: readonly string[] = []): string
   return english(text) ?? text[Object.keys(text).sort()[0]] ?? "";
 }
 
+/**
+ * The tag of the text the app edits: the English, else the first by tag
+ * (the untagged text of a card side, "", comes first); undefined when the
+ * text is in no language.
+ */
+function editedTag(text: LangText): string | undefined {
+  return englishTag(text) ?? Object.keys(text).sort()[0];
+}
+
 /** The text the app edits: the English, else the text shown; empty when there is none. */
 export function editedText(text: LangText | undefined): string {
   return text === undefined ? "" : (english(text) ?? shown(text));
+}
+
+/**
+ * A card side's text as entered: every language's text trimmed and an
+ * empty one left out; no text at all when the edited one is cleared, for
+ * clearing what the app shows clears the side's text.
+ */
+export function tidiedSideText(text: LangText): LangText {
+  const tag = editedTag(text);
+  const kept = Object.fromEntries(
+    Object.entries(text)
+      .map(([tag, value]) => [tag, value.trim()])
+      .filter(([, value]) => value !== ""),
+  );
+  return tag === undefined || tag in kept ? kept : {};
+}
+
+/**
+ * A card side's text with the edited text replaced by `value`, every
+ * other language kept. A side with no text yet gets untagged text (""):
+ * the app does not know what language a user types in.
+ */
+export function withEditedText(text: LangText, value: string): LangText {
+  return { ...text, [editedTag(text) ?? ""]: value };
 }
 
 /**

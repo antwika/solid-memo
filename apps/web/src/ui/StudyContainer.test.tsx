@@ -33,8 +33,8 @@ function makePrompt(id: string, front: string): Prompt {
     card: {
       id,
       url: `${deck.cardsDocumentUrl}#${id}`,
-      front,
-      back: `${front}-back`,
+      front: { "": front },
+      back: { "": `${front}-back` },
       createdAt: "2026-09-21T10:00:00.000Z",
       formatVersion: 1,
     },

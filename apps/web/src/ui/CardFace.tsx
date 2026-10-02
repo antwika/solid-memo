@@ -25,7 +25,8 @@ export function CardFace({
 }: {
   side: "front" | "back";
   role?: "question" | "answer";
-  text: string;
+  /** The side's text in every language it is in, shown in the reader's. */
+  text: LangText;
   imageUrl?: string;
   /** How the back relates to the front, e.g. "Replaced by", in the reader's language. */
   label?: LangText;
@@ -33,6 +34,7 @@ export function CardFace({
   note?: LangText;
 }) {
   const { t, readerText } = useI18n();
+  const shownText = readerText(text);
   return (
     <div class={`card-face card-${side} card-${role}`}>
       {imageUrl !== undefined &&
@@ -41,7 +43,7 @@ export function CardFace({
             class="card-image"
             src={imageUrl}
             alt={
-              text === ""
+              shownText === ""
                 ? side === "front"
                   ? t("cardFace.frontPictureAlt")
                   : t("cardFace.backPictureAlt")
@@ -52,7 +54,7 @@ export function CardFace({
           <p class="hint">{t("cardFace.notWebUrl")}</p>
         ))}
       {label !== undefined && <p class="card-label">{breakable(readerText(label))}</p>}
-      {text !== "" && <p>{breakable(text)}</p>}
+      {shownText !== "" && <p>{breakable(shownText)}</p>}
       {note !== undefined && <p class="card-note">{breakable(readerText(note))}</p>}
     </div>
   );

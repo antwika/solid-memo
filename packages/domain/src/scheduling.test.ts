@@ -18,8 +18,8 @@ function card(id: string): Card {
   return {
     id,
     url: `https://pod.example/decks/d.ttl#${id}`,
-    front: "front",
-    back: "back",
+    front: { "": "front" },
+    back: { "": "back" },
     createdAt: "2026-09-01T00:00:00.000Z",
     formatVersion: 1,
   };

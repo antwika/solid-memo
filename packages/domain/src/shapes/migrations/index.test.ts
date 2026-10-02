@@ -43,14 +43,22 @@ describe("the migration chain", () => {
 
 describe("migrate", () => {
   it("returns a latest record untouched", () => {
-    const data = { front: "Sweden", back: "Stockholm" };
-    expect(migrate("card", { version: 3, data }, CONTEXT)).toBe(data);
+    const data = { front: { en: "Sweden" }, back: { "": "Stockholm" } };
+    expect(migrate("card", { version: 4, data }, CONTEXT)).toBe(data);
   });
 
   it("walks a record up to the latest version", () => {
     expect(migrate("card", { version: 1, data: { front: "Sweden", back: "Stockholm" } }, CONTEXT)).toEqual({
-      front: "Sweden",
-      back: "Stockholm",
+      front: { "": "Sweden" },
+      back: { "": "Stockholm" },
+    });
+    expect(migrate("card", { version: 3, data: { frontImage: "https://flagcdn.com/se.svg", back: "Sweden" } }, CONTEXT)).toEqual({
+      frontImage: "https://flagcdn.com/se.svg",
+      back: { "": "Sweden" },
+    });
+    expect(migrate("card", { version: 3, data: { front: "Sweden", backImage: "https://flagcdn.com/se.svg" } }, CONTEXT)).toEqual({
+      front: { "": "Sweden" },
+      backImage: "https://flagcdn.com/se.svg",
     });
     const deck = { title: "Own", creator: ["Anton"], cardsDocument: "d", reviewsDocument: "r" };
     expect(migrate("deck", { version: 1, data: deck }, CONTEXT)).toEqual({

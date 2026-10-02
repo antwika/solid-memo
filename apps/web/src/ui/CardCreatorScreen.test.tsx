@@ -63,7 +63,7 @@ describe("CardCreatorScreen", () => {
       target: { value: " fire " },
     });
     fireEvent.submit(container.querySelector("form")!);
-    expect(props.onAdd).toHaveBeenCalledWith({ front: "火", back: "fire" });
+    expect(props.onAdd).toHaveBeenCalledWith({ front: { "": "火" }, back: { "": "fire" } });
     expect(screen.getByLabelText("Front")).toHaveValue("");
     expect(screen.getByLabelText("Back")).toHaveValue("");
   });
@@ -78,8 +78,8 @@ describe("CardCreatorScreen", () => {
     });
     fireEvent.submit(container.querySelector("form")!);
     expect(props.onAdd).toHaveBeenCalledWith({
-      front: "",
-      back: "Afghanistan",
+      front: {},
+      back: { "": "Afghanistan" },
       frontImageUrl: "https://flagcdn.com/af.svg",
     });
     expect(screen.getByLabelText("Front picture (URL)")).toHaveValue("");

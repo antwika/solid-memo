@@ -6,6 +6,7 @@ import type {
   CardV1,
   CardV2,
   CardV3,
+  CardV4,
   CatalogV1,
   DeckV1,
   DeckV2,
@@ -90,6 +91,28 @@ export const CARD_V3: ShapeDescriptor<CardV3> = {
   fields: [
     { name: "front", predicate: "https://solid-memo.com/vocab/v1#front", kind: "string", cardinality: "optional" },
     { name: "back", predicate: "https://solid-memo.com/vocab/v1#back", kind: "string", cardinality: "optional" },
+    { name: "frontImage", predicate: "https://solid-memo.com/vocab/v1#frontImage", kind: "iri", cardinality: "optional" },
+    { name: "backImage", predicate: "https://solid-memo.com/vocab/v1#backImage", kind: "iri", cardinality: "optional" },
+    { name: "frontNote", predicate: "https://solid-memo.com/vocab/v1#frontNote", kind: "text", cardinality: "optional" },
+    { name: "backLabel", predicate: "https://solid-memo.com/vocab/v1#backLabel", kind: "text", cardinality: "optional" },
+    { name: "backNote", predicate: "https://solid-memo.com/vocab/v1#backNote", kind: "text", cardinality: "optional" },
+    { name: "created", predicate: "http://purl.org/dc/terms/created", kind: "dateTime", cardinality: "optional" },
+    { name: "deprecated", predicate: "http://www.w3.org/2002/07/owl#deprecated", kind: "boolean", cardinality: "optional" },
+  ],
+};
+
+export const CARD_V4: ShapeDescriptor<CardV4> = {
+  shape: "card",
+  version: 4,
+  targetClass: "https://solid-memo.com/vocab/v1#Card",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/card/v4.ttl#shape",
+  shapeDocument: "card/v4.ttl",
+  context: "any",
+  fields: [
+    { name: "front", predicate: "https://solid-memo.com/vocab/v1#front", kind: "anyText", cardinality: "optional" },
+    { name: "back", predicate: "https://solid-memo.com/vocab/v1#back", kind: "anyText", cardinality: "optional" },
     { name: "frontImage", predicate: "https://solid-memo.com/vocab/v1#frontImage", kind: "iri", cardinality: "optional" },
     { name: "backImage", predicate: "https://solid-memo.com/vocab/v1#backImage", kind: "iri", cardinality: "optional" },
     { name: "frontNote", predicate: "https://solid-memo.com/vocab/v1#frontNote", kind: "text", cardinality: "optional" },
@@ -565,7 +588,7 @@ export const REVIEW_STATE_V2: ShapeDescriptor<ReviewStateV2> = {
 /** Every descriptor by kind and version. */
 export const SHAPES = {
   agent: { 1: AGENT_V1 },
-  card: { 1: CARD_V1, 2: CARD_V2, 3: CARD_V3 },
+  card: { 1: CARD_V1, 2: CARD_V2, 3: CARD_V3, 4: CARD_V4 },
   catalog: { 1: CATALOG_V1 },
   deck: { 1: DECK_V1, 2: DECK_V2, 3: DECK_V3, 4: DECK_V4 },
   deckSchedule: { 1: DECK_SCHEDULE_V1 },
@@ -584,6 +607,7 @@ export const ALL_SHAPES: readonly ShapeDescriptor[] = [
   CARD_V1,
   CARD_V2,
   CARD_V3,
+  CARD_V4,
   CATALOG_V1,
   DECK_V1,
   DECK_V2,
