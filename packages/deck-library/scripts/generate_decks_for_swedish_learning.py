@@ -122,6 +122,9 @@ POS_CHOICES = {
     "adjectives": ("av", "jj", "adjectives"),
 }
 
+# The word class in Swedish, for the deck's Swedish title, description and keyword.
+SWEDISH_LABELS = {"nouns": "substantiv", "verbs": "verb", "adjectives": "adjektiv"}
+
 # msd values that mark compound-building stems ("upphäv-"), not real word forms.
 COMPOUND_MSD = {"c", "ci", "cm", "sms"}
 
@@ -442,8 +445,10 @@ SOURCES = (
 )
 
 
-def write_deck(path: Path, *, title: str, description: str, creator: str | None,
+def write_deck(path: Path, *, title: dict[str, str], description: dict[str, str], creator: str | None,
                cards: list[tuple[str, str]], created: str, script_url: str, command: str) -> None:
+    """Write the deck. Title and description are by language tag, English
+    first; a card is (English front, Swedish back), tagged so."""
     deck_slug = slug(path.stem)
     def objects(predicate: str) -> str:
         """The sources as a Turtle object list, continuation lines aligned under the first."""
@@ -454,6 +459,7 @@ def write_deck(path: Path, *, title: str, description: str, creator: str | None,
         return (" ,\n" + " " * (5 + len(predicate))).join(objects)
 
     word_class = path.stem.split("-")[-1]
+    tagged = lambda text: [f"{ttl_str(value)}@{tag}" for tag, value in text.items()]
     out: list[str] = [
         f"@base <https://solid-memo.com/decks/{deck_slug}> .",
         "",
@@ -469,7 +475,7 @@ def write_deck(path: Path, *, title: str, description: str, creator: str | None,
         "<>",
         "    a solid-memo:Deck ,",
         "      dcat:Dataset ;",
-        f"    dcterms:title {ttl_str(title)} ;",
+        f"    dcterms:title {aligned('dcterms:title', tagged(title))} ;",
     ]
     creator_name, creator_email = None, None
     if creator:
@@ -478,14 +484,19 @@ def write_deck(path: Path, *, title: str, description: str, creator: str | None,
         out.append(f"    dcterms:creator <#{slug(creator_name)}> ;")
     out += [
         "    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;",
-        f"    dcterms:description {ttl_str(description)} ;",
+        f"    dcterms:description {aligned('dcterms:description', tagged(description))} ;",
         f"    prov:wasDerivedFrom {objects('prov:wasDerivedFrom')} ;",
         "    prov:wasGeneratedBy <#generation> ;",
         f'    dcterms:created "{created}"^^xsd:dateTime ;',
         "    dcat:theme "
         + aligned("dcat:theme", ["<http://publications.europa.eu/resource/authority/data-theme/EDUC>", "topic:swedish"])
         + " ;",
-        "    dcat:keyword " + aligned("dcat:keyword", ['"Swedish"', ttl_str(word_class), '"vocabulary"']) + " ;",
+        "    dcat:keyword "
+        + aligned(
+            "dcat:keyword",
+            ['"Swedish"', ttl_str(word_class), '"vocabulary"', '"svenska"', ttl_str(SWEDISH_LABELS[word_class]), '"ordförråd"'],
+        )
+        + " ;",
         "    dcterms:language "
         + aligned(
             "dcterms:language",
@@ -496,7 +507,7 @@ def write_deck(path: Path, *, title: str, description: str, creator: str | None,
         )
         + " ;",
         "    solid-memo:studyDirection solid-memo:frontToBack ;",
-        "    solid-memo:formatVersion 3 .",
+        "    solid-memo:formatVersion 4 .",
         "",
     ]
     if creator_name is not None:
@@ -548,10 +559,10 @@ def write_deck(path: Path, *, title: str, description: str, creator: str | None,
             "",
             f"<#{card_id}>",
             "    a solid-memo:Card ;",
-            "    solid-memo:formatVersion 1 ;",
+            "    solid-memo:formatVersion 4 ;",  # format 4: text tagged with its language
             f'    dcterms:created "{created}"^^xsd:dateTime ;',
-            f"    solid-memo:front {ttl_str(front)} ;",
-            f"    solid-memo:back {ttl_str(back)} .",
+            f"    solid-memo:front {ttl_str(front)}@en ;",
+            f"    solid-memo:back {ttl_str(back)}@sv .",
         ]
 
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
@@ -624,14 +635,28 @@ def main() -> None:
                 back = f"{art} {lemma}"
             cards.append((sentence_case(front), sentence_case(back)))
 
-        title = args.title[i] if args.title else f"Swedish {label}: the {len(cards)} most common"
-        # Learner-facing blurb only; how the deck was made is in its PROV block.
-        description = (
-            f"The {len(cards)} most frequent Swedish {label}, ranked by how often they appear in "
-            "novels, newspapers and web forums. English on the front, Swedish on the back"
-            + (" with its en/ett article" if saldo_pos == "nn" else "")
-            + ". Frequencies from Språkbanken's Flex, word classes from SALDO, translations from Folkets lexikon."
+        label_sv = SWEDISH_LABELS[pos_name]
+        # A title given on the command line is English only.
+        title = (
+            {"en": args.title[i]}
+            if args.title
+            else {"en": f"Swedish {label}: the {len(cards)} most common", "sv": f"Svenska {label_sv}: de {len(cards)} vanligaste"}
         )
+        # Learner-facing blurb only; how the deck was made is in its PROV block.
+        description = {
+            "en": (
+                f"The {len(cards)} most frequent Swedish {label}, ranked by how often they appear in "
+                "novels, newspapers and web forums. English on the front, Swedish on the back"
+                + (" with its en/ett article" if saldo_pos == "nn" else "")
+                + ". Frequencies from Språkbanken's Flex, word classes from SALDO, translations from Folkets lexikon."
+            ),
+            "sv": (
+                f"De {len(cards)} vanligaste svenska {label_sv}en, rangordnade efter hur ofta de "
+                "förekommer i romaner, tidningar och webbforum. Engelska på framsidan, svenska på baksidan"
+                + (" med sin en/ett-artikel" if saldo_pos == "nn" else "")
+                + ". Frekvenser från Språkbankens Flex, ordklasser från SALDO, översättningar från Folkets lexikon."
+            ),
+        }
         write_deck(out_path, title=title, description=description, creator=args.creator, cards=cards,
                    created=created, script_url=script_url, command=command)
         print(f"wrote {out_path}: {len(cards)} cards  (skipped {n_untranslated} without a Folkets "
