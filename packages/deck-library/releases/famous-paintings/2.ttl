@@ -1,4 +1,4 @@
-@base <https://solid-memo.com/decks/famous-paintings> .
+@base <https://solid-memo.com/decks/famous-paintings/2.ttl> .
 
 @prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
 @prefix dcterms:    <http://purl.org/dc/terms/> .
@@ -8,6 +8,7 @@
 @prefix dcat:       <http://www.w3.org/ns/dcat#> .
 @prefix foaf:       <http://xmlns.com/foaf/0.1/> .
 @prefix topic:      <https://solid-memo.com/vocab/topics#> .
+@prefix adms:       <http://www.w3.org/ns/adms#> .
 
 <>
     a solid-memo:Deck ,
@@ -32,7 +33,16 @@
                  "målningar" ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 4 ;
+    dcat:version "2" ;
+    dcterms:issued "2026-10-02T21:11:25Z"^^xsd:dateTime ;
+    adms:versionNotes "Title and description in Swedish as well as English, Swedish keywords, and each card's text tagged as English." ;
+    dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
+    dcat:inSeries <https://solid-memo.com/decks/index.ttl#famous-paintings> ;
+    dcat:isVersionOf <https://solid-memo.com/decks/index.ttl#famous-paintings> ;
+    dcat:prev <https://solid-memo.com/decks/famous-paintings/1.ttl> ;
+    dcat:previousVersion <https://solid-memo.com/decks/famous-paintings/1.ttl> ;
+    dcat:distribution <#turtle> .
 
 <#anton-wiklund>
     a foaf:Agent ;
@@ -1117,3 +1127,10 @@
     dcterms:created "2026-09-28T21:24:16.000Z"^^xsd:dateTime ;
     solid-memo:frontImage <https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8d/Flaming_June%2C_by_Frederic_Lord_Leighton_%281830-1896%29.jpg/1280px-Flaming_June%2C_by_Frederic_Lord_Leighton_%281830-1896%29.jpg> ;
     solid-memo:back "Flaming June — Frederic Leighton, 1895"@en .
+
+<#turtle>
+    a dcat:Distribution ;
+    dcat:accessURL <> ;
+    dcat:downloadURL <> ;
+    dcat:mediaType <https://www.iana.org/assignments/media-types/text/turtle> ;
+    dcterms:format <http://publications.europa.eu/resource/authority/file-type/RDF_TURTLE> .

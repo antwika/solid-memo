@@ -94,7 +94,10 @@ translations. Sources in format 3 (untagged text) stay valid.
 - **Cards** are `sm:Card` subjects with their own `sm:formatVersion` and
   text (`sm:front` / `sm:back`), a picture (`sm:frontImage` /
   `sm:backImage`, always an IRI — the [world flags deck](../packages/deck-library/decks/world-flags.ttl)
-  shows the flag alone on the front) or both on each side.
+  shows the flag alone on the front) or both on each side. From card
+  format 4 a side's text may be tagged with its language, one text per
+  language: the [famous paintings deck](../packages/deck-library/decks/famous-paintings.ttl)
+  tags its backs `@en`. Untagged text means the language is not known.
 - **A released card is never removed, but retired**: to stop using a
   card, keep it and add `owl:deprecated true` (card format 3). Copies of
   the deck keep it and its review history, but no longer study it, and
