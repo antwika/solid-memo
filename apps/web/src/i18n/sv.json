@@ -369,6 +369,7 @@
       "other": "tar bort {count} kort"
     },
     "studies": "studerar den {direction}",
+    "describes": "uppdaterar kortlekens namn, beskrivning eller nyckelord",
     "noStudiedChanges": "uppdaterar kort som du inte längre studerar",
     "list": "{items} och {last}",
     "listSeparator": ", ",

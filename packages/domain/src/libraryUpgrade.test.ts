@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Card, Deck } from "./deck";
 import type { LibraryCard, LibraryDeckContent } from "./library";
-import { applyLibraryUpgrade, planLibraryUpgrade, upgradedCards } from "./libraryUpgrade";
+import { applyLibraryUpgrade, planLibraryUpgrade, upgradedCards, withReleaseLanguages } from "./libraryUpgrade";
 
 const DECKS = "https://solid-memo.com/decks/";
 const CARDS = "https://pod.example/solid-memo/a/decks/deck-1.ttl";
@@ -175,5 +175,77 @@ describe("applyLibraryUpgrade", () => {
       sourceUrl: `${DECKS}capitals/3.ttl`,
       direction: "bidirectional",
     });
+  });
+});
+
+describe("the deck's texts in an upgrade", () => {
+  const flags = (version: number, about: Partial<LibraryDeckContent>): LibraryDeckContent => ({
+    ...release(version, []),
+    title: { en: "World flags" },
+    description: { en: "Flags." },
+    ...about,
+  });
+  const v1 = flags(1, {});
+  const v2 = flags(2, {
+    title: { en: "World flags", sv: "Världens flaggor" },
+    description: { en: "Flags.", sv: "Flaggor." },
+    keywords: ["flags", "flaggor"],
+    themes: ["https://solid-memo.com/vocab/topics#geography"],
+  });
+  const copy: Deck = { ...deck, title: { en: "World flags" }, description: { en: "Flags." }, keywords: [], themes: [] };
+  const plan = (mine: Deck, to = v2) => planLibraryUpgrade({ deck: mine, cards: [], from: v1, to, releases });
+
+  it("takes the release's title, description, keywords and themes where the user left the old ones, and offers that alone", () => {
+    expect(plan(copy)).toMatchObject({
+      title: { en: "World flags", sv: "Världens flaggor" },
+      description: { en: "Flags.", sv: "Flaggor." },
+      keywords: ["flags", "flaggor"],
+      themes: ["https://solid-memo.com/vocab/topics#geography"],
+    });
+    expect(applyLibraryUpgrade(copy, plan(copy)!)).toMatchObject({
+      title: { en: "World flags", sv: "Världens flaggor" },
+      keywords: ["flags", "flaggor"],
+    });
+  });
+
+  it("keeps a title the user changed, adding the release's languages only while its English is the release's", () => {
+    const renamed = plan({ ...copy, title: { en: "My flags" } })!;
+    expect(renamed).not.toHaveProperty("title");
+    const german = plan({ ...copy, title: { en: "World flags", de: "Weltflaggen" } })!;
+    expect(german.title).toEqual({ en: "World flags", de: "Weltflaggen", sv: "Världens flaggor" });
+    const already = plan({ ...copy, title: { en: "World flags", sv: "Flaggor" } })!;
+    expect(already).not.toHaveProperty("title");
+  });
+
+  it("keeps keywords and themes the user changed, a deck without a description, and what the release leaves out", () => {
+    const own = plan({ ...copy, keywords: ["mine"], themes: undefined, description: undefined })!;
+    expect(own).not.toHaveProperty("keywords");
+    expect(own).not.toHaveProperty("description");
+    expect(own.themes).toEqual(["https://solid-memo.com/vocab/topics#geography"]);
+    const silent = plan(copy, { ...v2, description: undefined })!;
+    expect(silent).not.toHaveProperty("description");
+    expect(plan(copy, { ...v1, version: "2" })).toBeNull();
+  });
+});
+
+describe("withReleaseLanguages", () => {
+  const release2 = { ...release(2, []), title: { en: "Capitals", sv: "Huvudstäder" }, description: { en: "Capitals.", sv: "Huvudstäder." } };
+
+  it("gives the copy the languages its release adds, where the English is the release's", () => {
+    expect(withReleaseLanguages({ ...deck, description: { en: "Capitals." } }, release2)).toMatchObject({
+      title: { en: "Capitals", sv: "Huvudstäder" },
+      description: { en: "Capitals.", sv: "Huvudstäder." },
+    });
+    expect(withReleaseLanguages(deck, release2)).toMatchObject({ title: { en: "Capitals", sv: "Huvudstäder" } });
+    expect(withReleaseLanguages(deck, release2)).not.toHaveProperty("description");
+  });
+
+  it("changes nothing the user wrote, and says so when there is nothing to add", () => {
+    expect(withReleaseLanguages({ ...deck, title: { en: "My capitals" } }, release2)).toBeNull();
+    expect(withReleaseLanguages({ ...deck, title: { en: "My capitals" }, description: { en: "Capitals." } }, release2)).toMatchObject({
+      title: { en: "My capitals" },
+      description: { en: "Capitals.", sv: "Huvudstäder." },
+    });
+    expect(withReleaseLanguages(deck, { ...release2, title: { en: "Capitals" }, description: undefined })).toBeNull();
   });
 });

@@ -62,6 +62,16 @@ describe("LibraryUpgradeContainer", () => {
     expect(useCases.planLibraryUpgrade).not.toHaveBeenCalled();
   });
 
+  it("gives the deck the languages its release adds, once, and refreshes the deck list when it did", async () => {
+    const useCases = makeUseCasesFake({
+      addReleaseLanguages: vi.fn(async (deck: Deck) => ({ ...deck, title: { en: "Capitals", sv: "Huvudstäder" } })),
+    });
+    const { invalidate } = renderContainer(useCases);
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] }));
+    expect(useCases.addReleaseLanguages).toHaveBeenCalledOnce();
+    expect(useCases.addReleaseLanguages).toHaveBeenCalledWith(imported);
+  });
+
   it("shows nothing when the library has nothing newer, or cannot be read", async () => {
     const quiet = makeUseCasesFake();
     const { container } = renderContainer(quiet);

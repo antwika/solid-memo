@@ -11,7 +11,10 @@ import { LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
  * and, when it does, shows the offer. Only decks with a library source
  * are checked (the index and two releases read once, kept for the
  * session); a failed check shows nothing, since the deck works as it is.
- * Home-made decks render nothing at all.
+ * Home-made decks render nothing at all. Once a session, it also gives
+ * the deck the languages its own release states its title and
+ * description in and the copy lacks, which upgrades made before they
+ * brought the texts along left out.
  */
 export function LibraryUpgradeContainer({
   useCases,
@@ -30,6 +33,18 @@ export function LibraryUpgradeContainer({
     queryFn: () => useCases.planLibraryUpgrade(deck),
     enabled: deck.sourceUrl !== undefined,
     staleTime: Infinity,
+  });
+
+  useQuery({
+    queryKey: ["releaseLanguages", deck.url, deck.sourceUrl],
+    queryFn: async () => {
+      const updated = await useCases.addReleaseLanguages(deck);
+      if (updated !== null) await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      return updated !== null;
+    },
+    enabled: deck.sourceUrl !== undefined,
+    staleTime: Infinity,
+    retry: false,
   });
 
   const upgradeMutation = useMutation({

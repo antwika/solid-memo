@@ -372,6 +372,7 @@
       "other": "removes {count} cards"
     },
     "studies": "studies it {direction}",
+    "describes": "updates the deck's name, description or keywords",
     "noStudiedChanges": "updates cards you no longer study",
     "list": "{items} and {last}",
     "listSeparator": ", ",

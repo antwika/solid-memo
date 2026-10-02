@@ -1090,6 +1090,18 @@ describe("createUseCases", () => {
     expect(deps.deckLibrary.fetchLibraryDeck).not.toHaveBeenCalled();
   });
 
+  it("addReleaseLanguages gives a copy the languages its release adds, and saves it; nothing for a home-made deck or nothing to add", async () => {
+    const deps = makeDeps();
+    const copy: Deck = { ...deck, title: { en: "Capitals" }, sourceUrl: libraryDeck.url };
+    vi.mocked(deps.deckLibrary.fetchLibraryDeck).mockResolvedValueOnce({ ...libraryContent, title: { en: "Capitals", sv: "Huvudstäder" } });
+    await expect(createUseCases(deps).addReleaseLanguages(copy)).resolves.toMatchObject({ title: { en: "Capitals", sv: "Huvudstäder" } });
+    expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(libraryDeck.url);
+    expect(deps.deckRepository.saveDeck).toHaveBeenCalledOnce();
+    await expect(createUseCases(deps).addReleaseLanguages(copy)).resolves.toBeNull();
+    await expect(createUseCases(deps).addReleaseLanguages({ ...deck, sourceUrl: undefined })).resolves.toBeNull();
+    expect(deps.deckRepository.saveDeck).toHaveBeenCalledOnce();
+  });
+
   it("applyLibraryUpgrade writes the cards, drops the removed cards' review states, and moves the deck to the release", async () => {
     const deps = makeDeps();
     const copy: Deck = { ...deck, sourceUrl: libraryDeck.url };
