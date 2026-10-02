@@ -28,7 +28,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:hasValue 2 ;
-    sh:message "Instance format 2 states its format version, 2." .
+    sh:message "Instance format 2 states its format version, 2."@en ,
+               "Instansformat 2 anger sin formatversion, 2."@sv .
 
 <#title>
     a sh:PropertyShape ;
@@ -49,7 +50,8 @@
     sh:path dcterms:replaces ;
     sh:nodeKind sh:IRI ;
     sh:maxCount 1 ;
-    sh:message "An updated instance names the one instance container it replaces." .
+    sh:message "An updated instance names the one instance container it replaces."@en ,
+               "En uppdaterad instans anger den enda instanscontainer som den ersätter."@sv .
 
 <#modified>
     a sh:PropertyShape ;

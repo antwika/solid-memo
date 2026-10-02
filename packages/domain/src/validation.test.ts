@@ -24,8 +24,8 @@ describe("summarize", () => {
             shape: "deck",
             version: 2,
             violations: [
-              { message: "no title", severity: "violation", constraint: "MinCount" },
-              { message: "odd", severity: "warning", constraint: "Pattern" },
+              { message: { en: "no title" }, severity: "violation", constraint: "MinCount" },
+              { message: { en: "odd" }, severity: "warning", constraint: "Pattern" },
             ],
           },
           { url: `${INSTANCE}catalog.ttl#deck-2`, status: "newer", shape: "deck", version: 3, latest: 2 },
@@ -33,7 +33,7 @@ describe("summarize", () => {
           {
             url: "https://creativecommons.org/publicdomain/zero/1.0/",
             status: "profiled",
-            violations: [{ message: "class", severity: "violation", constraint: "Class", profile: "dcat-ap" }],
+            violations: [{ message: { en: "class" }, severity: "violation", constraint: "Class", profile: "dcat-ap" }],
           },
         ],
       },
@@ -46,7 +46,7 @@ describe("summarize", () => {
             status: "checked",
             shape: "card",
             version: 2,
-            violations: [{ message: "literal", severity: "violation", constraint: "NodeKind" }],
+            violations: [{ message: { en: "literal" }, severity: "violation", constraint: "NodeKind" }],
           },
         ],
       },
@@ -75,15 +75,15 @@ describe("what fails, and the decks set aside for it", () => {
       url: `${INSTANCE}catalog.ttl`,
       status: "checked",
       subjects: [
-        { url: `${INSTANCE}catalog.ttl#deck-1`, status: "checked", shape: "deck", version: 3, violations: [{ message: "x", severity: "violation", constraint: "MinCount" }] },
-        { url: `${INSTANCE}catalog.ttl#deck-2`, status: "checked", shape: "deck", version: 3, violations: [{ message: "x", severity: "warning", constraint: "MinCount" }] },
+        { url: `${INSTANCE}catalog.ttl#deck-1`, status: "checked", shape: "deck", version: 3, violations: [{ message: { en: "x" }, severity: "violation", constraint: "MinCount" }] },
+        { url: `${INSTANCE}catalog.ttl#deck-2`, status: "checked", shape: "deck", version: 3, violations: [{ message: { en: "x" }, severity: "warning", constraint: "MinCount" }] },
         { url: `${INSTANCE}catalog.ttl#note`, status: "untyped" },
       ],
     },
     {
       url: `${INSTANCE}reviews/deck-3.ttl`,
       status: "checked",
-      subjects: [{ url: `${INSTANCE}reviews/deck-3.ttl#a`, status: "profiled", violations: [{ message: "x", severity: "violation", constraint: "Class", profile: "dcat-ap" }] }],
+      subjects: [{ url: `${INSTANCE}reviews/deck-3.ttl#a`, status: "profiled", violations: [{ message: { en: "x" }, severity: "violation", constraint: "Class", profile: "dcat-ap" }] }],
     },
     { url: `${INSTANCE}decks/deck-4.ttl`, status: "missing", subjects: [] },
   ]);
@@ -106,7 +106,7 @@ describe("what fails, and the decks set aside for it", () => {
 
   it("sets aside a deck whose entry, cards or review states fail", () => {
     const cardsFail = summarize(INSTANCE, [
-      { url: `${INSTANCE}decks/deck-4.ttl`, status: "checked", subjects: [{ url: `${INSTANCE}decks/deck-4.ttl#x`, status: "checked", shape: "card", version: 2, violations: [{ message: "x", severity: "violation", constraint: "Or" }] }] },
+      { url: `${INSTANCE}decks/deck-4.ttl`, status: "checked", subjects: [{ url: `${INSTANCE}decks/deck-4.ttl#x`, status: "checked", shape: "card", version: 2, violations: [{ message: { en: "x" }, severity: "violation", constraint: "Or" }] }] },
     ]);
     expect([...setAsideDecks(report, ["deck-1", "deck-2", "deck-3", "deck-4"].map(deck))]).toEqual([
       `${INSTANCE}catalog.ttl#deck-1`,

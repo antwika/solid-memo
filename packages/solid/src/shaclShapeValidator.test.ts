@@ -49,7 +49,7 @@ function catalog() {
 function makeValidator() {
   const validateNode = vi.fn(async (_data: unknown, focus: string) =>
     focus.endsWith("deck-1")
-      ? [{ path: SM.cardsDocument, message: "Less than 1 values", severity: "violation" as const, constraint: "MinCount" }]
+      ? [{ path: SM.cardsDocument, message: { en: "Less than 1 values" }, severity: "violation" as const, constraint: "MinCount" }]
       : [],
   );
   const validate = vi.fn(async () => [] as Awaited<ReturnType<ShapeEngine["validate"]>>);
@@ -125,7 +125,7 @@ describe("createShaclShapeValidator", () => {
           shape: "deck",
           version: 2,
           violations: [
-            { path: SM.cardsDocument, message: "Less than 1 values", severity: "violation", constraint: "MinCount" },
+            { path: SM.cardsDocument, message: { en: "Less than 1 values" }, severity: "violation", constraint: "MinCount" },
           ],
         },
         { url: `${DOC}#deck-2`, status: "newer", shape: "deck", version: 9, latest: 4 },
@@ -154,7 +154,7 @@ describe("createShaclShapeValidator", () => {
     const violation = (focusNode: string, severity: "violation" | "warning" = "violation") => ({
       focusNode,
       path: DCTERMS.description,
-      message: "Less than 1 values",
+      message: { en: "Less than 1 values" },
       severity,
       constraint: "MinCount",
     });
@@ -166,7 +166,7 @@ describe("createShaclShapeValidator", () => {
       violation("https://elsewhere.example/#x"),
     ]);
     const report = await validator.validateDocument(DOC);
-    const profiled = { path: DCTERMS.description, message: "Less than 1 values", severity: "violation", constraint: "MinCount", profile: "dcat-ap" };
+    const profiled = { path: DCTERMS.description, message: { en: "Less than 1 values" }, severity: "violation", constraint: "MinCount", profile: "dcat-ap" };
     expect(report.subjects).toEqual([
       expect.objectContaining({ url: `${DOC}#deck-1`, status: "checked", violations: [expect.anything(), profiled] }),
       { url: `${DOC}#deck-2`, status: "newer", shape: "deck", version: 9, latest: 4 },
@@ -211,11 +211,11 @@ describe("createShaclShapeValidator", () => {
   it("checks a write with the engine it has: pathless results named by subject, warnings and results about other subjects passed over", async () => {
     const { validator, validateNode, validate } = makeValidator();
     validateNode.mockResolvedValue([
-      { message: "Each side needs text or a picture.", severity: "violation", constraint: "Or" },
-      { path: SM.front, message: "odd", severity: "warning", constraint: "Pattern" },
+      { message: { en: "Each side needs text or a picture." }, severity: "violation", constraint: "Or" },
+      { path: SM.front, message: { en: "odd" }, severity: "warning", constraint: "Pattern" },
     ] as never);
     validate.mockResolvedValue([
-      { focusNode: `${DOC}#other`, message: "x", severity: "violation", constraint: "MinCount" },
+      { focusNode: `${DOC}#other`, message: { en: "x" }, severity: "violation", constraint: "MinCount" },
     ]);
     const dataset = setThing(
       setThing(

@@ -20,6 +20,7 @@ import { pickShape } from "@solid-memo/shacl/registry";
 import type { ShapeDescriptor } from "@solid-memo/vocab/shapeDescriptor";
 import { createShapeLoader, type ShapeLoader } from "@solid-memo/shacl/shapeLoader";
 import { AppError } from "@solid-memo/domain/appError";
+import { shown } from "@solid-memo/domain/langText";
 
 export interface ShaclShapeValidatorDeps {
   /** Fetches pod documents (authenticated). */
@@ -107,7 +108,7 @@ export function createShaclShapeValidator({
     const data = toRdfJsDataset(dataset);
     const problems: string[] = [];
     const describe = (subject: string, v: Violation) =>
-      `<${subject}>${v.path === undefined ? "" : ` (${v.path})`}: ${v.profile === "dcat-ap" ? "DCAT-AP: " : ""}${v.message}`;
+      `<${subject}>${v.path === undefined ? "" : ` (${v.path})`}: ${v.profile === "dcat-ap" ? "DCAT-AP: " : ""}${shown(v.message)}`;
     for (const subject of subjects) {
       const thing = getThing(dataset, subject);
       if (thing === null) continue;

@@ -14,7 +14,7 @@ const SHAPES = `
     sh:pattern "^https://" ;
     sh:xone ( [ sh:property [ sh:path ex:age ; sh:minCount 1 ] ] [ sh:property [ sh:path ex:note ; sh:minCount 1 ] ] ) .
 <#name> sh:path ex:name ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ;
-    sh:message "One name, as text." .
+    sh:message "One name, as text."@en, "Ett namn, som text."@sv, "One name, as text."@en-gb .
 <#age> sh:path ex:age ; sh:datatype xsd:integer ; sh:severity sh:Warning .
 <#note> sh:path ex:note ; sh:maxCount 1 ; sh:severity sh:Info .
 `;
@@ -47,20 +47,22 @@ describe("createEngine", () => {
     ).toEqual([
       {
         path: "https://example.com/ns#age",
-        message: 'Value does not have datatype <http://www.w3.org/2001/XMLSchema#integer>',
+        message: { en: 'Value does not have datatype <http://www.w3.org/2001/XMLSchema#integer>' },
+        builtIn: true,
         value: "young",
         severity: "warning",
         constraint: "Datatype",
       },
       {
         path: "https://example.com/ns#name",
-        message: "One name, as text.",
+        message: { en: "One name, as text.", "en-gb": "One name, as text.", sv: "Ett namn, som text." },
         severity: "violation",
         constraint: "MaxCount",
       },
       {
         path: "https://example.com/ns#note",
-        message: "More than 1 values",
+        message: { en: "More than 1 values" },
+        builtIn: true,
         severity: "info",
         constraint: "MaxCount",
       },
@@ -76,7 +78,8 @@ describe("createEngine", () => {
       await (await engine()).validateNode(data, "http://example.com/plain", `${SHAPES_URL}#shape`),
     ).toEqual([
       {
-        message: 'Value does not match pattern "^https://"',
+        message: { en: 'Value does not match pattern "^https://"' },
+        builtIn: true,
         value: "http://example.com/plain",
         severity: "violation",
         constraint: "Pattern",
@@ -93,13 +96,15 @@ describe("createEngine", () => {
       await (await engine()).validateNode(data, "http://example.com/plain", `${SHAPES_URL}#either`),
     ).toEqual([
       {
-        message: 'Value does not match pattern "^https://"',
+        message: { en: 'Value does not match pattern "^https://"' },
+        builtIn: true,
         value: "http://example.com/plain",
         severity: "violation",
         constraint: "Pattern",
       },
       {
-        message: "Xone constraint failed.",
+        message: { en: "Xone constraint failed." },
+        builtIn: true,
         value: "http://example.com/plain",
         severity: "violation",
         constraint: "Xone",
@@ -133,14 +138,16 @@ describe("createEngine", () => {
       {
         focusNode: `${DATA_URL}#a`,
         path: "https://example.com/ns#name",
-        message: "Less than 1 values",
+        message: { en: "Less than 1 values" },
+        builtIn: true,
         severity: "violation",
         constraint: "MinCount",
       },
       {
         focusNode: `${DATA_URL}#b`,
         path: "https://example.com/ns#name",
-        message: "Less than 1 values",
+        message: { en: "Less than 1 values" },
+        builtIn: true,
         severity: "violation",
         constraint: "MinCount",
       },

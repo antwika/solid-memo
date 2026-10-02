@@ -53,7 +53,8 @@
     sh:nodeKind sh:IRI ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "A catalogue names its publisher, a foaf:Agent: in a pod, the owner's WebID." .
+    sh:message "A catalogue names its publisher, a foaf:Agent: in a pod, the owner's WebID."@en ,
+               "En katalog anger sin utgivare, en foaf:Agent: i en Pod ägarens WebID."@sv .
 
 <#license>
     a sh:PropertyShape ;

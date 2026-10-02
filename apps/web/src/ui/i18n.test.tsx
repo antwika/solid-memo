@@ -141,6 +141,28 @@ describe("errorText", () => {
   });
 });
 
+describe("violationText", () => {
+  const shaped = { message: { en: "A picture is an IRI.", sv: "En bild är en IRI." }, severity: "violation" as const, constraint: "NodeKind" };
+  const builtIn = { message: { en: "Less than 1 values" }, builtIn: true as const, severity: "violation" as const, constraint: "MinCount" };
+
+  it("says a shape's message in the spoken language", () => {
+    expect(createI18n("sv").violationText(shaped)).toBe("En bild är en IRI.");
+    expect(createI18n("en").violationText(shaped)).toBe("A picture is an IRI.");
+  });
+
+  it("says the validator's own English by its constraint in another language, and keeps it in English", () => {
+    expect(createI18n("sv").violationText(builtIn)).toBe("Ett värde saknas.");
+    expect(createI18n("en").violationText(builtIn)).toBe("Less than 1 values");
+    expect(createI18n("sv").violationText({ ...builtIn, constraint: "Sparql" })).toBe("Less than 1 values");
+    expect(createI18n("sv").violationText({ ...shaped, message: { en: "Only English." } })).toBe("Only English.");
+  });
+
+  it("names a severity", () => {
+    expect(createI18n("sv").severityLabel("warning")).toBe("varning");
+    expect(createI18n("en").severityLabel("violation")).toBe("violation");
+  });
+});
+
 describe("useI18n", () => {
   it("speaks English outside a provider", () => {
     render(<Spoken />);

@@ -45,7 +45,12 @@ share the same named property shapes.
   readers ignore them and writers edit subjects in place.
 - **Property shapes are named** (`<#front>`, never blank nodes), so the
   generator and the results can refer to them. `sh:message` is set where
-  the engine's default text would be cryptic.
+  the engine's default text would be cryptic, always in English and
+  Swedish (`"…"@en`, `"…"@sv`): the app shows a result in the reader's
+  language, and a test holds every message to both. Where a shape sets
+  none, the validator's own English stands, and the app says it in
+  Swedish by its constraint (`validation.constraint.*` in the message
+  catalogues), more generally.
 - **Rules a record cannot carry** — a card side has text or a picture
   (`sh:or`), the review snapshot is all five triples or none (`sh:xone`),
   a review subject is named `#<cardId>` or `#<cardId>@back-to-front`

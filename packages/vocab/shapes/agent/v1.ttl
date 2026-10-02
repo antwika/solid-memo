@@ -32,7 +32,8 @@
     sh:datatype xsd:string ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "An agent has a name." .
+    sh:message "An agent has a name."@en ,
+               "En agent har ett namn."@sv .
 
 <#mbox>
     a sh:PropertyShape ;
@@ -40,4 +41,5 @@
     sh:nodeKind sh:IRI ;
     sh:maxCount 1 ;
     sh:pattern "^mailto:" ;
-    sh:message "An agent's mailbox is a mailto: IRI." .
+    sh:message "An agent's mailbox is a mailto: IRI."@en ,
+               "En agents e-postadress är en mailto:-IRI."@sv .

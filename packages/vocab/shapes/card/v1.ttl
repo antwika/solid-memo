@@ -24,7 +24,8 @@
     sh:datatype xsd:integer ;
     sh:maxCount 1 ;
     sh:in ( 1 ) ;
-    sh:message "Card format 1 states no format version, or 1." .
+    sh:message "Card format 1 states no format version, or 1."@en ,
+               "Kortformat 1 anger ingen formatversion, eller 1."@sv .
 
 <#front>
     a sh:PropertyShape ;
@@ -32,7 +33,8 @@
     sh:datatype xsd:string ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "A format-1 card has text on its front." .
+    sh:message "A format-1 card has text on its front."@en ,
+               "Ett kort i format 1 har text på framsidan."@sv .
 
 <#back>
     a sh:PropertyShape ;
@@ -40,7 +42,8 @@
     sh:datatype xsd:string ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "A format-1 card has text on its back." .
+    sh:message "A format-1 card has text on its back."@en ,
+               "Ett kort i format 1 har text på baksidan."@sv .
 
 <#created>
     a sh:PropertyShape ;

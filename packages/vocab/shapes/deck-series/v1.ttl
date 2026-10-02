@@ -41,7 +41,8 @@
     a sh:PropertyShape ;
     sh:path rdf:type ;
     sh:hasValue dcat:Dataset ;
-    sh:message "A deck series is a dcat:Dataset too." .
+    sh:message "A deck series is a dcat:Dataset too."@en ,
+               "En kortleksserie är också ett dcat:Dataset."@sv .
 
 <#title>
     a sh:PropertyShape ;
@@ -93,7 +94,8 @@
     sh:path dcat:hasVersion ;
     sh:nodeKind sh:IRI ;
     sh:minCount 1 ;
-    sh:message "A deck series lists every release as a version." .
+    sh:message "A deck series lists every release as a version."@en ,
+               "En kortleksserie listar varje utgåva som en version."@sv .
 
 <#currentVersion>
     a sh:PropertyShape ;
@@ -101,4 +103,5 @@
     sh:nodeKind sh:IRI ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "A deck series names its current release." .
+    sh:message "A deck series names its current release."@en ,
+               "En kortleksserie anger sin aktuella utgåva."@sv .

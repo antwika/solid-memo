@@ -27,12 +27,12 @@ const report: ValidationReport = {
           violations: [
             {
               path: "http://purl.org/dc/terms/title",
-              message: "Less than 1 values",
+              message: { en: "Less than 1 values" },
               severity: "violation",
               constraint: "MinCount",
             },
             {
-              message: "Value does not match pattern",
+              message: { en: "Value does not match pattern" },
               value: "odd",
               severity: "violation",
               constraint: "Pattern",
@@ -97,7 +97,7 @@ describe("ValidationScreen", () => {
                 {
                   url: "https://creativecommons.org/publicdomain/zero/1.0/",
                   status: "profiled",
-                  violations: [{ message: "Class constraint failed.", severity: "violation", constraint: "Class", profile: "dcat-ap" }],
+                  violations: [{ message: { en: "Class constraint failed." }, severity: "violation", constraint: "Class", profile: "dcat-ap" }],
                 },
               ],
             },

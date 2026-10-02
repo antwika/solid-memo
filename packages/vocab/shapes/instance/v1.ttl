@@ -23,7 +23,8 @@
     sh:datatype xsd:integer ;
     sh:maxCount 1 ;
     sh:in ( 1 ) ;
-    sh:message "Instance format 1 states no format version, or 1." .
+    sh:message "Instance format 1 states no format version, or 1."@en ,
+               "Instansformat 1 anger ingen formatversion, eller 1."@sv .
 
 <#title>
     a sh:PropertyShape ;

@@ -86,7 +86,7 @@ describe("Workspace", () => {
               shape: "deck" as const,
               version: 3,
               violations: [
-                { path: "http://purl.org/dc/terms/description", message: "Less than 1 values", severity: "violation" as const, constraint: "MinCount" },
+                { path: "http://purl.org/dc/terms/description", message: { en: "Less than 1 values" }, severity: "violation" as const, constraint: "MinCount" },
               ],
             },
           ],

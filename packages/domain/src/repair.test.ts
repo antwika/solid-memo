@@ -10,7 +10,7 @@ const DC = "http://purl.org/dc/terms/";
 
 const v = (constraint: string, path?: string, severity: Violation["severity"] = "violation"): Violation => ({
   ...(path === undefined ? {} : { path }),
-  message: `${constraint} on ${path ?? "the subject"}`,
+  message: { en: `${constraint} on ${path ?? "the subject"}` },
   severity,
   constraint,
 });
@@ -82,7 +82,7 @@ describe("planRepair", () => {
         {
           documentUrl: `${INSTANCE}decks/deck-1.ttl`,
           subjectUrl: `${INSTANCE}decks/deck-1.ttl#x`,
-          messages: ["Or on the subject", `MinCount on ${DC}description`],
+          violations: [v("Or"), v("MinCount", `${DC}description`)],
         },
       ],
     });

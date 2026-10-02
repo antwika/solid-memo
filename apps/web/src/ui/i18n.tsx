@@ -1,6 +1,7 @@
 import { createContext, Fragment, type ComponentChildren } from "preact";
 import { useContext } from "preact/hooks";
 import type { DeckDirection } from "@solid-memo/domain/deck";
+import type { Violation } from "@solid-memo/domain/validation";
 import { AppError } from "@solid-memo/domain/appError";
 import { shown, type LangText } from "@solid-memo/domain/langText";
 import { DEFAULT_LOCALE, type Locale } from "@solid-memo/domain/locale";
@@ -71,6 +72,14 @@ export interface I18n {
    * message; null when there is no error.
    */
   errorText(error: unknown): string | null;
+  /**
+   * What a shape check found, for the user: the shape's message in this
+   * language; else, for the validator's own English, a word on the
+   * constraint in this language; else the message in English.
+   */
+  violationText(violation: Violation): string;
+  /** A result's severity: "violation", "warning", "info". */
+  severityLabel(severity: Violation["severity"]): string;
 }
 
 export function createI18n(locale: Locale): I18n {
@@ -102,6 +111,15 @@ export function createI18n(locale: Locale): I18n {
     },
     formatDate(iso) {
       return new Date(iso).toLocaleDateString(locale, { dateStyle: "long", timeZone: "UTC" });
+    },
+    violationText(violation) {
+      if (locale in violation.message) return violation.message[locale];
+      const key = `validation.constraint.${violation.constraint}`;
+      if (violation.builtIn && lookup(CATALOGS[locale], key) !== undefined) return t(key as MessageKey);
+      return shown(violation.message, [locale]);
+    },
+    severityLabel(severity) {
+      return t(`validation.severityLevel.${severity}`);
     },
     errorText(error) {
       if (error === null || error === undefined) return null;

@@ -222,7 +222,7 @@ describe("the vendored profiles over their fixtures", async () => {
       validate: async () => [
         {
           focusNode: "https://pod.example/x.ttl#x",
-          message: "Not allowed.",
+          message: { en: "Not allowed." },
           severity: "violation" as const,
           constraint: "Not",
         },

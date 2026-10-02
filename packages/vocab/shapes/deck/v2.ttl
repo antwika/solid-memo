@@ -52,7 +52,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:hasValue 2 ;
-    sh:message "Deck format 2 states its format version, 2." .
+    sh:message "Deck format 2 states its format version, 2."@en ,
+               "Kortleksformat 2 anger sin formatversion, 2."@sv .
 
 <#title>
     a sh:PropertyShape ;
@@ -72,7 +73,8 @@
     sh:path dcterms:modified ;
     sh:datatype xsd:dateTime ;
     sh:maxCount 1 ;
-    sh:message "A modification time is an xsd:dateTime, like the creation time." .
+    sh:message "A modification time is an xsd:dateTime, like the creation time."@en ,
+               "En ändringstid är ett xsd:dateTime, liksom tiden då den skapades."@sv .
 
 <#creator>
     a sh:PropertyShape ;
@@ -84,7 +86,8 @@
     sh:path dcterms:license ;
     sh:nodeKind sh:IRI ;
     sh:maxCount 1 ;
-    sh:message "A licence is an IRI (<https://…>), never a string literal." .
+    sh:message "A licence is an IRI (<https://…>), never a string literal."@en ,
+               "En licens är en IRI (<https://…>), aldrig en strängliteral."@sv .
 
 <#description>
     a sh:PropertyShape ;
@@ -99,7 +102,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:in ( "front-to-back" "back-to-front" "bidirectional" ) ;
-    sh:message "A format-2 deck states its direction: front-to-back, back-to-front or bidirectional." .
+    sh:message "A format-2 deck states its direction: front-to-back, back-to-front or bidirectional."@en ,
+               "En kortlek i format 2 anger sin riktning: front-to-back, back-to-front eller bidirectional."@sv .
 
 <#cardsDocument>
     a sh:PropertyShape ;
@@ -120,22 +124,26 @@
     sh:path dcterms:source ;
     sh:nodeKind sh:IRI ;
     sh:maxCount 1 ;
-    sh:message "In a pod, a deck's source is the one library document it was imported from." .
+    sh:message "In a pod, a deck's source is the one library document it was imported from."@en ,
+               "I en Pod är en kortleks källa det enda biblioteksdokument den importerades från."@sv .
 
 <#noCardsDocument>
     a sh:PropertyShape ;
     sh:path solid-memo:cardsDocument ;
     sh:maxCount 0 ;
-    sh:message "A library deck has no cards document: its cards are in the file." .
+    sh:message "A library deck has no cards document: its cards are in the file."@en ,
+               "En bibliotekskortlek har inget kortdokument: dess kort finns i filen."@sv .
 
 <#noReviewsDocument>
     a sh:PropertyShape ;
     sh:path solid-memo:reviewsDocument ;
     sh:maxCount 0 ;
-    sh:message "A library deck has no reviews document." .
+    sh:message "A library deck has no reviews document."@en ,
+               "En bibliotekskortlek har inget repetitionsdokument."@sv .
 
 <#sources>
     a sh:PropertyShape ;
     sh:path dcterms:source ;
     sh:nodeKind sh:IRI ;
-    sh:message "A source is an IRI (<https://…>), never a string literal." .
+    sh:message "A source is an IRI (<https://…>), never a string literal."@en ,
+               "En källa är en IRI (<https://…>), aldrig en strängliteral."@sv .
