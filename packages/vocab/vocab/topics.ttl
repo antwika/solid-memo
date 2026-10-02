@@ -6,12 +6,17 @@
 
 # What decks are about: a SKOS concept scheme used with dcat:theme on
 # decks (next to the EU data theme EDUC) and declared as a theme
-# taxonomy of the catalogues. Concepts are only ever added; a concept
-# that should go is deprecated, never removed, since decks point at it.
+# taxonomy of the catalogues. Every concept has its label and
+# definition in each language the scheme's title is in (English and
+# Swedish, the app's languages). Concepts are only ever added; a
+# concept that should go is deprecated, never removed, since decks
+# point at it.
 <>
     a skos:ConceptScheme ;
-    dcterms:title "Solid Memo topics"@en ;
-    skos:definition "What a deck of flashcards is about."@en ;
+    dcterms:title "Solid Memo topics"@en ,
+                  "Solid Memo-ämnen"@sv ;
+    skos:definition "What a deck of flashcards is about."@en ,
+                    "Vad en kortlek med flashcards handlar om."@sv ;
     skos:hasTopConcept topic:languages ,
                        topic:geography ,
                        topic:computing ,
@@ -21,58 +26,74 @@
 
 topic:languages
     a skos:Concept ;
-    skos:prefLabel "Languages"@en ;
-    skos:definition "Vocabulary and grammar of human languages."@en ;
+    skos:prefLabel "Languages"@en ,
+                   "Språk"@sv ;
+    skos:definition "Vocabulary and grammar of human languages."@en ,
+                    "Ordförråd och grammatik i mänskliga språk."@sv ;
     skos:inScheme <> ;
     skos:topConceptOf <> ;
     skos:narrower topic:swedish .
 
 topic:swedish
     a skos:Concept ;
-    skos:prefLabel "Swedish"@en ;
-    skos:definition "The Swedish language."@en ;
+    skos:prefLabel "Swedish"@en ,
+                   "Svenska"@sv ;
+    skos:definition "The Swedish language."@en ,
+                    "Det svenska språket."@sv ;
     skos:inScheme <> ;
     skos:broader topic:languages .
 
 topic:geography
     a skos:Concept ;
-    skos:prefLabel "Geography"@en ;
-    skos:definition "Countries, capitals, flags and the places of the world."@en ;
+    skos:prefLabel "Geography"@en ,
+                   "Geografi"@sv ;
+    skos:definition "Countries, capitals, flags and the places of the world."@en ,
+                    "Länder, huvudstäder, flaggor och världens platser."@sv ;
     skos:inScheme <> ;
     skos:topConceptOf <> .
 
 topic:computing
     a skos:Concept ;
-    skos:prefLabel "Computing"@en ;
-    skos:definition "Computers, software and the protocols of the web."@en ;
+    skos:prefLabel "Computing"@en ,
+                   "Datorer"@sv ;
+    skos:definition "Computers, software and the protocols of the web."@en ,
+                    "Datorer, mjukvara och webbens protokoll."@sv ;
     skos:inScheme <> ;
     skos:topConceptOf <> .
 
 topic:science
     a skos:Concept ;
-    skos:prefLabel "Science"@en ;
-    skos:definition "The natural sciences."@en ;
+    skos:prefLabel "Science"@en ,
+                   "Naturvetenskap"@sv ;
+    skos:definition "The natural sciences."@en ,
+                    "Naturvetenskaperna."@sv ;
     skos:inScheme <> ;
     skos:topConceptOf <> ;
     skos:narrower topic:chemistry .
 
 topic:chemistry
     a skos:Concept ;
-    skos:prefLabel "Chemistry"@en ;
-    skos:definition "Elements, compounds and their reactions."@en ;
+    skos:prefLabel "Chemistry"@en ,
+                   "Kemi"@sv ;
+    skos:definition "Elements, compounds and their reactions."@en ,
+                    "Grundämnen, föreningar och deras reaktioner."@sv ;
     skos:inScheme <> ;
     skos:broader topic:science .
 
 topic:art
     a skos:Concept ;
-    skos:prefLabel "Art"@en ;
-    skos:definition "Paintings, artists and the history of art."@en ;
+    skos:prefLabel "Art"@en ,
+                   "Konst"@sv ;
+    skos:definition "Paintings, artists and the history of art."@en ,
+                    "Målningar, konstnärer och konstens historia."@sv ;
     skos:inScheme <> ;
     skos:topConceptOf <> .
 
 topic:labour-market
     a skos:Concept ;
-    skos:prefLabel "Labour market"@en ;
-    skos:definition "Occupations, work and the labour market."@en ;
+    skos:prefLabel "Labour market"@en ,
+                   "Arbetsmarknad"@sv ;
+    skos:definition "Occupations, work and the labour market."@en ,
+                    "Yrken, arbete och arbetsmarknaden."@sv ;
     skos:inScheme <> ;
     skos:topConceptOf <> .

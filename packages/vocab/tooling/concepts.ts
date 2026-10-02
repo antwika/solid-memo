@@ -12,10 +12,13 @@ import { escapeHtml, GENERATED_HEADER } from "./vocab.ts";
 const SKOS = "http://www.w3.org/2004/02/skos/core#";
 const DCTERMS = "http://purl.org/dc/terms/";
 
+/** Text by language tag, English first, then the other tags in order. */
+export type LangTextModel = Record<string, string>;
+
 export interface ConceptModel {
   iri: string;
-  label: string;
-  definition: string;
+  label: LangTextModel;
+  definition: LangTextModel;
   notation?: string;
   broader?: string;
 }
@@ -29,42 +32,60 @@ export interface SchemeModel {
   concepts: ConceptModel[];
 }
 
-/** Every concept scheme of one Turtle document, its concepts in document order. */
+/**
+ * Every concept scheme of one Turtle document, its concepts in document
+ * order. A concept's label and definition come in every language the
+ * scheme's title is in, English always among them.
+ */
 export function parseConceptSchemes(turtle: string, baseIri: string): SchemeModel[] {
   const quads = parseTurtle(turtle, baseIri);
-  const english = (subject: string, predicate: string): string => {
-    const value = objectsOf(quads, subject, predicate).find(
-      (o) => o.termType === "Literal" && o.language === "en",
-    )?.value;
-    if (value === undefined) {
+  const texts = (subject: string, predicate: string): LangTextModel => {
+    const byTag = new Map<string, string>();
+    for (const o of objectsOf(quads, subject, predicate)) {
+      if (o.termType === "Literal" && o.language !== "") byTag.set(o.language, o.value);
+    }
+    if (!byTag.has("en")) {
       throw new Error(`${baseIri}: <${subject}> has no English ${localName(predicate)}.`);
     }
-    return value;
+    const tags = [...byTag.keys()].sort((a, b) => (a === "en" ? -1 : b === "en" ? 1 : a.localeCompare(b)));
+    return Object.fromEntries(tags.map((tag) => [tag, byTag.get(tag)!]));
+  };
+  const inLanguages = (subject: string, predicate: string, languages: readonly string[]): LangTextModel => {
+    const text = texts(subject, predicate);
+    const missing = languages.filter((tag) => !(tag in text));
+    if (missing.length > 0) {
+      throw new Error(`${baseIri}: <${subject}> has no ${localName(predicate)} in ${missing.join(", ")}.`);
+    }
+    return text;
   };
   const concepts = subjectsOfType(quads, `${SKOS}Concept`);
-  return subjectsOfType(quads, `${SKOS}ConceptScheme`).map((iri): SchemeModel => ({
-    name: localName(iri)
-      .replace(/([a-z])([A-Z])/g, "$1_$2")
-      .toUpperCase(),
-    iri,
-    title: english(iri, `${DCTERMS}title`),
-    definition: english(iri, `${SKOS}definition`),
-    concepts: concepts
-      .filter((concept) =>
-        objectsOf(quads, concept, `${SKOS}inScheme`).some((s) => s.value === iri),
-      )
-      .map((concept): ConceptModel => {
-        const notation = objectsOf(quads, concept, `${SKOS}notation`)[0]?.value;
-        const broader = objectsOf(quads, concept, `${SKOS}broader`)[0]?.value;
-        return {
-          iri: concept,
-          label: english(concept, `${SKOS}prefLabel`),
-          definition: english(concept, `${SKOS}definition`),
-          ...(notation === undefined ? {} : { notation }),
-          ...(broader === undefined ? {} : { broader }),
-        };
-      }),
-  }));
+  return subjectsOfType(quads, `${SKOS}ConceptScheme`).map((iri): SchemeModel => {
+    const title = texts(iri, `${DCTERMS}title`);
+    const languages = Object.keys(title);
+    return {
+      name: localName(iri)
+        .replace(/([a-z])([A-Z])/g, "$1_$2")
+        .toUpperCase(),
+      iri,
+      title: title.en,
+      definition: texts(iri, `${SKOS}definition`).en,
+      concepts: concepts
+        .filter((concept) =>
+          objectsOf(quads, concept, `${SKOS}inScheme`).some((s) => s.value === iri),
+        )
+        .map((concept): ConceptModel => {
+          const notation = objectsOf(quads, concept, `${SKOS}notation`)[0]?.value;
+          const broader = objectsOf(quads, concept, `${SKOS}broader`)[0]?.value;
+          return {
+            iri: concept,
+            label: inLanguages(concept, `${SKOS}prefLabel`, languages),
+            definition: inLanguages(concept, `${SKOS}definition`, languages),
+            ...(notation === undefined ? {} : { notation }),
+            ...(broader === undefined ? {} : { broader }),
+          };
+        }),
+    };
+  });
 }
 
 /** Throws unless every concept of the documents belongs to one of their schemes. */
@@ -91,11 +112,16 @@ export function checkEveryConceptInAScheme(
 export function renderConcepts(sources: readonly string[], schemes: readonly SchemeModel[]): string {
   const lines = [
     GENERATED_HEADER(sources.join(", ")),
+    "/** Text by language tag (lower case), one of them English. */",
+    "export type ConceptText = Readonly<Record<string, string>>;",
+    "",
     "/** A concept of one of Solid Memo's SKOS concept schemes (see docs/vocab.md). */",
     "export interface Concept {",
     "  readonly iri: string;",
-    "  readonly label: string;",
-    "  readonly definition: string;",
+    "  /** skos:prefLabel, in every language of the scheme. */",
+    "  readonly label: ConceptText;",
+    "  /** skos:definition, in every language of the scheme. */",
+    "  readonly definition: ConceptText;",
     "  /** skos:notation: the concept's code, where the scheme gives one. */",
     "  readonly notation?: string;",
     "  /** skos:broader: the concept above this one, for a concept below the top. */",
@@ -118,8 +144,8 @@ export function renderConcepts(sources: readonly string[], schemes: readonly Sch
     for (const concept of scheme.concepts) {
       const parts = [
         `iri: ${JSON.stringify(concept.iri)}`,
-        `label: ${JSON.stringify(concept.label)}`,
-        `definition: ${JSON.stringify(concept.definition)}`,
+        `label: ${renderText(concept.label)}`,
+        `definition: ${renderText(concept.definition)}`,
         ...(concept.notation === undefined ? [] : [`notation: ${JSON.stringify(concept.notation)}`]),
         ...(concept.broader === undefined ? [] : [`broader: ${JSON.stringify(concept.broader)}`]),
       ];
@@ -132,19 +158,34 @@ export function renderConcepts(sources: readonly string[], schemes: readonly Sch
   return lines.join("\n");
 }
 
+/** A language map as an object literal: { en: "Red", sv: "Röd" }. */
+function renderText(text: LangTextModel): string {
+  const entries = Object.entries(text).map(
+    ([tag, value]) => `${/^[a-z]+$/.test(tag) ? tag : JSON.stringify(tag)}: ${JSON.stringify(value)}`,
+  );
+  return `{ ${entries.join(", ")} }`;
+}
+
+/** Text in each of its languages, one line each, tagged with the language. */
+function textCell(text: LangTextModel): string {
+  return Object.entries(text)
+    .map(([tag, value]) => `<span lang="${escapeHtml(tag)}">${escapeHtml(value)}</span>`)
+    .join("<br>");
+}
+
 /**
  * The HTML page published at a scheme's IRI (e.g. vocab/topics/), so a
  * concept IRI such as …/vocab/topics#geography lands on its row; it
  * links to the Turtle as the machine-readable form.
  */
 export function renderSchemePage(scheme: SchemeModel, turtleHref: string): string {
-  const labelOf = new Map(scheme.concepts.map((c) => [c.iri, c.label]));
+  const labelOf = new Map(scheme.concepts.map((c) => [c.iri, c.label.en]));
   const rows = scheme.concepts
     .map((concept) => {
       const id = concept.iri.slice(concept.iri.lastIndexOf("#") + 1);
       const broader =
         concept.broader === undefined ? "" : (labelOf.get(concept.broader) ?? concept.broader);
-      return `<tr id="${escapeHtml(id)}"><td><code>${escapeHtml(id)}</code></td><td>${escapeHtml(concept.label)}</td><td>${escapeHtml(concept.definition)}</td><td>${escapeHtml(broader)}</td></tr>`;
+      return `<tr id="${escapeHtml(id)}"><td><code>${escapeHtml(id)}</code></td><td>${textCell(concept.label)}</td><td>${textCell(concept.definition)}</td><td>${escapeHtml(broader)}</td></tr>`;
     })
     .join("\n");
   return `<!doctype html>

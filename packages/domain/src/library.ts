@@ -105,10 +105,10 @@ export function isCopyOf(deck: Deck, libraryDeck: LibraryDeck): boolean {
   return deck.sourceUrl !== undefined && librarySeriesUrlOf(deck.sourceUrl) === libraryDeck.seriesUrl;
 }
 
-/** A topic of Solid Memo's topics scheme, as the library lists them. */
+/** A topic of Solid Memo's topics scheme, as the library lists them: its label in English and Swedish. */
 export interface Topic {
   iri: string;
-  label: string;
+  label: LangText;
 }
 
 /**
@@ -126,8 +126,8 @@ export function topicsOf(decks: readonly LibraryDeck[]): Topic[] {
     .map((concept) => ({ iri: concept.iri, label: concept.label }));
 }
 
-/** The labels of the Solid Memo topics among a deck's themes, in the scheme's order. */
-export function topicLabels(themes: readonly string[]): string[] {
+/** The labels (in English and Swedish) of the Solid Memo topics among a deck's themes, in the scheme's order. */
+export function topicLabels(themes: readonly string[]): LangText[] {
   return TOPICS.concepts.filter((concept) => themes.includes(concept.iri)).map((concept) => concept.label);
 }
 

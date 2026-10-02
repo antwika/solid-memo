@@ -62,7 +62,7 @@ export function DeckAboutSection({
         {deck.description !== undefined && <p class="deck-description">{linkify(readerText(deck.description))}</p>}
         {(topics.length > 0 || keywords.length > 0) && (
           <p class="hint">
-            {topics.length > 0 && t("deckAbout.topicsLine", { topics: topics.join(", ") })}
+            {topics.length > 0 && t("deckAbout.topicsLine", { topics: topics.map(readerText).join(", ") })}
             {topics.length > 0 && keywords.length > 0 && " · "}
             {keywords.length > 0 && t("deckAbout.keywordsLine", { keywords: keywords.join(", ") })}
           </p>
@@ -94,7 +94,7 @@ export function DeckAboutSection({
               onChange={(e) => toggleTopic(topic.iri, e.currentTarget.checked)}
               disabled={busy}
             />
-            {topic.label}
+            {readerText(topic.label)}
           </label>
         ))}
       </fieldset>

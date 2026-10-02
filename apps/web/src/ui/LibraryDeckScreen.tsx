@@ -67,7 +67,7 @@ export function LibraryDeckScreen({
         {topics.length > 0 && (
           <>
             <dt>{t("libraryDeck.topics", { count: topics.length })}</dt>
-            <dd>{topics.join(", ")}</dd>
+            <dd>{topics.map(readerText).join(", ")}</dd>
           </>
         )}
         {deck.keywords.length > 0 && (
