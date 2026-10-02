@@ -37,6 +37,22 @@ export function defaultDeckDescriptionText(title: LangText): LangText {
 }
 
 /**
+ * Whether a description is the default one the app gave a deck that had
+ * none (in English, with or without its Swedish), for a deck by any of
+ * `titles`: not text the user wrote, so a release's may replace it.
+ */
+export function isDefaultDeckDescription(description: LangText, titles: readonly LangText[]): boolean {
+  return titles.some((title) => {
+    const name = english(title) ?? shown(title);
+    const tags = Object.keys(description).sort().join(",");
+    return (
+      (tags === "en" || (tags === "en,sv" && description.sv === defaultDeckDescriptionText(title).sv)) &&
+      description.en === defaultDeckDescription(name)
+    );
+  });
+}
+
+/**
  * A format-3 description in format 4: the default one, which the app
  * wrote, in English and Swedish; any other as its English.
  */

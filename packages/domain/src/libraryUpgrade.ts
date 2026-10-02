@@ -6,6 +6,7 @@ import {
   type DeckDirection,
 } from "./deck";
 import type { LibraryCard, LibraryDeckContent, LibraryRelease } from "./library";
+import { isDefaultDeckDescription } from "./dcat";
 import { english, sameText, type LangText } from "./langText";
 
 /**
@@ -105,7 +106,11 @@ export function withReleaseLanguages(deck: Deck, release: LibraryDeckContent): D
   const description =
     deck.description === undefined || release.description === undefined
       ? undefined
-      : withLanguagesOf(deck.description, release.description);
+      : isDefaultDeckDescription(deck.description, [deck.title])
+        ? sameText(deck.description, release.description)
+          ? undefined
+          : release.description
+        : withLanguagesOf(deck.description, release.description);
   if (title === undefined && description === undefined) return null;
   return { ...deck, ...(title === undefined ? {} : { title }), ...(description === undefined ? {} : { description }) };
 }
@@ -177,7 +182,13 @@ export function planLibraryUpgrade({
     to.direction !== from.direction && deck.direction === from.direction ? to.direction : undefined;
   const about = {
     title: upgradedText(deck.title, from.title, to.title),
-    description: upgradedText(deck.description, from.description, to.description),
+    // The app's default description is not the user's: it gives way to the release's.
+    description:
+      deck.description !== undefined && isDefaultDeckDescription(deck.description, [deck.title, from.title])
+        ? to.description === undefined || sameText(deck.description, to.description)
+          ? undefined
+          : to.description
+        : upgradedText(deck.description, from.description, to.description),
     keywords: upgradedList(deck.keywords, from.keywords, to.keywords),
     themes: upgradedList(deck.themes, from.themes, to.themes),
   };

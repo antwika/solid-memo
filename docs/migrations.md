@@ -273,7 +273,9 @@ A new study direction is taken up when the copy is still studied the old
 release's way. So are the deck's title, description, keywords and
 themes, each when the copy still has the old release's; a title or
 description the user changed is kept, given the languages the release
-adds only while its English is still the release's. A copy upgraded
+adds only while its English is still the release's. The default
+description the app gave a deck that had none ("Flashcards: <title>.")
+is not the user's: it gives way to the release's description. A copy upgraded
 before upgrades brought these texts along is given its own release's
 languages, the same way, once a session when its page opens
 (`addReleaseLanguages`): nothing the user wrote changes. The notice lists the notes of every release in between.
