@@ -141,10 +141,11 @@ REPRODUCIBILITY
 
 LANGUAGE
   Solid Memo is English first. The deck is in deck format 4, which states the
-  title and description in several languages: English, which the app shows,
-  and Swedish (TEXTS). The keywords and the notes on the cards' backs are
-  English, the occupation names Swedish. The cards are in card format 3,
-  which can retire a card.
+  title and description in several languages: English and Swedish (TEXTS),
+  the app showing the reader's. The notes and labels on the cards are in
+  every language of TEXTS; the occupation names, front and back, are Swedish
+  and tagged so. The cards are in card format 4, which states a text's
+  language (card format 3 brought the notes and retired cards).
 """
 
 from __future__ import annotations
@@ -1174,15 +1175,15 @@ def write_deck(path: Path, cards: list[Card], retired: dict[str, Released], left
             "",
             f"<#{card_id_}>",
             "    a solid-memo:Card ;",
-            "    solid-memo:formatVersion 3 ;",
+            "    solid-memo:formatVersion 4 ;",  # format 4: the names tagged as Swedish
             *([f'    dcterms:created "{created}"^^xsd:dateTime ;'] if created else []),
             *(["    owl:deprecated true ;"] if is_retired else []),
-            f"    solid-memo:front {ttl_str(front)} ;",
+            f"    solid-memo:front {ttl_str(front)}@sv ;",
             *([f"    solid-memo:frontNote {tagged(back.front_note, 'solid-memo:frontNote')} ;"]
               if back.front_note else []),
             *([f"    solid-memo:backLabel {tagged(back.label, 'solid-memo:backLabel')} ;"]
               if back.label else []),
-            f"    solid-memo:back {ttl_str(back.text)}" + (" ;" if back.note else " ."),
+            f"    solid-memo:back {ttl_str(back.text)}@sv" + (" ;" if back.note else " ."),
             *([f"    solid-memo:backNote {tagged(back.note, 'solid-memo:backNote')} ."] if back.note else []),
         ]
 
