@@ -67,6 +67,12 @@
       "sha256": "72d439fec352db7b026319c991c2d0cc25da348b29f676397bbfcadc721dbe9d"
     },
     {
+      "deck": "swedish-adjectives",
+      "version": 2,
+      "issued": "2026-10-02T22:06:54Z",
+      "sha256": "96a677e115c3db3f9e7f0e4892dee6b5ea19f42584e0afb9e8384c80640ba909"
+    },
+    {
       "deck": "swedish-labour-market-taxonomy-occupation-names",
       "version": 1,
       "issued": "2026-10-01T00:38:16Z",
@@ -85,6 +91,12 @@
       "sha256": "ded5b72384f98743a6f7117dd91796a08f96ae346caffab8fa9b5186d917d27b"
     },
     {
+      "deck": "swedish-nouns",
+      "version": 3,
+      "issued": "2026-10-02T22:06:38Z",
+      "sha256": "6fc9a3ea74ecc8d5db70151c3f7ee1d4eafaff4186fc25819f4ce6d4589a88c1"
+    },
+    {
       "deck": "swedish-verbs",
       "version": 1,
       "issued": "2026-09-28T17:02:16Z",
@@ -95,6 +107,12 @@
       "version": 2,
       "issued": "2026-09-29T20:14:17Z",
       "sha256": "1c21bb03b3087833a40904fa9a602598fd9c17ed8f834c097de58167c405e0db"
+    },
+    {
+      "deck": "swedish-verbs",
+      "version": 3,
+      "issued": "2026-10-02T22:06:46Z",
+      "sha256": "b74a39ef4150b0ac3e23c728ac0bd63a69436dbe4b6de38f6a519e5cc3d25c55"
     },
     {
       "deck": "world-flags",
