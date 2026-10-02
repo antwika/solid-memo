@@ -31,6 +31,12 @@
       "sha256": "8beecb8be2068d97ef62b510c579f2c7b21319d3e24685c936a8042a217914cb"
     },
     {
+      "deck": "http-status-codes",
+      "version": 2,
+      "issued": "2026-10-02T21:51:53Z",
+      "sha256": "a0ec2bf9e8ccac8131f2e912e6adfa9652a1be295ef59799c9d38ad1696d214b"
+    },
+    {
       "deck": "network-ports",
       "version": 1,
       "issued": "2026-09-28T21:25:01Z",
