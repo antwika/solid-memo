@@ -99,7 +99,7 @@ export function LibraryScreen({
                     checked={topics.includes(topic.iri)}
                     onChange={(e) => toggleTopic(topic.iri, e.currentTarget.checked)}
                   />
-                  {topic.label}
+                  {readerText(topic.label)}
                 </label>
               ))}
             </fieldset>

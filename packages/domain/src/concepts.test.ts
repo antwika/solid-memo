@@ -15,7 +15,7 @@ const SM = "https://solid-memo.com/vocab/v1#";
 
 describe("conceptByIri and conceptByNotation", () => {
   it("find a concept of a scheme, or nothing", () => {
-    expect(conceptByIri(TOPICS, "https://solid-memo.com/vocab/topics#swedish")?.label).toBe("Swedish");
+    expect(conceptByIri(TOPICS, "https://solid-memo.com/vocab/topics#swedish")?.label).toEqual({ en: "Swedish", sv: "Svenska" });
     expect(conceptByIri(TOPICS, `${SM}frontToBack`)).toBeUndefined();
     expect(conceptByNotation(STUDY_DIRECTIONS, "bidirectional")?.iri).toBe(`${SM}bidirectional`);
     expect(conceptByNotation(STUDY_DIRECTIONS, "sideways")).toBeUndefined();

@@ -18,7 +18,7 @@ describe("topicsPage", () => {
     expect(page.path).toBe("topics/index.html");
     const body = await page.body();
     expect(body).toContain("<title>Solid Memo topics</title>");
-    expect(body).toContain('<tr id="swedish"><td><code>swedish</code></td><td>Swedish</td>');
+    expect(body).toContain('<tr id="swedish"><td><code>swedish</code></td><td><span lang="en">Swedish</span><br><span lang="sv">Svenska</span></td>');
   });
 });
 

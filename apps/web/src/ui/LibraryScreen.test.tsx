@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { LibraryScreen } from "./LibraryScreen";
+import { I18nProvider } from "./i18n";
 import type { LibraryDeck } from "@solid-memo/domain/library";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
 
@@ -27,6 +28,7 @@ const rivers: LibraryDeck = {
 
 function renderScreen(
   overrides: Partial<Parameters<typeof LibraryScreen>[0]> = {},
+  locale: "en" | "sv" = "en",
 ) {
   const props = {
     decks: [capitals, rivers],
@@ -39,7 +41,11 @@ function renderScreen(
     onImport: vi.fn(),
     ...overrides,
   };
-  const view = render(<LibraryScreen {...props} />);
+  const view = render(
+    <I18nProvider locale={locale} onChoose={() => undefined}>
+      <LibraryScreen {...props} />
+    </I18nProvider>,
+  );
   return { ...view, props };
 }
 
@@ -106,6 +112,13 @@ describe("LibraryScreen", () => {
     expect(screen.getByText("1 of 2 decks")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("checkbox", { name: "Languages" }));
     expect(screen.getByText("2 decks")).toBeInTheDocument();
+  });
+
+  it("names the topics in the language the user reads", () => {
+    const swedish = { ...rivers, title: { en: "Swedish nouns" }, themes: ["https://solid-memo.com/vocab/topics#swedish"] };
+    renderScreen({ decks: [swedish] }, "sv");
+    const topics = screen.getByRole("group", { name: "Ämnen" });
+    expect([...topics.querySelectorAll("label")].map((l) => l.textContent)).toEqual(["Språk", "Svenska"]);
   });
 
   it("offers no topics when no deck names one", () => {
