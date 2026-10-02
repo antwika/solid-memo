@@ -94,10 +94,11 @@ describe("applyRepairs", () => {
     ]);
     const one = getThing(saved(), `${CATALOG}#deck-1`)!;
     expect(getStringWithLocale(one, DCTERMS.description, "en")).toBe("Flashcards: Capitals.");
+    expect(getStringWithLocale(one, DCTERMS.description, "sv")).toBe("Kortlek: Huvudstäder.");
     expect(getStringWithLocale(one, DCTERMS.title, "sv")).toBe("Huvudstäder");
-    expect(getStringWithLocale(getThing(saved(), `${CATALOG}#deck-2`)!, DCTERMS.description, "en")).toBe(
-      "Flashcards: a deck.",
-    );
+    const two = getThing(saved(), `${CATALOG}#deck-2`)!;
+    expect(getStringWithLocale(two, DCTERMS.description, "en")).toBe("Flashcards: a deck.");
+    expect(getStringWithLocale(two, DCTERMS.description, "sv")).toBe("Kortlek: a deck.");
   });
 
   it("drops a half-written snapshot and recomputes a due day, leaving a state without the facts as it is", async () => {

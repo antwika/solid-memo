@@ -1,10 +1,9 @@
 import { agentToRecord, agentUrlOf } from "./agentRecord";
 import { directionOfConcept, conceptOfDirection } from "./concepts";
-import { defaultDeckDescription, distributionUrlOf, TURTLE_MEDIA_TYPE } from "./dcat";
+import { defaultDeckDescriptionText, distributionUrlOf, TURTLE_MEDIA_TYPE } from "./dcat";
 import { isEmptyText, type Card, type CardContent, type Deck } from "./deck";
 import type { LibraryCard, LibraryDeckContent } from "./library";
 import type { AgentV1, CardV4, DeckV4, DistributionV1, LibraryDeckV4 } from "@solid-memo/vocab/types.generated";
-import { inEnglish, shown } from "./langText";
 import { fragmentIdOf } from "./subjectUrl";
 
 /**
@@ -48,7 +47,7 @@ export function deckFromRecord(
 export function deckToRecord(deck: Deck): DeckV4 {
   return {
     title: deck.title,
-    description: deck.description ?? inEnglish(defaultDeckDescription(shown(deck.title))),
+    description: deck.description ?? defaultDeckDescriptionText(deck.title),
     ...(deck.createdAt === "" ? {} : { created: deck.createdAt }),
     ...(deck.modifiedAt === undefined ? {} : { modified: deck.modifiedAt }),
     creator: deck.authors.map((author) => agentUrlOf(deck.url, author)),

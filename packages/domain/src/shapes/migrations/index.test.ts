@@ -63,7 +63,7 @@ describe("migrate", () => {
     const deck = { title: "Own", creator: ["Anton"], cardsDocument: "d", reviewsDocument: "r" };
     expect(migrate("deck", { version: 1, data: deck }, CONTEXT)).toEqual({
       title: { en: "Own" },
-      description: { en: "Flashcards: Own." },
+      description: { en: "Flashcards: Own.", sv: "Kortlek: Own." },
       creator: ["https://pod.example/x.ttl#agent-anton"],
       studyDirection: `${SM}frontToBack`,
       theme: [],

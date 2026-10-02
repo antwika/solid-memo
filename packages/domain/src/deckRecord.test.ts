@@ -98,7 +98,7 @@ describe("deck records", () => {
     const record = deckToRecord(bare);
     expect(record).toEqual({
       title: { en: "Own" },
-      description: { en: "Flashcards: Own." },
+      description: { en: "Flashcards: Own.", sv: "Kortlek: Own." },
       creator: [],
       studyDirection: `${SM}frontToBack`,
       theme: [],
@@ -109,7 +109,7 @@ describe("deck records", () => {
     });
     expect(deckFromRecord(bare.url, 1, record, byAgent)).toEqual({
       ...bare,
-      description: { en: "Flashcards: Own." },
+      description: { en: "Flashcards: Own.", sv: "Kortlek: Own." },
     });
   });
 

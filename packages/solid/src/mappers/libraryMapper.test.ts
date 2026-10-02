@@ -253,7 +253,7 @@ describe("toLibraryDeckContent", () => {
       title: { en: "Capitals" },
       formatVersion: 1,
       authors: [],
-      description: { en: "Flashcards: Capitals." },
+      description: { en: "Flashcards: Capitals.", sv: "Kortlek: Capitals." },
       direction: "front-to-back",
       version: "1",
       seriesUrl: SERIES,
