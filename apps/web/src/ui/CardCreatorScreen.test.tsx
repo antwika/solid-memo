@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { CardCreatorScreen } from "./CardCreatorScreen";
+import { I18nProvider } from "./i18n";
 import type { Deck } from "@solid-memo/domain/deck";
 
 const deck: Deck = {
@@ -104,6 +105,16 @@ describe("CardCreatorScreen", () => {
     fireEvent.submit(container.querySelector("form")!);
     expect(props.onAdd).toHaveBeenCalledOnce();
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("explains an incomplete card in the language the user reads", () => {
+    const { container } = render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <CardCreatorScreen deck={deck} deckHref="#/deck?deck=d" busy={false} error={null} onAdd={vi.fn()} onBack={vi.fn()} />
+      </I18nProvider>,
+    );
+    fireEvent.submit(container.querySelector("form")!);
+    expect(screen.getByRole("alert")).toHaveTextContent("Framsidan behöver text eller en bild.");
   });
 
   it("navigates back", () => {

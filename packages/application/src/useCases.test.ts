@@ -1,3 +1,4 @@
+import { AppError } from "@solid-memo/domain/appError";
 import { describe, expect, it, vi } from "vitest";
 import type {
   DigestRepository,
@@ -767,7 +768,7 @@ describe("createUseCases", () => {
       vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
       fail(deps);
       const outcome = await createUseCases(deps).updateInstance(session, instance);
-      expect(outcome).toEqual({ ok: false, step, error: "boom", cleanedUp: true });
+      expect(outcome).toEqual({ ok: false, step, error: new Error("boom"), cleanedUp: true });
       expect(deps.instanceCopier.deleteRecursively).toHaveBeenCalledTimes(copied ? 1 : 0);
       if (copied) expect(deps.instanceCopier.deleteRecursively).toHaveBeenCalledWith(COPY);
       expect(deps.instanceRepository.saveMeta).not.toHaveBeenCalledWith(instance.url, expect.anything());
@@ -785,7 +786,7 @@ describe("createUseCases", () => {
       }));
       const outcome = await createUseCases(deps).updateInstance(session, instance);
       expect(outcome).toMatchObject({ ok: false, step: "validate", cleanedUp: true });
-      expect((outcome as { error: string }).error).toMatch(/^The updated copy does not conform to Solid Memo's shapes \(\d+ violations\)/);
+      expect((outcome as { error: Error }).error.message).toMatch(/^The updated copy does not conform to Solid Memo's shapes \(\d+ violations\)/);
       vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([]);
       vi.mocked(deps.shapeValidator.validateDocument).mockImplementation(async (url) =>
         url.endsWith("meta.ttl")
@@ -793,7 +794,7 @@ describe("createUseCases", () => {
           : { url, status: "missing" as const, subjects: [] },
       );
       expect(await createUseCases(deps).updateInstance(session, instance)).toMatchObject({
-        error: "The updated copy does not conform to Solid Memo's shapes (1 violation); your data is left as it was.",
+        error: new AppError("updatedCopyInvalid", { count: 1 }),
       });
     });
 
@@ -804,7 +805,7 @@ describe("createUseCases", () => {
       expect(await createUseCases(deps).updateInstance(session, instance)).toEqual({
         ok: false,
         step: "verify",
-        error: `<${instance.url}decks/> changed while it was being copied (in another tab or app?); try again.`,
+        error: new AppError("resourceChangedDuringCopy", { url: `${instance.url}decks/` }),
         cleanedUp: true,
       });
       // Asked of the version each copy was made from.
@@ -816,7 +817,7 @@ describe("createUseCases", () => {
         .mockResolvedValueOnce([`${instance.url}meta.ttl`, `${instance.url}new.ttl`]);
       expect(await createUseCases(more).updateInstance(session, instance)).toMatchObject({
         step: "verify",
-        error: "The instance changed while it was being copied (in another tab or app?); try again.",
+        error: new AppError("instanceChangedDuringCopy"),
       });
       expect(more.instanceRepository.switchInstance).not.toHaveBeenCalled();
     });

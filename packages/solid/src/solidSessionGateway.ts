@@ -10,6 +10,7 @@ import type { SessionGateway } from "@solid-memo/application/ports";
 import type { SessionOrigin } from "@solid-memo/domain/session";
 import { isSecureUrl } from "@solid-memo/domain/webId";
 import { SESSION_EXPIRED_EVENT } from "./authFetch";
+import { AppError } from "@solid-memo/domain/appError";
 
 const SOLID_OIDC_ISSUER = "http://www.w3.org/ns/solid/terms#oidcIssuer";
 
@@ -23,19 +24,15 @@ async function discoverOidcIssuer(webId: string): Promise<string> {
   const dataset = await getSolidDataset(webId);
   const profile = getThing(dataset, webId);
   if (!profile) {
-    throw new Error(`No subject <${webId}> found in the WebID document.`);
+    throw new AppError("webIdNoSubject", { webId });
   }
   const issuers = getIriAll(profile, SOLID_OIDC_ISSUER);
   if (issuers.length === 0) {
-    throw new Error(
-      `The WebID document does not declare a solid:oidcIssuer for <${webId}>.`,
-    );
+    throw new AppError("webIdNoIssuer", { webId });
   }
   const issuer = issuers.find(isSecureUrl);
   if (issuer === undefined) {
-    throw new Error(
-      `The solid:oidcIssuer declared for <${webId}> is not a valid https:// URL.`,
-    );
+    throw new AppError("webIdIssuerNotHttps", { webId });
   }
   return issuer;
 }

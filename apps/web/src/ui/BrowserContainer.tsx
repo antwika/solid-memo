@@ -3,7 +3,6 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import type { Card, Deck, DeckDirection } from "@solid-memo/domain/deck";
 import type { DeckAbout } from "@solid-memo/domain/deckAbout";
 import { BrowserScreen } from "./BrowserScreen";
-import { errorMessage } from "./errorMessage";
 import { useI18n } from "./i18n";
 import { Loading } from "./Loading";
 
@@ -27,7 +26,7 @@ export function BrowserContainer({
   cardHref: (card: Card) => string;
   onPageChange: (page: number) => void;
 }) {
-  const { t } = useI18n();
+  const { t, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const cardsQuery = useQuery({
@@ -63,7 +62,7 @@ export function BrowserContainer({
   });
 
   if (cardsQuery.error) {
-    return <p class="error">{errorMessage(cardsQuery.error)}</p>;
+    return <p class="error">{errorText(cardsQuery.error)}</p>;
   }
   if (cardsQuery.data === undefined) {
     return <Loading label={t("browser.loading")} />;
@@ -81,9 +80,9 @@ export function BrowserContainer({
         removeCardMutation.isPending
       }
       error={
-        errorMessage(describeDeckMutation.error) ??
-        errorMessage(setDirectionMutation.error) ??
-        errorMessage(removeCardMutation.error)
+        errorText(describeDeckMutation.error) ??
+        errorText(setDirectionMutation.error) ??
+        errorText(removeCardMutation.error)
       }
       onDescribeDeck={(about) => describeDeckMutation.mutate(about)}
       onChangeDirection={(direction) => setDirectionMutation.mutate(direction)}

@@ -10,6 +10,7 @@ import {
 
 import type { Literal, Quad } from "@rdfjs/types";
 import { getSolidDatasetLinear } from "./linearDataset";
+import { AppError } from "@solid-memo/domain/appError";
 
 type Dataset = Awaited<ReturnType<typeof getSolidDataset>>;
 
@@ -49,16 +50,12 @@ const ETAGS = new WeakMap<object, string>();
 export const MAX_PATCH_BYTES = 64 * 1024;
 
 /** The pod refused a write because the document is not as Solid Memo last saw it. */
-export class PreconditionFailedError extends Error {
+export class PreconditionFailedError extends AppError {
   constructor(
     readonly url: string,
     readonly expected: "unchanged" | "absent",
   ) {
-    super(
-      expected === "unchanged"
-        ? `${url} was changed elsewhere (in another tab or app?) since Solid Memo read it, so nothing was saved. Reload and try again.`
-        : `${url} was created elsewhere (in another tab or app?) while Solid Memo was about to create it, so nothing was saved. Reload and try again.`,
-    );
+    super(expected === "unchanged" ? "changedElsewhere" : "createdElsewhere", { url });
     this.name = "PreconditionFailedError";
   }
 }

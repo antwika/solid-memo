@@ -21,6 +21,7 @@ import {
   candidateStorageUrls,
   hasStorageLink,
 } from "./solidStorageGateway";
+import { AppError } from "@solid-memo/domain/appError";
 
 type Fetch = typeof globalThis.fetch;
 export type TypeIndexKind = "private" | "public";
@@ -165,7 +166,7 @@ async function linkTypeIndexFromProfile(
   const profileDataset = await readDataset(webId, fetch);
   const profile = getThing(profileDataset, webId);
   if (profile === null) {
-    throw new Error(`No subject <${webId}> found in the profile document.`);
+    throw new AppError("profileNoSubject", { webId });
   }
   const predicate =
     kind === "public" ? SOLID.publicTypeIndex : SOLID.privateTypeIndex;
@@ -198,10 +199,10 @@ async function linkTypeIndexFromProfile(
     }
   }
 
-  throw new Error(
-    `Could not link the ${kind} type index <${indexUrl}> from any profile document:\n` +
-    failures.map((failure) => `- ${failure}`).join("\n"),
-  );
+  throw new AppError(kind === "private" ? "privateTypeIndexNotLinked" : "publicTypeIndexNotLinked", {
+    index: indexUrl,
+    failures: failures.map((failure) => `- ${failure}`).join("\n"),
+  });
 }
 
 function describeFailure(documentUrl: string, error: unknown): string {

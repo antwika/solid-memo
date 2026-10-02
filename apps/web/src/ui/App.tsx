@@ -5,7 +5,6 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import { POD_PROVIDERS } from "@solid-memo/domain/podProvider";
 import type { Session } from "@solid-memo/domain/session";
 import illustrationUrl from "../assets/illustration.svg";
-import { errorMessage } from "./errorMessage";
 import { ExternalLink } from "./ExternalLink";
 import { Footer } from "./Footer";
 import { I18nProvider, useI18n } from "./i18n";
@@ -45,7 +44,7 @@ export function App({ useCases }: { useCases: UseCases }) {
 
 function AppContent({ useCases }: { useCases: UseCases }) {
   const queryClient = useQueryClient();
-  const { t, tx } = useI18n();
+  const { t, tx, errorText } = useI18n();
   // The session can expire long after the effect below subscribed, in
   // whatever language the user reads by then.
   const latestT = useRef(t);
@@ -55,7 +54,7 @@ function AppContent({ useCases }: { useCases: UseCases }) {
   const [connecting, setConnecting] = useState(false);
   const [returning, setReturning] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<unknown>(null);
 
   useEffect(() => {
     void (async () => {
@@ -66,7 +65,7 @@ function AppContent({ useCases }: { useCases: UseCases }) {
           setConnecting(established.origin === "login");
         }
       } catch (e) {
-        setAuthError(errorMessage(e));
+        setAuthError(e);
       } finally {
         setCheckingSession(false);
       }
@@ -96,7 +95,7 @@ function AppContent({ useCases }: { useCases: UseCases }) {
     try {
       await login();
     } catch (e) {
-      setAuthError(errorMessage(e));
+      setAuthError(e);
       setBusy(false);
     }
   }
@@ -142,7 +141,7 @@ function AppContent({ useCases }: { useCases: UseCases }) {
             )
           }
         />
-        {authError && <p class="error">{authError}</p>}
+        {authError !== null && <p class="error">{errorText(authError)}</p>}
       </main>
     );
   }
@@ -160,7 +159,7 @@ function AppContent({ useCases }: { useCases: UseCases }) {
         <PodConnectionScreen
           account={accountQuery.data}
           busy={accountQuery.isFetching}
-          error={errorMessage(accountQuery.error)}
+          error={errorText(accountQuery.error)}
           onRetry={() => void accountQuery.refetch()}
           onContinue={() => setConnecting(false)}
           onLogout={handleLogout}

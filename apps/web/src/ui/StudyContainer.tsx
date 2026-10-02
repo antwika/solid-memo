@@ -10,7 +10,6 @@ import {
   repeatsInSession,
   requeueCard,
 } from "@solid-memo/domain/scheduling";
-import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
 import { StudyScreen } from "./StudyScreen";
 import { deckHref } from "./router";
@@ -38,7 +37,7 @@ export function StudyContainer({
   /** Uniform [0, 1) source deciding where a failed card comes back. */
   random?: () => number;
 }) {
-  const { t, readerText } = useI18n();
+  const { t, readerText, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const queueQuery = useQuery({
@@ -134,7 +133,7 @@ export function StudyContainer({
   }
 
   if (queueQuery.error) {
-    return <p class="error">{errorMessage(queueQuery.error)}</p>;
+    return <p class="error">{errorText(queueQuery.error)}</p>;
   }
   if (session === null) {
     return <Loading label={t("study.preparing")} />;
@@ -151,7 +150,7 @@ export function StudyContainer({
       total={prompts.length}
       answerScale={answerScale}
       busy={answerMutation.isPending}
-      error={errorMessage(answerMutation.error)}
+      error={errorText(answerMutation.error)}
       onAnswer={(quality) =>
         answerMutation.mutate({ prompt: prompt!, quality })
       }

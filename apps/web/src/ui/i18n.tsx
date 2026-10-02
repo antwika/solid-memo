@@ -1,6 +1,7 @@
 import { createContext, Fragment, type ComponentChildren } from "preact";
 import { useContext } from "preact/hooks";
 import type { DeckDirection } from "@solid-memo/domain/deck";
+import { AppError } from "@solid-memo/domain/appError";
 import { shown, type LangText } from "@solid-memo/domain/langText";
 import { DEFAULT_LOCALE, type Locale } from "@solid-memo/domain/locale";
 import en from "../i18n/en.json";
@@ -64,6 +65,12 @@ export interface I18n {
   formatDate(iso: string): string;
   /** How a study direction is named. */
   directionLabel(direction: DeckDirection): string;
+  /**
+   * What went wrong, for the user: an AppError in this language
+   * (`errors.<code>`, its values filled in), any other error as its own
+   * message; null when there is no error.
+   */
+  errorText(error: unknown): string | null;
 }
 
 export function createI18n(locale: Locale): I18n {
@@ -95,6 +102,11 @@ export function createI18n(locale: Locale): I18n {
     },
     formatDate(iso) {
       return new Date(iso).toLocaleDateString(locale, { dateStyle: "long", timeZone: "UTC" });
+    },
+    errorText(error) {
+      if (error === null || error === undefined) return null;
+      if (error instanceof AppError) return t(`errors.${error.code}`, error.vars);
+      return error instanceof Error ? error.message : String(error);
     },
     directionLabel(direction) {
       switch (direction) {

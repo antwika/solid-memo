@@ -1,3 +1,4 @@
+import { AppError } from "./appError";
 import { describe, expect, it } from "vitest";
 import {
   cardLabel,
@@ -92,11 +93,11 @@ describe("validateCardContent", () => {
   it("requires text or an image on each side", () => {
     expect(validateCardContent({ front: { "": " " }, back: { "": "b" } })).toEqual({
       ok: false,
-      error: "The front needs text or an image.",
+      error: new AppError("cardFrontEmpty"),
     });
     expect(
       validateCardContent({ front: {}, back: {}, frontImageUrl: FLAG }),
-    ).toEqual({ ok: false, error: "The back needs text or an image." });
+    ).toEqual({ ok: false, error: new AppError("cardBackEmpty") });
   });
 
   it("rejects images that are not http(s) URLs", () => {
@@ -106,14 +107,14 @@ describe("validateCardContent", () => {
         back: { "": "b" },
         frontImageUrl: "/data/flags/h80/af.png",
       }),
-    ).toEqual({ ok: false, error: "The front image must be an http(s) URL." });
+    ).toEqual({ ok: false, error: new AppError("cardFrontImageNotWebUrl") });
     expect(
       validateCardContent({
         front: { "": "f" },
         back: { "": "b" },
         backImageUrl: "javascript:alert(1)",
       }),
-    ).toEqual({ ok: false, error: "The back image must be an http(s) URL." });
+    ).toEqual({ ok: false, error: new AppError("cardBackImageNotWebUrl") });
   });
 });
 

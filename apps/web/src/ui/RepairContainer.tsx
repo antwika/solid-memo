@@ -3,7 +3,6 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { RepairKind, Unrepairable } from "@solid-memo/domain/repair";
 import type { ValidationReport } from "@solid-memo/domain/validation";
-import { errorMessage } from "./errorMessage";
 import { ExternalLink } from "./ExternalLink";
 import { useI18n, type I18n } from "./i18n";
 import { summaryOf, ValidationScreen } from "./ValidationScreen";
@@ -35,7 +34,7 @@ export function RepairContainer({
   instance: Instance;
   report: ValidationReport;
 }) {
-  const { t, tx } = useI18n();
+  const { t, tx, errorText } = useI18n();
   const queryClient = useQueryClient();
   const plan = useCases.planRepair(report);
 
@@ -96,7 +95,7 @@ export function RepairContainer({
           </ul>
         </>
       )}
-      {repairMutation.error && <p class="error">{errorMessage(repairMutation.error)}</p>}
+      {repairMutation.error && <p class="error">{errorText(repairMutation.error)}</p>}
       <details>
         <summary>{t("repair.fullReport")}</summary>
         <ValidationScreen report={report} />

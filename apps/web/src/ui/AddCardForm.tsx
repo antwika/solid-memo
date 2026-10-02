@@ -1,3 +1,4 @@
+import type { AppError } from "@solid-memo/domain/appError";
 import { useState } from "preact/hooks";
 import { validateCardContent, type CardContent } from "@solid-memo/domain/deck";
 import { CardContentFields, contentOf, EMPTY_DRAFT } from "./CardContentFields";
@@ -11,9 +12,9 @@ export function AddCardForm({
   busy: boolean;
   onAdd: (content: CardContent) => void;
 }) {
-  const { t } = useI18n();
+  const { t, errorText } = useI18n();
   const [draft, setDraft] = useState(EMPTY_DRAFT);
-  const [invalid, setInvalid] = useState<string | null>(null);
+  const [invalid, setInvalid] = useState<AppError | null>(null);
 
   function handleSubmit(event: Event) {
     event.preventDefault();
@@ -32,7 +33,7 @@ export function AddCardForm({
       <CardContentFields draft={draft} busy={busy} onChange={setDraft} />
       {invalid && (
         <p class="error" role="alert">
-          {invalid}
+          {errorText(invalid)}
         </p>
       )}
       <button type="submit" disabled={busy}>

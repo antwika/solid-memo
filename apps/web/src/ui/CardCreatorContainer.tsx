@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { CardContent, Deck } from "@solid-memo/domain/deck";
 import { CardCreatorScreen } from "./CardCreatorScreen";
-import { errorMessage } from "./errorMessage";
+import { useI18n } from "./i18n";
 
 /**
  * Owns the add-card mutation. Deliberately stays on the page after a
@@ -20,6 +20,7 @@ export function CardCreatorContainer({
   deckHref: string;
   onBack: () => void;
 }) {
+  const { errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const addCardMutation = useMutation({
@@ -37,7 +38,7 @@ export function CardCreatorContainer({
       deck={deck}
       deckHref={deckHref}
       busy={addCardMutation.isPending}
-      error={errorMessage(addCardMutation.error)}
+      error={errorText(addCardMutation.error)}
       onAdd={(content) => addCardMutation.mutate(content)}
       onBack={onBack}
     />

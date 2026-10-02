@@ -25,6 +25,7 @@ import { migrate } from "@solid-memo/domain/shapes/migrations";
 import { readVersioned, storedVersionOf } from "../records";
 import { agentNamesOf } from "./deckMapper";
 import { ADMS, DCAT, DCTERMS, RDF, SM } from "../vocab";
+import { AppError } from "@solid-memo/domain/appError";
 
 /**
  * Every deck the library's index lists (see docs/deck-library.md): the
@@ -129,13 +130,11 @@ export function toLibraryDeckContent(
   );
   const formatVersion = deck === undefined ? 1 : storedVersionOf(deck);
   if (formatVersion > LATEST_VERSION.libraryDeck) {
-    throw new Error(
-      `<${url}> is in deck format ${formatVersion}, newer than this app supports (${LATEST_VERSION.libraryDeck}).`,
-    );
+    throw new AppError("libraryDeckTooNew", { url, version: formatVersion, latest: LATEST_VERSION.libraryDeck });
   }
   const read = deck === undefined ? null : readVersioned(deck, "libraryDeck");
   if (read === null) {
-    throw new Error(`<${url}> is not a Solid Memo deck.`);
+    throw new AppError("notADeck", { url });
   }
   const cards = things
     .map((thing) => toLibraryCard(url, thing))
@@ -160,9 +159,12 @@ function toLibraryCard(url: string, thing: Thing): LibraryCard | null {
   if (!getUrlAll(thing, RDF.type).includes(SM.Card)) return null;
   const formatVersion = storedVersionOf(thing);
   if (formatVersion > LATEST_VERSION.card) {
-    throw new Error(
-      `<${asUrl(thing)}> in <${url}> is in card format ${formatVersion}, newer than this app supports (${LATEST_VERSION.card}).`,
-    );
+    throw new AppError("libraryCardTooNew", {
+      card: asUrl(thing),
+      url,
+      version: formatVersion,
+      latest: LATEST_VERSION.card,
+    });
   }
   const read = readVersioned(thing, "card");
   if (read === null) return null;

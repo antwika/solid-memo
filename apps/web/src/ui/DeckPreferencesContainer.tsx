@@ -4,7 +4,6 @@ import type { Deck } from "@solid-memo/domain/deck";
 import type { DeckPace } from "@solid-memo/domain/deckPace";
 import type { Instance } from "@solid-memo/domain/instance";
 import { DeckPreferencesScreen } from "./DeckPreferencesScreen";
-import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
 import { deckHref, routeToHash } from "./router";
 import { useI18n } from "./i18n";
@@ -30,7 +29,7 @@ export function DeckPreferencesContainer({
   /** Called after a successful save. */
   onDone: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const preferencesQuery = useQuery({
@@ -61,7 +60,7 @@ export function DeckPreferencesContainer({
   });
 
   if (preferencesQuery.error) {
-    return <p class="error">{errorMessage(preferencesQuery.error)}</p>;
+    return <p class="error">{errorText(preferencesQuery.error)}</p>;
   }
   if (preferencesQuery.data === undefined) {
     return <Loading label={t("deckPreferences.loading")} />;
@@ -79,9 +78,9 @@ export function DeckPreferencesContainer({
         removeMutation.isPending
       }
       error={
-        errorMessage(saveMutation.error) ??
-        errorMessage(renameMutation.error) ??
-        errorMessage(removeMutation.error)
+        errorText(saveMutation.error) ??
+        errorText(renameMutation.error) ??
+        errorText(removeMutation.error)
       }
       onSave={(pace) => saveMutation.mutate(pace)}
       onRename={(name) => renameMutation.mutate(name)}

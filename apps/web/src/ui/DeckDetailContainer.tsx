@@ -3,7 +3,6 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import { activeCards, type Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import { DeckDetailScreen } from "./DeckDetailScreen";
-import { errorMessage } from "./errorMessage";
 import { LibraryUpgradeContainer } from "./LibraryUpgradeContainer";
 import { Loading } from "./Loading";
 import { deckHref } from "./router";
@@ -25,7 +24,7 @@ export function DeckDetailContainer({
   onPreferences: () => void;
   onBrowse: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, errorText } = useI18n();
   const cardsQuery = useQuery({
     queryKey: ["cards", deck.cardsDocumentUrl],
     queryFn: () => useCases.listCards(deck),
@@ -54,7 +53,7 @@ export function DeckDetailContainer({
 
   const error = cardsQuery.error ?? queueQuery.error;
   if (error) {
-    return <p class="error">{errorMessage(error)}</p>;
+    return <p class="error">{errorText(error)}</p>;
   }
   if (
     cardsQuery.data === undefined ||
@@ -72,7 +71,7 @@ export function DeckDetailContainer({
       newCount={queueQuery.data.newPrompts.length}
       studiedToday={queueQuery.data.studiedToday}
       busy={resetDayMutation.isPending}
-      error={errorMessage(resetDayMutation.error)}
+      error={errorText(resetDayMutation.error)}
       onResetDay={() => resetDayMutation.mutate()}
       deckHref={deckHref(instance.url, deck.url)}
       onStudy={onStudy}

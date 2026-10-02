@@ -1,3 +1,4 @@
+import type { AppError } from "@solid-memo/domain/appError";
 import { useState } from "preact/hooks";
 import {
   cardLabel,
@@ -28,9 +29,9 @@ export function CardScreen({
   onSave: (content: CardContent) => void;
   onRemove: () => void;
 }) {
-  const { t, readerText } = useI18n();
+  const { t, readerText, errorText } = useI18n();
   const [draft, setDraft] = useState(() => draftOf(card));
-  const [invalid, setInvalid] = useState<string | null>(null);
+  const [invalid, setInvalid] = useState<AppError | null>(null);
 
   function handleSubmit(event: Event) {
     event.preventDefault();
@@ -74,7 +75,7 @@ export function CardScreen({
         <CardContentFields draft={draft} busy={busy} onChange={setDraft} />
         {invalid && (
           <p class="error" role="alert">
-            {invalid}
+            {errorText(invalid)}
           </p>
         )}
         <div class="edit-actions">

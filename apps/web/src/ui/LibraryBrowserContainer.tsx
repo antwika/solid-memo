@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { LibraryCard, LibraryDeck } from "@solid-memo/domain/library";
-import { errorMessage } from "./errorMessage";
 import { useI18n } from "./i18n";
 import { LibraryBrowserScreen } from "./LibraryBrowserScreen";
 import { Loading } from "./Loading";
@@ -25,14 +24,14 @@ export function LibraryBrowserContainer({
   page: number;
   onPageChange: (page: number) => void;
 }) {
-  const { t } = useI18n();
+  const { t, errorText } = useI18n();
   const cardsQuery = useQuery({
     queryKey: ["libraryCards", deck.url],
     queryFn: () => useCases.listLibraryCards(deck),
   });
 
   if (cardsQuery.error) {
-    return <p class="error">{errorMessage(cardsQuery.error)}</p>;
+    return <p class="error">{errorText(cardsQuery.error)}</p>;
   }
   if (cardsQuery.data === undefined) {
     return <Loading label={t("libraryBrowser.loading")} />;

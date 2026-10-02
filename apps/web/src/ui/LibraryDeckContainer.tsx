@@ -2,9 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import { isCopyOf, type LibraryDeck } from "@solid-memo/domain/library";
-import { errorMessage } from "./errorMessage";
 import { LibraryDeckScreen } from "./LibraryDeckScreen";
 import { libraryDeckHref, libraryPreviewHref } from "./router";
+import { useI18n } from "./i18n";
 
 /**
  * Owns one library deck's page and its import; returns to the deck list
@@ -26,6 +26,7 @@ export function LibraryDeckContainer({
   /** Called after a successful import. */
   onDone: () => void;
 }) {
+  const { errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const decksQuery = useQuery({
@@ -51,7 +52,7 @@ export function LibraryDeckContainer({
       previewHref={libraryPreviewHref(instance.url, deck.seriesUrl)}
       imported={imported}
       busy={importMutation.isPending}
-      error={errorMessage(importMutation.error)}
+      error={errorText(importMutation.error)}
       onBrowse={onBrowse}
       onImport={() => importMutation.mutate()}
     />

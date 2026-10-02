@@ -19,6 +19,7 @@ import { coreOnly } from "@solid-memo/shacl/profiles";
 import { pickShape } from "@solid-memo/shacl/registry";
 import type { ShapeDescriptor } from "@solid-memo/vocab/shapeDescriptor";
 import { createShapeLoader, type ShapeLoader } from "@solid-memo/shacl/shapeLoader";
+import { AppError } from "@solid-memo/domain/appError";
 
 export interface ShaclShapeValidatorDeps {
   /** Fetches pod documents (authenticated). */
@@ -182,9 +183,7 @@ export function createShaclShapeValidator({
     async checkSubjects(dataset, subjects) {
       const problems = await subjectViolations(dataset, subjects);
       if (problems.length > 0) {
-        throw new Error(
-          `Solid Memo did not save data that does not conform to its shapes:\n  ${problems.join("\n  ")}`,
-        );
+        throw new AppError("dataNotConforming", { problems: problems.join("\n  ") });
       }
     },
 
