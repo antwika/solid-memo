@@ -22,6 +22,9 @@ export function describeChanges(
     ...(plan.direction === undefined
       ? []
       : [t("libraryUpgradeNotice.studies", { direction: directionLabel(plan.direction).toLowerCase() })]),
+    ...([plan.title, plan.description, plan.keywords, plan.themes].some((value) => value !== undefined)
+      ? [t("libraryUpgradeNotice.describes")]
+      : []),
   ];
   if (parts.length === 0) return t("libraryUpgradeNotice.noStudiedChanges");
   return parts.length === 1

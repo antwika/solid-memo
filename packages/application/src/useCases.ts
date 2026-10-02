@@ -29,6 +29,7 @@ import type { LibraryCard, LibraryDeck } from "@solid-memo/domain/library";
 import {
   applyLibraryUpgrade,
   planLibraryUpgrade,
+  withReleaseLanguages,
   upgradedCards,
   type LibraryUpgradePlan,
 } from "@solid-memo/domain/libraryUpgrade";
@@ -179,6 +180,13 @@ export interface UseCases {
    * two releases, and the copy's cards; writes nothing.
    */
   planLibraryUpgrade(deck: Deck): Promise<LibraryUpgradePlan | null>;
+  /**
+   * Give an imported deck the languages its own release states its title
+   * and description in and the copy lacks, where the copy's English is
+   * the release's, and save it; null when that adds nothing (or the deck
+   * is not from the library). Nothing the user wrote changes.
+   */
+  addReleaseLanguages(deck: Deck): Promise<Deck | null>;
   /**
    * Apply a planned upgrade: one write of the cards, one of the review
    * states of cards it removes, one of the deck's catalog entry.
@@ -645,6 +653,11 @@ export function createUseCases({
         deckRepository.listCards(deck),
       ]);
       return planLibraryUpgrade({ deck, cards, from, to, releases: series.releases });
+    },
+    async addReleaseLanguages(deck) {
+      if (deck.sourceUrl === undefined) return null;
+      const updated = withReleaseLanguages(deck, await deckLibrary.fetchLibraryDeck(deck.sourceUrl));
+      return updated === null ? null : deckRepository.saveDeck(updated);
     },
     async applyLibraryUpgrade(deck, plan) {
       await deckRepository.applyCardChanges(deck, {

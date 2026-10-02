@@ -6,7 +6,7 @@ import {
   type DeckDirection,
 } from "./deck";
 import type { LibraryCard, LibraryDeckContent, LibraryRelease } from "./library";
-import { sameText } from "./langText";
+import { english, sameText, type LangText } from "./langText";
 
 /**
  * Bringing an imported deck up to a newer release of its library deck
@@ -44,6 +44,70 @@ export interface LibraryUpgradePlan {
   kept: Card[];
   /** The library's new study direction, when the copy is still studied the old way. */
   direction?: DeckDirection;
+  /**
+   * The deck's new title and description, when the copy's change: the
+   * release's where the user has left the old one, else the user's with
+   * the languages the release adds (see upgradedText).
+   */
+  title?: LangText;
+  description?: LangText;
+  /** The release's keywords and themes, when the copy still has the old release's and they changed. */
+  keywords?: string[];
+  themes?: string[];
+}
+
+/**
+ * A text of the copy as an upgrade leaves it; undefined when it stays as
+ * it is. The newer release's when the copy still has the older one's,
+ * as the user left it. Else the copy's own, with the languages the
+ * release has and the copy lacks, as long as the copy's English is the
+ * release's: a deck the user renamed keeps its name, in every language.
+ */
+export function upgradedText(
+  mine: LangText | undefined,
+  before: LangText | undefined,
+  after: LangText | undefined,
+): LangText | undefined {
+  if (after === undefined) return undefined;
+  if (sameText(mine, before)) return sameText(mine, after) ? undefined : after;
+  return mine === undefined ? undefined : withLanguagesOf(mine, after);
+}
+
+/**
+ * The copy's text with the languages `release` adds, when both say the
+ * same in English; undefined when that adds nothing.
+ */
+function withLanguagesOf(mine: LangText, release: LangText): LangText | undefined {
+  if (english(mine) !== english(release)) return undefined;
+  const added = Object.keys(release).filter((tag) => !(tag in mine));
+  return added.length === 0 ? undefined : { ...release, ...mine };
+}
+
+/** A list as an upgrade leaves it: the release's, when the copy still has the older release's; else undefined. */
+function upgradedList(
+  mine: readonly string[] | undefined,
+  before: readonly string[],
+  after: readonly string[],
+): string[] | undefined {
+  const same = (a: readonly string[], b: readonly string[]) =>
+    a.length === b.length && [...a].sort().join("\n") === [...b].sort().join("\n");
+  return same(mine ?? [], before) && !same(before, after) ? [...after] : undefined;
+}
+
+/**
+ * The deck with its title and description in the languages its own
+ * release states them in and the copy lacks, where the copy's English
+ * is the release's; null when that adds nothing. For a copy upgraded
+ * before upgrades brought the texts along: nothing the user wrote changes.
+ */
+export function withReleaseLanguages(deck: Deck, release: LibraryDeckContent): Deck | null {
+  const title = withLanguagesOf(deck.title, release.title);
+  const description =
+    deck.description === undefined || release.description === undefined
+      ? undefined
+      : withLanguagesOf(deck.description, release.description);
+  if (title === undefined && description === undefined) return null;
+  return { ...deck, ...(title === undefined ? {} : { title }), ...(description === undefined ? {} : { description }) };
 }
 
 function sameContent(a: CardContent, b: CardContent): boolean {
@@ -111,7 +175,18 @@ export function planLibraryUpgrade({
   }
   const direction =
     to.direction !== from.direction && deck.direction === from.direction ? to.direction : undefined;
-  if (add.length + change.length + retire.length + restore.length + remove.length === 0 && direction === undefined) {
+  const about = {
+    title: upgradedText(deck.title, from.title, to.title),
+    description: upgradedText(deck.description, from.description, to.description),
+    keywords: upgradedList(deck.keywords, from.keywords, to.keywords),
+    themes: upgradedList(deck.themes, from.themes, to.themes),
+  };
+  const aboutChanged = Object.values(about).some((value) => value !== undefined);
+  if (
+    add.length + change.length + retire.length + restore.length + remove.length === 0 &&
+    direction === undefined &&
+    !aboutChanged
+  ) {
     return null;
   }
   return {
@@ -128,6 +203,7 @@ export function planLibraryUpgrade({
     remove,
     kept,
     ...(direction === undefined ? {} : { direction }),
+    ...Object.fromEntries(Object.entries(about).filter(([, value]) => value !== undefined)),
   };
 }
 
@@ -146,11 +222,19 @@ export function upgradedCards(plan: LibraryUpgradePlan): (LibraryCard | Card)[] 
   return [...plan.add, ...plan.change, ...flagged];
 }
 
-/** The deck as the upgrade writes it: from the newer release, in its direction when that changes. */
+/**
+ * The deck as the upgrade writes it: from the newer release, in its
+ * direction, with its title, description, keywords and themes, when
+ * those change.
+ */
 export function applyLibraryUpgrade(deck: Deck, plan: LibraryUpgradePlan): Deck {
   return {
     ...deck,
     sourceUrl: plan.releaseUrl,
     ...(plan.direction === undefined ? {} : { direction: plan.direction }),
+    ...(plan.title === undefined ? {} : { title: plan.title }),
+    ...(plan.description === undefined ? {} : { description: plan.description }),
+    ...(plan.keywords === undefined ? {} : { keywords: plan.keywords }),
+    ...(plan.themes === undefined ? {} : { themes: plan.themes }),
   };
 }

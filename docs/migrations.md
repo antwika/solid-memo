@@ -270,7 +270,13 @@ release before it); the removal rows are for releases made before cards
 could be retired.
 
 A new study direction is taken up when the copy is still studied the old
-release's way. The notice lists the notes of every release in between.
+release's way. So are the deck's title, description, keywords and
+themes, each when the copy still has the old release's; a title or
+description the user changed is kept, given the languages the release
+adds only while its English is still the release's. A copy upgraded
+before upgrades brought these texts along is given its own release's
+languages, the same way, once a session when its page opens
+(`addReleaseLanguages`): nothing the user wrote changes. The notice lists the notes of every release in between.
 Nothing is offered for a release that is not newer, uses a card format
 this app does not know, or would change nothing. Applying it is one
 write of the cards document (`applyCardChanges`: an existing card keeps

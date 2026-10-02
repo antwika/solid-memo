@@ -58,6 +58,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     }),
     listLibraryCards: vi.fn(async () => []),
     planLibraryUpgrade: vi.fn(async () => null),
+    addReleaseLanguages: vi.fn(async () => null),
     applyLibraryUpgrade: vi.fn(async (deck, plan) => ({
       ...deck,
       sourceUrl: plan.releaseUrl,

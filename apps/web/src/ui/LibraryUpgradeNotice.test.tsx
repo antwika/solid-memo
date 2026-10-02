@@ -37,6 +37,9 @@ describe("describeChanges", () => {
     expect(describeChanges({ ...plan, add: [], change: [], remove: [], direction: "bidirectional" }, en)).toBe(
       "studies it both ways",
     );
+    expect(describeChanges({ ...plan, add: [], change: [], remove: [], title: { en: "Capitals", sv: "Huvudstäder" } }, en)).toBe(
+      "updates the deck's name, description or keywords",
+    );
   });
 
   it("counts retirements and cards brought back, not what is added or changed retired", () => {
