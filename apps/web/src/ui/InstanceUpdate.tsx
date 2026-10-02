@@ -77,12 +77,12 @@ export function InstanceUpdateFailure({
   onRemoveLeftover: () => void;
   onDismiss: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, errorText } = useI18n();
   return (
     <div class="warning migration" role="region" aria-label={t("instanceUpdate.failedRegion")}>
       <p>
         <strong>{t("instanceUpdate.failedWhile", { step: stepLabels(t)[outcome.step].toLowerCase() })}</strong>{" "}
-        {outcome.error}
+        {errorText(outcome.error)}
       </p>
       <p>
         {t("instanceUpdate.noChanges")}{" "}

@@ -41,9 +41,10 @@ export type UpdateOutcome =
   /**
    * Failed before switching over, at `step`: the original is untouched.
    * `cleanedUp` says whether the partial copy was deleted; when it was
-   * not, `leftoverUrl` is where it remains.
+   * not, `leftoverUrl` is where it remains. `error` is what went wrong: an
+   * AppError the app can show in the reader's language, or any other error.
    */
-  | { ok: false; step: UpdateStep; error: string; cleanedUp: boolean; leftoverUrl?: string };
+  | { ok: false; step: UpdateStep; error: unknown; cleanedUp: boolean; leftoverUrl?: string };
 
 /** The container an update copies an instance into: a sibling, `…/main/` → `…/main-<uuid>/`. */
 export function stagingUrlOf(sourceUrl: string, uuid: string): string {

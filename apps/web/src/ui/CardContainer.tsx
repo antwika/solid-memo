@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Card, CardContent, Deck } from "@solid-memo/domain/deck";
 import { CardScreen } from "./CardScreen";
-import { errorMessage } from "./errorMessage";
+import { useI18n } from "./i18n";
 
 /**
  * Owns the edit/remove mutations of one card's page. The card itself is
@@ -21,6 +21,7 @@ export function CardContainer({
   /** The card is gone; leave its page. */
   onRemoved: () => void;
 }) {
+  const { errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const updateCardMutation = useMutation({
@@ -54,8 +55,8 @@ export function CardContainer({
       busy={updateCardMutation.isPending || removeCardMutation.isPending}
       saved={updateCardMutation.isSuccess}
       error={
-        errorMessage(updateCardMutation.error) ??
-        errorMessage(removeCardMutation.error)
+        errorText(updateCardMutation.error) ??
+        errorText(removeCardMutation.error)
       }
       onSave={(content) => updateCardMutation.mutate(content)}
       onRemove={() => removeCardMutation.mutate()}

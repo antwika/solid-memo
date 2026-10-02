@@ -1,4 +1,5 @@
 import type { WriteFence } from "@solid-memo/application/ports";
+import { AppError } from "@solid-memo/domain/appError";
 
 /** Methods that only read; every other one writes. */
 const READS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -31,9 +32,7 @@ export function createWriteFence(inner: typeof globalThis.fetch): WriteFence & {
         const url = normalize(request?.url ?? String(input));
         for (const container of held.keys()) {
           if (url.startsWith(container)) {
-            throw new Error(
-              `Solid Memo is updating the instance at ${container} and writes nothing to it until the update is over (refused: ${method} ${url}).`,
-            );
+            throw new AppError("instanceBeingUpdated", { container, method, url });
           }
         }
       }

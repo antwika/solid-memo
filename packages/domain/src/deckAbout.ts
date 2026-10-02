@@ -1,3 +1,4 @@
+import { AppError } from "./appError";
 import { TOPICS } from "@solid-memo/vocab/concepts.generated";
 import type { Deck } from "./deck";
 import { withEnglish } from "./langText";
@@ -36,7 +37,7 @@ export function parseKeywords(text: string): string[] {
  */
 export function withAbout(deck: Deck, about: DeckAbout): Deck {
   const description = about.description.trim();
-  if (description === "") throw new Error("A deck needs a description.");
+  if (description === "") throw new AppError("deckNeedsDescription");
   const themes = [
     ...(deck.themes ?? []).filter((theme) => !TOPIC_IRIS.includes(theme)),
     ...about.topics,

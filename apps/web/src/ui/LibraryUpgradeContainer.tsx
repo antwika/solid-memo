@@ -3,7 +3,6 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { LibraryUpgradePlan } from "@solid-memo/domain/libraryUpgrade";
-import { errorMessage } from "./errorMessage";
 import { useI18n } from "./i18n";
 import { LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
 
@@ -23,7 +22,7 @@ export function LibraryUpgradeContainer({
   instance: Instance;
   deck: Deck;
 }) {
-  const { t, readerText } = useI18n();
+  const { t, readerText, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const planQuery = useQuery({
@@ -63,7 +62,7 @@ export function LibraryUpgradeContainer({
       deckName={readerText(deck.title)}
       plan={plan}
       busy={upgradeMutation.isPending}
-      error={errorMessage(upgradeMutation.error)}
+      error={errorText(upgradeMutation.error)}
       onUpgrade={() => upgradeMutation.mutate(plan)}
     />
   );

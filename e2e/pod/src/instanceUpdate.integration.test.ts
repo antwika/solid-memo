@@ -390,7 +390,7 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
     const outcome = await useCases.updateInstance(session, pod.instance);
     expect(changed).toBe(true);
     expect(outcome).toMatchObject({ ok: false, step: "verify", cleanedUp: true });
-    expect((outcome as { error: string }).error).toContain("decks/deck-1.ttl> changed while it was being copied");
+    expect((outcome as { error: Error }).error.message).toContain("decks/deck-1.ttl> changed while it was being copied");
     expect(await registeredContainers(pod)).toBe(indexBefore);
     expect(await triples(`${pod.source}decks/deck-1.ttl`)).toContain("studied in another tab");
   }, 60_000);
@@ -411,7 +411,7 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
     });
     const outcome = await useCases.updateInstance(session, pod.instance);
     expect(outcome).toMatchObject({ ok: false, step: "copy", cleanedUp: true });
-    expect((outcome as { error: string }).error).toBe(
+    expect((outcome as { error: Error }).error.message).toBe(
       `${squatted} was created elsewhere (in another tab or app?) while Solid Memo was about to create it, so nothing was saved. Reload and try again.`,
     );
     expect(await snapshot(pod.source)).toEqual(before);

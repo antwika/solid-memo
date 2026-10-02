@@ -1,3 +1,4 @@
+import { AppError } from "./appError";
 import { describe, expect, it } from "vitest";
 import {
   isHttpUrl,
@@ -79,23 +80,20 @@ describe("validateWebId", () => {
   it("rejects empty input", () => {
     expect(validateWebId("   ")).toEqual({
       ok: false,
-      error: "Enter your WebID.",
+      error: new AppError("webIdEmpty"),
     });
   });
 
   it("rejects input that is not a URL", () => {
     const result = validateWebId("alice");
     expect(result.ok).toBe(false);
-    expect(result).toHaveProperty(
-      "error",
-      expect.stringContaining("not a valid URL"),
-    );
+    expect(result).toEqual({ ok: false, error: new AppError("webIdInvalidUrl") });
   });
 
   it("rejects a non-https URL", () => {
     expect(validateWebId("http://alice.example/profile/card#me")).toEqual({
       ok: false,
-      error: "A WebID must start with https://.",
+      error: new AppError("webIdNotHttps"),
     });
   });
 
@@ -104,7 +102,7 @@ describe("validateWebId", () => {
       validateWebId("https://alice:hunter2@alice.example/profile/card#me"),
     ).toEqual({
       ok: false,
-      error: "A WebID must not contain a username or password.",
+      error: new AppError("webIdWithCredentials"),
     });
   });
 });

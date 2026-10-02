@@ -1,3 +1,4 @@
+import { AppError } from "./appError";
 import type { Deck } from "./deck";
 import type { StudyPreferences } from "./preferences";
 
@@ -26,7 +27,7 @@ export function paceOf(deck: Deck): DeckPace {
 export function withPace(deck: Deck, pace: DeckPace): Deck {
   for (const cap of [pace.newCardsPerDay, pace.maxReviewsPerDay]) {
     if (cap !== undefined && !(Number.isInteger(cap) && cap >= 0)) {
-      throw new Error("A daily limit is a whole number, 0 or more.");
+      throw new AppError("dailyLimitInvalid");
     }
   }
   const { newCardsPerDay: _new, maxReviewsPerDay: _max, ...rest } = deck;

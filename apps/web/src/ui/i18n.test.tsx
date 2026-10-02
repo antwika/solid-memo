@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/preact";
+import { AppError, ERROR_TEMPLATES } from "@solid-memo/domain/appError";
 import { createI18n, I18nProvider, useI18n, type MessageKey } from "./i18n";
 import en from "../i18n/en.json";
 import sv from "../i18n/sv.json";
@@ -114,6 +115,31 @@ function Spoken() {
     </button>
   );
 }
+
+describe("errorText", () => {
+  it("says an app error in the spoken language, its values filled in", () => {
+    const gone = new AppError("deckGone", { deck: "Capitals" });
+    expect(createI18n("en").errorText(gone)).toBe("The deck <Capitals> no longer exists.");
+    expect(createI18n("sv").errorText(gone)).toBe("Kortleken <Capitals> finns inte längre.");
+    const invalid = new AppError("updatedCopyInvalid", { count: 1 });
+    expect(createI18n("sv").errorText(invalid)).toBe(
+      "Den uppdaterade kopian uppfyller inte Solid Memos former (1 avvikelse); dina data lämnas som de var.",
+    );
+  });
+
+  it("shows any other error as its own message, and no error as none", () => {
+    const { errorText } = createI18n("sv");
+    expect(errorText(new Error("broken"))).toBe("broken");
+    expect(errorText("plain")).toBe("plain");
+    expect(errorText(42)).toBe("42");
+    expect(errorText(null)).toBeNull();
+    expect(errorText(undefined)).toBeNull();
+  });
+
+  it("has every error's English exactly as the domain writes it", () => {
+    expect(en.errors).toEqual(ERROR_TEMPLATES);
+  });
+});
 
 describe("useI18n", () => {
   it("speaks English outside a provider", () => {

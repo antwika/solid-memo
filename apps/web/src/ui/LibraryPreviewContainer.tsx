@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import { activeCards, studyDirections } from "@solid-memo/domain/deck";
 import type { LibraryDeck } from "@solid-memo/domain/library";
-import { errorMessage } from "./errorMessage";
 import { useI18n } from "./i18n";
 import { LibraryPreviewScreen, type PreviewPrompt } from "./LibraryPreviewScreen";
 import { Loading } from "./Loading";
@@ -27,7 +26,7 @@ export function LibraryPreviewContainer({
   /** Uniform [0, 1) source picking the next card. */
   random?: () => number;
 }) {
-  const { t, readerText } = useI18n();
+  const { t, readerText, errorText } = useI18n();
   const cardsQuery = useQuery({
     queryKey: ["libraryCards", deck.url],
     queryFn: () => useCases.listLibraryCards(deck),
@@ -38,7 +37,7 @@ export function LibraryPreviewContainer({
   );
 
   if (cardsQuery.error) {
-    return <p class="error">{errorMessage(cardsQuery.error)}</p>;
+    return <p class="error">{errorText(cardsQuery.error)}</p>;
   }
   if (cardsQuery.data === undefined) {
     return <Loading label={t("libraryPreview.loading")} />;

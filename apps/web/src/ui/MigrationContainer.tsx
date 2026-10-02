@@ -5,7 +5,6 @@ import type { Instance } from "@solid-memo/domain/instance";
 import type { UpdateOutcome, UpdateProgress } from "@solid-memo/domain/instanceUpdate";
 import { isPlanEmpty } from "@solid-memo/domain/migration";
 import type { Session } from "@solid-memo/domain/session";
-import { errorMessage } from "./errorMessage";
 import { useI18n } from "./i18n";
 import { InstanceUpdateConfirm, InstanceUpdateFailure, InstanceUpdateProgress } from "./InstanceUpdate";
 import { MigrationNotice } from "./MigrationNotice";
@@ -32,7 +31,7 @@ export function MigrationContainer({
   /** The update switched over: the instance now lives at a new address. */
   onUpdated: (instance: Instance) => void;
 }) {
-  const { t } = useI18n();
+  const { t, errorText } = useI18n();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [progress, setProgress] = useState<UpdateProgress | null>(null);
@@ -93,7 +92,7 @@ export function MigrationContainer({
         <button onClick={() => cleanupMutation.mutate()} disabled={cleanupMutation.isPending}>
           {cleanupMutation.isPending ? t("migration.removing") : t("migration.removeIt")}
         </button>
-        {cleanupMutation.error && <p class="error">{errorMessage(cleanupMutation.error)}</p>}
+        {cleanupMutation.error && <p class="error">{errorText(cleanupMutation.error)}</p>}
       </div>
     );
   }
@@ -115,7 +114,7 @@ export function MigrationContainer({
     <MigrationNotice
       plan={plan}
       busy={updateMutation.isPending}
-      error={errorMessage(updateMutation.error)}
+      error={errorText(updateMutation.error)}
       onMigrate={() => setConfirming(true)}
     />
   );

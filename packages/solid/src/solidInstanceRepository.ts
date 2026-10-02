@@ -31,6 +31,7 @@ import {
   type InstanceRegistration,
 } from "./typeIndex";
 import { ensureTrailingSlash, lastPathSegment } from "./urls";
+import { AppError } from "@solid-memo/domain/appError";
 
 export interface SolidInstanceRepositoryDeps {
   fetch: typeof globalThis.fetch;
@@ -166,7 +167,7 @@ export function createSolidInstanceRepository({
         throw error;
       }
       if (switched.length === 0) {
-        throw new Error(`<${from}> is registered in no type index; there is nothing to switch.`);
+        throw new AppError("notRegistered", { url: from });
       }
     },
 
@@ -184,7 +185,7 @@ export function createSolidInstanceRepository({
       const url = `${metaUrl}#it`;
       const existing = dataset === null ? null : getThing(dataset, url);
       if (dataset === null || existing === null) {
-        throw new Error(`<${instanceUrl}> has no meta document to update.`);
+        throw new AppError("noMetaToUpdate", { url: instanceUrl });
       }
       const updated = setThing(dataset, toInstanceMetaThing(url, meta, existing));
       await checkWrite(updated, [url]);
@@ -241,15 +242,11 @@ async function readInstanceName(
   try {
     dataset = await readDataset(metaUrl, fetch);
   } catch {
-    throw new Error(
-      `<${instanceUrl}> is not a Solid Memo instance (no readable meta.ttl).`,
-    );
+    throw new AppError("notAnInstanceNoMeta", { url: instanceUrl });
   }
   const meta = getThing(dataset, `${metaUrl}#it`);
   if (meta === null) {
-    throw new Error(
-      `<${instanceUrl}> is not a Solid Memo instance (meta.ttl has no #it subject).`,
-    );
+    throw new AppError("notAnInstanceNoSubject", { url: instanceUrl });
   }
   return toInstanceMeta(meta)?.name ?? lastPathSegment(instanceUrl);
 }

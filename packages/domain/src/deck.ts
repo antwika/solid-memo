@@ -1,3 +1,4 @@
+import { AppError } from "./appError";
 import { shown, tidied, tidiedSideText, type LangText } from "./langText";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { isHttpUrl } from "./webId";
@@ -228,7 +229,7 @@ export function activeCards<T extends { retired?: true }>(cards: readonly T[]): 
 /** Outcome of validating card content as entered. */
 export type CardContentValidation =
   | { ok: true; content: CardContent }
-  | { ok: false; error: string };
+  | { ok: false; error: AppError };
 
 /**
  * Validate and normalize card content as entered: text is trimmed, an
@@ -248,16 +249,16 @@ export function validateCardContent(
   const backLabel = tidied(input.backLabel);
   const backNote = tidied(input.backNote);
   if (frontImageUrl !== undefined && !isHttpUrl(frontImageUrl)) {
-    return { ok: false, error: "The front image must be an http(s) URL." };
+    return { ok: false, error: new AppError("cardFrontImageNotWebUrl") };
   }
   if (backImageUrl !== undefined && !isHttpUrl(backImageUrl)) {
-    return { ok: false, error: "The back image must be an http(s) URL." };
+    return { ok: false, error: new AppError("cardBackImageNotWebUrl") };
   }
   if (isEmptyText(front) && frontImageUrl === undefined) {
-    return { ok: false, error: "The front needs text or an image." };
+    return { ok: false, error: new AppError("cardFrontEmpty") };
   }
   if (isEmptyText(back) && backImageUrl === undefined) {
-    return { ok: false, error: "The back needs text or an image." };
+    return { ok: false, error: new AppError("cardBackEmpty") };
   }
   return {
     ok: true,

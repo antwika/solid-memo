@@ -2,6 +2,7 @@ import { getPodUrlAll } from "@inrupt/solid-client";
 import type { StorageGateway } from "@solid-memo/application/ports";
 import type { Storage } from "@solid-memo/domain/storage";
 import { ensureTrailingSlash } from "./urls";
+import { AppError } from "@solid-memo/domain/appError";
 
 const PIM_STORAGE_TYPE = "http://www.w3.org/ns/pim/space#Storage";
 
@@ -29,9 +30,7 @@ export function createSolidStorageGateway({
       const normalized = ensureTrailingSlash(url);
       const response = await fetch(normalized, { method: "HEAD" });
       if (!response.ok) {
-        throw new Error(
-          `Cannot access <${normalized}> (HTTP ${response.status}).`,
-        );
+        throw new AppError("storageInaccessible", { url: normalized, status: response.status });
       }
       return { url: normalized, source: "manual" };
     },

@@ -92,6 +92,7 @@ import type {
   UpdateJournal,
   WriteFence,
 } from "./ports";
+import { AppError } from "@solid-memo/domain/appError";
 
 export interface UseCases {
   restoreSession(): Promise<EstablishedSession | null>;
@@ -326,7 +327,7 @@ export function createUseCases({
   function validContent(content: CardContent): CardContent {
     const validation = validateCardContent(content);
     if (!validation.ok) {
-      throw new Error(validation.error);
+      throw validation.error;
     }
     return validation.content;
   }
@@ -526,13 +527,13 @@ export function createUseCases({
     async loginWithWebId(webId) {
       const validation = validateWebId(webId);
       if (!validation.ok) {
-        throw new Error(validation.error);
+        throw validation.error;
       }
       return sessionGateway.login(validation.webId);
     },
     async loginWithProvider(oidcIssuer) {
       if (!isSecureUrl(oidcIssuer)) {
-        throw new Error("An identity provider must be an https:// URL.");
+        throw new AppError("providerNotHttps");
       }
       return sessionGateway.loginWithIssuer(oidcIssuer);
     },
@@ -744,20 +745,16 @@ export function createUseCases({
         finished("validate");
         const report = await validateInstance(target);
         if (!report.conforms) {
-          throw new Error(
-            `The updated copy does not conform to Solid Memo's shapes (${report.violationCount} ${
-              report.violationCount === 1 ? "violation" : "violations"
-            }); your data is left as it was.`,
-          );
+          throw new AppError("updatedCopyInvalid", { count: report.violationCount });
         }
         finished("verify");
         const listedAgain = await instanceCopier.listResources(source);
         if (listedAgain.join("\n") !== resources.join("\n")) {
-          throw new Error("The instance changed while it was being copied (in another tab or app?); try again.");
+          throw new AppError("instanceChangedDuringCopy");
         }
         for (const resource of resources) {
           if (!(await instanceCopier.isUnchanged(resource, versions.get(resource)!))) {
-            throw new Error(`<${resource}> changed while it was being copied (in another tab or app?); try again.`);
+            throw new AppError("resourceChangedDuringCopy", { url: resource });
           }
         }
         finished("switch");
@@ -777,7 +774,7 @@ export function createUseCases({
         return {
           ok: false,
           step,
-          error: error instanceof Error ? error.message : String(error),
+          error,
           cleanedUp,
           ...(cleanedUp ? {} : { leftoverUrl: target }),
         };
@@ -817,7 +814,7 @@ export function createUseCases({
     },
     async restoreBackup(session, instance) {
       const meta = await instanceRepository.readMeta(instance.url);
-      if (meta?.replaces === undefined) throw new Error(`${instance.name} has no backup to restore.`);
+      if (meta?.replaces === undefined) throw new AppError("noBackup", { instance: instance.name });
       await instanceRepository.switchInstance({
         webId: session.webId,
         from: instance.url,

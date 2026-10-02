@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { StudyPreferences } from "@solid-memo/domain/preferences";
-import { errorMessage } from "./errorMessage";
 import { Loading } from "./Loading";
 import { PreferencesScreen } from "./PreferencesScreen";
 import { useI18n } from "./i18n";
@@ -17,7 +16,7 @@ export function PreferencesContainer({
   instance: Instance;
   onBack: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const preferencesQuery = useQuery({
@@ -38,7 +37,7 @@ export function PreferencesContainer({
   });
 
   if (preferencesQuery.error) {
-    return <p class="error">{errorMessage(preferencesQuery.error)}</p>;
+    return <p class="error">{errorText(preferencesQuery.error)}</p>;
   }
   if (preferencesQuery.data === undefined) {
     return <Loading label={t("preferences.loading")} />;
@@ -48,7 +47,7 @@ export function PreferencesContainer({
     <PreferencesScreen
       preferences={preferencesQuery.data}
       busy={saveMutation.isPending}
-      error={errorMessage(saveMutation.error)}
+      error={errorText(saveMutation.error)}
       onSave={(preferences) => saveMutation.mutate(preferences)}
     />
   );

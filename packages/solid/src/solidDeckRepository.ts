@@ -38,6 +38,7 @@ import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import { reviewSubjectUrl } from "./mappers/reviewStateMapper";
 import { recordThing } from "./records";
 import { mapSince, readSince } from "./readSince";
+import { AppError } from "@solid-memo/domain/appError";
 
 export interface SolidDeckRepositoryDeps {
   fetch: typeof globalThis.fetch;
@@ -156,13 +157,11 @@ export function createSolidDeckRepository({
         fetch,
       );
       if (dataset === null) {
-        throw new Error(
-          `The cards document of <${shown(deck.title)}> no longer exists.`,
-        );
+        throw new AppError("cardsDocumentGone", { deck: shown(deck.title) });
       }
       const thing = getThing(dataset, card.url);
       if (thing === null) {
-        throw new Error(`Card <${card.url}> no longer exists.`);
+        throw new AppError("cardGone", { card: card.url });
       }
       const updated: Card = {
         id: card.id,
@@ -251,7 +250,7 @@ export function createSolidDeckRepository({
     const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
     const thing = dataset === null ? null : getThing(dataset, deck.url);
     if (dataset === null || thing === null) {
-      throw new Error(`The deck <${shown(deck.title)}> no longer exists.`);
+      throw new AppError("deckGone", { deck: shown(deck.title) });
     }
     const written: Deck = { ...deck, formatVersion: DECK_FORMAT_VERSION };
     await save(catalogUrl, withDeck(dataset, written), deckSubjects(written));

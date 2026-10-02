@@ -1,7 +1,8 @@
+import { AppError } from "./appError";
 /** Outcome of validating user input as a WebID. */
 export type WebIdValidation =
   | { ok: true; webId: string }
-  | { ok: false; error: string };
+  | { ok: false; error: AppError };
 
 function parseUrl(value: string): URL | null {
   try {
@@ -47,29 +48,22 @@ export function isHttpUrl(value: string): boolean {
 
 /**
  * Validate user input as a WebID: an absolute https: URL. Returns the
- * normalized WebID, or a message suitable for showing next to the field.
+ * normalized WebID, or the error to show next to the field.
  */
 export function validateWebId(input: string): WebIdValidation {
   const trimmed = input.trim();
   if (trimmed === "") {
-    return { ok: false, error: "Enter your WebID." };
+    return { ok: false, error: new AppError("webIdEmpty") };
   }
   const url = parseUrl(trimmed);
   if (url === null) {
-    return {
-      ok: false,
-      error:
-        "That is not a valid URL. A WebID looks like https://you.example/profile/card#me.",
-    };
+    return { ok: false, error: new AppError("webIdInvalidUrl") };
   }
   if (url.protocol !== "https:") {
-    return { ok: false, error: "A WebID must start with https://." };
+    return { ok: false, error: new AppError("webIdNotHttps") };
   }
   if (hasCredentials(url)) {
-    return {
-      ok: false,
-      error: "A WebID must not contain a username or password.",
-    };
+    return { ok: false, error: new AppError("webIdWithCredentials") };
   }
   return { ok: true, webId: url.href };
 }

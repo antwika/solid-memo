@@ -10,6 +10,7 @@ import type { ContainerMove, InstanceCopier } from "@solid-memo/application/port
 import { rebaseIri } from "@solid-memo/domain/instanceUpdate";
 import { deleteContainerRecursively, listContainerTree } from "./containers";
 import { getSolidDatasetOrNull, PreconditionFailedError, saveDataset } from "./datasets";
+import { AppError } from "@solid-memo/domain/appError";
 
 type Fetch = typeof globalThis.fetch;
 
@@ -98,9 +99,9 @@ export function createSolidInstanceCopier({
     async ensureAbsent(url) {
       const response = await head(url);
       if (response.status === 404) return;
-      throw new Error(
-        response.ok ? `<${url}> already exists.` : `Could not check <${url}>: ${response.status}.`,
-      );
+      throw response.ok
+        ? new AppError("alreadyExists", { url })
+        : new AppError("cannotCheck", { url, status: response.status });
     },
 
     async createContainer(url) {
@@ -113,7 +114,7 @@ export function createSolidInstanceCopier({
       if (acl === null) return false;
       const targetAcl = linkedUrl((await head(to)).headers.get("Link"), "acl", to);
       if (targetAcl === null) {
-        throw new Error(`The pod does not say where the access control of <${to}> goes.`);
+        throw new AppError("accessControlUnknown", { url: to });
       }
       await saveDataset(targetAcl, await rebasedDataset(acl, move), fetch);
       return true;

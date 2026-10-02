@@ -16,7 +16,6 @@ import { DeckDetailContainer } from "./DeckDetailContainer";
 import { DeckPreferencesContainer } from "./DeckPreferencesContainer";
 import { DeckListContainer } from "./DeckListContainer";
 import { studyCountsQuery } from "./DeckStudyAction";
-import { errorMessage } from "./errorMessage";
 import { InstanceBar } from "./InstanceBar";
 import { InstanceCreator } from "./InstanceCreator";
 import { InstancePicker } from "./InstancePicker";
@@ -50,7 +49,7 @@ export function Workspace({
   useCases: UseCases;
   session: Session;
 }) {
-  const { t, tx, readerText } = useI18n();
+  const { t, tx, readerText, errorText } = useI18n();
   const queryClient = useQueryClient();
   const { route, navigate, replace } = useHashRoute();
   const webId = session.webId;
@@ -294,7 +293,7 @@ export function Workspace({
   });
 
   if (instancesQuery.error) {
-    return <p class="error">{errorMessage(instancesQuery.error)}</p>;
+    return <p class="error">{errorText(instancesQuery.error)}</p>;
   }
   if (route === null || instances === undefined) {
     return <Loading label={t("workspace.loadingInstances")} />;
@@ -304,7 +303,7 @@ export function Workspace({
   }
   if (needsDeck) {
     if (decksQuery.error) {
-      return <p class="error">{errorMessage(decksQuery.error)}</p>;
+      return <p class="error">{errorText(decksQuery.error)}</p>;
     }
     if (decksQuery.data === undefined) {
       return <Loading label={t("workspace.loadingDeck")} />;
@@ -315,7 +314,7 @@ export function Workspace({
   }
   if (needsCard) {
     if (cardsQuery.error) {
-      return <p class="error">{errorMessage(cardsQuery.error)}</p>;
+      return <p class="error">{errorText(cardsQuery.error)}</p>;
     }
     if (activeCard === null) {
       return <Loading label={t("workspace.loadingCard")} />;
@@ -323,7 +322,7 @@ export function Workspace({
   }
   if (needsLibraryDeck) {
     if (libraryQuery.error) {
-      return <p class="error">{errorMessage(libraryQuery.error)}</p>;
+      return <p class="error">{errorText(libraryQuery.error)}</p>;
     }
     if (activeLibraryDeck === null) {
       return <Loading label={t("workspace.loadingLibrary")} />;
@@ -331,7 +330,7 @@ export function Workspace({
   }
   if (needsLibraryCard) {
     if (libraryCardsQuery.error) {
-      return <p class="error">{errorMessage(libraryCardsQuery.error)}</p>;
+      return <p class="error">{errorText(libraryCardsQuery.error)}</p>;
     }
     if (activeLibraryCard === null) {
       return <Loading label={t("workspace.loadingCard")} />;
@@ -342,7 +341,7 @@ export function Workspace({
     switch (route.screen) {
       case "storagePicker":
         if (storagesQuery.error) {
-          return <p class="error">{errorMessage(storagesQuery.error)}</p>;
+          return <p class="error">{errorText(storagesQuery.error)}</p>;
         }
         if (storagesQuery.data === undefined) {
           return <Loading label={t("workspace.discoveringStorages")} />;
@@ -351,7 +350,7 @@ export function Workspace({
           <StoragePicker
             storages={storagesQuery.data}
             busy={manualStorageMutation.isPending}
-            error={errorMessage(manualStorageMutation.error)}
+            error={errorText(manualStorageMutation.error)}
             onSelect={(storage) =>
               navigate({
                 screen: "instanceCreator",
@@ -372,8 +371,8 @@ export function Workspace({
               deleteInstanceMutation.isPending
             }
             error={
-              errorMessage(attachInstanceMutation.error) ??
-              errorMessage(deleteInstanceMutation.error)
+              errorText(attachInstanceMutation.error) ??
+              errorText(deleteInstanceMutation.error)
             }
             onSelect={(instance: Instance) =>
               navigate({ screen: "home", instanceUrl: instance.url })
@@ -391,7 +390,7 @@ export function Workspace({
             storage={{ url: route.storageUrl, source: route.source }}
             options={registrationOptions}
             busy={createInstanceMutation.isPending}
-            error={errorMessage(createInstanceMutation.error)}
+            error={errorText(createInstanceMutation.error)}
             onCreate={(args) => createInstanceMutation.mutate(args)}
             onBack={() => navigate({ screen: "instancePicker" })}
           />
@@ -674,7 +673,7 @@ export function Workspace({
           />
           {checkQuery.error && (
             <p class="warning">
-              {t("workspace.checkFailed", { error: errorMessage(checkQuery.error)! })}
+              {t("workspace.checkFailed", { error: errorText(checkQuery.error)! })}
             </p>
           )}
           {invalidReport !== null && (

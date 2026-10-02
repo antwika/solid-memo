@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { Session } from "@solid-memo/domain/session";
-import { errorMessage } from "./errorMessage";
 import { ExternalLink } from "./ExternalLink";
 import { useI18n } from "./i18n";
 
@@ -24,7 +23,7 @@ export function BackupContainer({
   /** Switched back: the instance lives at the backup's address again. */
   onRestored: (instance: Instance) => void;
 }) {
-  const { t, tx, formatDate } = useI18n();
+  const { t, tx, formatDate, errorText } = useI18n();
   const queryClient = useQueryClient();
   const backupQuery = useQuery({
     queryKey: ["backup", instance.url],
@@ -86,7 +85,7 @@ export function BackupContainer({
         </button>
       </div>
       {(restoreMutation.error || deleteMutation.error) && (
-        <p class="error">{errorMessage(restoreMutation.error ?? deleteMutation.error)}</p>
+        <p class="error">{errorText(restoreMutation.error ?? deleteMutation.error)}</p>
       )}
     </section>
   );

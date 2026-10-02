@@ -1,3 +1,4 @@
+import type { AppError } from "@solid-memo/domain/appError";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { validateWebId } from "@solid-memo/domain/webId";
 import { useI18n } from "../i18n";
@@ -15,9 +16,9 @@ export function WebIdForm({
   onSubmit: (webId: string) => void;
   onBack: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, errorText } = useI18n();
   const [webId, setWebId] = useState("");
-  const [invalid, setInvalid] = useState<string | null>(null);
+  const [invalid, setInvalid] = useState<AppError | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export function WebIdForm({
       />
       {invalid && (
         <p class="error" role="alert">
-          {invalid}
+          {errorText(invalid)}
         </p>
       )}
       <p id="webid-help" class="hint">
