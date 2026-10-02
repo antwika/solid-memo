@@ -7,6 +7,12 @@
       "sha256": "80a44d6be032f37a0c61cb6a4d12b771ccf97024f658378635ab94880a234e9a"
     },
     {
+      "deck": "capitals-of-the-world",
+      "version": 2,
+      "issued": "2026-10-02T21:50:10Z",
+      "sha256": "a9b902c792e43d1f1770d09052290f499a1110bd31c4f9b8e69983f81387282d"
+    },
+    {
       "deck": "famous-paintings",
       "version": 1,
       "issued": "2026-09-28T21:25:02Z",
