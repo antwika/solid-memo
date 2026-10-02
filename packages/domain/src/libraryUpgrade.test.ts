@@ -249,3 +249,35 @@ describe("withReleaseLanguages", () => {
     expect(withReleaseLanguages(deck, { ...release2, title: { en: "Capitals" }, description: undefined })).toBeNull();
   });
 });
+
+describe("the app's default description in an upgrade", () => {
+  const capitals = (version: number, description: LibraryDeckContent["description"]): LibraryDeckContent => ({
+    ...release(version, []),
+    title: { en: "Capitals of the world", sv: "Världens huvudstäder" },
+    description,
+  });
+  const latest = { en: "Every country and its capital city, in English and Swedish.", sv: "Varje land och dess huvudstad, på engelska och svenska." };
+  const defaulted: Deck = { ...deck, title: { en: "Capitals of the world" }, description: { en: "Flashcards: Capitals of the world." } };
+
+  it("gives way to the release's description, whether or not the release changed it", () => {
+    const from = capitals(1, { en: "Every country and its capital city." });
+    expect(planLibraryUpgrade({ deck: defaulted, cards: [], from, to: capitals(2, latest), releases })?.description).toEqual(latest);
+    expect(planLibraryUpgrade({ deck: defaulted, cards: [], from: capitals(1, latest), to: capitals(2, latest), releases })?.description).toEqual(latest);
+    const swedishToo = { ...defaulted, description: { en: "Flashcards: Capitals of the world.", sv: "Kortlek: Capitals of the world." } };
+    expect(planLibraryUpgrade({ deck: swedishToo, cards: [], from, to: capitals(2, latest), releases })?.description).toEqual(latest);
+    expect(planLibraryUpgrade({ deck: defaulted, cards: [], from, to: capitals(2, undefined), releases })).not.toHaveProperty("description");
+  });
+
+  it("is replaced on a copy upgraded before, by its own release's description", () => {
+    expect(withReleaseLanguages(defaulted, capitals(2, latest))?.description).toEqual(latest);
+    const done = { ...defaulted, title: { en: "Capitals of the world", sv: "Världens huvudstäder" }, description: latest };
+    expect(withReleaseLanguages(done, capitals(2, latest))).toBeNull();
+    const plain = { ...done, description: { en: "Flashcards: Capitals of the world." } };
+    expect(withReleaseLanguages(plain, capitals(2, { en: "Flashcards: Capitals of the world." }))).toBeNull();
+  });
+
+  it("is told from a description the user wrote, even one like it", () => {
+    const mine = { ...defaulted, description: { en: "Flashcards: Capitals of the world.", sv: "Mina huvudstäder." } };
+    expect(withReleaseLanguages(mine, capitals(2, latest))).toMatchObject({ description: mine.description });
+  });
+});
