@@ -13,6 +13,12 @@
       "sha256": "005acfb9f703f110a4f4ec9937f48ac3143a36c67f7f8b373417473f41f23c24"
     },
     {
+      "deck": "famous-paintings",
+      "version": 2,
+      "issued": "2026-10-02T21:11:25Z",
+      "sha256": "bea61e8fbc6261f2794ad4d4c685c18d011f19d09c51cdf09c34930c2be1d9f8"
+    },
+    {
       "deck": "http-status-codes",
       "version": 1,
       "issued": "2026-09-28T17:02:14Z",

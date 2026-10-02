@@ -399,6 +399,13 @@ def write_deck(path: Path, cards: list[tuple[Painting, str]], *, creator: str | 
         "Wikidata; the pictures are public-domain reproductions on Wikimedia Commons, shown "
         "from there."
     )
+    description_sv = (
+        f"{len(cards)} av världens mest berömda målningar, rangordnade efter hur många Wikipedior som "
+        "har en artikel om dem: målningen på framsidan, dess titel, målare och datering på baksidan, "
+        "på engelska. Bara målningar vars upphovsrätt sedan länge har gått ut finns med. Titlar, "
+        "målare och dateringar från Wikidata; bilderna är reproduktioner i allmän egendom på "
+        "Wikimedia Commons och visas därifrån."
+    )
     sources = [f"<{WIKIDATA}>", f"<{COMMONS}>"]
     out: list[str] = [
         f"@base <https://solid-memo.com/decks/{slug(path.stem)}> .",
@@ -415,7 +422,7 @@ def write_deck(path: Path, cards: list[tuple[Painting, str]], *, creator: str | 
         "<>",
         "    a solid-memo:Deck ,",
         "      dcat:Dataset ;",
-        '    dcterms:title "Famous paintings" ;',
+        "    dcterms:title " + aligned("dcterms:title", ['"Famous paintings"@en', '"Berömda målningar"@sv']) + " ;",
     ]
     creator_name, creator_email = None, None
     if creator:
@@ -424,17 +431,21 @@ def write_deck(path: Path, cards: list[tuple[Painting, str]], *, creator: str | 
         out.append(f"    dcterms:creator <#{slug(creator_name)}> ;")
     out += [
         f"    dcterms:license {CC0} ;",
-        f"    dcterms:description {ttl_str(description)} ;",
+        "    dcterms:description "
+        + aligned("dcterms:description", [f"{ttl_str(description)}@en", f"{ttl_str(description_sv)}@sv"])
+        + " ;",
         f"    prov:wasDerivedFrom {aligned('prov:wasDerivedFrom', sources)} ;",
         "    prov:wasGeneratedBy <#generation> ;",
         f'    dcterms:created "{created}"^^xsd:dateTime ;',
         "    dcat:theme "
         + aligned("dcat:theme", ["<http://publications.europa.eu/resource/authority/data-theme/EDUC>", "topic:art"])
         + " ;",
-        "    dcat:keyword " + aligned("dcat:keyword", ['"art"', '"art history"', '"paintings"']) + " ;",
+        "    dcat:keyword " + aligned(
+            "dcat:keyword", ['"art"', '"art history"', '"paintings"', '"konst"', '"konsthistoria"', '"målningar"']
+        ) + " ;",
         "    dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ;",
         "    solid-memo:studyDirection solid-memo:frontToBack ;",
-        "    solid-memo:formatVersion 3 .",
+        "    solid-memo:formatVersion 4 .",
         "",
     ]
     if creator_name is not None:
@@ -477,10 +488,10 @@ def write_deck(path: Path, cards: list[tuple[Painting, str]], *, creator: str | 
             "",
             f"<#{painting.qid.lower()}>",
             "    a solid-memo:Card ;",
-            "    solid-memo:formatVersion 2 ;",  # format 2: a card with a picture
+            "    solid-memo:formatVersion 4 ;",  # format 4: a picture, and text tagged with its language
             f'    dcterms:created "{created}"^^xsd:dateTime ;',
             f"    solid-memo:frontImage <{thumb}> ;",
-            f"    solid-memo:back {ttl_str(back_text(painting))} .",
+            f"    solid-memo:back {ttl_str(back_text(painting))}@en .",
         ]
 
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
