@@ -101,6 +101,12 @@
       "version": 1,
       "issued": "2026-09-28T17:02:14Z",
       "sha256": "825f085fdcb139bf513270bfb4d8ca8c0b71085716d6d6e2b0c84fa6ebe25229"
+    },
+    {
+      "deck": "world-flags",
+      "version": 2,
+      "issued": "2026-10-02T22:01:58Z",
+      "sha256": "ad5f4e028472bd026894d83caed4b84d5c13b212af76775122e725f17fe87e84"
     }
   ]
 }
