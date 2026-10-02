@@ -46,12 +46,13 @@ describe("isCopyOf", () => {
 
 describe("topicsOf and topicLabels", () => {
   it("list the topics the decks name, with the broader topics above them, in the scheme's order", () => {
-    expect(topicsOf([nouns, capitals]).map((t) => t.label)).toEqual(["Languages", "Swedish", "Geography"]);
+    expect(topicsOf([nouns, capitals]).map((t) => t.label.en)).toEqual(["Languages", "Swedish", "Geography"]);
+    expect(topicsOf([nouns]).map((t) => t.label.sv)).toEqual(["Språk", "Svenska"]);
     expect(topicsOf([])).toEqual([]);
   });
 
   it("label a deck's topics, leaving out the EU themes", () => {
-    expect(topicLabels(nouns.themes)).toEqual(["Swedish"]);
+    expect(topicLabels(nouns.themes)).toEqual([{ en: "Swedish", sv: "Svenska" }]);
     expect(topicLabels([EDUC])).toEqual([]);
   });
 });

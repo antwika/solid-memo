@@ -38,11 +38,13 @@ string, so other applications can look up what it means:
 |---|---|---|---|
 | `sm:StudyDirections` | `packages/vocab/vocab/v1.ttl` | `sm:frontToBack`, `sm:backToFront`, `sm:bidirectional` | `sm:studyDirection` on a deck |
 | `sm:InvalidDataPolicies` | `packages/vocab/vocab/v1.ttl` | `sm:blockInstance` (default), `sm:blockSubject`, `sm:warnOnly` | `sm:invalidDataPolicy` in preferences |
-| Topics (`https://solid-memo.com/vocab/topics`) | [`packages/vocab/vocab/topics.ttl`](../packages/vocab/vocab/topics.ttl) | languages (swedish), geography, computing, science (chemistry), art | `dcat:theme` on a deck, next to the EU data theme `EDUC` |
+| Topics (`https://solid-memo.com/vocab/topics`) | [`packages/vocab/vocab/topics.ttl`](../packages/vocab/vocab/topics.ttl) | languages (swedish), geography, computing, science (chemistry), art, labour-market | `dcat:theme` on a deck, next to the EU data theme `EDUC` |
 
 - Every scheme has a `dcterms:title` and a `skos:definition`; every
-  concept an English `skos:prefLabel` and `skos:definition` and its
-  `skos:inScheme`. Top concepts say `skos:topConceptOf`, narrower ones
+  concept a `skos:prefLabel` and `skos:definition` in each language the
+  scheme's title is in (English always; the topics in English and
+  Swedish, the app's languages) and its `skos:inScheme`. The generator
+  refuses a concept that misses one. Top concepts say `skos:topConceptOf`, narrower ones
   `skos:broader`. The files are held to SKOS, SkoHub's best practice
   included (see [validation.md](validation.md#profiles-dcat-ap-and-skos)).
 - A concept that replaces a string the app used before carries that
@@ -51,7 +53,7 @@ string, so other applications can look up what it means:
 - `npm run generate` renders every scheme into
   `packages/vocab/src/concepts.generated.ts` (`STUDY_DIRECTIONS`,
   `INVALID_DATA_POLICIES`, `TOPICS`), which the app lists and labels
-  from; [concepts.ts](../packages/domain/src/concepts.ts) looks concepts up by
+  from, in the language the user reads; [concepts.ts](../packages/domain/src/concepts.ts) looks concepts up by
   IRI or notation. The topics scheme's IRI lands on an HTML page
   (`vocab/topics/`), as the vocabulary's does.
 - Concepts are only ever added. One that should go is deprecated

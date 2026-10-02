@@ -14,12 +14,12 @@ const HEAD = `
 `;
 const SCHEME = `${HEAD}
 <> a skos:ConceptScheme ; dcterms:title "Colours"@en, "Färger"@sv ; skos:definition "Colours <&> \\"hues\\"."@en .
-c:red a skos:Concept ; skos:prefLabel "Red"@en ; skos:definition "Blood."@en ; skos:notation "r" ; skos:inScheme <> .
-c:crimson a skos:Concept ; skos:prefLabel "Crimson"@en ; skos:definition "Dark red."@en ; skos:broader c:red ; skos:inScheme <> .
+c:red a skos:Concept ; skos:prefLabel "Röd"@sv, "Red"@en ; skos:definition "Blood."@en, "Blod."@sv ; skos:notation "r" ; skos:inScheme <> .
+c:crimson a skos:Concept ; skos:prefLabel "Crimson"@en, "Karmosin"@sv, "Crimson"@en-gb ; skos:definition "Dark red."@en, "Mörkröd."@sv ; skos:broader c:red ; skos:inScheme <> .
 `;
 
 describe("parseConceptSchemes", () => {
-  it("reads each scheme and its concepts in document order, in English", () => {
+  it("reads each scheme and its concepts in document order, English first", () => {
     expect(parseConceptSchemes(SCHEME, BASE)).toEqual([
       {
         name: "COLOURS",
@@ -27,8 +27,18 @@ describe("parseConceptSchemes", () => {
         title: "Colours",
         definition: 'Colours <&> "hues".',
         concepts: [
-          { iri: `${BASE}#red`, label: "Red", definition: "Blood.", notation: "r" },
-          { iri: `${BASE}#crimson`, label: "Crimson", definition: "Dark red.", broader: `${BASE}#red` },
+          {
+            iri: `${BASE}#red`,
+            label: { en: "Red", sv: "Röd" },
+            definition: { en: "Blood.", sv: "Blod." },
+            notation: "r",
+          },
+          {
+            iri: `${BASE}#crimson`,
+            label: { en: "Crimson", "en-gb": "Crimson", sv: "Karmosin" },
+            definition: { en: "Dark red.", sv: "Mörkröd." },
+            broader: `${BASE}#red`,
+          },
         ],
       },
     ]);
@@ -44,6 +54,12 @@ describe("parseConceptSchemes", () => {
     expect(() => parseConceptSchemes(turtle, BASE)).toThrow(
       `${BASE}: <${BASE}> has no English title.`,
     );
+  });
+
+  it("requires a concept's label and definition in every language of the scheme's title, untagged text not counting", () => {
+    const turtle = `${HEAD} <> a skos:ConceptScheme ; dcterms:title "Colours"@en, "Färger"@sv ; skos:definition "x"@en .
+c:red a skos:Concept ; skos:prefLabel "Red"@en, "Röd" ; skos:definition "Blood."@en, "Blod."@sv ; skos:inScheme <> .`;
+    expect(() => parseConceptSchemes(turtle, BASE)).toThrow(`${BASE}: <${BASE}#red> has no prefLabel in sv.`);
   });
 });
 
@@ -68,14 +84,14 @@ export const COLOURS = {
   concepts: [
     {
       iri: "${BASE}#red",
-      label: "Red",
-      definition: "Blood.",
+      label: { en: "Red", sv: "Röd" },
+      definition: { en: "Blood.", sv: "Blod." },
       notation: "r",
     },
     {
       iri: "${BASE}#crimson",
-      label: "Crimson",
-      definition: "Dark red.",
+      label: { en: "Crimson", "en-gb": "Crimson", sv: "Karmosin" },
+      definition: { en: "Dark red.", sv: "Mörkröd." },
       broader: "${BASE}#red",
     },
   ],
@@ -90,8 +106,8 @@ describe("renderSchemePage", () => {
     const [scheme] = parseConceptSchemes(SCHEME, BASE);
     const page = renderSchemePage(scheme, "../colours.ttl");
     expect(page).toContain('<link rel="alternate" type="text/turtle" href="../colours.ttl">');
-    expect(page).toContain('<tr id="red"><td><code>red</code></td><td>Red</td><td>Blood.</td><td></td></tr>');
-    expect(page).toContain('<tr id="crimson"><td><code>crimson</code></td><td>Crimson</td><td>Dark red.</td><td>Red</td></tr>');
+    expect(page).toContain('<tr id="red"><td><code>red</code></td><td><span lang="en">Red</span><br><span lang="sv">Röd</span></td><td><span lang="en">Blood.</span><br><span lang="sv">Blod.</span></td><td></td></tr>');
+    expect(page).toContain('<td><span lang="en">Dark red.</span><br><span lang="sv">Mörkröd.</span></td><td>Red</td></tr>');
     expect(page).toContain("Colours &lt;&amp;&gt; &quot;hues&quot;.");
   });
 

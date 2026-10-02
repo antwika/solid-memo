@@ -1,10 +1,15 @@
 /* Generated from vocab/v1.ttl, vocab/topics.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
+/** Text by language tag (lower case), one of them English. */
+export type ConceptText = Readonly<Record<string, string>>;
+
 /** A concept of one of Solid Memo's SKOS concept schemes (see docs/vocab.md). */
 export interface Concept {
   readonly iri: string;
-  readonly label: string;
-  readonly definition: string;
+  /** skos:prefLabel, in every language of the scheme. */
+  readonly label: ConceptText;
+  /** skos:definition, in every language of the scheme. */
+  readonly definition: ConceptText;
   /** skos:notation: the concept's code, where the scheme gives one. */
   readonly notation?: string;
   /** skos:broader: the concept above this one, for a concept below the top. */
@@ -24,20 +29,20 @@ export const STUDY_DIRECTIONS = {
   concepts: [
     {
       iri: "https://solid-memo.com/vocab/v1#frontToBack",
-      label: "Front to back",
-      definition: "Each card is shown by its front and answered with its back.",
+      label: { en: "Front to back" },
+      definition: { en: "Each card is shown by its front and answered with its back." },
       notation: "front-to-back",
     },
     {
       iri: "https://solid-memo.com/vocab/v1#backToFront",
-      label: "Back to front",
-      definition: "Each card is shown by its back and answered with its front.",
+      label: { en: "Back to front" },
+      definition: { en: "Each card is shown by its back and answered with its front." },
       notation: "back-to-front",
     },
     {
       iri: "https://solid-memo.com/vocab/v1#bidirectional",
-      label: "Both ways",
-      definition: "Each card is asked both ways, each way scheduled on its own.",
+      label: { en: "Both ways" },
+      definition: { en: "Each card is asked both ways, each way scheduled on its own." },
       notation: "bidirectional",
     },
   ],
@@ -50,20 +55,20 @@ export const INVALID_DATA_POLICIES = {
   concepts: [
     {
       iri: "https://solid-memo.com/vocab/v1#blockInstance",
-      label: "Block the instance",
-      definition: "Any invalid data stops the app from using the instance until it is repaired. The default.",
+      label: { en: "Block the instance" },
+      definition: { en: "Any invalid data stops the app from using the instance until it is repaired. The default." },
       notation: "block-instance",
     },
     {
       iri: "https://solid-memo.com/vocab/v1#blockSubject",
-      label: "Set invalid data aside",
-      definition: "Decks with invalid data are set aside until they are repaired; everything else keeps working.",
+      label: { en: "Set invalid data aside" },
+      definition: { en: "Decks with invalid data are set aside until they are repaired; everything else keeps working." },
       notation: "block-subject",
     },
     {
       iri: "https://solid-memo.com/vocab/v1#warnOnly",
-      label: "Warn only",
-      definition: "Invalid data is reported, and the app keeps working with it.",
+      label: { en: "Warn only" },
+      definition: { en: "Invalid data is reported, and the app keeps working with it." },
       notation: "warn-only",
     },
   ],
@@ -76,45 +81,45 @@ export const TOPICS = {
   concepts: [
     {
       iri: "https://solid-memo.com/vocab/topics#languages",
-      label: "Languages",
-      definition: "Vocabulary and grammar of human languages.",
+      label: { en: "Languages", sv: "Språk" },
+      definition: { en: "Vocabulary and grammar of human languages.", sv: "Ordförråd och grammatik i mänskliga språk." },
     },
     {
       iri: "https://solid-memo.com/vocab/topics#swedish",
-      label: "Swedish",
-      definition: "The Swedish language.",
+      label: { en: "Swedish", sv: "Svenska" },
+      definition: { en: "The Swedish language.", sv: "Det svenska språket." },
       broader: "https://solid-memo.com/vocab/topics#languages",
     },
     {
       iri: "https://solid-memo.com/vocab/topics#geography",
-      label: "Geography",
-      definition: "Countries, capitals, flags and the places of the world.",
+      label: { en: "Geography", sv: "Geografi" },
+      definition: { en: "Countries, capitals, flags and the places of the world.", sv: "Länder, huvudstäder, flaggor och världens platser." },
     },
     {
       iri: "https://solid-memo.com/vocab/topics#computing",
-      label: "Computing",
-      definition: "Computers, software and the protocols of the web.",
+      label: { en: "Computing", sv: "Datorer" },
+      definition: { en: "Computers, software and the protocols of the web.", sv: "Datorer, mjukvara och webbens protokoll." },
     },
     {
       iri: "https://solid-memo.com/vocab/topics#science",
-      label: "Science",
-      definition: "The natural sciences.",
+      label: { en: "Science", sv: "Naturvetenskap" },
+      definition: { en: "The natural sciences.", sv: "Naturvetenskaperna." },
     },
     {
       iri: "https://solid-memo.com/vocab/topics#chemistry",
-      label: "Chemistry",
-      definition: "Elements, compounds and their reactions.",
+      label: { en: "Chemistry", sv: "Kemi" },
+      definition: { en: "Elements, compounds and their reactions.", sv: "Grundämnen, föreningar och deras reaktioner." },
       broader: "https://solid-memo.com/vocab/topics#science",
     },
     {
       iri: "https://solid-memo.com/vocab/topics#art",
-      label: "Art",
-      definition: "Paintings, artists and the history of art.",
+      label: { en: "Art", sv: "Konst" },
+      definition: { en: "Paintings, artists and the history of art.", sv: "Målningar, konstnärer och konstens historia." },
     },
     {
       iri: "https://solid-memo.com/vocab/topics#labour-market",
-      label: "Labour market",
-      definition: "Occupations, work and the labour market.",
+      label: { en: "Labour market", sv: "Arbetsmarknad" },
+      definition: { en: "Occupations, work and the labour market.", sv: "Yrken, arbete och arbetsmarknaden." },
     },
   ],
 } as const satisfies ConceptScheme;
