@@ -1,4 +1,4 @@
-@base <https://solid-memo.com/decks/swedish-labour-market-taxonomy-occupation-names> .
+@base <https://solid-memo.com/decks/swedish-labour-market-taxonomy-occupation-names/2.ttl> .
 
 @prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
 @prefix dcterms:    <http://purl.org/dc/terms/> .
@@ -10,6 +10,7 @@
 @prefix topic:      <https://solid-memo.com/vocab/topics#> .
 @prefix owl:        <http://www.w3.org/2002/07/owl#> .
 @prefix spdx:       <http://spdx.org/rdf/terms#> .
+@prefix adms:       <http://www.w3.org/ns/adms#> .
 
 <>
     a solid-memo:Deck ,
@@ -33,7 +34,16 @@
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 4 ;
+    dcat:version "2" ;
+    dcterms:issued "2026-10-02T22:10:05Z"^^xsd:dateTime ;
+    adms:versionNotes "Each occupation name, on the front and the back, tagged as Swedish. The cards are otherwise unchanged and still cover taxonomy versions 1 to 31." ;
+    dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
+    dcat:inSeries <https://solid-memo.com/decks/index.ttl#swedish-labour-market-taxonomy-occupation-names> ;
+    dcat:isVersionOf <https://solid-memo.com/decks/index.ttl#swedish-labour-market-taxonomy-occupation-names> ;
+    dcat:prev <https://solid-memo.com/decks/swedish-labour-market-taxonomy-occupation-names/1.ttl> ;
+    dcat:previousVersion <https://solid-memo.com/decks/swedish-labour-market-taxonomy-occupation-names/1.ttl> ;
+    dcat:distribution <#turtle> .
 
 <#anton-wiklund>
     a foaf:Agent ;
@@ -39150,3 +39160,10 @@ spdx:checksumAlgorithm_sha256
     solid-memo:back "Åklagare"@sv ;
     solid-memo:backNote "In taxonomy version 17, 2022-11-08."@en ,
                         "I taxonomiversion 17, 2022-11-08."@sv .
+
+<#turtle>
+    a dcat:Distribution ;
+    dcat:accessURL <> ;
+    dcat:downloadURL <> ;
+    dcat:mediaType <https://www.iana.org/assignments/media-types/text/turtle> ;
+    dcterms:format <http://publications.europa.eu/resource/authority/file-type/RDF_TURTLE> .
