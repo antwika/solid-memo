@@ -17,7 +17,7 @@ const report: ValidationReport = {
   documents: [],
 };
 const repair = (subject: string) => ({ kind: "describe-deck" as const, documentUrl: CATALOG, subjectUrl: `${CATALOG}#${subject}`, version: 3 });
-const problem = { documentUrl: `${instance.url}decks/deck-1.ttl`, subjectUrl: `${instance.url}decks/deck-1.ttl#x`, messages: ["Each side of a card needs text or a picture."] };
+const problem = { documentUrl: `${instance.url}decks/deck-1.ttl`, subjectUrl: `${instance.url}decks/deck-1.ttl#x`, violations: [{ message: { en: "Each side of a card needs text or a picture.", sv: "Varje sida av ett kort behöver text eller en bild." }, severity: "violation" as const, constraint: "Or" }] };
 
 function renderRepair(useCases: UseCases) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

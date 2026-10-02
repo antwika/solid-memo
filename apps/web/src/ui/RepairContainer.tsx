@@ -34,7 +34,7 @@ export function RepairContainer({
   instance: Instance;
   report: ValidationReport;
 }) {
-  const { t, tx, errorText } = useI18n();
+  const { t, tx, errorText, violationText } = useI18n();
   const queryClient = useQueryClient();
   const plan = useCases.planRepair(report);
 
@@ -85,7 +85,7 @@ export function RepairContainer({
                 {tx("repair.problem", {
                   subject: <ExternalLink url={problem.subjectUrl} />,
                   document: <ExternalLink url={problem.documentUrl} />,
-                  messages: problem.messages.join(" "),
+                  messages: problem.violations.map(violationText).join(" "),
                 })}{" "}
                 <button class="danger" onClick={() => remove(problem)} disabled={busy}>
                   {t("repair.removeButton")}

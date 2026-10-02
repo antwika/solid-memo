@@ -1,6 +1,7 @@
 import type { DatasetCore, Quad } from "@rdfjs/types";
 import SHACLValidator from "rdf-validate-shacl";
 import environment from "rdf-validate-shacl/src/defaultEnv.js";
+import { shown } from "@solid-memo/domain/langText";
 import type { Violation } from "@solid-memo/domain/validation";
 
 /**
@@ -69,10 +70,9 @@ function toViolation(result: ValidationResult): Violation {
   );
   const path = result.path?.value;
   const value = result.value?.value;
-  const message = result.message.map((term) => term.value).join(" ");
   return {
     ...(path === undefined ? {} : { path }),
-    message: message === "" ? `${constraint} constraint failed.` : message,
+    ...messageOf(result, constraint),
     ...(value === undefined ? {} : { value }),
     severity:
       result.severity.value === `${SH}Warning`
@@ -84,8 +84,24 @@ function toViolation(result: ValidationResult): Violation {
   };
 }
 
+/**
+ * A result's message by language, English first: the shape's sh:message
+ * in each language it gives (tagged literals); else the validator's own
+ * English, untagged, or a word on the constraint when it has none either.
+ */
+function messageOf(result: ValidationResult, constraint: string): Pick<Violation, "message" | "builtIn"> {
+  const tagged = result.message.filter((term) => term.termType === "Literal" && term.language !== "");
+  if (tagged.length > 0) {
+    const tags = tagged.map((term) => (term as { language: string }).language.toLowerCase());
+    const ordered = [...new Set(tags)].sort((a, b) => Number(b === "en") - Number(a === "en") || a.localeCompare(b));
+    return { message: Object.fromEntries(ordered.map((tag) => [tag, tagged[tags.indexOf(tag)].value])) };
+  }
+  const builtIn = result.message.map((term) => term.value).join(" ");
+  return { message: { en: builtIn === "" ? `${constraint} constraint failed.` : builtIn }, builtIn: true };
+}
+
 function byPathThenMessage(a: Violation, b: Violation): number {
-  return (a.path ?? "").localeCompare(b.path ?? "") || a.message.localeCompare(b.message);
+  return (a.path ?? "").localeCompare(b.path ?? "") || shown(a.message).localeCompare(shown(b.message));
 }
 
 export function createEngine(shapes: DatasetCore): ShapeEngine {

@@ -1,5 +1,6 @@
 import type { ShapeName } from "@solid-memo/vocab/types.generated";
 import type { SubjectReport, ValidationReport, Violation } from "./validation";
+import { shown } from "./langText";
 
 /**
  * Repairing what an instance check found (see docs/validation.md). A
@@ -33,11 +34,11 @@ export interface Repair {
   version: number;
 }
 
-/** A subject with problems no repair covers, and what they are. */
+/** A subject with problems no repair covers, and what they are: one violation per message. */
 export interface Unrepairable {
   documentUrl: string;
   subjectUrl: string;
-  messages: string[];
+  violations: Violation[];
 }
 
 export interface RepairPlan {
@@ -82,19 +83,20 @@ export function planRepair(report: ValidationReport): RepairPlan {
     for (const subject of document.subjects) {
       const problems = problemsOf(subject);
       if (problems === null) continue;
-      const left: string[] = [];
+      const left = new Map<string, Violation>();
       for (const violation of problems.violations.filter((v) => v.severity === "violation")) {
         const kind = repairFor(problems.shape, violation);
         if (kind === null) {
-          left.push(violation.message);
+          const key = shown(violation.message);
+          if (!left.has(key)) left.set(key, violation);
           continue;
         }
         if (!repairs.some((r) => r.kind === kind && r.subjectUrl === subject.url)) {
           repairs.push({ kind, documentUrl: document.url, subjectUrl: subject.url, version: problems.version });
         }
       }
-      if (left.length > 0) {
-        unrepairable.push({ documentUrl: document.url, subjectUrl: subject.url, messages: [...new Set(left)] });
+      if (left.size > 0) {
+        unrepairable.push({ documentUrl: document.url, subjectUrl: subject.url, violations: [...left.values()] });
       }
     }
   }

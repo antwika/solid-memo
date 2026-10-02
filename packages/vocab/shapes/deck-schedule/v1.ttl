@@ -63,7 +63,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:in ( solid-memo:frontToBack solid-memo:backToFront solid-memo:bidirectional ) ;
-    sh:message "A deck schedule states the study direction it was computed for, a concept of solid-memo:StudyDirections." .
+    sh:message "A deck schedule states the study direction it was computed for, a concept of solid-memo:StudyDirections."@en ,
+               "Ett kortleksschema anger studieriktningen det beräknades för, ett begrepp i solid-memo:StudyDirections."@sv .
 
 <#dayBoundaryHour>
     a sh:PropertyShape ;
@@ -83,14 +84,16 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" ;
-    sh:message "The study day is a plain \"YYYY-MM-DD\" string." .
+    sh:message "The study day is a plain \"YYYY-MM-DD\" string."@en ,
+               "Studiedagen är en vanlig sträng \"YYYY-MM-DD\"."@sv .
 
 <#dueOnDay>
     a sh:PropertyShape ;
     sh:path solid-memo:dueOnDay ;
     sh:datatype xsd:string ;
     sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2} [1-9][0-9]*$" ;
-    sh:message "Prompts due on a day are \"YYYY-MM-DD count\", one value per day." .
+    sh:message "Prompts due on a day are \"YYYY-MM-DD count\", one value per day."@en ,
+               "Frågor som förfaller en dag anges som \"YYYY-MM-DD antal\", ett värde per dag."@sv .
 
 <#unreviewed>
     a sh:PropertyShape ;

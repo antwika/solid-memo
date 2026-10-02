@@ -101,7 +101,7 @@ function SubjectView({ subject }: { subject: SubjectReport }) {
 
 /** One row per result; a DCAT-AP result says so before its message. */
 function ViolationTable({ violations }: { violations: Violation[] }) {
-  const { t } = useI18n();
+  const { t, violationText, severityLabel } = useI18n();
   return (
     <table>
       <thead>
@@ -115,7 +115,7 @@ function ViolationTable({ violations }: { violations: Violation[] }) {
       <tbody>
         {violations.map((violation, index) => (
           <tr key={index}>
-            <td>{violation.severity}</td>
+            <td>{severityLabel(violation.severity)}</td>
             <td>
               {violation.path === undefined ? (
                 t("validation.theSubject")
@@ -125,7 +125,7 @@ function ViolationTable({ violations }: { violations: Violation[] }) {
             </td>
             <td>
               {violation.profile === "dcat-ap" && "DCAT-AP: "}
-              {violation.message}
+              {violationText(violation)}
             </td>
             <td>{violation.value ?? ""}</td>
           </tr>

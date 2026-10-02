@@ -139,8 +139,8 @@ describe("shapes, descriptors and migrations", () => {
     const engine = createEngine(await loader.load(SHAPES.card[2]));
     const violations = await engine.validateNode(data, URL_, SHAPES.card[2].shapeIri);
     expect(violations.map((v) => v.message)).toEqual([
-      "Each side of a card needs text or a picture.",
-      "A picture is an IRI (<https://…>), never a string literal.",
+      { en: "Each side of a card needs text or a picture.", sv: "Varje sida av ett kort behöver text eller en bild." },
+      { en: "A picture is an IRI (<https://…>), never a string literal.", sv: "En bild är en IRI (<https://…>), aldrig en strängliteral." },
     ]);
   });
 });

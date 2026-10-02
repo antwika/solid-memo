@@ -613,7 +613,35 @@
     "property": "Property",
     "message": "Message",
     "value": "Value",
-    "theSubject": "(the subject)"
+    "theSubject": "(the subject)",
+    "severityLevel": {
+      "violation": "violation",
+      "warning": "warning",
+      "info": "info"
+    },
+    "constraint": {
+      "Datatype": "The value has the wrong datatype.",
+      "MinCount": "A value is missing.",
+      "MaxCount": "There are too many values.",
+      "Class": "The value is not of the right class.",
+      "NodeKind": "The value is of the wrong kind (an IRI or a literal).",
+      "In": "The value is not one of those allowed.",
+      "HasValue": "A required value is missing.",
+      "Pattern": "The value does not have the right form.",
+      "Or": "None of the allowed alternatives holds.",
+      "Xone": "Exactly one of the alternatives must hold.",
+      "Not": "The value is something it must not be.",
+      "Node": "The value does not conform to its shape.",
+      "UniqueLang": "The same language is used for more than one value.",
+      "LanguageIn": "The text is in a language not allowed here.",
+      "QualifiedMinCount": "Too few values of the required kind.",
+      "QualifiedMaxCount": "Too many values of a certain kind.",
+      "MinInclusive": "The value is too small.",
+      "MaxInclusive": "The value is too large.",
+      "MinLength": "The text is too short.",
+      "MaxLength": "The text is too long.",
+      "Closed": "The property is not allowed here."
+    }
   },
   "webIdDocument": {
     "summary": "WebID document",

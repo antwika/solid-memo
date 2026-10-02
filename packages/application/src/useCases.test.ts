@@ -778,7 +778,7 @@ describe("createUseCases", () => {
     it("updateInstance refuses a copy that does not conform, naming how many violations", async () => {
       const deps = makeDeps();
       vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
-      const violation = { message: "x", severity: "violation" as const, constraint: "MinCount" };
+      const violation = { message: { en: "x" }, severity: "violation" as const, constraint: "MinCount" };
       vi.mocked(deps.shapeValidator.validateDocument).mockImplementation(async (url) => ({
         url,
         status: "checked" as const,
@@ -1023,7 +1023,7 @@ describe("createUseCases", () => {
                 status: "checked",
                 shape: "deck",
                 version: 2,
-                violations: [{ message: "no title", severity: "violation", constraint: "MinCount" }],
+                violations: [{ message: { en: "no title" }, severity: "violation", constraint: "MinCount" }],
               },
             ],
           }
@@ -1634,7 +1634,7 @@ describe("the instance digest", () => {
     const { deps, useCases, stored, digestRepository } = setup();
     deps.shapeValidator.validateDocumentSince = vi.fn(async (url: string) => ({
       unchanged: false as const,
-      value: { url, status: "checked" as const, subjects: [{ url: `${url}#x`, status: "checked" as const, shape: "reviewState" as const, version: 2, violations: [{ message: "no", severity: "violation" as const, constraint: "MinCount" }] }] },
+      value: { url, status: "checked" as const, subjects: [{ url: `${url}#x`, status: "checked" as const, shape: "reviewState" as const, version: 2, violations: [{ message: { en: "no" }, severity: "violation" as const, constraint: "MinCount" }] }] },
       version: "r1",
     }));
     await useCases.refreshStudyDigest(instance.url, deck);

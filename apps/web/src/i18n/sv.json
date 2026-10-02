@@ -610,7 +610,35 @@
     "property": "Egenskap",
     "message": "Meddelande",
     "value": "Värde",
-    "theSubject": "(subjektet)"
+    "theSubject": "(subjektet)",
+    "severityLevel": {
+      "violation": "fel",
+      "warning": "varning",
+      "info": "information"
+    },
+    "constraint": {
+      "Datatype": "Värdet har fel datatyp.",
+      "MinCount": "Ett värde saknas.",
+      "MaxCount": "Det finns för många värden.",
+      "Class": "Värdet är inte av rätt klass.",
+      "NodeKind": "Värdet är av fel slag (en IRI eller en literal).",
+      "In": "Värdet är inte ett av de tillåtna.",
+      "HasValue": "Ett obligatoriskt värde saknas.",
+      "Pattern": "Värdet har fel form.",
+      "Or": "Inget av de tillåtna alternativen gäller.",
+      "Xone": "Exakt ett av alternativen ska gälla.",
+      "Not": "Värdet är något som det inte får vara.",
+      "Node": "Värdet uppfyller inte sin form.",
+      "UniqueLang": "Samma språk används för mer än ett värde.",
+      "LanguageIn": "Texten är på ett språk som inte är tillåtet här.",
+      "QualifiedMinCount": "För få värden av det slag som krävs.",
+      "QualifiedMaxCount": "För många värden av ett visst slag.",
+      "MinInclusive": "Värdet är för litet.",
+      "MaxInclusive": "Värdet är för stort.",
+      "MinLength": "Texten är för kort.",
+      "MaxLength": "Texten är för lång.",
+      "Closed": "Egenskapen är inte tillåten här."
+    }
   },
   "webIdDocument": {
     "summary": "WebID-dokument",

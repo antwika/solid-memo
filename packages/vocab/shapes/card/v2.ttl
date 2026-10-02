@@ -21,7 +21,8 @@
                 <#created> ;
     sh:or ( [ sh:path solid-memo:front ; sh:minCount 1 ] [ sh:path solid-memo:frontImage ; sh:minCount 1 ] ) ,
           ( [ sh:path solid-memo:back ; sh:minCount 1 ] [ sh:path solid-memo:backImage ; sh:minCount 1 ] ) ;
-    sh:message "Each side of a card needs text or a picture." .
+    sh:message "Each side of a card needs text or a picture."@en ,
+               "Varje sida av ett kort behöver text eller en bild."@sv .
 
 <#formatVersion>
     a sh:PropertyShape ;
@@ -30,7 +31,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:hasValue 2 ;
-    sh:message "Card format 2 states its format version, 2." .
+    sh:message "Card format 2 states its format version, 2."@en ,
+               "Kortformat 2 anger sin formatversion, 2."@sv .
 
 <#front>
     a sh:PropertyShape ;
@@ -49,14 +51,16 @@
     sh:path solid-memo:frontImage ;
     sh:nodeKind sh:IRI ;
     sh:maxCount 1 ;
-    sh:message "A picture is an IRI (<https://…>), never a string literal." .
+    sh:message "A picture is an IRI (<https://…>), never a string literal."@en ,
+               "En bild är en IRI (<https://…>), aldrig en strängliteral."@sv .
 
 <#backImage>
     a sh:PropertyShape ;
     sh:path solid-memo:backImage ;
     sh:nodeKind sh:IRI ;
     sh:maxCount 1 ;
-    sh:message "A picture is an IRI (<https://…>), never a string literal." .
+    sh:message "A picture is an IRI (<https://…>), never a string literal."@en ,
+               "En bild är en IRI (<https://…>), aldrig en strängliteral."@sv .
 
 <#created>
     a sh:PropertyShape ;

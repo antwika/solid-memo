@@ -14,6 +14,7 @@ import type { ShapeContext } from "@solid-memo/vocab/shapeDescriptor";
 import { RDF_TYPE, objectsOf, parseTurtle, readTurtleTree } from "@solid-memo/turtle/rdf";
 import { SM_NS } from "@solid-memo/vocab/tooling/vocab";
 import { SHAPES_BASE } from "@solid-memo/vocab/tooling/shapes";
+import { shown } from "@solid-memo/domain/langText";
 
 /**
  * Build-time SHACL validation: the shapes under shapes/ applied to a
@@ -94,7 +95,7 @@ export async function validateTurtleDocument(
       pick.descriptor.shapeIri,
     )) {
       const where = violation.path === undefined ? "" : ` (${violation.path})`;
-      problems.push(`<${subject}>${where}: ${violation.message}`);
+      problems.push(`<${subject}>${where}: ${shown(violation.message)}`);
     }
   }
   if (problems.length > 0) {
@@ -138,7 +139,7 @@ export async function validateProfile(
     .filter((violation) => subjects.has(violation.focusNode))
     .map((violation) => {
       const where = violation.path === undefined ? "" : ` (${violation.path})`;
-      return `<${violation.focusNode}>${where}: ${violation.message}`;
+      return `<${violation.focusNode}>${where}: ${shown(violation.message)}`;
     });
   if (problems.length > 0) {
     throw new Error(`${label}:\n  ${problems.join("\n  ")}`);

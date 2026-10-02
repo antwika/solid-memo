@@ -27,7 +27,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:hasValue 2 ;
-    sh:message "Preferences format 2 states its format version, 2." .
+    sh:message "Preferences format 2 states its format version, 2."@en ,
+               "Inställningsformat 2 anger sin formatversion, 2."@sv .
 
 <#newCardsPerDay>
     a sh:PropertyShape ;
@@ -53,7 +54,8 @@
     sh:maxInclusive 23 ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "The day boundary is an hour of the day, 0 to 23." .
+    sh:message "The day boundary is an hour of the day, 0 to 23."@en ,
+               "Dagens början är en timme på dygnet, 0 till 23."@sv .
 
 <#answerScale>
     a sh:PropertyShape ;
@@ -62,7 +64,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:in ( "sm2" "minimal" ) ;
-    sh:message "The answer scale is sm2 or minimal." .
+    sh:message "The answer scale is sm2 or minimal."@en ,
+               "Svarsskalan är sm2 eller minimal."@sv .
 
 <#developerMode>
     a sh:PropertyShape ;

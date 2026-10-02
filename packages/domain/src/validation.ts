@@ -1,3 +1,4 @@
+import type { LangText } from "./langText";
 import type { Deck } from "./deck";
 import type { ShapeName } from "@solid-memo/vocab/types.generated";
 
@@ -11,7 +12,14 @@ import type { ShapeName } from "@solid-memo/vocab/types.generated";
 export interface Violation {
   /** The predicate the result is about; absent for a rule on the subject itself. */
   path?: string;
-  message: string;
+  /**
+   * What is wrong, in every language the shape says it in (sh:message,
+   * English and Swedish), English first; the validator's own English when
+   * the shape says nothing, which `builtIn` marks.
+   */
+  message: LangText;
+  /** The message is the validator's own English: the app may say it by its constraint instead. */
+  builtIn?: true;
   /** The offending value, when the result names one. */
   value?: string;
   severity: "violation" | "warning" | "info";

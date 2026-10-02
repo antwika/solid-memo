@@ -30,7 +30,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:hasValue 3 ;
-    sh:message "Preferences format 3 states its format version, 3." .
+    sh:message "Preferences format 3 states its format version, 3."@en ,
+               "Inställningsformat 3 anger sin formatversion, 3."@sv .
 
 <#newCardsPerDay>
     a sh:PropertyShape ;
@@ -56,7 +57,8 @@
     sh:maxInclusive 23 ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "The day boundary is an hour of the day, 0 to 23." .
+    sh:message "The day boundary is an hour of the day, 0 to 23."@en ,
+               "Dagens början är en timme på dygnet, 0 till 23."@sv .
 
 <#answerScale>
     a sh:PropertyShape ;
@@ -65,7 +67,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:in ( "sm2" "minimal" ) ;
-    sh:message "The answer scale is sm2 or minimal." .
+    sh:message "The answer scale is sm2 or minimal."@en ,
+               "Svarsskalan är sm2 eller minimal."@sv .
 
 <#developerMode>
     a sh:PropertyShape ;
@@ -81,4 +84,5 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:in ( solid-memo:blockInstance solid-memo:blockSubject solid-memo:warnOnly ) ;
-    sh:message "Preferences state what to do with invalid data: a concept of solid-memo:InvalidDataPolicies." .
+    sh:message "Preferences state what to do with invalid data: a concept of solid-memo:InvalidDataPolicies."@en ,
+               "Inställningarna anger vad som ska göras med ogiltig data: ett begrepp i solid-memo:InvalidDataPolicies."@sv .
