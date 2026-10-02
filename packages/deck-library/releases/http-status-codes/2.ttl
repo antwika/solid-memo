@@ -1,4 +1,4 @@
-@base <https://solid-memo.com/decks/http-status-codes> .
+@base <https://solid-memo.com/decks/http-status-codes/2.ttl> .
 
 @prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
 @prefix dcterms:    <http://purl.org/dc/terms/> .
@@ -7,6 +7,7 @@
 @prefix foaf:       <http://xmlns.com/foaf/0.1/> .
 @prefix topic:      <https://solid-memo.com/vocab/topics#> .
 @prefix prov:       <http://www.w3.org/ns/prov#> .
+@prefix adms:       <http://www.w3.org/ns/adms#> .
 
 <>
     a solid-memo:Deck ,
@@ -30,7 +31,16 @@
                  "webb" ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 4 ;
+    dcat:version "2" ;
+    dcterms:issued "2026-10-02T21:51:53Z"^^xsd:dateTime ;
+    adms:versionNotes "Title and description in Swedish as well as English, Swedish keywords, and each reason phrase tagged as English." ;
+    dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
+    dcat:inSeries <https://solid-memo.com/decks/index.ttl#http-status-codes> ;
+    dcat:isVersionOf <https://solid-memo.com/decks/index.ttl#http-status-codes> ;
+    dcat:prev <https://solid-memo.com/decks/http-status-codes/1.ttl> ;
+    dcat:previousVersion <https://solid-memo.com/decks/http-status-codes/1.ttl> ;
+    dcat:distribution <#turtle> .
 
 <#anton-wiklund>
     a foaf:Agent ;
@@ -489,3 +499,10 @@
     dcterms:created "2026-09-22T16:29:47.000Z"^^xsd:dateTime ;
     solid-memo:back "Network Authentication Required"@en ;
     solid-memo:front "511" .
+
+<#turtle>
+    a dcat:Distribution ;
+    dcat:accessURL <> ;
+    dcat:downloadURL <> ;
+    dcat:mediaType <https://www.iana.org/assignments/media-types/text/turtle> ;
+    dcterms:format <http://publications.europa.eu/resource/authority/file-type/RDF_TURTLE> .
