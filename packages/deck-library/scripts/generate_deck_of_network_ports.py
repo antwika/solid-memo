@@ -52,87 +52,89 @@ REGISTRY_URL = "https://www.iana.org/assignments/service-names-port-numbers/serv
 REGISTRY_PAGE = "https://www.iana.org/assignments/service-names-port-numbers"
 USER_AGENT = "solid-memo deck generator (https://github.com/antwika/solid-memo)"
 
-# (port, IANA service name, card text). Back texts must be unique: the deck is
-# studied both ways.
-PORTS: list[tuple[int, str, str]] = [
-    (20, "ftp-data", "FTP data transfer"),
-    (21, "ftp", "FTP (File Transfer Protocol) control"),
-    (22, "ssh", "SSH (Secure Shell)"),
-    (23, "telnet", "Telnet"),
-    (25, "smtp", "SMTP (Simple Mail Transfer Protocol)"),
-    (53, "domain", "DNS (Domain Name System)"),
-    (67, "bootps", "DHCP server (BOOTP server)"),
-    (68, "bootpc", "DHCP client (BOOTP client)"),
-    (69, "tftp", "TFTP (Trivial File Transfer Protocol)"),
-    (80, "http", "HTTP"),
-    (88, "kerberos", "Kerberos"),
-    (110, "pop3", "POP3 (Post Office Protocol 3)"),
-    (119, "nntp", "NNTP (Usenet news)"),
-    (123, "ntp", "NTP (Network Time Protocol)"),
-    (135, "epmap", "Microsoft RPC endpoint mapper"),
-    (137, "netbios-ns", "NetBIOS name service"),
-    (138, "netbios-dgm", "NetBIOS datagram service"),
-    (139, "netbios-ssn", "NetBIOS session service"),
-    (143, "imap", "IMAP (Internet Message Access Protocol)"),
-    (161, "snmp", "SNMP (Simple Network Management Protocol)"),
-    (162, "snmptrap", "SNMP traps"),
-    (179, "bgp", "BGP (Border Gateway Protocol)"),
-    (389, "ldap", "LDAP (Lightweight Directory Access Protocol)"),
-    (443, "https", "HTTPS (HTTP over TLS)"),
-    (445, "microsoft-ds", "SMB (Windows file sharing)"),
-    (465, "submissions", "Mail submission over TLS (SMTPS)"),
-    (500, "isakmp", "IKE (IPsec key exchange)"),
-    (514, "syslog", "Syslog"),
-    (515, "printer", "LPD (Line Printer Daemon)"),
-    (546, "dhcpv6-client", "DHCPv6 client"),
-    (547, "dhcpv6-server", "DHCPv6 server"),
-    (554, "rtsp", "RTSP (Real Time Streaming Protocol)"),
-    (587, "submission", "Mail submission (SMTP from mail clients)"),
-    (631, "ipp", "IPP (Internet Printing Protocol)"),
-    (636, "ldaps", "LDAPS (LDAP over TLS)"),
-    (853, "domain-s", "DNS over TLS"),
-    (873, "rsync", "rsync"),
-    (989, "ftps-data", "FTPS data (FTP over TLS)"),
-    (990, "ftps", "FTPS control (FTP over TLS)"),
-    (993, "imaps", "IMAPS (IMAP over TLS)"),
-    (995, "pop3s", "POP3S (POP3 over TLS)"),
-    (1080, "socks", "SOCKS proxy"),
-    (1194, "openvpn", "OpenVPN"),
-    (1433, "ms-sql-s", "Microsoft SQL Server"),
-    (1701, "l2tp", "L2TP (Layer 2 Tunneling Protocol)"),
-    (1723, "pptp", "PPTP (Point-to-Point Tunneling Protocol)"),
-    (1812, "radius", "RADIUS authentication"),
-    (1813, "radius-acct", "RADIUS accounting"),
-    (1883, "mqtt", "MQTT"),
-    (2049, "nfs", "NFS (Network File System)"),
-    (2375, "docker", "Docker API (unencrypted)"),
-    (2376, "docker-s", "Docker API over TLS"),
-    (2379, "etcd-client", "etcd client API"),
-    (2380, "etcd-server", "etcd peer communication"),
-    (3306, "mysql", "MySQL"),
-    (3389, "ms-wbt-server", "RDP (Remote Desktop Protocol)"),
-    (3478, "stun", "STUN and TURN (NAT traversal)"),
-    (3690, "svn", "Subversion (svnserve)"),
-    (4500, "ipsec-nat-t", "IPsec NAT traversal"),
-    (4789, "vxlan", "VXLAN"),
-    (5060, "sip", "SIP (Session Initiation Protocol)"),
-    (5061, "sips", "SIP over TLS"),
-    (5222, "xmpp-client", "XMPP client connections"),
-    (5269, "xmpp-server", "XMPP server-to-server connections"),
-    (5353, "mdns", "mDNS (Multicast DNS)"),
-    (5432, "postgresql", "PostgreSQL"),
-    (5671, "amqps", "AMQP over TLS"),
-    (5672, "amqp", "AMQP (e.g. RabbitMQ)"),
-    (5900, "rfb", "VNC (Remote Framebuffer protocol)"),
-    (5984, "couchdb", "CouchDB"),
-    (6379, "redis", "Redis"),
-    (6514, "syslog-tls", "Syslog over TLS"),
-    (6697, "ircs-u", "IRC over TLS"),
-    (8080, "http-alt", "HTTP alternate"),
-    (8883, "secure-mqtt", "MQTT over TLS"),
-    (9418, "git", "Git protocol (git://)"),
-    (11211, "memcache", "Memcached"),
-    (27017, "mongodb", "MongoDB"),
+# (port, IANA service name, card text in English, in Swedish). Back texts must be
+# unique in each language: the deck is studied both ways. Protocol names and
+# their expansions are names, the same in Swedish; only the words around them
+# are translated.
+PORTS: list[tuple[int, str, str, str]] = [
+    (20, "ftp-data", "FTP data transfer", "FTP-dataöverföring"),
+    (21, "ftp", "FTP (File Transfer Protocol) control", "FTP (File Transfer Protocol), styrning"),
+    (22, "ssh", "SSH (Secure Shell)", "SSH (Secure Shell)"),
+    (23, "telnet", "Telnet", "Telnet"),
+    (25, "smtp", "SMTP (Simple Mail Transfer Protocol)", "SMTP (Simple Mail Transfer Protocol)"),
+    (53, "domain", "DNS (Domain Name System)", "DNS (Domain Name System)"),
+    (67, "bootps", "DHCP server (BOOTP server)", "DHCP-server (BOOTP-server)"),
+    (68, "bootpc", "DHCP client (BOOTP client)", "DHCP-klient (BOOTP-klient)"),
+    (69, "tftp", "TFTP (Trivial File Transfer Protocol)", "TFTP (Trivial File Transfer Protocol)"),
+    (80, "http", "HTTP", "HTTP"),
+    (88, "kerberos", "Kerberos", "Kerberos"),
+    (110, "pop3", "POP3 (Post Office Protocol 3)", "POP3 (Post Office Protocol 3)"),
+    (119, "nntp", "NNTP (Usenet news)", "NNTP (Usenet-nyheter)"),
+    (123, "ntp", "NTP (Network Time Protocol)", "NTP (Network Time Protocol)"),
+    (135, "epmap", "Microsoft RPC endpoint mapper", "Microsoft RPC endpoint mapper"),
+    (137, "netbios-ns", "NetBIOS name service", "NetBIOS-namntjänst"),
+    (138, "netbios-dgm", "NetBIOS datagram service", "NetBIOS-datagramtjänst"),
+    (139, "netbios-ssn", "NetBIOS session service", "NetBIOS-sessionstjänst"),
+    (143, "imap", "IMAP (Internet Message Access Protocol)", "IMAP (Internet Message Access Protocol)"),
+    (161, "snmp", "SNMP (Simple Network Management Protocol)", "SNMP (Simple Network Management Protocol)"),
+    (162, "snmptrap", "SNMP traps", "SNMP-traps"),
+    (179, "bgp", "BGP (Border Gateway Protocol)", "BGP (Border Gateway Protocol)"),
+    (389, "ldap", "LDAP (Lightweight Directory Access Protocol)", "LDAP (Lightweight Directory Access Protocol)"),
+    (443, "https", "HTTPS (HTTP over TLS)", "HTTPS (HTTP över TLS)"),
+    (445, "microsoft-ds", "SMB (Windows file sharing)", "SMB (fildelning i Windows)"),
+    (465, "submissions", "Mail submission over TLS (SMTPS)", "Inlämning av e-post över TLS (SMTPS)"),
+    (500, "isakmp", "IKE (IPsec key exchange)", "IKE (nyckelutbyte för IPsec)"),
+    (514, "syslog", "Syslog", "Syslog"),
+    (515, "printer", "LPD (Line Printer Daemon)", "LPD (Line Printer Daemon)"),
+    (546, "dhcpv6-client", "DHCPv6 client", "DHCPv6-klient"),
+    (547, "dhcpv6-server", "DHCPv6 server", "DHCPv6-server"),
+    (554, "rtsp", "RTSP (Real Time Streaming Protocol)", "RTSP (Real Time Streaming Protocol)"),
+    (587, "submission", "Mail submission (SMTP from mail clients)", "Inlämning av e-post (SMTP från e-postklienter)"),
+    (631, "ipp", "IPP (Internet Printing Protocol)", "IPP (Internet Printing Protocol)"),
+    (636, "ldaps", "LDAPS (LDAP over TLS)", "LDAPS (LDAP över TLS)"),
+    (853, "domain-s", "DNS over TLS", "DNS över TLS"),
+    (873, "rsync", "rsync", "rsync"),
+    (989, "ftps-data", "FTPS data (FTP over TLS)", "FTPS-data (FTP över TLS)"),
+    (990, "ftps", "FTPS control (FTP over TLS)", "FTPS-styrning (FTP över TLS)"),
+    (993, "imaps", "IMAPS (IMAP over TLS)", "IMAPS (IMAP över TLS)"),
+    (995, "pop3s", "POP3S (POP3 over TLS)", "POP3S (POP3 över TLS)"),
+    (1080, "socks", "SOCKS proxy", "SOCKS-proxy"),
+    (1194, "openvpn", "OpenVPN", "OpenVPN"),
+    (1433, "ms-sql-s", "Microsoft SQL Server", "Microsoft SQL Server"),
+    (1701, "l2tp", "L2TP (Layer 2 Tunneling Protocol)", "L2TP (Layer 2 Tunneling Protocol)"),
+    (1723, "pptp", "PPTP (Point-to-Point Tunneling Protocol)", "PPTP (Point-to-Point Tunneling Protocol)"),
+    (1812, "radius", "RADIUS authentication", "RADIUS-autentisering"),
+    (1813, "radius-acct", "RADIUS accounting", "RADIUS-accounting"),
+    (1883, "mqtt", "MQTT", "MQTT"),
+    (2049, "nfs", "NFS (Network File System)", "NFS (Network File System)"),
+    (2375, "docker", "Docker API (unencrypted)", "Docker-API (okrypterat)"),
+    (2376, "docker-s", "Docker API over TLS", "Docker-API över TLS"),
+    (2379, "etcd-client", "etcd client API", "etcd, klient-API"),
+    (2380, "etcd-server", "etcd peer communication", "etcd, kommunikation mellan noder"),
+    (3306, "mysql", "MySQL", "MySQL"),
+    (3389, "ms-wbt-server", "RDP (Remote Desktop Protocol)", "RDP (Remote Desktop Protocol)"),
+    (3478, "stun", "STUN and TURN (NAT traversal)", "STUN och TURN (NAT-traversering)"),
+    (3690, "svn", "Subversion (svnserve)", "Subversion (svnserve)"),
+    (4500, "ipsec-nat-t", "IPsec NAT traversal", "IPsec NAT-traversering"),
+    (4789, "vxlan", "VXLAN", "VXLAN"),
+    (5060, "sip", "SIP (Session Initiation Protocol)", "SIP (Session Initiation Protocol)"),
+    (5061, "sips", "SIP over TLS", "SIP över TLS"),
+    (5222, "xmpp-client", "XMPP client connections", "XMPP, klientanslutningar"),
+    (5269, "xmpp-server", "XMPP server-to-server connections", "XMPP, anslutningar mellan servrar"),
+    (5353, "mdns", "mDNS (Multicast DNS)", "mDNS (Multicast DNS)"),
+    (5432, "postgresql", "PostgreSQL", "PostgreSQL"),
+    (5671, "amqps", "AMQP over TLS", "AMQP över TLS"),
+    (5672, "amqp", "AMQP (e.g. RabbitMQ)", "AMQP (t.ex. RabbitMQ)"),
+    (5900, "rfb", "VNC (Remote Framebuffer protocol)", "VNC (Remote Framebuffer protocol)"),
+    (5984, "couchdb", "CouchDB", "CouchDB"),
+    (6379, "redis", "Redis", "Redis"),
+    (6514, "syslog-tls", "Syslog over TLS", "Syslog över TLS"),
+    (6697, "ircs-u", "IRC over TLS", "IRC över TLS"),
+    (8080, "http-alt", "HTTP alternate", "HTTP, alternativ port"),
+    (8883, "secure-mqtt", "MQTT over TLS", "MQTT över TLS"),
+    (9418, "git", "Git protocol (git://)", "Git-protokollet (git://)"),
+    (11211, "memcache", "Memcached", "Memcached"),
+    (27017, "mongodb", "MongoDB", "MongoDB"),
 ]
 
 
@@ -156,11 +158,13 @@ def load_registry() -> dict[int, set[str]]:
 def check_ports(assigned: dict[int, set[str]]) -> None:
     errors = [
         f"  {port}: IANA assigns {sorted(assigned.get(port, ())) or 'nothing'}, not {service!r}"
-        for port, service, _ in PORTS
+        for port, service, _, _ in PORTS
         if service not in assigned.get(port, ())
     ]
-    backs = [back for _, _, back in PORTS]
-    errors += [f"  duplicate card text {b!r}" for b in sorted({b for b in backs if backs.count(b) > 1})]
+    for language, backs in (("English", [r[2] for r in PORTS]), ("Swedish", [r[3] for r in PORTS])):
+        errors += [
+            f"  duplicate {language} card text {b!r}" for b in sorted({b for b in backs if backs.count(b) > 1})
+        ]
     if errors:
         sys.exit("the port list no longer matches the registry:\n" + "\n".join(errors))
 
@@ -227,6 +231,13 @@ def write_deck(path: Path, *, creator: str | None, created: str, script_url: str
         "on the front, the service on the back. Ports used only by convention, such as Kafka's 9092, "
         "are left out: every card is an assignment in IANA's Service Name and Port Number Registry."
     )
+    description_sv = (
+        f"{len(PORTS)} TCP- och UDP-portnummer som du möter i praktiken och de tjänster IANA tilldelar "
+        "dem, från 22 (SSH) och 443 (HTTPS) till databaser, e-post, VPN och meddelandeköer. Porten på "
+        "framsidan, tjänsten på baksidan, med protokollens namn som de heter. Portar som bara används "
+        "av konvention, som Kafkas 9092, är utelämnade: varje kort är en tilldelning i IANA:s register "
+        "över tjänstenamn och portnummer."
+    )
     out: list[str] = [
         f"@base <https://solid-memo.com/decks/{slug(path.stem)}> .",
         "",
@@ -242,7 +253,7 @@ def write_deck(path: Path, *, creator: str | None, created: str, script_url: str
         "<>",
         "    a solid-memo:Deck ,",
         "      dcat:Dataset ;",
-        '    dcterms:title "Common network ports" ;',
+        "    dcterms:title " + aligned("dcterms:title", ['"Common network ports"@en', '"Vanliga nätverksportar"@sv']) + " ;",
     ]
     creator_name, creator_email = None, None
     if creator:
@@ -251,17 +262,29 @@ def write_deck(path: Path, *, creator: str | None, created: str, script_url: str
         out.append(f"    dcterms:creator <#{slug(creator_name)}> ;")
     out += [
         f"    dcterms:license {CC0} ;",
-        f"    dcterms:description {ttl_str(description)} ;",
+        "    dcterms:description "
+        + aligned("dcterms:description", [f"{ttl_str(description)}@en", f"{ttl_str(description_sv)}@sv"])
+        + " ;",
         f"    prov:wasDerivedFrom <{REGISTRY_PAGE}> ;",
         "    prov:wasGeneratedBy <#generation> ;",
         f'    dcterms:created "{created}"^^xsd:dateTime ;',
         "    dcat:theme "
         + aligned("dcat:theme", ["<http://publications.europa.eu/resource/authority/data-theme/EDUC>", "topic:computing"])
         + " ;",
-        "    dcat:keyword " + aligned("dcat:keyword", ['"networking"', '"ports"', '"TCP"', '"UDP"']) + " ;",
-        "    dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ;",
+        "    dcat:keyword "
+        + aligned("dcat:keyword", ['"networking"', '"ports"', '"TCP"', '"UDP"', '"nätverk"', '"portar"'])
+        + " ;",
+        "    dcterms:language "
+        + aligned(
+            "dcterms:language",
+            [
+                "<http://publications.europa.eu/resource/authority/language/ENG>",
+                "<http://publications.europa.eu/resource/authority/language/SWE>",
+            ],
+        )
+        + " ;",
         "    solid-memo:studyDirection solid-memo:bidirectional ;",
-        "    solid-memo:formatVersion 3 .",
+        "    solid-memo:formatVersion 4 .",
         "",
     ]
     if creator_name is not None:
@@ -291,15 +314,15 @@ def write_deck(path: Path, *, creator: str | None, created: str, script_url: str
         '    dcterms:creator "Internet Assigned Numbers Authority" ;',
         f"    dcterms:license {CC0} .",
     ]
-    for port, service, back in PORTS:
+    for port, service, back, back_sv in PORTS:
         out += [
             "",
             f"<#{port}-{slug(service)}>",
             "    a solid-memo:Card ;",
-            "    solid-memo:formatVersion 1 ;",
+            "    solid-memo:formatVersion 4 ;",  # format 4: text tagged with its language; the port is in none
             f'    dcterms:created "{created}"^^xsd:dateTime ;',
             f'    solid-memo:front "{port}" ;',
-            f"    solid-memo:back {ttl_str(back)} .",
+            "    solid-memo:back " + aligned("solid-memo:back", [f"{ttl_str(back)}@en", f"{ttl_str(back_sv)}@sv"]) + " .",
         ]
 
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
