@@ -69,7 +69,7 @@ export function BrowserScreen({
 
   function handleRemove(card: Card) {
     if (
-      window.confirm(t("browser.removeConfirm", { card: cardLabel(card) }))
+      window.confirm(t("browser.removeConfirm", { card: cardLabel(card, readerText) }))
     ) {
       onRemoveCard(card);
     }
@@ -140,14 +140,14 @@ export function BrowserScreen({
                   <td class="clickable">
                     <a href={cardHref(card)}>
                       <CardThumbnail imageUrl={card.frontImageUrl} />
-                      {breakable(card.front)}
+                      {breakable(readerText(card.front))}
                       {card.retired && <RetiredTag />}
                     </a>
                   </td>
                   <td class="clickable">
                     <a href={cardHref(card)} tabIndex={-1} aria-hidden="true">
                       <CardThumbnail imageUrl={card.backImageUrl} />
-                      {breakable(card.back)}
+                      {breakable(readerText(card.back))}
                     </a>
                   </td>
                   <td class="actions">

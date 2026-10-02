@@ -40,6 +40,16 @@ but no longer studies it. The version moved because a format-2 reader
 would go on studying a retired card. A format-2 card is in use, so the
 step to format 3 changes nothing.
 
+Card format 4 lets a side's text be language-tagged, one text per
+language ("Mona Lisa"@en), or stay untagged when its language is not
+known, never both. English is not required, since card text is often
+not English. The app shows the reader's language, else the English,
+else the untagged text, and edits one text while keeping the others;
+text typed in the app is untagged. The version moved because a format-3
+reader knows only untagged text: it would read a tagged side as empty
+and drop the card. The step to format 4 changes nothing in the data, as
+a format-3 side's text is untagged and stays so: no language is guessed.
+
 Rules that hold across versions:
 
 - **Readers never refuse older data.** A subject is read with the shape
@@ -59,6 +69,7 @@ Rules that hold across versions:
 flowchart LR
     v1["CardV1"] -->|card/1-to-2| v2["CardV2"]
     v2 -->|card/2-to-3<br/>in use: nothing to change| v3["CardV3"]
+    v3 -->|card/3-to-4<br/>text stays untagged| v4["CardV4"]
     d1["DeckV1"] -->|deck/1-to-2<br/>direction: front-to-back| d2["DeckV2"]
     d2 -->|deck/2-to-3<br/>DCAT dataset: direction concept,<br/>default description, creator agents,<br/>release 1 as its source| d3["DeckV3"]
     d3 -->|deck/3-to-4<br/>title and description tagged English| d4["DeckV4"]

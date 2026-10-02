@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { editedText, english, inEnglish, sameText, shown, tidied, withEnglish } from "./langText";
+import {
+  editedText,
+  english,
+  inEnglish,
+  sameText,
+  shown,
+  tidied,
+  tidiedSideText,
+  withEditedText,
+  withEnglish,
+} from "./langText";
 
 describe("text in several languages", () => {
   it("finds the English text, a regional English when there is no plain one", () => {
@@ -50,5 +60,26 @@ describe("text in several languages", () => {
     expect(withEnglish({ "en-gb": "Old", sv: "Gammal" }, "New")).toEqual({ "en-gb": "New", sv: "Gammal" });
     expect(withEnglish({ sv: "Gammal" }, "New")).toEqual({ sv: "Gammal", en: "New" });
     expect(withEnglish(undefined, "New")).toEqual(inEnglish("New"));
+  });
+});
+
+describe("a card side's text", () => {
+  it("shows untagged text when it is in no language the reader prefers", () => {
+    expect(shown({ "": "en bil" }, ["sv"])).toBe("en bil");
+    expect(editedText({ "": "en bil" })).toBe("en bil");
+  });
+
+  it("edits the English, else the untagged or only text, and starts a new side untagged", () => {
+    expect(withEditedText({ en: "Mona Lisa", sv: "Mona Lisa" }, "La Joconde")).toEqual({ en: "La Joconde", sv: "Mona Lisa" });
+    expect(withEditedText({ "": "en bil" }, "ett hus")).toEqual({ "": "ett hus" });
+    expect(withEditedText({ sv: "Stjärnenatt" }, "Natten")).toEqual({ sv: "Natten" });
+    expect(withEditedText({}, "Sweden")).toEqual({ "": "Sweden" });
+  });
+
+  it("trims every language and leaves out an empty one, clearing all when the edited text is cleared", () => {
+    expect(tidiedSideText({ en: " Mona Lisa ", sv: " " })).toEqual({ en: "Mona Lisa" });
+    expect(tidiedSideText({ en: " ", sv: "Mona Lisa" })).toEqual({});
+    expect(tidiedSideText({ "": "  " })).toEqual({});
+    expect(tidiedSideText({})).toEqual({});
   });
 });

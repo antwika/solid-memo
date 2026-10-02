@@ -78,7 +78,7 @@ describe("fetchLibraryDeck", () => {
       themes: ["http://publications.europa.eu/resource/authority/data-theme/EDUC"],
       keywords: [],
       cards: [
-        { id: "sweden", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+        { id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 },
       ],
     });
     expect(getSolidDataset).toHaveBeenCalledWith(DOC, { fetch });

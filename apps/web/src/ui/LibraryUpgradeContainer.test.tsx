@@ -29,7 +29,7 @@ const plan: LibraryUpgradePlan = {
   toVersion: "2",
   releaseUrl: "https://solid-memo.com/decks/capitals/2.ttl",
   notes: [],
-  add: [{ id: "no", front: "Norway", back: "Oslo", formatVersion: 1 }],
+  add: [{ id: "no", front: { "": "Norway" }, back: { "": "Oslo" }, formatVersion: 1 }],
   change: [],
   retire: [],
   restore: [],

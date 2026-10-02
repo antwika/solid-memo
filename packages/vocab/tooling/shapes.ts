@@ -43,7 +43,8 @@ export type TermKind =
   | "iri"
   | "enum"
   | "iriEnum"
-  | "text";
+  | "text"
+  | "anyText";
 export type Cardinality = "one" | "optional" | "many";
 export type ShapeContext = "pod" | "library" | "any";
 
@@ -222,9 +223,11 @@ function parseProperty(
   if (maxCount === 0) return { absent: predicate };
   const datatype = of("datatype")[0]?.value;
   const nodeKind = of("nodeKind")[0]?.value;
+  const alternatives = of("or")[0];
   let kind: TermKind | undefined;
   if (datatype !== undefined) kind = DATATYPES[datatype];
   else if (nodeKind === `${SH}IRI`) kind = "iri";
+  else if (alternatives !== undefined) kind = alternativesKind(quads, alternatives);
   if (kind === undefined) {
     fail(`<${shape}> has no supported sh:datatype or sh:nodeKind sh:IRI.`);
   }
@@ -237,7 +240,7 @@ function parseProperty(
   const name = of("name")[0]?.value ?? localName(predicate);
   // A text is one field however many languages it is in: required or not.
   const cardinality: Cardinality =
-    kind === "text"
+    kind === "text" || kind === "anyText"
       ? minCount >= 1 ? "one" : "optional"
       : maxCount === undefined ? "many" : minCount >= 1 ? "one" : "optional";
   if (cardinality === "many" && kind !== "string" && kind !== "iri") {
@@ -252,6 +255,20 @@ function parseProperty(
   };
 }
 
+/**
+ * The kind sh:or over datatypes makes: untagged or language-tagged text
+ * ( [ sh:datatype xsd:string ] [ sh:datatype rdf:langString ] ) is
+ * "anyText"; nothing else is supported.
+ */
+function alternativesKind(quads: readonly Quad[], list: Quad_Object): TermKind | undefined {
+  const datatypes = listMembers(quads, list)
+    .map((member) => objectsOf(quads, member.value, `${SH}datatype`)[0]?.value)
+    .sort();
+  return datatypes.length === 2 && datatypes[0] === RDF_LANG_STRING && datatypes[1] === `${XSD}string`
+    ? "anyText"
+    : undefined;
+}
+
 function tsType(field: ShapeField): string {
   const scalar =
     field.kind === "enum" || field.kind === "iriEnum"
@@ -260,7 +277,7 @@ function tsType(field: ShapeField): string {
         ? "number"
         : field.kind === "boolean"
           ? "boolean"
-          : field.kind === "text"
+          : field.kind === "text" || field.kind === "anyText"
             ? "LangText"
             : "string";
   return field.cardinality === "many"
@@ -300,6 +317,8 @@ export function renderDomainTypes(models: readonly ShapeModel[]): string {
     "/**",
     " * A text in one or more languages (rdf:langString values): language tag,",
     " * lower case (\"en\", \"sv\", \"en-gb\"), to the text in that language.",
+    " * Where a shape also allows untagged text (a card's sides), the empty tag",
+    " * (\"\") holds it.",
     " */",
     "export type LangText = Readonly<Record<string, string>>;",
     "",

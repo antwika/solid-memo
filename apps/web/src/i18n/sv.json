@@ -420,7 +420,7 @@
     "catalogueFormat": "en katalog över varje instans kortlekar, som andra appar läser som en DCAT-katalog",
     "preferencesFormat": "inställningsformat {version}, som sparar svarsskalan, utvecklarläget och vad som ska hända med ogiltiga data",
     "deckFormat": "kortleksformat {version}, som beskriver kortlekar med standarderna DCAT och SKOS, ger varje kortlek en beskrivning och låter en kortleks titel och beskrivning finnas på flera språk",
-    "cardFormat": "kortformat {version}, som lägger till bilder på kort och låter en bibliotekskortlek ta ur bruk ett kort den inte längre använder",
+    "cardFormat": "kortformat {version}, som lägger till bilder på kort, låter en bibliotekskortlek ta ur bruk ett kort den inte längre använder och låter ett korts text ange sitt språk",
     "reviewFormat": "repetitionstillståndsformat {version}, som sparar varje studieriktnings tillstånd och dagens ångra-ögonblicksbild",
     "itemInstanceRecord": "Instanspost",
     "itemCatalogue": "Katalog över kortlekarna",

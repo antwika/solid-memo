@@ -1,4 +1,4 @@
-import { tidied, type LangText } from "./langText";
+import { shown, tidied, tidiedSideText, type LangText } from "./langText";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { isHttpUrl } from "./webId";
 
@@ -82,7 +82,8 @@ export function promptsOf(cards: Card[], direction: DeckDirection): Prompt[] {
 /** One side of a card as shown: its text and picture, and which side it is. */
 export interface CardSide {
   side: "front" | "back";
-  text: string;
+  /** The side's text in every language it is in; no language when the side is a picture only. */
+  text: LangText;
   imageUrl?: string;
   /** The back's label, on the back whichever way it is studied: how the answer relates to the front. */
   label?: LangText;
@@ -169,10 +170,14 @@ export interface Deck {
 
 /** What is on a card: its editable content, without identity. */
 export interface CardContent {
-  /** Text on the front; empty when the front is a picture only. */
-  front: string;
-  /** Text on the back; empty when the back is a picture only. */
-  back: string;
+  /**
+   * Text on the front, in every language it is in (card format 4), or
+   * untagged under the empty tag ("") when its language is not known, as
+   * for text typed in the app; no language when the front is a picture only.
+   */
+  front: LangText;
+  /** Text on the back, likewise. */
+  back: LangText;
   /** URL of a picture shown on the front, above any text. */
   frontImageUrl?: string;
   /**
@@ -235,8 +240,8 @@ export type CardContentValidation =
 export function validateCardContent(
   input: CardContent,
 ): CardContentValidation {
-  const front = input.front.trim();
-  const back = input.back.trim();
+  const front = tidiedSideText(input.front);
+  const back = tidiedSideText(input.back);
   const frontImageUrl = normalizeImageUrl(input.frontImageUrl);
   const backImageUrl = normalizeImageUrl(input.backImageUrl);
   const frontNote = tidied(input.frontNote);
@@ -248,10 +253,10 @@ export function validateCardContent(
   if (backImageUrl !== undefined && !isHttpUrl(backImageUrl)) {
     return { ok: false, error: "The back image must be an http(s) URL." };
   }
-  if (front === "" && frontImageUrl === undefined) {
+  if (isEmptyText(front) && frontImageUrl === undefined) {
     return { ok: false, error: "The front needs text or an image." };
   }
-  if (back === "" && backImageUrl === undefined) {
+  if (isEmptyText(back) && backImageUrl === undefined) {
     return { ok: false, error: "The back needs text or an image." };
   }
   return {
@@ -273,13 +278,22 @@ function normalizeImageUrl(value: string | undefined): string | undefined {
   return trimmed === "" ? undefined : trimmed;
 }
 
+/** Whether a side has no text: it is a picture only. */
+export function isEmptyText(text: LangText): boolean {
+  return Object.keys(text).length === 0;
+}
+
 /**
  * A short name for a card where one is needed (breadcrumbs, confirmation
  * prompts): its front text, else its back text — a picture-only front is
- * best named by its answer — else its id.
+ * best named by its answer — else its id; each as `show` shows text
+ * (the reader's language, else English).
  */
-export function cardLabel(card: CardContent & { id: string }): string {
-  if (card.front !== "") return card.front;
-  if (card.back !== "") return card.back;
+export function cardLabel(
+  card: CardContent & { id: string },
+  show: (text: LangText) => string = shown,
+): string {
+  if (!isEmptyText(card.front)) return show(card.front);
+  if (!isEmptyText(card.back)) return show(card.back);
   return card.id;
 }

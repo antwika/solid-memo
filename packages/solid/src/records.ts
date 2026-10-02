@@ -58,6 +58,8 @@ function readScalar(thing: Thing, field: FieldDescriptor): string | number | boo
   switch (field.kind) {
     case "text":
       return readText(thing, field.predicate);
+    case "anyText":
+      return readAnyText(thing, field.predicate);
     case "string":
       return getStringNoLocale(thing, field.predicate);
     case "enum": {
@@ -91,6 +93,13 @@ function readText(thing: Thing, predicate: string): LangText | null {
     [...getStringByLocaleAll(thing, predicate)].map(([language, values]) => [language.toLowerCase(), values[0]]),
   );
   return Object.keys(text).length > 0 ? text : null;
+}
+
+/** A text that may also be untagged: the untagged literal under the empty tag. */
+function readAnyText(thing: Thing, predicate: string): LangText | null {
+  const untagged = getStringNoLocale(thing, predicate);
+  const text = readText(thing, predicate) ?? {};
+  return untagged === null ? (Object.keys(text).length > 0 ? text : null) : { "": untagged, ...text };
 }
 
 /**
@@ -147,10 +156,11 @@ export function applyRecord<T>(
     builder.removeAll(field.predicate);
     const value = (record as Record<string, FieldValue | undefined>)[field.name];
     if (value === undefined) continue;
-    if (field.kind === "text") {
+    if (field.kind === "text" || field.kind === "anyText") {
       const text = value as LangText;
       for (const language of Object.keys(text).sort()) {
-        builder.addStringWithLocale(field.predicate, text[language], language);
+        if (language === "") builder.addStringNoLocale(field.predicate, text[language]);
+        else builder.addStringWithLocale(field.predicate, text[language], language);
       }
       continue;
     }

@@ -8,8 +8,8 @@ describe("LibraryCardScreen", () => {
       <LibraryCardScreen
         card={{
           id: "sweden",
-          front: "Sweden",
-          back: "Stockholm",
+          front: { "": "Sweden" },
+          back: { "": "Stockholm" },
           backImageUrl: "https://flagcdn.com/se.svg",
           formatVersion: 1,
         }}
@@ -32,7 +32,7 @@ describe("LibraryCardScreen", () => {
   it("says a retired card is no longer studied", () => {
     render(
       <LibraryCardScreen
-        card={{ id: "yu", front: "Yugoslavia", back: "Belgrade", formatVersion: 3, retired: true }}
+        card={{ id: "yu", front: { "": "Yugoslavia" }, back: { "": "Belgrade" }, formatVersion: 3, retired: true }}
         deckName="Capitals"
         deckHref="#/library-deck?deck=capitals"
       />,

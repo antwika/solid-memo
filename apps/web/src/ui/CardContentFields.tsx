@@ -1,10 +1,11 @@
 import type { CardContent } from "@solid-memo/domain/deck";
-import { editedText, withEnglish } from "@solid-memo/domain/langText";
+import { editedText, withEditedText, withEnglish } from "@solid-memo/domain/langText";
 import { useI18n } from "./i18n";
 
 /**
- * The fields of a card as typed; all strings, empty when unset. The notes
- * and the label are their English text: the one the app edits.
+ * The fields of a card as typed; all strings, empty when unset. Each is
+ * the text the app edits: the English, else (a side's text) the untagged
+ * or only text.
  */
 export interface CardDraft {
   front: string;
@@ -29,8 +30,8 @@ export const EMPTY_DRAFT: CardDraft = {
 /** The draft to start editing an existing card from. */
 export function draftOf(content: CardContent): CardDraft {
   return {
-    front: content.front,
-    back: content.back,
+    front: editedText(content.front),
+    back: editedText(content.back),
     frontImageUrl: content.frontImageUrl ?? "",
     frontNote: editedText(content.frontNote),
     backImageUrl: content.backImageUrl ?? "",
@@ -40,15 +41,16 @@ export function draftOf(content: CardContent): CardDraft {
 }
 
 /**
- * The card content a draft makes, to validate: the notes and the label
- * with their English replaced by what was typed and every other language
- * of `card` (the card edited, if any) kept. Clearing the English clears
- * the whole text, other languages too, as validation leaves it out.
+ * The card content a draft makes, to validate: each text with the one
+ * the app edits replaced by what was typed and every other language of
+ * `card` (the card edited, if any) kept; a new card's sides untagged.
+ * Clearing the edited text clears the whole text, other languages too,
+ * as validation leaves it out.
  */
 export function contentOf(draft: CardDraft, card?: CardContent): CardContent {
   return {
-    front: draft.front,
-    back: draft.back,
+    front: withEditedText(card?.front ?? {}, draft.front),
+    back: withEditedText(card?.back ?? {}, draft.back),
     frontImageUrl: draft.frontImageUrl,
     backImageUrl: draft.backImageUrl,
     frontNote: withEnglish(card?.frontNote, draft.frontNote),

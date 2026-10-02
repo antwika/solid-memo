@@ -18,7 +18,7 @@ const capitals: LibraryDeck = {
 const FLAG = "https://flagcdn.com/se.svg";
 
 function card(n: number): LibraryCard {
-  return { id: `card-${n}`, front: `Front ${n}`, back: `Back ${n}`, formatVersion: 1 };
+  return { id: `card-${n}`, front: { "": `Front ${n}` }, back: { "": `Back ${n}` }, formatVersion: 1 };
 }
 
 function renderScreen(
@@ -70,7 +70,7 @@ describe("LibraryBrowserScreen", () => {
 
   it("shows a card's pictures", () => {
     const { container } = renderScreen({
-      cards: [{ ...card(1), front: "", frontImageUrl: FLAG }],
+      cards: [{ ...card(1), front: {}, frontImageUrl: FLAG }],
     });
     expect(container.querySelector("img.card-thumbnail")).toHaveAttribute(
       "src",

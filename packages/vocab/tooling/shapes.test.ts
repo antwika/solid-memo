@@ -161,6 +161,8 @@ describe("parseShapes", () => {
        ${V1_VERSION} <#p> a sh:PropertyShape ; sh:path sm:p ; ${property} .`;
     rejects("thing/v1.ttl", shape("sh:datatype xsd:date"), "<https://solid-memo.com/shapes/thing/v1.ttl#p> has no supported sh:datatype or sh:nodeKind sh:IRI.");
     rejects("thing/v1.ttl", shape("sh:nodeKind sh:Literal"), "has no supported sh:datatype");
+    rejects("thing/v1.ttl", shape("sh:or ( [ sh:datatype xsd:string ] [ sh:datatype xsd:integer ] )"), "has no supported sh:datatype");
+    rejects("thing/v1.ttl", shape("sh:or ( [ sh:datatype xsd:string ] )"), "has no supported sh:datatype");
     rejects("thing/v1.ttl", shape("sh:datatype xsd:integer ; sh:in ( 1 2 )"), "uses sh:in, which is only supported for xsd:string and IRIs.");
     rejects("thing/v1.ttl", shape('sh:nodeKind sh:IRI ; sh:in ( sm:a "b" )'), "lists sh:in values of another kind than the field's.");
     rejects("thing/v1.ttl", shape("sh:datatype xsd:string ; sh:in ( sm:a )"), "lists sh:in values of another kind than the field's.");
@@ -202,6 +204,23 @@ describe("parseShapes", () => {
     ]);
   });
 
+  it("reads text that may also be untagged as one field: sh:or over xsd:string and rdf:langString", () => {
+    const LANG = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#langString>";
+    const [model] = parseShapes(
+      files([
+        "thing/v1.ttl",
+        `${HEAD} <#shape> a sh:NodeShape ; sh:name "ThingV1" ; sh:class sm:Thing ; sh:property <#formatVersion>, <#front>, <#back> . ${V1_VERSION}
+<#front> a sh:PropertyShape ; sh:path sm:front ; sh:or ( [ sh:datatype ${LANG} ] [ sh:datatype xsd:string ] ) ; sh:minCount 1 ; sh:uniqueLang true .
+<#back> a sh:PropertyShape ; sh:path sm:back ; sh:or ( [ sh:datatype xsd:string ] [ sh:datatype ${LANG} ] ) ; sh:uniqueLang true .`,
+      ]),
+    );
+    expect(model.fields).toEqual([
+      { name: "front", predicate: "https://solid-memo.com/vocab/v1#front", kind: "anyText", cardinality: "one" },
+      { name: "back", predicate: "https://solid-memo.com/vocab/v1#back", kind: "anyText", cardinality: "optional" },
+    ]);
+    expect(renderDomainTypes([model])).toContain("  readonly front: LangText;\n  readonly back?: LangText;");
+  });
+
   it("requires versions to run without gaps when rendering", () => {
     const models = parseShapes(files(["thing/v2.ttl", THING_V2]));
     expect(() => renderDomainTypes(models)).toThrow(
@@ -222,6 +241,8 @@ describe("renderers", () => {
 /**
  * A text in one or more languages (rdf:langString values): language tag,
  * lower case ("en", "sv", "en-gb"), to the text in that language.
+ * Where a shape also allows untagged text (a card's sides), the empty tag
+ * ("") holds it.
  */
 export type LangText = Readonly<Record<string, string>>;
 

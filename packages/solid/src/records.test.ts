@@ -11,7 +11,7 @@ import {
 } from "@inrupt/solid-client";
 import { describe, expect, it } from "vitest";
 import type { ShapeDescriptor } from "@solid-memo/vocab/shapeDescriptor";
-import { CARD_V2, DECK_V2, DECK_V4, PREFERENCES_V2, REVIEW_STATE_V2 } from "@solid-memo/vocab/descriptors.generated";
+import { CARD_V2, CARD_V4, DECK_V2, DECK_V4, PREFERENCES_V2, REVIEW_STATE_V2 } from "@solid-memo/vocab/descriptors.generated";
 import { applyRecord, readRecord, readVersioned, recordThing, storedVersionOf } from "./records";
 import { DCTERMS, RDF, SM } from "./vocab";
 
@@ -188,6 +188,26 @@ describe("language-tagged text", () => {
   });
 });
 
+describe("text that may be untagged (a card's sides)", () => {
+  it("writes the empty tag as an untagged literal and other tags as tagged ones, and reads them back", () => {
+    const record = { front: { "": "Sweden" }, back: { en: "Stockholm", sv: "Stockholm" } };
+    const thing = recordThing(URL_, CARD_V4, record, null);
+    expect(getStringNoLocale(thing, SM.front)).toBe("Sweden");
+    expect(getStringWithLocale(thing, SM.back, "sv")).toBe("Stockholm");
+    expect(getStringNoLocale(thing, SM.back)).toBeNull();
+    expect(readRecord(thing, CARD_V4)).toEqual(record);
+  });
+
+  it("reads untagged and tagged values together, and a side without text as absent", () => {
+    const thing = buildThing(createThing({ url: URL_ }))
+      .addStringNoLocale(SM.front, "Sverige")
+      .addStringWithLocale(SM.front, "Sweden", "en")
+      .addUrl(SM.backImage, "https://flagcdn.com/se.svg")
+      .build();
+    expect(readRecord(thing, CARD_V4)).toEqual({ front: { "": "Sverige", en: "Sweden" }, backImage: "https://flagcdn.com/se.svg" });
+  });
+});
+
 describe("applyRecord", () => {
   it("adds nothing for undefined fields but still clears their old values", () => {
     const builder = buildThing(createThing({ url: URL_ })).addInteger(`${EX}count`, 9);
@@ -221,7 +241,7 @@ describe("readVersioned", () => {
   it("reads a newer version with the latest shape it knows, passing the stored version through", () => {
     expect(readVersioned(card(7), "card")).toEqual({
       storedVersion: 7,
-      record: { version: 3, data: { front: "Sweden", back: "Stockholm" } },
+      record: { version: 4, data: { front: { "": "Sweden" }, back: { "": "Stockholm" } } },
     });
     expect(readVersioned(card(0), "card")?.record.version).toBe(1);
   });

@@ -8,8 +8,8 @@ import type { StudyQueue } from "@solid-memo/domain/scheduling";
 const card: Card = {
   id: "card-1",
   url: "https://pod.example/solid-memo/a/decks/deck-1.ttl#card-1",
-  front: "水",
-  back: "water",
+  front: { "": "水" },
+  back: { "": "water" },
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };

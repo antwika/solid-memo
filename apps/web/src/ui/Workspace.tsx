@@ -691,9 +691,9 @@ export function Workspace({
       <Breadcrumbs
         crumbs={breadcrumbsFor(route, {
           deck: activeDeck === null ? "" : readerText(activeDeck.title),
-          card: activeCard === null ? "" : cardLabel(activeCard),
+          card: activeCard === null ? "" : cardLabel(activeCard, readerText),
           libraryDeck: activeLibraryDeck === null ? "" : readerText(activeLibraryDeck.title),
-          libraryCard: activeLibraryCard === null ? "" : cardLabel(activeLibraryCard),
+          libraryCard: activeLibraryCard === null ? "" : cardLabel(activeLibraryCard, readerText),
         }, t)}
       />
       {shown}

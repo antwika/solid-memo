@@ -38,7 +38,7 @@ function renderContainer(useCases: UseCases) {
 describe("LibraryBrowserContainer", () => {
   it("shows a loading state, then the deck's cards", async () => {
     const listLibraryCards = vi.fn(async () => [
-      { id: "se", front: "Sweden", back: "Stockholm", formatVersion: 1 },
+      { id: "se", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 },
     ]);
     renderContainer(makeUseCasesFake({ listLibraryCards }));
     expect(screen.getByText("Loading cards…")).toBeInTheDocument();
