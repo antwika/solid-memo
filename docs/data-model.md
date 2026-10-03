@@ -71,7 +71,8 @@ flowchart LR
 │                        backup) and dcterms:modified; sm:formatVersion 2
 ├── preferences.ttl #it: a sm:Preferences (created on first explicit save):
 │                        study caps, sm:answerScale, sm:developerMode,
-│                        sm:invalidDataPolicy, sm:formatVersion 3
+│                        sm:invalidDataPolicy, sm:theme,
+│                        sm:formatVersion 4
 ├── catalog.ttl     one subject per deck (titles live ONLY here), a
 │                        sm:Deck and dcat:Dataset: sm:formatVersion 4,
 │                        dcterms:description, sm:studyDirection, optional
@@ -165,7 +166,7 @@ graph LR
 - **Format versions**: every subject the app writes carries
   `sm:formatVersion`, saying which version of its class's
   [shape](shapes.md) it conforms to: instance 1, decks 3 (DCAT),
-  cards 2 (pictures), review states 2, preferences 3; the catalogue,
+  cards 2 (pictures), review states 2, preferences 4; the catalogue,
   agent and distribution nodes 1. Readers treat a
   missing version as 1 — data written before the field existed — read
   older versions as they are, and pass a newer stored version through

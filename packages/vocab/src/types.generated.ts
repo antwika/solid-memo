@@ -24,7 +24,7 @@ export const LATEST_VERSION = {
   instance: 2,
   libraryDeck: 4,
   libraryDeckSeries: 2,
-  preferences: 3,
+  preferences: 4,
   reviewState: 2,
 } as const;
 
@@ -331,6 +331,17 @@ export interface PreferencesV3 {
   readonly invalidDataPolicy: "https://solid-memo.com/vocab/v1#blockInstance" | "https://solid-memo.com/vocab/v1#blockSubject" | "https://solid-memo.com/vocab/v1#warnOnly";
 }
 
+/** Preferences format 4: every field required, the theme among them. */
+export interface PreferencesV4 {
+  readonly newCardsPerDay: number;
+  readonly maxReviewsPerDay: number;
+  readonly dayBoundaryHour: number;
+  readonly answerScale: "sm2" | "minimal";
+  readonly developerMode: boolean;
+  readonly invalidDataPolicy: "https://solid-memo.com/vocab/v1#blockInstance" | "https://solid-memo.com/vocab/v1#blockSubject" | "https://solid-memo.com/vocab/v1#warnOnly";
+  readonly theme: "https://solid-memo.com/vocab/v1#systemTheme" | "https://solid-memo.com/vocab/v1#lightTheme" | "https://solid-memo.com/vocab/v1#darkTheme";
+}
+
 /** Review-state format 1: the SM-2 fields; the previous* snapshot is admitted. */
 export interface ReviewStateV1 {
   readonly easeFactor: number;
@@ -372,7 +383,7 @@ export type DocumentReceiptRecord = { version: 1; data: DocumentReceiptV1 };
 export type InstanceRecord = { version: 1; data: InstanceV1 } | { version: 2; data: InstanceV2 };
 export type LibraryDeckRecord = { version: 1; data: LibraryDeckV1 } | { version: 2; data: LibraryDeckV2 } | { version: 3; data: LibraryDeckV3 } | { version: 4; data: LibraryDeckV4 };
 export type LibraryDeckSeriesRecord = { version: 1; data: LibraryDeckSeriesV1 } | { version: 2; data: LibraryDeckSeriesV2 };
-export type PreferencesRecord = { version: 1; data: PreferencesV1 } | { version: 2; data: PreferencesV2 } | { version: 3; data: PreferencesV3 };
+export type PreferencesRecord = { version: 1; data: PreferencesV1 } | { version: 2; data: PreferencesV2 } | { version: 3; data: PreferencesV3 } | { version: 4; data: PreferencesV4 };
 export type ReviewStateRecord = { version: 1; data: ReviewStateV1 } | { version: 2; data: ReviewStateV2 };
 
 /** A record of any version, by kind. */
@@ -405,6 +416,6 @@ export type LatestRecord = {
   instance: InstanceV2;
   libraryDeck: LibraryDeckV4;
   libraryDeckSeries: LibraryDeckSeriesV2;
-  preferences: PreferencesV3;
+  preferences: PreferencesV4;
   reviewState: ReviewStateV2;
 };

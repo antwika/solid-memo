@@ -6,7 +6,8 @@ import { MIGRATIONS, migrate, stepFor } from "./index";
 const CONTEXT = { subject: "https://pod.example/x.ttl#it" };
 const SM = "https://solid-memo.com/vocab/v1#";
 const EDUC = "http://publications.europa.eu/resource/authority/data-theme/EDUC";
-const BLOCK = { invalidDataPolicy: `${SM}blockInstance` };
+/** The concept-valued fields of migrated preferences: the policy that blocks, the browser's theme. */
+const MIGRATED_CONCEPTS = { invalidDataPolicy: `${SM}blockInstance`, theme: `${SM}systemTheme` };
 
 const SHAPES = Object.keys(LATEST_VERSION) as ShapeName[];
 
@@ -139,12 +140,12 @@ describe("migrate", () => {
     ).toEqual(review);
     expect(migrate("preferences", { version: 1, data: { newCardsPerDay: 5 } }, CONTEXT)).toEqual({
       ...DEFAULT_PREFERENCES,
-      ...BLOCK,
+      ...MIGRATED_CONCEPTS,
       newCardsPerDay: 5,
     });
     expect(migrate("preferences", { version: 1, data: { answerScale: "minimal", developerMode: true } }, CONTEXT)).toEqual({
       ...DEFAULT_PREFERENCES,
-      ...BLOCK,
+      ...MIGRATED_CONCEPTS,
       // A format-1 document without the field meant the default of its day.
       newCardsPerDay: 20,
       answerScale: "minimal",

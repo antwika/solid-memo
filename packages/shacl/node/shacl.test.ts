@@ -51,6 +51,8 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "preferences/v2/invalid/hour-out-of-range.ttl": { path: `${SM}dayBoundaryHour`, message: "The day boundary is an hour of the day, 0 to 23." },
   "preferences/v3/invalid/missing-policy.ttl": { path: `${SM}invalidDataPolicy`, message: "Preferences state what to do with invalid data" },
   "preferences/v3/invalid/unknown-policy.ttl": { path: `${SM}invalidDataPolicy`, message: "Preferences state what to do with invalid data" },
+  "preferences/v4/invalid/missing-theme.ttl": { path: `${SM}theme`, message: "Preferences state the theme" },
+  "preferences/v4/invalid/unknown-theme.ttl": { path: `${SM}theme`, message: "Preferences state the theme" },
   "deck/v3/invalid/pod-with-old-direction.ttl": { path: `${SM}direction`, message: "Format 3 states the study direction with solid-memo:studyDirection" },
   "deck/v3/invalid/pod-without-description.ttl": { path: `${DC}description`, message: "A format-3 deck has a description" },
   "deck/v3/invalid/unknown-direction.ttl": { path: `${SM}studyDirection`, message: "A format-3 deck states its study direction" },

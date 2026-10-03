@@ -74,6 +74,32 @@ export const INVALID_DATA_POLICIES = {
   ],
 } as const satisfies ConceptScheme;
 
+/** How the app is shown: light, dark, or as the browser prefers. */
+export const THEMES = {
+  iri: "https://solid-memo.com/vocab/v1#Themes",
+  title: "Themes",
+  concepts: [
+    {
+      iri: "https://solid-memo.com/vocab/v1#systemTheme",
+      label: { en: "As the browser prefers" },
+      definition: { en: "The app is light or dark as the browser or operating system prefers, following it when it changes. The default." },
+      notation: "system",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/v1#lightTheme",
+      label: { en: "Light" },
+      definition: { en: "The app is shown light, whatever the browser prefers." },
+      notation: "light",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/v1#darkTheme",
+      label: { en: "Dark" },
+      definition: { en: "The app is shown dark, whatever the browser prefers." },
+      notation: "dark",
+    },
+  ],
+} as const satisfies ConceptScheme;
+
 /** What a deck of flashcards is about. */
 export const TOPICS = {
   iri: "https://solid-memo.com/vocab/topics",

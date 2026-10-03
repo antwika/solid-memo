@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { Locale } from "@solid-memo/domain/locale";
+import { resolveTheme, type Theme, type ThemeChoice } from "@solid-memo/domain/theme";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import { POD_PROVIDERS } from "@solid-memo/domain/podProvider";
@@ -13,12 +14,15 @@ import { LanguageSelector } from "./LanguageSelector";
 import { Loading } from "./Loading";
 import { OnboardingFlow } from "./onboarding/OnboardingFlow";
 import { PodConnectionScreen } from "./onboarding/PodConnectionScreen";
+import { applyTheme, browserTheme, DARK_QUERY, instanceThemeKey, ThemeProvider } from "./theme";
+import { ThemeToggle } from "./ThemeToggle";
 import { Workspace } from "./Workspace";
 
 /**
- * The app in whichever state it is in, between the language choice on
- * top and the site-wide footer, in the language the user chose (else
- * their browser's, else English).
+ * The app in whichever state it is in, between the language and theme
+ * choices on top and the site-wide footer, in the language the user chose
+ * (else their browser's, else English) and the theme they chose (else
+ * their browser's).
  */
 export function App({ useCases }: { useCases: UseCases }) {
   const [locale, setLocale] = useState<Locale>(() => useCases.language(navigator.languages));
@@ -32,13 +36,60 @@ export function App({ useCases }: { useCases: UseCases }) {
     setLocale(chosen);
   }
 
+  const queryClient = useQueryClient();
+  const [themeChoice, setThemeChoice] = useState<ThemeChoice>(() => useCases.themeChoice());
+  const [preferredTheme, setPreferredTheme] = useState<Theme>(browserTheme);
+  const theme = resolveTheme(themeChoice, preferredTheme);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  // The browser's theme as it changes (the OS going dark at dusk), shown while the choice is "system".
+  useEffect(() => {
+    const query = matchMedia(DARK_QUERY);
+    const follow = () => setPreferredTheme(query.matches ? "dark" : "light");
+    query.addEventListener("change", follow);
+    return () => query.removeEventListener("change", follow);
+  }, []);
+
+  // The open instance, whose preferences keep the choice once it has them.
+  const themeInstance = useRef<string | null>(null);
+  const themeChoices = useRef(0);
+
+  function chooseTheme(chosen: ThemeChoice) {
+    setThemeChoice(chosen);
+    const instanceUrl = themeInstance.current;
+    const count = ++themeChoices.current;
+    void useCases
+      .chooseTheme(chosen, instanceUrl)
+      .catch(() => undefined)
+      .finally(() => {
+        // Read back what the pod holds (which undoes a failed write), unless another choice is on its way.
+        if (instanceUrl === null || count !== themeChoices.current) return;
+        void queryClient.invalidateQueries({ queryKey: instanceThemeKey(instanceUrl) });
+        void queryClient.invalidateQueries({ queryKey: ["preferences", instanceUrl] });
+      });
+  }
+
   return (
     <I18nProvider locale={locale} onChoose={chooseLocale}>
-      <div class="top-bar">
-        <LanguageSelector />
-      </div>
-      <AppContent useCases={useCases} />
-      <Footer />
+      <ThemeProvider
+        choice={themeChoice}
+        preferred={preferredTheme}
+        onChoose={chooseTheme}
+        onFollowInstance={(instanceUrl) => {
+          themeInstance.current = instanceUrl;
+        }}
+        onAdopt={setThemeChoice}
+      >
+        <div class="top-bar">
+          <ThemeToggle />
+          <LanguageSelector />
+        </div>
+        <AppContent useCases={useCases} />
+        <Footer />
+      </ThemeProvider>
     </I18nProvider>
   );
 }

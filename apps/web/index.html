@@ -7,6 +7,21 @@
   <meta name="description" content="Spaced-repetition flashcards that live in your own Solid pod." />
   <meta name="theme-color" content="#f7f6f1" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#11171e" media="(prefers-color-scheme: dark)" />
+  <!-- The theme before the first paint, so the page does not flash in the
+       other one: the choice kept on this device (the key
+       localStorageThemePreference.ts keeps it under), else the browser's.
+       The app takes over from here (src/ui/theme.tsx). -->
+  <script>
+    (function () {
+      var chosen = null;
+      try {
+        chosen = localStorage.getItem("solid-memo:theme");
+      } catch (e) {}
+      document.documentElement.dataset.theme =
+        chosen === "light" || chosen === "dark" ? chosen
+        : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    })();
+  </script>
   <!-- Favicons at fixed root URLs (public/), not fingerprinted assets:
        search engines want a stable favicon URL, and look for /favicon.ico
        first. The .ico holds 16, 32 and 48 px renders of favicon.svg. -->

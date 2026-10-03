@@ -23,6 +23,7 @@ import { CARD_FORMAT_VERSION, DECK_FORMAT_VERSION, type Card, type Deck } from "
 import type { Instance } from "@solid-memo/domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "@solid-memo/domain/library";
 import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
+import type { ThemeChoice } from "@solid-memo/domain/theme";
 import type { ReviewState } from "@solid-memo/domain/review";
 import type { Answer } from "@solid-memo/domain/answer";
 import type { Catalog } from "@solid-memo/domain/catalog";
@@ -228,6 +229,101 @@ describe("createUseCases", () => {
       const useCases = createUseCases(makeDeps());
       useCases.chooseLanguage("en");
       expect(useCases.language(["sv-SE"])).toBe("sv");
+    });
+  });
+
+  describe("theme", () => {
+    const INSTANCE = "https://pod.example/solid-memo/main/";
+
+    function devicePreference(initial: ThemeChoice = "system") {
+      let chosen = initial;
+      return {
+        chosen: () => chosen,
+        choose: vi.fn((choice: ThemeChoice) => {
+          chosen = choice;
+        }),
+      };
+    }
+
+    function stored(theme: ThemeChoice) {
+      return { preferences: { ...DEFAULT_PREFERENCES, theme }, formatVersion: 4 };
+    }
+
+    it("keeps the theme chosen on this device", async () => {
+      const themePreference = devicePreference("dark");
+      const deps = makeDeps();
+      const useCases = createUseCases({ ...deps, themePreference });
+      expect(useCases.themeChoice()).toBe("dark");
+      await useCases.chooseTheme("light", null);
+      expect(useCases.themeChoice()).toBe("light");
+      expect(deps.preferencesRepository.getPreferences).not.toHaveBeenCalled();
+    });
+
+    it("follows the browser when nothing is kept", async () => {
+      const useCases = createUseCases(makeDeps());
+      await useCases.chooseTheme("dark", null);
+      expect(useCases.themeChoice()).toBe("system");
+    });
+
+    it("reads an instance's theme, and keeps it on this device for the first paint", async () => {
+      const themePreference = devicePreference("light");
+      const deps = makeDeps();
+      vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue(stored("dark"));
+      const useCases = createUseCases({ ...deps, themePreference });
+      await expect(useCases.instanceTheme(INSTANCE)).resolves.toBe("dark");
+      expect(useCases.themeChoice()).toBe("dark");
+    });
+
+    it("has no instance theme before the instance's first preferences, and leaves the device's", async () => {
+      const themePreference = devicePreference("light");
+      const useCases = createUseCases({ ...makeDeps(), themePreference });
+      await expect(useCases.instanceTheme(INSTANCE)).resolves.toBeNull();
+      expect(themePreference.choose).not.toHaveBeenCalled();
+    });
+
+    it("keeps a choice in the instance's preferences once it has them", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue(stored("system"));
+      const useCases = createUseCases(deps);
+      await useCases.chooseTheme("dark", INSTANCE);
+      expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledExactlyOnceWith(INSTANCE, {
+        ...DEFAULT_PREFERENCES,
+        theme: "dark",
+      });
+    });
+
+    it("keeps a choice on this device alone before the instance's first preferences, or when they already say it", async () => {
+      const deps = makeDeps();
+      const useCases = createUseCases(deps);
+      await useCases.chooseTheme("dark", INSTANCE);
+      vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue(stored("dark"));
+      await useCases.chooseTheme("dark", INSTANCE);
+      expect(deps.preferencesRepository.savePreferences).not.toHaveBeenCalled();
+    });
+
+    it("writes one choice after another, a failed one not stopping the next", async () => {
+      const deps = makeDeps();
+      let theme: ThemeChoice = "system";
+      vi.mocked(deps.preferencesRepository.getPreferences).mockImplementation(async () => stored(theme));
+      vi.mocked(deps.preferencesRepository.savePreferences)
+        .mockRejectedValueOnce(new Error("412"))
+        .mockImplementation(async (_, preferences) => {
+          theme = preferences.theme;
+        });
+      const useCases = createUseCases(deps);
+      const first = useCases.chooseTheme("dark", INSTANCE);
+      const second = useCases.chooseTheme("light", INSTANCE);
+      await expect(first).rejects.toThrow("412");
+      await second;
+      expect(theme).toBe("light");
+      expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledTimes(2);
+    });
+
+    it("keeps the theme of saved preferences on this device too", async () => {
+      const themePreference = devicePreference();
+      const useCases = createUseCases({ ...makeDeps(), themePreference });
+      await useCases.savePreferences(INSTANCE, { ...DEFAULT_PREFERENCES, theme: "light" });
+      expect(useCases.themeChoice()).toBe("light");
     });
   });
 
@@ -1154,6 +1250,7 @@ describe("createUseCases", () => {
       answerScale: "sm2",
       developerMode: false,
       invalidDataPolicy: "block-instance" as const,
+      theme: "system" as const,
     });
   });
 
@@ -1198,6 +1295,7 @@ describe("createUseCases", () => {
       answerScale: "minimal" as const,
       developerMode: true,
       invalidDataPolicy: "block-instance" as const,
+      theme: "system" as const,
     };
     vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
       preferences: stored,
@@ -1219,6 +1317,7 @@ describe("createUseCases", () => {
       answerScale: "minimal" as const,
       developerMode: true,
       invalidDataPolicy: "block-instance" as const,
+      theme: "system" as const,
     };
     await useCases.savePreferences(instance.url, preferences);
     expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledWith(
@@ -1471,6 +1570,7 @@ describe("createUseCases", () => {
           answerScale: "sm2",
           developerMode: false,
           invalidDataPolicy: "block-instance" as const,
+          theme: "system" as const,
         },
         formatVersion: 2,
       });

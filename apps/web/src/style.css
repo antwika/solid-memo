@@ -2,7 +2,7 @@
 @import "@fontsource/bangers";
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   --bg: #f7f6f1;
   --surface: #ffffff;
@@ -69,43 +69,44 @@
   -webkit-font-smoothing: antialiased;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #11171e;
-    --surface: #19212b;
-    --surface-sunken: #151c25;
-    --surface-hover: #232e3b;
-    --text: #ecebe4;
-    --text-muted: #9ba6b2;
-    --border: #2a3644;
-    --border-strong: #3a4859;
+/* The dark theme, which the root's data-theme turns on (see ui/theme.tsx). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
 
-    --primary: #4fae6a;
-    --primary-fill: #2a7340;
-    --primary-hover: #33864b;
-    --primary-soft: #1b3324;
-    --on-primary: #ffffff;
-    --link: #74cc8e;
-    --link-hover-bg: #3a414b;
-    --link-hover-border: #7d8692;
+  --bg: #11171e;
+  --surface: #19212b;
+  --surface-sunken: #151c25;
+  --surface-hover: #232e3b;
+  --text: #ecebe4;
+  --text-muted: #9ba6b2;
+  --border: #2a3644;
+  --border-strong: #3a4859;
 
-    --danger: #ff8a75;
-    --danger-soft: #38201c;
-    --danger-border: #63302a;
-    --warning-text: #f1d283;
-    --warning-soft: #33280e;
-    --warning-border: #5e4a17;
+  --primary: #4fae6a;
+  --primary-fill: #2a7340;
+  --primary-hover: #33864b;
+  --primary-soft: #1b3324;
+  --on-primary: #ffffff;
+  --link: #74cc8e;
+  --link-hover-bg: #3a414b;
+  --link-hover-border: #7d8692;
 
-    --paper-blue: rgba(177, 207, 227, 0.07);
-    --paper-yellow: rgba(232, 171, 20, 0.05);
+  --danger: #ff8a75;
+  --danger-soft: #38201c;
+  --danger-border: #63302a;
+  --warning-text: #f1d283;
+  --warning-soft: #33280e;
+  --warning-border: #5e4a17;
 
-    --masthead-bg: #1d2937;
-    --masthead-border: #2f3d4e;
-    --masthead-blue: #5d86a3;
+  --paper-blue: rgba(177, 207, 227, 0.07);
+  --paper-yellow: rgba(232, 171, 20, 0.05);
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.6);
-  }
+  --masthead-bg: #1d2937;
+  --masthead-border: #2f3d4e;
+  --masthead-blue: #5d86a3;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.6);
 }
 
 *,
@@ -158,14 +159,114 @@ main {
   color: var(--link);
 }
 
-/* The language choice above every screen: a flag per language, the others faded. */
+/* The theme and language choices above every screen: a sun or a moon, then a flag per language, the others faded. */
 .top-bar {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  /* The flags' own gap, so the toggle sits as far from them as they do from each other. */
+  gap: 0.35rem;
   width: 100%;
   max-width: 46rem;
   margin: 0 auto;
   padding: 0.5rem 1rem 0;
+}
+
+/*
+ * The theme toggle, shaped like a language flag beside it (a 1.5rem by
+ * 1rem rectangle, outlined, with the flag button's 0.2rem around it): a
+ * yellow sun on a pale fill in the light theme, a blue moon on the
+ * masthead's navy in the dark one.
+ */
+.theme-toggle {
+  width: 1.5rem;
+  height: 1rem;
+  min-height: 0;
+  margin: 0.2rem;
+  padding: 0;
+  /* The accent's yellow, deepened enough to stand out on the pale fill. */
+  color: color-mix(in srgb, var(--accent-yellow) 70%, var(--text));
+  background: var(--paper-yellow);
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+.theme-toggle:hover:not(:disabled) {
+  background: var(--surface-hover);
+  box-shadow: 0 0 0 1px var(--accent-yellow);
+  transform: none;
+}
+
+:root[data-theme="dark"] .theme-toggle {
+  color: var(--masthead-blue);
+  background: var(--masthead-bg);
+  box-shadow: 0 0 0 1px var(--masthead-border);
+}
+
+:root[data-theme="dark"] .theme-toggle:hover:not(:disabled) {
+  background: var(--surface-hover);
+  box-shadow: 0 0 0 1px var(--masthead-blue);
+}
+
+.theme-toggle svg.icon {
+  width: 0.8rem;
+  height: 0.8rem;
+  margin: 0;
+}
+
+/* An on/off switch (ui/Switch.tsx): a track with a knob, on the left when off, on the right when on. */
+.switch {
+  position: relative;
+  width: 2.75rem;
+  min-height: 0;
+  height: 1.5rem;
+  padding: 0;
+  background: var(--border);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.switch:hover:not(:disabled) {
+  background: var(--border-strong);
+  transform: none;
+}
+
+.switch[aria-checked="true"] {
+  background: var(--masthead-bg);
+  border-color: var(--masthead-border);
+}
+
+.switch[aria-checked="true"]:hover:not(:disabled) {
+  background: var(--masthead-border);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 50%;
+  left: 0.125rem;
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--accent-yellow);
+  background: var(--surface);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-50%);
+  transition: left 0.15s ease;
+}
+
+.switch[aria-checked="true"] .switch-knob {
+  left: calc(100% - 1.275rem);
+  color: var(--masthead-blue);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch-knob {
+    transition: none;
+  }
 }
 
 .language-selector {

@@ -2,6 +2,13 @@
   "language": {
     "label": "Språk"
   },
+  "theme": {
+    "toDark": "Byt till mörkt läge",
+    "toLight": "Byt till ljust läge",
+    "system": "Som min webbläsare",
+    "light": "Ljust",
+    "dark": "Mörkt"
+  },
   "common": {
     "cardCount": {
       "one": "{count} kort",
@@ -486,7 +493,7 @@
     "countIn": "{what} i {decks}",
     "instanceFormat": "instansformat {version}",
     "catalogueFormat": "en katalog över varje instans kortlekar, som andra appar läser som en DCAT-katalog",
-    "preferencesFormat": "inställningsformat {version}, som sparar svarsskalan, utvecklarläget och vad som ska hända med ogiltiga data",
+    "preferencesFormat": "inställningsformat {version}, som sparar svarsskalan, utvecklarläget, vad som ska hända med ogiltiga data och temat",
     "deckFormat": "kortleksformat {version}, som beskriver kortlekar med standarderna DCAT och SKOS, ger varje kortlek en beskrivning och låter en kortleks titel och beskrivning finnas på flera språk",
     "cardFormat": "kortformat {version}, som lägger till bilder på kort, låter en bibliotekskortlek ta ur bruk ett kort den inte längre använder och låter ett korts text ange sitt språk",
     "reviewFormat": "repetitionstillståndsformat {version}, som sparar varje studieriktnings tillstånd och dagens ångra-ögonblicksbild",
@@ -588,6 +595,10 @@
     "language": {
       "legend": "Språk",
       "hint": "Gäller direkt och sparas på den här enheten, inte i din Pod."
+    },
+    "theme": {
+      "legend": "Utseende",
+      "hint": "Gäller direkt. När inställningarna har sparats sparas det i din Pod, så att alla enheter du loggar in på ser likadana ut."
     },
     "heading": "Studieinställningar",
     "loading": "Läser in inställningar…",

@@ -87,6 +87,7 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
     1: { newCardsPerDay: 20 },
     2: { newCardsPerDay: 20, maxReviewsPerDay: 200, dayBoundaryHour: 4, answerScale: "sm2", developerMode: false },
     3: { newCardsPerDay: 20, maxReviewsPerDay: 200, dayBoundaryHour: 4, answerScale: "sm2", developerMode: false, invalidDataPolicy: `${SM_NS}warnOnly` },
+    4: { newCardsPerDay: 20, maxReviewsPerDay: 200, dayBoundaryHour: 4, answerScale: "sm2", developerMode: false, invalidDataPolicy: `${SM_NS}warnOnly`, theme: `${SM_NS}darkTheme` },
   },
   documentReceipt: {
     1: { document: "https://pod.example/solid-memo/a/decks/d.ttl", version: '"v1"', conformedTo: "0123abcd", latestFormat: true },

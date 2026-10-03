@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { PreferencesScreen } from "./PreferencesScreen";
 import { I18nProvider } from "./i18n";
+import { ThemeProvider } from "./theme";
 import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
 
 function renderScreen(
@@ -40,6 +41,25 @@ describe("PreferencesScreen", () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it("switches the theme right away, and saves the one chosen with the preferences", () => {
+    const onChoose = vi.fn();
+    const onSave = vi.fn();
+    const { container } = render(
+      <ThemeProvider choice="dark" onChoose={onChoose}>
+        <PreferencesScreen preferences={DEFAULT_PREFERENCES} busy={false} error={null} onSave={onSave} />
+      </ThemeProvider>,
+    );
+    const group = screen.getByRole("group", { name: "Appearance" });
+    expect(group).toContainElement(screen.getByRole("radio", { name: "As my browser" }));
+    expect(screen.getByRole("radio", { name: "Dark" })).toBeChecked();
+    expect(group).toHaveTextContent("Once these preferences are saved it is kept in your Pod");
+    fireEvent.click(screen.getByRole("radio", { name: "As my browser" }));
+    expect(onChoose).toHaveBeenCalledWith("system");
+    expect(onSave).not.toHaveBeenCalled();
+    fireEvent.submit(container.querySelector("form")!);
+    expect(onSave).toHaveBeenCalledWith({ ...DEFAULT_PREFERENCES, theme: "dark" });
+  });
+
   it("prefills the current preferences", () => {
     renderScreen({
       preferences: {
@@ -49,6 +69,7 @@ describe("PreferencesScreen", () => {
         answerScale: "minimal",
         developerMode: true,
         invalidDataPolicy: "block-instance" as const,
+        theme: "system",
       },
     });
     expect(screen.getByLabelText("New cards per day")).toHaveValue(10);
@@ -75,6 +96,7 @@ describe("PreferencesScreen", () => {
       ...DEFAULT_PREFERENCES,
       developerMode: true,
       invalidDataPolicy: "block-instance" as const,
+      theme: "system",
     });
   });
 
@@ -126,6 +148,7 @@ describe("PreferencesScreen", () => {
       answerScale: "sm2",
       developerMode: false,
       invalidDataPolicy: "block-instance" as const,
+      theme: "system",
     });
   });
 

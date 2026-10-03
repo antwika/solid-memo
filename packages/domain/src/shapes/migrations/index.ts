@@ -12,6 +12,7 @@ import { LIBRARY_DECK_3_TO_4 } from "./libraryDeck/3-to-4";
 import { LIBRARY_DECK_SERIES_1_TO_2 } from "./libraryDeckSeries/1-to-2";
 import { PREFERENCES_1_TO_2 } from "./preferences/1-to-2";
 import { PREFERENCES_2_TO_3 } from "./preferences/2-to-3";
+import { PREFERENCES_3_TO_4 } from "./preferences/3-to-4";
 import { REVIEW_STATE_1_TO_2 } from "./reviewState/1-to-2";
 import type { AnyMigrationStep, MigrationContext } from "./step";
 
@@ -36,6 +37,7 @@ export const MIGRATIONS: readonly AnyMigrationStep[] = [
   LIBRARY_DECK_SERIES_1_TO_2,
   PREFERENCES_1_TO_2,
   PREFERENCES_2_TO_3,
+  PREFERENCES_3_TO_4,
   REVIEW_STATE_1_TO_2,
 ];
 

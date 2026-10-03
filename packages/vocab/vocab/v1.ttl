@@ -16,9 +16,9 @@
     a owl:Ontology ;
     dcterms:title "Solid Memo vocabulary, v1" ;
     dcterms:description "Terms for spaced-repetition flashcards stored in a Solid pod: instances, decks, cards, SM-2 review state and study preferences." ;
-    owl:versionInfo "1.10" ;
+    owl:versionInfo "1.11" ;
     rdfs:seeAlso <https://solid-memo.com/vocab/v1.ttl> ;
-    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed. 1.10: Answer, the answer log the study statistics are computed from." .
+    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed. 1.10: Answer, the answer log the study statistics are computed from. 1.11: the Themes concept scheme and theme (preferences format 4)." .
 
 #################### Classes ####################
 
@@ -377,6 +377,15 @@ solid-memo:invalidDataPolicy
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.6 for preferences format 3." .
 
+solid-memo:theme
+    a owl:ObjectProperty ;
+    rdfs:label "theme" ;
+    rdfs:comment "Whether the app is shown light, dark, or as the browser prefers: a concept of solid-memo:Themes." ;
+    rdfs:domain solid-memo:Preferences ;
+    rdfs:range skos:Concept ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11 for preferences format 4." .
+
 #################### Digest ####################
 
 solid-memo:receiptOf
@@ -660,3 +669,43 @@ solid-memo:warnOnly
     skos:topConceptOf solid-memo:InvalidDataPolicies ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.6." .
+
+solid-memo:Themes
+    a skos:ConceptScheme ;
+    dcterms:title "Themes"@en ;
+    skos:definition "How the app is shown: light, dark, or as the browser prefers."@en ;
+    skos:hasTopConcept solid-memo:systemTheme ,
+                       solid-memo:lightTheme ,
+                       solid-memo:darkTheme ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11." .
+
+solid-memo:systemTheme
+    a skos:Concept ;
+    skos:prefLabel "As the browser prefers"@en ;
+    skos:definition "The app is light or dark as the browser or operating system prefers, following it when it changes. The default."@en ;
+    skos:notation "system" ;
+    skos:inScheme solid-memo:Themes ;
+    skos:topConceptOf solid-memo:Themes ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11." .
+
+solid-memo:lightTheme
+    a skos:Concept ;
+    skos:prefLabel "Light"@en ;
+    skos:definition "The app is shown light, whatever the browser prefers."@en ;
+    skos:notation "light" ;
+    skos:inScheme solid-memo:Themes ;
+    skos:topConceptOf solid-memo:Themes ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11." .
+
+solid-memo:darkTheme
+    a skos:Concept ;
+    skos:prefLabel "Dark"@en ;
+    skos:definition "The app is shown dark, whatever the browser prefers."@en ;
+    skos:notation "dark" ;
+    skos:inScheme solid-memo:Themes ;
+    skos:topConceptOf solid-memo:Themes ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11." .
