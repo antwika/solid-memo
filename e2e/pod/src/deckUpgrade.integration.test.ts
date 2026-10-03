@@ -182,7 +182,7 @@ describe.each(SERVERS)("a library deck upgrade on $name", ({ url: server }) => {
 
     const outcome = await useCases.applyLibraryUpgrade(deck, plan);
 
-    expect(outcome).toMatchObject({ ok: true, tidied: true });
+    expect(outcome, JSON.stringify(outcome)).toMatchObject({ ok: true, tidied: true });
     const upgraded = (await deckRepository.readDeck(deck.url))!;
     expect(upgraded).toMatchObject({ url: deck.url, sourceUrl: V2.url, title: { en: "Capitals", sv: "Huvudstäder" } });
     expect(upgraded.cardsDocumentUrl).toMatch(new RegExp(`/decks/${deck.id}-[0-9a-f-]+\\.ttl$`));

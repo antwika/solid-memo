@@ -31,6 +31,7 @@ the run ends, on Ctrl-C); the test names say which server and version:
 | `nss-5` | node-solid-server 5.x | the same | blocking |
 | `css-8` | Community Solid Server 8, still in alpha, in memory | its own, pinned by digest | advisory |
 | `pivot` | Pivot, the server of solidcommunity.net (the Community Solid Server 7 with Pivot's components), in memory | built here from its lockfile ([servers/pivot/](../e2e/pod/servers/pivot/Dockerfile)) with a configuration of its own, its root open | advisory |
+| `nextcloud` | Solid-Nextcloud: Nextcloud 30 with the Solid app, on SQLite, the pod `apps/solid/~alice/storage/` | built here from a commit of the app ([servers/nextcloud/](../e2e/pod/servers/nextcloud/Dockerfile)), installed on every start, alice's pod opened by a hook | advisory |
 
 A **blocking** server's tests gate CI, and so deploys and Renovate's
 merges: every test passes or skips, for a reason the tests give. An
@@ -43,7 +44,10 @@ and a job fails only on a test failing that
 no test ran ([compare.ts](../e2e/pod/compare.ts) says which in the job's
 summary, and what passes though listed, to take off the list). CI still
 checks that every advisory server starts and meets the contract, so a
-change that breaks one is not merged unnoticed. css-8 becomes blocking at
+change that breaks one is not merged unnoticed. Solid-Nextcloud's SQLite
+refuses writes made at once, so with it in a run the test files run one
+at a time (`serialFiles` in servers.ts); what it fails, and why, is its
+`expected-failures.json`. css-8 becomes blocking at
 8.0.0, and css-6 then goes.
 
 Each server is a compose file, `e2e/pod/servers/<id>/compose.yml`. It may

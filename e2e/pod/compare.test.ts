@@ -5,6 +5,7 @@ const results: Results = {
   testResults: [
     {
       name: "/repo/e2e/pod/src/digest.integration.test.ts",
+      status: "failed",
       assertionResults: [
         { ancestorTitles: ["the instance digest on Server 1.0.0"], title: "keeps", status: "passed" },
         { ancestorTitles: ["the instance digest on Server 1.0.0"], title: "counts", status: "failed" },
@@ -32,6 +33,16 @@ describe("compare", () => {
       failed: ["digest.integration.test.ts > learns"],
       fixed: ["digest.integration.test.ts > inner > mends"],
     });
+  });
+});
+
+describe("a file that failed around its tests", () => {
+  it("is a failure, though its tests only skipped", () => {
+    const skippedAll: Results = {
+      testResults: [{ name: "/a/deck.integration.test.ts", status: "failed", assertionResults: [{ ancestorTitles: ["on S"], title: "t", status: "skipped" }] }],
+    };
+    expect(compare(skippedAll, {}).failed).toEqual(["deck.integration.test.ts > (the file, around its tests)"]);
+    expect(compare(skippedAll, { "deck.integration.test.ts > (the file, around its tests)": "why" }).known).toHaveLength(1);
   });
 });
 

@@ -1,0 +1,21 @@
+# Solid-Nextcloud, built from ./Dockerfile, on SQLite, alice's pod open to
+# anyone (open-pod.sh): an advisory server (docs/testing.md). The harness
+# (../../servers.ts) sets E2E_PORT, the port on 127.0.0.1 it is reached at,
+# and E2E_SECRET, alice's password, made up for the run. Its entrypoint
+# needs root, to install and hand over to www-data.
+services:
+  server:
+    build: .
+    image: localhost/solid-memo-e2e-nextcloud:local
+    pull_policy: never
+    environment:
+      SQLITE_DATABASE: nextcloud
+      NEXTCLOUD_ADMIN_USER: alice
+      NEXTCLOUD_ADMIN_PASSWORD: "${E2E_SECRET:?}"
+      E2E_PORT: "${E2E_PORT:?}"
+      PHP_MEMORY_LIMIT: 512M
+    ports: ["127.0.0.1:${E2E_PORT:?}:80"]
+    init: true
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 2g
+    pids_limit: 1024

@@ -8,6 +8,17 @@
     ],
     automerge: true,
     automergeType: 'branch',
+    customManagers: [
+        // The commit of Solid-Nextcloud its end-to-end tests' image builds,
+        // as the branch its Dockerfile names moves on.
+        {
+            customType: 'regex',
+            managerFilePatterns: ['/^e2e/pod/servers/nextcloud/Dockerfile$/'],
+            matchStrings: [
+                '# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) branch=(?<currentValue>\\S+)\\nARG SOLID_NEXTCLOUD_SHA=(?<currentDigest>[0-9a-f]{40})',
+            ],
+        },
+    ],
     packageRules: [
         // The end-to-end tests run against two majors of each Solid server,
         // each pinned in e2e/pod/servers/ (docs/testing.md): each stays on
@@ -59,6 +70,17 @@
             matchFileNames: ['e2e/pod/servers/pivot/Dockerfile'],
             matchDepNames: ['node'],
             allowedVersions: '<23',
+        },
+        // Solid-Nextcloud, advisory: what it reports is for a person to look
+        // at. Its app supports Nextcloud 30 at most.
+        {
+            matchFileNames: ['e2e/pod/servers/nextcloud/**'],
+            automerge: false,
+        },
+        {
+            matchFileNames: ['e2e/pod/servers/nextcloud/Dockerfile'],
+            matchDepNames: ['nextcloud'],
+            allowedVersions: '<31',
         },
         // The Community Solid Server's tags are pushed again now and then:
         // a new digest for the same version is for a person to look at.

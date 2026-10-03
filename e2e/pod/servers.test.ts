@@ -36,8 +36,10 @@ describe.each(SERVER_IDS)("servers/%s/compose.yml", (id) => {
     expect(server.ports).toEqual([`127.0.0.1:\${E2E_PORT:?}:${SERVERS[id].internalPort}`]);
   });
 
-  it("is told its URL on 127.0.0.1 at E2E_PORT", () => {
-    expect(server.command!.some((arg) => arg.startsWith("http://127.0.0.1:${E2E_PORT:?}"))).toBe(true);
+  it("is told its URL on 127.0.0.1 at E2E_PORT, or the port to make it from", () => {
+    const told = server.command?.some((arg) => arg.startsWith("http://127.0.0.1:${E2E_PORT:?}"));
+    const environment = server.environment as Record<string, string> | undefined;
+    expect(told || environment?.E2E_PORT === "${E2E_PORT:?}").toBe(true);
   });
 
   it("runs an image pinned by digest, or one it builds and never pulls", () => {
@@ -46,7 +48,8 @@ describe.each(SERVER_IDS)("servers/%s/compose.yml", (id) => {
   });
 
   it("is limited and given nothing of the host", () => {
-    expect(server).toMatchObject({ init: true, cap_drop: ["ALL"], security_opt: ["no-new-privileges:true"] });
+    expect(server).toMatchObject({ init: true, security_opt: ["no-new-privileges:true"] });
+    if (!(SERVERS[id] as { rootEntrypoint?: true }).rootEntrypoint) expect(server.cap_drop).toEqual(["ALL"]);
     expect(server.mem_limit).toBeDefined();
     expect(server.pids_limit).toBeDefined();
     for (const key of ["privileged", "network_mode", "pid", "ipc", "cap_add", "devices", "volumes", "volumes_from"]) expect(server).not.toHaveProperty(key);
@@ -91,6 +94,7 @@ describe("the names in the tests", () => {
       "nss-5": expect.stringMatching(/^node-solid-server 5\.\d+\.\d+$/),
       "css-8": expect.stringMatching(/^Community Solid Server 8\.\d+\.\d+(-[\w.]+)?$/),
       pivot: expect.stringMatching(/^Pivot \d+\.\d+\.\d+ \(Community Solid Server 7\.\d+\.\d+\)$/),
+      nextcloud: expect.stringMatching(/^Solid-Nextcloud [0-9a-f]{8} \(Nextcloud 30\.\d+\.\d+\)$/),
     });
   });
 });
