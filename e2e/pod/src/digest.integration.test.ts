@@ -99,6 +99,14 @@ async function seed(server: string): Promise<{ instanceUrl: string; deck: Deck }
 
 const isDocument = (deck: Deck) => (r: Recorded) => r.url === deck.cardsDocumentUrl || r.url === deck.reviewsDocumentUrl;
 
+/**
+ * How long to wait for what pages write in the background: every write is
+ * checked against the shapes first, and is made again if the digest
+ * changed meanwhile, which on a busy CI runner takes longer than waitFor's
+ * default second.
+ */
+const LEARNING = { timeout: 10_000 };
+
 async function digestOf(instanceUrl: string): Promise<string> {
   const response = await fetch(`${instanceUrl}digest.ttl`);
   return response.ok ? response.text() : "";
@@ -116,7 +124,7 @@ async function untilLearned(instanceUrl: string, deck: Deck): Promise<void> {
       expect(digest?.schedules[deck.url]).toBeDefined();
       expect(digest?.receipts[deck.cardsDocumentUrl]?.conformedTo).toBe(RULESET);
     },
-    { timeout: 10_000 },
+    LEARNING,
   );
 }
 
@@ -165,7 +173,7 @@ describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
     const first = page();
     await first.useCases.getStudyCounts(instanceUrl, deck, now);
     if (await versioned(deck.cardsDocumentUrl)) {
-      await vi.waitFor(async () => expect(await digestOf(instanceUrl)).toContain("DeckSchedule"));
+      await vi.waitFor(async () => expect(await digestOf(instanceUrl)).toContain("DeckSchedule"), LEARNING);
     }
     await first.useCases.addCard(deck, { front: { "": "Denmark" }, back: { "": "Copenhagen" } });
     expect(await page().useCases.getStudyCounts(instanceUrl, deck, now)).toEqual({ dueCount: 0, newCount: 4 });
@@ -181,6 +189,6 @@ describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
       const digest = await digestOf(instanceUrl);
       expect(digest).toContain("DeckSchedule");
       expect(digest).toContain(RULESET);
-    });
+    }, LEARNING);
   });
 });

@@ -218,17 +218,31 @@ describe("the instance's digest in the pod", () => {
     expect(Object.keys((await digests.readDigest(INSTANCE))!.receipts)).toEqual([CARDS, REVIEWS]);
   });
 
-  it("reads and changes again when the digest changed elsewhere meanwhile, up to three times", async () => {
+  it("reads and changes again when the digest changed elsewhere meanwhile, six times in all, waiting longer each time", async () => {
     const pod = fakePod();
-    const digests = createSolidDigestRepository({ fetch: pod.fetch });
+    const waits: number[] = [];
+    const digests = createSolidDigestRepository({ fetch: pod.fetch, wait: async (ms) => void waits.push(ms) });
     await digests.updateDigest(INSTANCE, () => learned());
     pod.failNext("PATCH", DIGEST, 412);
     await digests.updateDigest(INSTANCE, (stored) => withReceipt(stored!, REVIEWS, '"r1"', {}));
     expect((await digests.readDigest(INSTANCE))!.receipts[REVIEWS]).toEqual({ document: REVIEWS, version: '"r1"' });
-    for (let i = 0; i < 3; i++) pod.failNext("PATCH", DIGEST, 412);
+    expect(waits).toEqual([50]);
+    waits.length = 0;
+    for (let i = 0; i < 6; i++) pod.failNext("PATCH", DIGEST, 412);
     await expect(digests.updateDigest(INSTANCE, (stored) => withReceipt(stored!, REVIEWS, '"r2"', {}))).rejects.toThrow(
       "changed elsewhere",
     );
+    expect(waits).toEqual([50, 100, 150, 200, 250]);
+  });
+
+  it("waits by the clock when no wait is given", async () => {
+    const pod = fakePod();
+    const digests = createSolidDigestRepository({ fetch: pod.fetch });
+    await digests.updateDigest(INSTANCE, () => learned());
+    pod.failNext("PATCH", DIGEST, 412);
+    const started = Date.now();
+    await digests.updateDigest(INSTANCE, (stored) => withReceipt(stored!, REVIEWS, '"r1"', {}));
+    expect(Date.now() - started).toBeGreaterThanOrEqual(45);
   });
 
   it("fails a change the pod refuses, and keeps writing later ones", async () => {

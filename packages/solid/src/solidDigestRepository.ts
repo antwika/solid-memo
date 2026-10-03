@@ -10,10 +10,21 @@ export interface SolidDigestRepositoryDeps {
   fetch: typeof globalThis.fetch;
   /** Checks what is about to be written; see writeCheck.ts. */
   checkWrite?: WriteCheck;
+  /** Waits before a write is made again (tests: at once). */
+  wait?: (ms: number) => Promise<void>;
 }
 
-/** How often a write is made again after the digest changed elsewhere meanwhile (412). */
-const ATTEMPTS = 3;
+/**
+ * How often a write is made, in all, while the digest keeps changing
+ * elsewhere (412), and how long it waits before each try again. Another
+ * page learning a check's documents writes the digest several times
+ * running; trying again at once, a write could lose to each of those and
+ * be dropped, so it waits a little longer each time, for them to be done.
+ */
+const ATTEMPTS = 6;
+const PAUSE_MS = 50;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
  * Each instance's digest as its digest.ttl (domain/studyDigest.ts). A
@@ -25,6 +36,7 @@ const ATTEMPTS = 3;
 export function createSolidDigestRepository({
   fetch,
   checkWrite = noWriteCheck,
+  wait = sleep,
 }: SolidDigestRepositoryDeps): DigestRepository {
   type Change = (stored: InstanceDigest | null) => InstanceDigest;
   const queues = new Map<string, { waiting: { change: Change; done: () => void; failed: (e: unknown) => void }[]; writing: boolean }>();
@@ -32,6 +44,7 @@ export function createSolidDigestRepository({
   async function write(instanceUrl: string, changes: Change[]): Promise<void> {
     const url = digestUrlOf(instanceUrl);
     for (let attempt = 1; ; attempt++) {
+      if (attempt > 1) await wait(PAUSE_MS * (attempt - 1));
       const dataset = await getSolidDatasetOrNull(url, fetch);
       const stored = dataset === null ? null : toDigest(dataset);
       const next = changes.reduce<InstanceDigest | null>((digest, change) => change(digest), stored)!;
