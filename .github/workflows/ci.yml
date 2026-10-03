@@ -70,3 +70,30 @@ jobs:
           name: pod-logs-${{ matrix.server }}
           path: e2e/pod/logs/
           retention-days: 7
+
+  # The advisory servers (docs/testing.md) only report, in the Interop
+  # workflow, but each must still start and meet the harness's contract:
+  # a change that breaks one fails here, not unnoticed until Interop runs.
+  contract:
+    name: contract (${{ matrix.server }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        server: [css-8]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run servers -w @solid-memo/e2e-pod -- ${{ matrix.server }}
+      - run: node e2e/pod/servers.ts contract ${{ matrix.server }}
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: contract-logs-${{ matrix.server }}
+          path: e2e/pod/logs/
+          retention-days: 7

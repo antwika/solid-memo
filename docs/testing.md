@@ -23,12 +23,27 @@ npm run pod:clean # take down the servers an interrupted run left
 free port of 127.0.0.1 and told that URL, and takes down after (or as
 the run ends, on Ctrl-C); the test names say which server and version:
 
-| Id | Server | Image |
-|---|---|---|
-| `css-7` | Community Solid Server 7.x, in memory | its own, `solidproject/community-server`, pinned by digest |
-| `css-6` | Community Solid Server 6.x, in memory | the same |
-| `nss-6` | node-solid-server 6.x | built here from its lockfile ([servers/nss/](../e2e/pod/servers/nss/Dockerfile)), in a root whose ACL lets anyone read and write |
-| `nss-5` | node-solid-server 5.x | the same |
+| Id | Server | Image | Tier |
+|---|---|---|---|
+| `css-7` | Community Solid Server 7.x, in memory | its own, `solidproject/community-server`, pinned by digest | blocking |
+| `css-6` | Community Solid Server 6.x, in memory | the same | blocking |
+| `nss-6` | node-solid-server 6.x | built here from its lockfile ([servers/nss/](../e2e/pod/servers/nss/Dockerfile)), in a root whose ACL lets anyone read and write | blocking |
+| `nss-5` | node-solid-server 5.x | the same | blocking |
+| `css-8` | Community Solid Server 8, still in alpha, in memory | its own, pinned by digest | advisory |
+
+A **blocking** server's tests gate CI, and so deploys and Renovate's
+merges: every test passes or skips, for a reason the tests give. An
+**advisory** server's results are reported, not a gate: the Interop
+workflow ([interop.yml](../.github/workflows/interop.yml)) runs them on
+pushes to `main` that touch the app's Solid code, weekly, and by hand,
+and a job fails only on a test failing that
+`e2e/pod/servers/<id>/expected-failures.json` (`{ "<file> > <test>":
+"<why>" }`, the test named without its server) does not list, or when
+no test ran ([compare.ts](../e2e/pod/compare.ts) says which in the job's
+summary, and what passes though listed, to take off the list). CI still
+checks that every advisory server starts and meets the contract, so a
+change that breaks one is not merged unnoticed. css-8 becomes blocking at
+8.0.0, and css-6 then goes.
 
 Each server is a compose file, `e2e/pod/servers/<id>/compose.yml`. It may
 ask only for `E2E_PORT` (the port on 127.0.0.1 the harness picked, which
@@ -45,13 +60,15 @@ test. What a server prints goes to `e2e/pod/logs/<id>.log`, which CI
 keeps when a job fails.
 
 `SOLID_SERVERS=css-7,nss-5` runs the suite against some only (`all`
-against every one; unset, the blocking ones, which today are all four);
+against every one; unset, the blocking ones; `css-8` for the advisory);
 `SOLID_SERVER_URL` against a server of your own instead, which must let
 anyone read and write, as `npm run pod`'s does (`SOLID_SERVER_NAME` names
 it in the tests; `NODE_EXTRA_CA_CERTS` trusts its certificate, if a CA of
-your own signed it). CI runs one job per server, side by side, none
+your own signed it). CI runs one job per blocking server, side by side, none
 stopping the others ([migrations.md](migrations.md#proof-on-a-real-server));
-Renovate keeps each server on its major (`renovate.json5`).
+Renovate keeps each server on its major (`renovate.json5`), and which
+servers each workflow runs is the table's in servers.ts (`npm test`
+checks).
 
 They need Docker: Docker Engine 28.3.3 or later on Linux (before it, a
 port published on 127.0.0.1 could be reached from the local network,

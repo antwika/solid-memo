@@ -1,0 +1,61 @@
+name: Interop
+
+# The app's use cases and Solid adapters against the advisory Solid
+# servers (docs/testing.md), whose results are reported, not a gate: one
+# job per server, as CI runs the blocking ones. A job fails only on a test
+# failing that its servers/<id>/expected-failures.json does not list, or
+# when no test ran; the job's summary says what passed, what failed as
+# expected and why, and what passes though listed.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - e2e/pod/**
+      - packages/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/interop.yml
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: interop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pod:
+    name: pod (${{ matrix.server }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        server: [css-8]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run servers -w @solid-memo/e2e-pod -- ${{ matrix.server }}
+      # compare.ts says whether the run went as expected, not Vitest.
+      - run: npm run test:pod
+        continue-on-error: true
+        env:
+          SOLID_SERVERS: ${{ matrix.server }}
+          E2E_RESULT_JSON: logs/result.json
+      - run: node e2e/pod/compare.ts ${{ matrix.server }} e2e/pod/logs/result.json
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pod-logs-${{ matrix.server }}
+          path: e2e/pod/logs/
+          retention-days: 7

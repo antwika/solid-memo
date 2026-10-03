@@ -57,7 +57,8 @@
       "env": [
         "SOLID_SERVER_URL",
         "SOLID_SERVER_NAME",
-        "SOLID_SERVERS"
+        "SOLID_SERVERS",
+        "E2E_RESULT_JSON"
       ],
       "dependsOn": [
         "transit"

@@ -13,6 +13,11 @@
         // each pinned in e2e/pod/servers/ (docs/testing.md): each stays on
         // its major, the Community Solid Server's in its compose file,
         // node-solid-server's in the lockfile its image is built from.
+        // Its tags are versions, and 8's are prereleases: read as semver.
+        {
+            matchDepNames: ['solidproject/community-server'],
+            versioning: 'semver',
+        },
         {
             matchFileNames: ['e2e/pod/servers/css-6/compose.yml'],
             matchDepNames: ['solidproject/community-server'],
@@ -22,6 +27,15 @@
             matchFileNames: ['e2e/pod/servers/css-7/compose.yml'],
             matchDepNames: ['solidproject/community-server'],
             allowedVersions: '<8',
+        },
+        // The advisory 8 follows its alphas to 8.0.0 (docs/testing.md); what
+        // it reports is for a person to look at, so nothing merges itself.
+        {
+            matchFileNames: ['e2e/pod/servers/css-8/compose.yml'],
+            matchDepNames: ['solidproject/community-server'],
+            allowedVersions: '>=8.0.0-0 <9',
+            ignoreUnstable: false,
+            automerge: false,
         },
         {
             matchFileNames: ['e2e/pod/servers/nss/5/package.json'],

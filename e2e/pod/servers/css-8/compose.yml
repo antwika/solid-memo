@@ -1,0 +1,15 @@
+# Community Solid Server 8, still in alpha, in memory, as css-7/compose.yml
+# runs 7: an advisory server (docs/testing.md), whose results are reported,
+# not a gate, until 8.0.0 is out. Renovate follows its prereleases
+# (renovate.json5).
+services:
+  server:
+    image: solidproject/community-server:8.0.0-alpha.3@sha256:e27aa81723b52e83d376f1584ea3470a0acce9fc2f000e34ac2a09722a5c50ee
+    command: ["-c", "config/default.json", "-b", "http://127.0.0.1:${E2E_PORT:?}/", "-l", "warn"]
+    ports: ["127.0.0.1:${E2E_PORT:?}:3000"]
+    user: node
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    pids_limit: 512

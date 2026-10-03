@@ -49,6 +49,7 @@ export const SERVERS = {
   "css-6": { label: "Community Solid Server", tier: "blocking", internalPort: 3000, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => imageTag("css-6") },
   "nss-6": { label: "node-solid-server", tier: "blocking", internalPort: 8443, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => lockedVersion("nss/6", "solid-server") },
   "nss-5": { label: "node-solid-server", tier: "blocking", internalPort: 8443, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => lockedVersion("nss/5", "solid-server") },
+  "css-8": { label: "Community Solid Server", tier: "advisory", internalPort: 3000, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => imageTag("css-8") },
 } satisfies Record<string, Entry>;
 
 export type ServerId = keyof typeof SERVERS;
