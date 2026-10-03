@@ -4,6 +4,7 @@ import { withAbout, type DeckAbout } from "@solid-memo/domain/deckAbout";
 import { deckPreferences, withPace, type DeckPace } from "@solid-memo/domain/deckPace";
 import { isCopyOf } from "@solid-memo/domain/library";
 import { pickLocale, type Locale } from "@solid-memo/domain/locale";
+import type { ThemeChoice } from "@solid-memo/domain/theme";
 import { planRepair, type Repair, type RepairPlan } from "@solid-memo/domain/repair";
 import {
   rebaseIri,
@@ -82,6 +83,7 @@ import {
 } from "@solid-memo/domain/studyDigest";
 import {
   DEFAULT_PREFERENCES,
+  type StoredPreferences,
   type StudyPreferences,
 } from "@solid-memo/domain/preferences";
 import {
@@ -133,6 +135,7 @@ import type {
   ContainerMove,
   GuestPod,
   LanguagePreference,
+  ThemePreference,
   UpdateJournal,
   WriteFence,
   Since,
@@ -179,6 +182,20 @@ export interface UseCases {
   language(preferred: readonly string[]): Locale;
   /** Speak this language from now on, on this device. */
   chooseLanguage(locale: Locale): void;
+  /** The theme chosen on this device; "system" when none was. */
+  themeChoice(): ThemeChoice;
+  /**
+   * The theme an instance's preferences hold, kept on this device too
+   * for the next visit's first paint; null when the instance has no
+   * preferences yet.
+   */
+  instanceTheme(instanceUrl: string): Promise<ThemeChoice | null>;
+  /**
+   * Show this theme from now on: on this device, and in the instance's
+   * preferences when there is an instance open and it has preferences
+   * (until its first preferences are saved, the device keeps it alone).
+   */
+  chooseTheme(choice: ThemeChoice, instanceUrl: string | null): Promise<void>;
   /**
    * The account behind a session: its Pod, discovered through the WebID
    * profile's storage link, its identity provider and its foaf:name.
@@ -383,6 +400,8 @@ export interface Dependencies {
   updateJournal?: UpdateJournal;
   /** The language the user chose; by default none is kept. */
   languagePreference?: LanguagePreference;
+  /** The theme the user chose; by default none is kept. */
+  themePreference?: ThemePreference;
   /** The clock; injected for tests. */
   now?: () => Date;
   /** Fresh identifiers (the UUID of an update's copy); injected for tests. */
@@ -407,6 +426,7 @@ async function readNow<T>(read: Promise<Since<T>>): Promise<{ value: T; version:
 }
 
 const NO_LANGUAGE_PREFERENCE: LanguagePreference = { chosen: () => null, choose: () => undefined };
+const NO_THEME_PREFERENCE: ThemePreference = { chosen: () => "system", choose: () => undefined };
 const NO_JOURNAL: UpdateJournal = { begin: () => undefined, end: () => undefined, staging: () => null };
 const NO_FENCE: WriteFence = { hold: () => () => undefined };
 const NO_DIGESTS: DigestRepository = { readDigest: async () => null, updateDigest: async () => undefined };
@@ -478,6 +498,7 @@ export function createUseCases({
   instanceCopier,
   updateJournal = NO_JOURNAL,
   languagePreference = NO_LANGUAGE_PREFERENCE,
+  themePreference = NO_THEME_PREFERENCE,
   now = () => new Date(),
   newId = () => crypto.randomUUID(),
   writeFence = NO_FENCE,
@@ -543,18 +564,25 @@ export function createUseCases({
     return { switched, deck };
   }
 
-  const preferenceReads = new Map<string, Promise<StudyPreferences>>();
+  const preferenceReads = new Map<string, Promise<StoredPreferences | null>>();
 
-  function getPreferences(instanceUrl: string): Promise<StudyPreferences> {
+  /** An instance's stored preferences, one read for callers that ask at once. */
+  function readStoredPreferences(instanceUrl: string): Promise<StoredPreferences | null> {
     const inFlight = preferenceReads.get(instanceUrl);
     if (inFlight !== undefined) return inFlight;
     const read = preferencesRepository
       .getPreferences(instanceUrl)
-      .then((stored) => stored?.preferences ?? DEFAULT_PREFERENCES)
       .finally(() => preferenceReads.delete(instanceUrl));
     preferenceReads.set(instanceUrl, read);
     return read;
   }
+
+  function getPreferences(instanceUrl: string): Promise<StudyPreferences> {
+    return readStoredPreferences(instanceUrl).then((stored) => stored?.preferences ?? DEFAULT_PREFERENCES);
+  }
+
+  /** Each instance's theme writes, one after another, so a later choice is never overwritten by an earlier. */
+  const themeWrites = new Map<string, Promise<void>>();
 
 
   /**
@@ -963,6 +991,29 @@ export function createUseCases({
     chooseLanguage(locale) {
       languagePreference.choose(locale);
     },
+    themeChoice() {
+      return themePreference.chosen();
+    },
+    async instanceTheme(instanceUrl) {
+      const stored = await readStoredPreferences(instanceUrl);
+      if (stored === null) return null;
+      themePreference.choose(stored.preferences.theme);
+      return stored.preferences.theme;
+    },
+    chooseTheme(choice, instanceUrl) {
+      themePreference.choose(choice);
+      if (instanceUrl === null) return Promise.resolve();
+      const previous = themeWrites.get(instanceUrl) ?? Promise.resolve();
+      const write = previous
+        .catch(() => undefined)
+        .then(async () => {
+          const stored = await preferencesRepository.getPreferences(instanceUrl);
+          if (stored === null || stored.preferences.theme === choice) return;
+          await preferencesRepository.savePreferences(instanceUrl, { ...stored.preferences, theme: choice });
+        });
+      themeWrites.set(instanceUrl, write);
+      return write;
+    },
     async loginWithWebId(webId) {
       const validation = validateWebId(webId);
       if (!validation.ok) {
@@ -1337,6 +1388,7 @@ export function createUseCases({
     },
     getPreferences,
     savePreferences(instanceUrl, preferences) {
+      themePreference.choose(preferences.theme);
       return preferencesRepository.savePreferences(instanceUrl, preferences);
     },
     async getStudyQueue(instanceUrl, deck, now) {

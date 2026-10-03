@@ -117,7 +117,8 @@ describe("review states, preferences and the instance record", () => {
     expect(upgradeReviewState(current)).toBe(current);
     expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 1 })).toBe(true);
     expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 2 })).toBe(true);
-    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 3 })).toBe(false);
+    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 3 })).toBe(true);
+    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 4 })).toBe(false);
     expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 0 })).toBe(true);
     expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 1 })).toBe(true);
     expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 2 })).toBe(false);
@@ -173,7 +174,7 @@ describe("planMigration", () => {
       isPlanEmpty(
         planMigration({
           instance: { name: "Main", createdAt: "", formatVersion: 2 },
-          preferences: { preferences: DEFAULT_PREFERENCES, formatVersion: 3 },
+          preferences: { preferences: DEFAULT_PREFERENCES, formatVersion: 4 },
           catalog,
           entries: [],
         }),

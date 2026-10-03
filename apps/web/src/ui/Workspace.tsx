@@ -42,6 +42,7 @@ import {
 import { ValidationContainer } from "./ValidationContainer";
 import { WebIdDocumentContainer } from "./WebIdDocumentContainer";
 import { useI18n } from "./i18n";
+import { useInstanceTheme } from "./theme";
 
 export function Workspace({
   useCases,
@@ -67,6 +68,8 @@ export function Workspace({
     instanceUrl === null
       ? null
       : (instances?.find((i) => i.url === instanceUrl) ?? null);
+
+  useInstanceTheme(useCases, activeInstance?.url ?? null);
 
   const deckUrl = route !== null && "deckUrl" in route ? route.deckUrl : null;
   const needsDeck = deckUrl !== null && activeInstance !== null;

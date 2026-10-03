@@ -5,10 +5,13 @@ import {
   conceptByNotation,
   conceptOfDirection,
   conceptOfPolicy,
+  conceptOfTheme,
   directionOfConcept,
   policyOfConcept,
+  themeOfConcept,
 } from "./concepts";
 import { INVALID_DATA_POLICIES } from "./invalidDataPolicy";
+import { THEME_CHOICES } from "./theme";
 import { DECK_DIRECTIONS } from "./deck";
 
 const SM = "https://solid-memo.com/vocab/v1#";
@@ -53,5 +56,15 @@ describe("invalid data policies as concepts", () => {
     }
     expect(conceptOfPolicy("warn-only")).toBe(`${SM}warnOnly`);
     expect(policyOfConcept(`${SM}frontToBack`)).toBeUndefined();
+  });
+});
+
+describe("theme choices as concepts", () => {
+  it("map every choice to its concept and back", () => {
+    for (const choice of THEME_CHOICES) {
+      expect(themeOfConcept(conceptOfTheme(choice))).toBe(choice);
+    }
+    expect(conceptOfTheme("system")).toBe(`${SM}systemTheme`);
+    expect(themeOfConcept(`${SM}warnOnly`)).toBeUndefined();
   });
 });

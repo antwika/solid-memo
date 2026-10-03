@@ -5,6 +5,7 @@ import type { StudyPreferences } from "@solid-memo/domain/preferences";
 import { Loading } from "./Loading";
 import { PreferencesScreen } from "./PreferencesScreen";
 import { useI18n } from "./i18n";
+import { instanceThemeKey } from "./theme";
 
 /** Owns the preferences query/mutation for one instance. */
 export function PreferencesContainer({
@@ -31,6 +32,8 @@ export function PreferencesContainer({
       await queryClient.invalidateQueries({
         queryKey: ["preferences", instance.url],
       });
+      // The first save puts the theme into the instance's preferences.
+      await queryClient.invalidateQueries({ queryKey: instanceThemeKey(instance.url) });
       queryClient.removeQueries({ queryKey: ["studyQueue"] });
       onBack();
     },

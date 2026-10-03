@@ -1,10 +1,11 @@
 import type { AnswerScale } from "./answerScale";
 import { DEFAULT_INVALID_DATA_POLICY, type InvalidDataPolicy } from "./invalidDataPolicy";
+import { DEFAULT_THEME_CHOICE, type ThemeChoice } from "./theme";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 
 /**
  * Format version written on every preferences document this app saves.
- * Format 3 adds the invalid data policy; format 2 states every field;
+ * Format 4 adds the theme; format 3 the invalid data policy; format 2 states every field;
  * format 1 is whatever the unversioned era wrote, each missing field
  * meaning its default.
  */
@@ -29,6 +30,11 @@ export interface StudyPreferences {
   developerMode: boolean;
   /** What the app does when data in the instance does not conform to its shapes. */
   invalidDataPolicy: InvalidDataPolicy;
+  /**
+   * How the app is shown. Kept on the device too, which is all there is
+   * before an instance has preferences (and before login).
+   */
+  theme: ThemeChoice;
 }
 
 /** Preferences as a pod holds them, with the format they are stored in. */
@@ -48,4 +54,5 @@ export const DEFAULT_PREFERENCES: StudyPreferences = {
   answerScale: "sm2",
   developerMode: false,
   invalidDataPolicy: DEFAULT_INVALID_DATA_POLICY,
+  theme: DEFAULT_THEME_CHOICE,
 };

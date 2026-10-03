@@ -12,6 +12,7 @@ import { createSolidAnswerLog } from "@solid-memo/solid/solidAnswerLog";
 import { createSolidInstanceRepository } from "@solid-memo/solid/solidInstanceRepository";
 import { createSolidPreferencesRepository } from "@solid-memo/solid/solidPreferencesRepository";
 import { createLocalStorageLanguagePreference } from "@solid-memo/browser/localStorageLanguagePreference";
+import { createLocalStorageThemePreference } from "@solid-memo/browser/localStorageThemePreference";
 import { createLocalStorageUpdateJournal } from "@solid-memo/browser/localStorageUpdateJournal";
 import { createIndexedDbResourceStore } from "@solid-memo/browser/indexedDbResourceStore";
 import { GUEST_ORIGIN } from "@solid-memo/domain/guest";
@@ -89,6 +90,7 @@ const useCases = createUseCases({
   instanceCopier: createSolidInstanceCopier({ fetch: podFetch }),
   updateJournal: createLocalStorageUpdateJournal(),
   languagePreference: createLocalStorageLanguagePreference(),
+  themePreference: createLocalStorageThemePreference(),
   writeFence,
   digestRepository: createSolidDigestRepository({ fetch: podFetch, checkWrite }),
   answerLog: createSolidAnswerLog({ fetch: podFetch, checkWrite }),

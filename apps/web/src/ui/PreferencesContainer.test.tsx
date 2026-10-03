@@ -76,6 +76,7 @@ describe("PreferencesContainer", () => {
       answerScale: "sm2",
       developerMode: false,
       invalidDataPolicy: "block-instance" as const,
+      theme: "system",
     });
   });
 

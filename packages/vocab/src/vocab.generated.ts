@@ -1,6 +1,6 @@
 /* Generated from vocab/v1.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
-/** Solid Memo's own vocabulary, version 1.10 (see docs/vocab.md). */
+/** Solid Memo's own vocabulary, version 1.11 (see docs/vocab.md). */
 export const SM_NS = "https://solid-memo.com/vocab/v1#";
 
 export const SM = {
@@ -84,6 +84,8 @@ export const SM = {
   developerMode: `${SM_NS}developerMode`,
   /** What the app does when data in the instance does not conform to its shapes: a concept of solid-memo:InvalidDataPolicies. (Added in 1.6 for preferences format 3.) */
   invalidDataPolicy: `${SM_NS}invalidDataPolicy`,
+  /** Whether the app is shown light, dark, or as the browser prefers: a concept of solid-memo:Themes. (Added in 1.11 for preferences format 4.) */
+  theme: `${SM_NS}theme`,
   /** The document a receipt is about. (Added in 1.9.) */
   receiptOf: `${SM_NS}receiptOf`,
   /** The version of the document a receipt is about: its ETag, as the pod gave it. (Added in 1.9.) */
@@ -144,4 +146,12 @@ export const SM = {
   blockSubject: `${SM_NS}blockSubject`,
   /** Invalid data is reported, and the app keeps working with it. (Added in 1.6.) */
   warnOnly: `${SM_NS}warnOnly`,
+  /** How the app is shown: light, dark, or as the browser prefers. (Added in 1.11.) */
+  Themes: `${SM_NS}Themes`,
+  /** The app is light or dark as the browser or operating system prefers, following it when it changes. The default. (Added in 1.11.) */
+  systemTheme: `${SM_NS}systemTheme`,
+  /** The app is shown light, whatever the browser prefers. (Added in 1.11.) */
+  lightTheme: `${SM_NS}lightTheme`,
+  /** The app is shown dark, whatever the browser prefers. (Added in 1.11.) */
+  darkTheme: `${SM_NS}darkTheme`,
 } as const;

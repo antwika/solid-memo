@@ -125,7 +125,7 @@ describe("describeFormats", () => {
         catalogMissing: false,
       }, t),
     ).toBe(
-      "instance format 2 and preferences format 3, which records the answer scale, developer mode and what to do with invalid data",
+      "instance format 2 and preferences format 4, which records the answer scale, developer mode, what to do with invalid data and the theme",
     );
   });
 });

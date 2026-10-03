@@ -6,8 +6,10 @@ import {
 } from "@solid-memo/domain/invalidDataPolicy";
 import { LOCALES } from "@solid-memo/domain/locale";
 import type { StudyPreferences } from "@solid-memo/domain/preferences";
+import { THEME_CHOICES } from "@solid-memo/domain/theme";
 import { useI18n, type I18n } from "./i18n";
 import { LANGUAGE_NAMES } from "./LanguageSelector";
+import { useTheme } from "./theme";
 
 /** The answer scales on offer, each with its label and meaning. */
 function answerScaleOptions(t: I18n["t"]): {
@@ -71,6 +73,7 @@ export function PreferencesScreen({
   onSave: (preferences: StudyPreferences) => void;
 }) {
   const { t, locale, chooseLocale } = useI18n();
+  const { choice: themeChoice, chooseTheme } = useTheme();
   const [newCardsPerDay, setNewCardsPerDay] = useState(
     String(preferences.newCardsPerDay),
   );
@@ -100,6 +103,7 @@ export function PreferencesScreen({
       answerScale,
       developerMode,
       invalidDataPolicy,
+      theme: themeChoice,
     });
   }
 
@@ -124,6 +128,22 @@ export function PreferencesScreen({
             </label>
           ))}
           <p class="hint">{t("preferences.language.hint")}</p>
+        </fieldset>
+        <fieldset>
+          <legend>{t("preferences.theme.legend")}</legend>
+          {THEME_CHOICES.map((option) => (
+            <label key={option} class="radio-option">
+              <input
+                type="radio"
+                name="theme"
+                value={option}
+                checked={themeChoice === option}
+                onChange={() => chooseTheme(option)}
+              />
+              {t(`theme.${option}`)}
+            </label>
+          ))}
+          <p class="hint">{t("preferences.theme.hint")}</p>
         </fieldset>
         <label for="pref-new">{t("preferences.newCardsPerDay")}</label>
         <input

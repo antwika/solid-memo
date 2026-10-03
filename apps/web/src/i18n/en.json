@@ -2,6 +2,13 @@
   "language": {
     "label": "Language"
   },
+  "theme": {
+    "toDark": "Switch to dark mode",
+    "toLight": "Switch to light mode",
+    "system": "As my browser",
+    "light": "Light",
+    "dark": "Dark"
+  },
   "common": {
     "cardCount": {
       "one": "{count} card",
@@ -489,7 +496,7 @@
     "countIn": "{what} in {decks}",
     "instanceFormat": "instance format {version}",
     "catalogueFormat": "a catalogue of each instance's decks, which other apps read as a DCAT catalogue",
-    "preferencesFormat": "preferences format {version}, which records the answer scale, developer mode and what to do with invalid data",
+    "preferencesFormat": "preferences format {version}, which records the answer scale, developer mode, what to do with invalid data and the theme",
     "deckFormat": "deck format {version}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages",
     "cardFormat": "card format {version}, which adds pictures on cards, lets a library deck retire a card it no longer uses and lets a card's text state its language",
     "reviewFormat": "review-state format {version}, which keeps each study direction's state and the day's undo snapshot",
@@ -591,6 +598,10 @@
     "language": {
       "legend": "Language",
       "hint": "Takes effect right away, and is kept on this device rather than in your Pod."
+    },
+    "theme": {
+      "legend": "Appearance",
+      "hint": "Takes effect right away. Once these preferences are saved it is kept in your Pod, so every device you log in on looks the same."
     },
     "heading": "Study preferences",
     "loading": "Loading preferences…",

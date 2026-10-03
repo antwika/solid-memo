@@ -1,5 +1,6 @@
 import type { Catalog } from "@solid-memo/domain/catalog";
 import type { Locale } from "@solid-memo/domain/locale";
+import type { ThemeChoice } from "@solid-memo/domain/theme";
 import type { Repair } from "@solid-memo/domain/repair";
 import type { Card, CardContent, Deck } from "@solid-memo/domain/deck";
 import type {
@@ -338,6 +339,19 @@ export interface LanguagePreference {
   /** The chosen language; null when none was chosen (or it was forgotten). */
   chosen(): Locale | null;
   choose(locale: Locale): void;
+}
+
+/**
+ * Driven port: the theme the user chose for the app, kept where the app
+ * runs (the browser), since it is needed before any pod is reached: on
+ * the sign-in screens, and for the first paint. An instance's preferences,
+ * once it has them, keep the choice too and win. Best effort: it may
+ * forget, and the app then looks as the browser prefers.
+ */
+export interface ThemePreference {
+  /** The chosen theme; "system" when none was chosen (or it was forgotten). */
+  chosen(): ThemeChoice;
+  choose(choice: ThemeChoice): void;
 }
 
 /**

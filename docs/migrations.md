@@ -79,6 +79,7 @@ flowchart LR
     r1["ReviewStateV1"] -->|reviewState/1-to-2<br/>partial snapshot dropped| r2["ReviewStateV2"]
     p1["PreferencesV1"] -->|preferences/1-to-2<br/>defaults filled| p2["PreferencesV2"]
     p2 -->|preferences/2-to-3<br/>block the instance on invalid data| p3["PreferencesV3"]
+    p3 -->|preferences/3-to-4<br/>theme as the browser prefers| p4["PreferencesV4"]
 ```
 
 One module per step (`<class>/<n>-to-<n+1>.ts`), each a pure, total

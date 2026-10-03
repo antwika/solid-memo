@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   act,
   fireEvent,
@@ -47,6 +47,132 @@ describe("App", () => {
     expect(useCases.language).toHaveBeenCalledWith(navigator.languages);
     expect(await screen.findByText(/Skapad av/)).toBeInTheDocument();
     expect(document.documentElement.lang).toBe("sv");
+  });
+
+  describe("theme", () => {
+    /** A browser whose dark-mode wish can change while the app runs. */
+    function fakeBrowserScheme(dark: boolean) {
+      const listeners = new Set<() => void>();
+      const query = {
+        get matches() {
+          return dark;
+        },
+        addEventListener: (_: string, listener: () => void) => listeners.add(listener),
+        removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
+      };
+      vi.spyOn(window, "matchMedia").mockReturnValue(query as unknown as MediaQueryList);
+      return {
+        change(nowDark: boolean) {
+          dark = nowDark;
+          act(() => listeners.forEach((listener) => listener()));
+        },
+        listeners,
+      };
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const instance = { url: "https://pod.example/solid-memo/main/", name: "Main" };
+
+    /** Logged in, in an instance whose preferences hold `theme` (null: it has none yet). */
+    function inInstance(theme: "system" | "light" | "dark" | null, overrides: Partial<UseCases> = {}) {
+      window.location.hash = "";
+      return makeUseCases({
+        restoreSession: vi.fn(async () => restored),
+        listInstances: vi.fn(async () => [instance]),
+        instanceTheme: vi.fn(async () => theme),
+        ...overrides,
+      });
+    }
+
+    it("follows the browser while nothing is chosen, as it changes", async () => {
+      const browser = fakeBrowserScheme(true);
+      const { unmount } = renderApp(makeUseCases());
+      expect(await screen.findByRole("button", { name: "Switch to light mode" })).toBeInTheDocument();
+      expect(document.documentElement.dataset.theme).toBe("dark");
+      browser.change(false);
+      expect(document.documentElement.dataset.theme).toBe("light");
+      browser.change(true);
+      expect(document.documentElement.dataset.theme).toBe("dark");
+      unmount();
+      await waitFor(() => expect(browser.listeners.size).toBe(0));
+    });
+
+    it("shows the theme chosen on this device, whatever the browser prefers", async () => {
+      fakeBrowserScheme(true);
+      renderApp(makeUseCases({ themeChoice: vi.fn(() => "light" as const) }));
+      expect(await screen.findByRole("button", { name: "Switch to dark mode" })).toBeInTheDocument();
+      expect(document.documentElement.dataset.theme).toBe("light");
+    });
+
+    it("switches theme on this device alone outside an instance", async () => {
+      fakeBrowserScheme(false);
+      const meta = document.createElement("meta");
+      meta.name = "theme-color";
+      document.head.append(meta);
+      const useCases = makeUseCases();
+      renderApp(useCases);
+      fireEvent.click(await screen.findByRole("button", { name: "Switch to dark mode" }));
+      expect(useCases.chooseTheme).toHaveBeenCalledWith("dark", null);
+      expect(document.documentElement.dataset.theme).toBe("dark");
+      expect(meta.content).toBe("#11171e");
+      fireEvent.click(screen.getByRole("button", { name: "Switch to light mode" }));
+      expect(document.documentElement.dataset.theme).toBe("light");
+      expect(meta.content).toBe("#f7f6f1");
+      await waitFor(() => expect(useCases.chooseTheme).toHaveBeenCalledTimes(2));
+      expect(useCases.instanceTheme).not.toHaveBeenCalled();
+      meta.remove();
+    });
+
+    it("shows the theme the open instance's preferences hold, and keeps a new choice there", async () => {
+      fakeBrowserScheme(false);
+      const useCases = inInstance("dark");
+      renderApp(useCases);
+      await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+      expect(useCases.instanceTheme).toHaveBeenCalledWith(instance.url);
+      vi.mocked(useCases.instanceTheme).mockResolvedValue("light");
+      fireEvent.click(screen.getByRole("button", { name: "Switch to light mode" }));
+      expect(useCases.chooseTheme).toHaveBeenCalledWith("light", instance.url);
+      // Read back from the pod once written.
+      await waitFor(() => expect(useCases.instanceTheme).toHaveBeenCalledTimes(2));
+      expect(document.documentElement.dataset.theme).toBe("light");
+    });
+
+    it("keeps the device's theme in an instance without preferences", async () => {
+      fakeBrowserScheme(false);
+      const useCases = inInstance(null, { themeChoice: vi.fn(() => "dark" as const) });
+      renderApp(useCases);
+      await waitFor(() => expect(useCases.instanceTheme).toHaveBeenCalledWith(instance.url));
+      expect(document.documentElement.dataset.theme).toBe("dark");
+    });
+
+    it("puts back the pod's theme when a choice cannot be written there", async () => {
+      fakeBrowserScheme(false);
+      const useCases = inInstance("dark", { chooseTheme: vi.fn(async () => Promise.reject(new Error("412"))) });
+      renderApp(useCases);
+      await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+      fireEvent.click(screen.getByRole("button", { name: "Switch to light mode" }));
+      expect(document.documentElement.dataset.theme).toBe("light");
+      await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+    });
+
+    it("reads the pod back only after the last of quick choices", async () => {
+      fakeBrowserScheme(false);
+      const writes: (() => void)[] = [];
+      const useCases = inInstance("dark", {
+        chooseTheme: vi.fn(() => new Promise<void>((resolve) => writes.push(resolve))),
+      });
+      renderApp(useCases);
+      await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+      fireEvent.click(screen.getByRole("button", { name: "Switch to light mode" }));
+      fireEvent.click(screen.getByRole("button", { name: "Switch to dark mode" }));
+      await act(async () => writes[0]());
+      expect(useCases.instanceTheme).toHaveBeenCalledOnce();
+      await act(async () => writes[1]());
+      await waitFor(() => expect(useCases.instanceTheme).toHaveBeenCalledTimes(2));
+    });
   });
 
   it("switches language, and keeps the choice", async () => {
