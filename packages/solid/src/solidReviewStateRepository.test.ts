@@ -205,3 +205,28 @@ describe("applyReviewChanges", () => {
     expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });
 });
+
+describe("stageReviewChanges", () => {
+  const STAGED = `${INSTANCE}reviews/deck-1-u1.ttl`;
+  const other: ReviewState = { ...state, cardId: "card-2" };
+
+  it("writes the states, but the removed ones, into a new document, moving them to it", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      setThing(reviewsDataset(), toReviewStateThing(deck.reviewsDocumentUrl, other)) as never,
+    );
+    await makeRepository().stageReviewChanges(deck, STAGED, [
+      { cardId: "card-2", direction: "front-to-back" },
+    ]);
+    const [url, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    expect(url).toBe(STAGED);
+    expect(toReviewState(getThing(saved as SolidDataset, `${STAGED}#card-1`)!)).toEqual(state);
+    expect(getThing(saved as SolidDataset, `${STAGED}#card-2`)).toBeNull();
+    expect(getThing(saved as SolidDataset, `${deck.reviewsDocumentUrl}#card-1`)).toBeNull();
+  });
+
+  it("writes an empty document for a deck without one", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
+    await makeRepository().stageReviewChanges(deck, STAGED, []);
+    expect(vi.mocked(saveSolidDatasetAt).mock.calls[0][0]).toBe(STAGED);
+  });
+});

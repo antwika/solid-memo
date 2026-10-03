@@ -5,9 +5,9 @@ import { AppError } from "@solid-memo/domain/appError";
 const READS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 /**
- * The WriteFence as a wrapper of the pod fetch: while a container is
- * held, every request under it that could write (PUT, POST, PATCH,
- * DELETE, …) is refused before it leaves the browser. Every adapter is
+ * The WriteFence as a wrapper of the pod fetch: while a container (or a
+ * document) is held, every request under it (or to it) that could write
+ * (PUT, POST, PATCH, DELETE, …) is refused before it leaves the browser. Every adapter is
  * given the wrapped fetch, so no code path can write around it.
  */
 export function createWriteFence(inner: typeof globalThis.fetch): WriteFence & { fetch: typeof globalThis.fetch } {
@@ -32,7 +32,9 @@ export function createWriteFence(inner: typeof globalThis.fetch): WriteFence & {
         const url = normalize(request?.url ?? String(input));
         for (const container of held.keys()) {
           if (url.startsWith(container)) {
-            throw new AppError("instanceBeingUpdated", { container, method, url });
+            throw container.endsWith("/")
+              ? new AppError("instanceBeingUpdated", { container, method, url })
+              : new AppError("deckBeingUpgraded", { document: container, method, url });
           }
         }
       }

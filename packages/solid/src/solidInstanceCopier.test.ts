@@ -148,6 +148,30 @@ describe("copyAccessControl", () => {
     expect(getUrlAll(rule, "http://www.w3.org/ns/auth/acl#agent")).toEqual(["https://alice.example/profile/card#me"]);
   });
 
+  it("moves a document's own rules with it, and nothing else, when a document moves", async () => {
+    const from = `${FROM}decks/deck-1.ttl`;
+    const to = `${FROM}decks/deck-1-u1.ttl`;
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      setThing(
+        mockSolidDatasetFrom(`${from}.acl`),
+        buildThing(createThing({ url: `${from}.acl#friend` }))
+          .addIri("http://www.w3.org/ns/auth/acl#accessTo", from)
+          .addIri("http://www.w3.org/ns/auth/acl#agent", "https://bob.example/profile/card#me")
+          .build(),
+      ) as never,
+    );
+    const fetch = fetchOf({
+      [from]: { headers: { Link: '<deck-1.ttl.acl>; rel="acl"' } },
+      [to]: { headers: { Link: '<deck-1-u1.ttl.acl>; rel="acl"' } },
+    });
+    await expect(copier(fetch).copyAccessControl(from, to, { from, to })).resolves.toBe(true);
+    const [url, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    expect(url).toBe(`${to}.acl`);
+    const rule = getThing(saved as SolidDataset, `${to}.acl#friend`)!;
+    expect(getUrlAll(rule, "http://www.w3.org/ns/auth/acl#accessTo")).toEqual([to]);
+    expect(getUrlAll(rule, "http://www.w3.org/ns/auth/acl#agent")).toEqual(["https://bob.example/profile/card#me"]);
+  });
+
   it("copies nothing for a resource that inherits its access control", async () => {
     await expect(copier().copyAccessControl(FROM, TO, MOVE)).resolves.toBe(false);
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);

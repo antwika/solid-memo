@@ -1,4 +1,5 @@
 import { isRecalled, type Answer } from "./answer";
+import { fragmentIdOf } from "./subjectUrl";
 
 /**
  * Study statistics, computed from the answer log (domain/answer.ts):
@@ -118,7 +119,8 @@ export function statisticsOf(answers: readonly Answer[], today: string): Statist
     totals: {
       answers: answers.length,
       studyDays: days.length,
-      cards: new Set(answers.map((answer) => answer.cardUrl)).size,
+      // A card is its deck's and its id: an upgrade moves a deck's cards into a new document.
+      cards: new Set(answers.map((answer) => `${answer.deckUrl}\n${fragmentIdOf(answer.cardUrl)}`)).size,
     },
     days,
     streaks: streaksOf(

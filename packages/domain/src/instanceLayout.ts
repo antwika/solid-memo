@@ -23,6 +23,17 @@ export function catalogUrlOf(instanceUrl: string): string {
   return `${ensureTrailingSlash(instanceUrl)}catalog.ttl`;
 }
 
+/** The instance a deck is in: the container of its catalog entry's document. */
+export function instanceUrlOfDeck(deckUrl: string): string {
+  const catalog = deckUrl.split("#")[0];
+  return catalog.slice(0, catalog.lastIndexOf("/") + 1);
+}
+
+/** Every document the decks use: their cards and reviews documents. */
+export function documentsInUse(decks: readonly Deck[]): Set<string> {
+  return new Set(decks.flatMap((deck) => [deck.cardsDocumentUrl, deck.reviewsDocumentUrl]));
+}
+
 /**
  * The instance's digest document: derived data (domain/studyDigest.ts),
  * not one of the documents an instance is checked by.

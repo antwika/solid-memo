@@ -20,7 +20,7 @@ import {
   type DeckDirection,
 } from "@solid-memo/domain/deck";
 import { cardToRecord } from "@solid-memo/domain/deckRecord";
-import { catalogUrlOf, ensureTrailingSlash } from "@solid-memo/domain/instanceLayout";
+import { catalogUrlOf, documentsInUse, ensureTrailingSlash } from "@solid-memo/domain/instanceLayout";
 import { documentUrlOf } from "@solid-memo/domain/subjectUrl";
 import { CARD_V4 } from "@solid-memo/vocab/descriptors.generated";
 import { deleteDataset, getSolidDatasetOrNull, saveDataset } from "./datasets";
@@ -39,6 +39,8 @@ import { reviewSubjectUrl } from "./mappers/reviewStateMapper";
 import { recordThing } from "./records";
 import { mapSince, readSince } from "./readSince";
 import { AppError } from "@solid-memo/domain/appError";
+import { sameDeckState, withDeckChanges } from "@solid-memo/domain/deckUpgrade";
+import { loadEngine as defaultLoadEngine, movedDataset, type LoadEngine } from "./movedDataset";
 
 export interface SolidDeckRepositoryDeps {
   fetch: typeof globalThis.fetch;
@@ -46,6 +48,8 @@ export interface SolidDeckRepositoryDeps {
   randomId: () => string;
   /** Checks what is about to be written; see writeCheck.ts. */
   checkWrite?: WriteCheck;
+  /** The IRI mapper an upgrade's new cards document is moved with; injected for tests. */
+  loadEngine?: LoadEngine;
 }
 
 export function createSolidDeckRepository({
@@ -53,6 +57,7 @@ export function createSolidDeckRepository({
   now,
   randomId,
   checkWrite = noWriteCheck,
+  loadEngine = defaultLoadEngine,
 }: SolidDeckRepositoryDeps): DeckRepository {
   /** Save a document once the subjects the write touched are checked. */
   async function save(url: string, dataset: SolidDataset, subjects: readonly string[]): Promise<void> {
@@ -109,10 +114,13 @@ export function createSolidDeckRepository({
     saveDeck,
 
     async removeDeck(deck): Promise<void> {
-      await deleteDocumentIfPresent(deck.cardsDocumentUrl, fetch);
-      await deleteDocumentIfPresent(deck.reviewsDocumentUrl, fetch);
       const catalogUrl = documentUrlOf(deck.url);
       const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
+      // A document another deck uses too (another app may point two decks at one) is kept.
+      const used = documentsInUse(dataset === null ? [] : toDecks(dataset).filter((other) => other.url !== deck.url));
+      for (const url of [deck.cardsDocumentUrl, deck.reviewsDocumentUrl]) {
+        if (!used.has(url)) await deleteDocumentIfPresent(url, fetch);
+      }
       if (dataset === null) return;
       await saveDataset(catalogUrl, withoutDeck(dataset, deck), fetch);
     },
@@ -194,21 +202,47 @@ export function createSolidDeckRepository({
       await save(deck.cardsDocumentUrl, updated, cards.map((card) => card.url));
     },
 
-    async applyCardChanges(deck, { save: saved, remove }): Promise<void> {
+    async applyCardChanges(deck, changes): Promise<void> {
       const dataset =
         (await getSolidDatasetOrNull(deck.cardsDocumentUrl, fetch)) ?? createSolidDataset();
-      const urlOf = (id: string) => `${deck.cardsDocumentUrl}#${id}`;
-      let updated = dataset;
-      for (const card of saved) {
-        const existing = getThing(updated, urlOf(card.id));
-        const createdAt = existing === null ? undefined : getDatetime(existing, DCTERMS.created)?.toISOString();
-        updated = setThing(
-          updated,
-          cardThing(deck, { ...card, ...(createdAt === undefined ? {} : { createdAt }) }, existing),
-        );
+      await save(
+        deck.cardsDocumentUrl,
+        withCardChanges(dataset, deck, changes),
+        changes.save.map((card) => `${deck.cardsDocumentUrl}#${card.id}`),
+      );
+    },
+
+    async readDeck(deckUrl) {
+      const dataset = await getSolidDatasetOrNull(documentUrlOf(deckUrl), fetch);
+      return dataset === null ? null : (toDecks(dataset).find((deck) => deck.url === deckUrl) ?? null);
+    },
+
+    async stageCardChanges(deck, stagedUrl, changes): Promise<void> {
+      const original =
+        (await getSolidDatasetOrNull(deck.cardsDocumentUrl, fetch)) ?? createSolidDataset();
+      const staged = { ...deck, cardsDocumentUrl: stagedUrl };
+      await save(
+        stagedUrl,
+        withCardChanges(await movedDataset(original, deck.cardsDocumentUrl, stagedUrl, loadEngine), staged, changes),
+        changes.save.map((card) => `${stagedUrl}#${card.id}`),
+      );
+    },
+
+    async switchDeck(current, next): Promise<Deck> {
+      const catalogUrl = documentUrlOf(current.url);
+      const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
+      const stored = dataset === null ? undefined : toDecks(dataset).find((deck) => deck.url === current.url);
+      if (dataset === null || stored === undefined || !sameDeckState(stored, current)) {
+        throw new AppError("deckChangedDuringUpgrade", { url: current.url });
       }
-      for (const id of remove) updated = removeThing(updated, urlOf(id));
-      await save(deck.cardsDocumentUrl, updated, saved.map((card) => urlOf(card.id)));
+      const written: Deck = { ...withDeckChanges(stored, current, next), formatVersion: DECK_FORMAT_VERSION };
+      // The write carries If-Match of the read above: the entry is moved as it was checked, or not at all.
+      await save(catalogUrl, withDeck(dataset, written), deckSubjects(written));
+      return written;
+    },
+
+    deleteDocument(url) {
+      return deleteDocumentIfPresent(url, fetch);
     },
 
     async removeCard(deck, card): Promise<void> {
@@ -300,6 +334,30 @@ export function createSolidDeckRepository({
         ? {}
         : { keywords: source.keywords }),
     };
+  }
+
+  /**
+   * The cards document with cards written by fragment id, new or
+   * existing (an existing card keeps its creation time and triples this
+   * app does not know), and others removed.
+   */
+  function withCardChanges(
+    dataset: SolidDataset,
+    deck: Deck,
+    { save: saved, remove }: { save: (CardContent & { id: string; retired?: true })[]; remove: string[] },
+  ): SolidDataset {
+    const urlOf = (id: string) => `${deck.cardsDocumentUrl}#${id}`;
+    let updated = dataset;
+    for (const card of saved) {
+      const existing = getThing(updated, urlOf(card.id));
+      const createdAt = existing === null ? undefined : getDatetime(existing, DCTERMS.created)?.toISOString();
+      updated = setThing(
+        updated,
+        cardThing(deck, { ...card, ...(createdAt === undefined ? {} : { createdAt }) }, existing),
+      );
+    }
+    for (const id of remove) updated = removeThing(updated, urlOf(id));
+    return updated;
   }
 
   /** Add a deck's catalog entry. */

@@ -10,6 +10,7 @@ import type { ReviewState } from "@solid-memo/domain/review";
 import { getSolidDatasetOrNull, saveDataset } from "./datasets";
 import { noWriteCheck, type WriteCheck } from "./writeCheck";
 import { mapSince, readSince } from "./readSince";
+import { loadEngine as defaultLoadEngine, movedDataset, type LoadEngine } from "./movedDataset";
 import {
   reviewSubjectUrl,
   toReviewState,
@@ -20,11 +21,14 @@ export interface SolidReviewStateRepositoryDeps {
   fetch: typeof globalThis.fetch;
   /** Checks what is about to be written; see writeCheck.ts. */
   checkWrite?: WriteCheck;
+  /** The IRI mapper an upgrade's new reviews document is moved with; injected for tests. */
+  loadEngine?: LoadEngine;
 }
 
 export function createSolidReviewStateRepository({
   fetch,
   checkWrite = noWriteCheck,
+  loadEngine = defaultLoadEngine,
 }: SolidReviewStateRepositoryDeps): ReviewStateRepository {
   return {
     async listReviewStates(deck): Promise<ReviewState[]> {
@@ -104,6 +108,14 @@ export function createSolidReviewStateRepository({
         save.map((state) => reviewSubjectUrl(deck.reviewsDocumentUrl, state)),
       );
       await saveDataset(deck.reviewsDocumentUrl, updated, fetch);
+    },
+
+    async stageReviewChanges(deck, stagedUrl, remove): Promise<void> {
+      const original =
+        (await getSolidDatasetOrNull(deck.reviewsDocumentUrl, fetch)) ?? createSolidDataset();
+      let staged = await movedDataset(original, deck.reviewsDocumentUrl, stagedUrl, loadEngine);
+      for (const key of remove) staged = removeThing(staged, reviewSubjectUrl(stagedUrl, key));
+      await saveDataset(stagedUrl, staged, fetch);
     },
   };
 }

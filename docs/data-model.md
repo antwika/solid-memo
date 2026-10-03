@@ -102,6 +102,11 @@ flowchart LR
                          it was learned from; sm:formatVersion 1
 ```
 
+A deck's documents are found through its catalog entry
+(`sm:cardsDocument`, `sm:reviewsDocument`), never by name: a library
+upgrade moves them to `decks/<deckId>-<uuid>.ttl` and
+`reviews/<deckId>-<uuid>.ttl` ([migrations](migrations.md#how-an-upgrade-is-applied)).
+
 ## Decks and cards
 
 Granularity is chosen around the N+1 problem (no batch requests, no SPARQL

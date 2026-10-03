@@ -1,3 +1,4 @@
+import { useState } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
@@ -5,6 +6,7 @@ import type { Instance } from "@solid-memo/domain/instance";
 import type { LibraryUpgradePlan } from "@solid-memo/domain/libraryUpgrade";
 import { useI18n } from "./i18n";
 import { LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
+import { DECK_UPGRADE_SCREEN_STEPS, DeckUpgradeFailure, DeckUpgradeProgress, type DeckUpgradeScreenStep } from "./DeckUpgrade";
 
 /**
  * Checks whether the library has a newer release of an imported deck
@@ -14,7 +16,10 @@ import { LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
  * Home-made decks render nothing at all. Once a session, it also gives
  * the deck the languages its own release states its title and
  * description in and the copy lacks, which upgrades made before they
- * brought the texts along left out.
+ * brought the texts along left out, and tidies away what an upgrade cut
+ * off half-way left in the pod. While an upgrade runs, its steps are
+ * shown in place of the offer; a failed one says where it failed and
+ * that the deck is as it was.
  */
 export function LibraryUpgradeContainer({
   useCases,
@@ -47,24 +52,50 @@ export function LibraryUpgradeContainer({
     retry: false,
   });
 
+  useQuery({
+    queryKey: ["deckUpgradeTidy", deck.url],
+    queryFn: () => useCases.tidyInterruptedDeckUpgrade(deck),
+    enabled: deck.sourceUrl !== undefined,
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const [progress, setProgress] = useState<{ step: DeckUpgradeScreenStep; done: number }>({ step: "read", done: 0 });
   const upgradeMutation = useMutation({
-    mutationFn: (plan: LibraryUpgradePlan) =>
-      useCases.applyLibraryUpgrade(deck, plan),
-    onSuccess: async () => {
+    mutationFn: async (plan: LibraryUpgradePlan) => {
+      setProgress({ step: "read", done: 0 });
+      const outcome = await useCases.applyLibraryUpgrade(deck, plan, setProgress);
+      if (!outcome.ok) {
+        // An offer the deck no longer calls for is looked at again.
+        await queryClient.invalidateQueries({ queryKey: ["libraryUpgrade", deck.url] });
+        return outcome;
+      }
+      // Everything the upgrade touched is read again at once, so the deck changes on screen in one go.
+      setProgress({ step: "refresh", done: DECK_UPGRADE_SCREEN_STEPS.length - 1 });
       queryClient.removeQueries({ queryKey: ["studyQueue", deck.url] });
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
-      await queryClient.invalidateQueries({ queryKey: ["cards", deck.cardsDocumentUrl] });
-      await queryClient.invalidateQueries({ queryKey: ["reviews", deck.reviewsDocumentUrl] });
-      await queryClient.invalidateQueries({
-        queryKey: ["migration", instance.url],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["libraryUpgrade", deck.url],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["decks"] }),
+        queryClient.invalidateQueries({ queryKey: ["cards", deck.cardsDocumentUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["reviews", deck.reviewsDocumentUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["migration", instance.url] }),
+        queryClient.invalidateQueries({ queryKey: ["libraryUpgrade", deck.url] }),
+      ]);
+      return outcome;
     },
   });
 
+  if (upgradeMutation.isPending) return <DeckUpgradeProgress step={progress.step} done={progress.done} />;
+  const outcome = upgradeMutation.data;
   const plan = planQuery.data;
+  if (outcome?.ok === false) {
+    return (
+      <DeckUpgradeFailure
+        outcome={outcome}
+        onRetry={() => (plan === undefined || plan === null ? upgradeMutation.reset() : upgradeMutation.mutate(plan))}
+        onDismiss={() => upgradeMutation.reset()}
+      />
+    );
+  }
   if (plan === undefined || plan === null) {
     return upgradeMutation.isSuccess ? (
       <p class="hint" role="status">
@@ -76,7 +107,7 @@ export function LibraryUpgradeContainer({
     <LibraryUpgradeNotice
       deckName={readerText(deck.title)}
       plan={plan}
-      busy={upgradeMutation.isPending}
+      busy={false}
       error={errorText(upgradeMutation.error)}
       onUpgrade={() => upgradeMutation.mutate(plan)}
     />

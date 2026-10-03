@@ -3,6 +3,8 @@ import type { Deck } from "./deck";
 import {
   catalogNodeUrlOf,
   catalogUrlOf,
+  documentsInUse,
+  instanceUrlOfDeck,
   digestSubjectOf,
   digestUrlOf,
   ensureTrailingSlash,
@@ -74,5 +76,18 @@ describe("the digest", () => {
     expect(monthOfHistoryUrl(INSTANCE, `${INSTANCE}/history/2026-10.ttl`)).toBe("2026-10");
     expect(monthOfHistoryUrl(INSTANCE, `${INSTANCE}/history/notes.ttl`)).toBeNull();
     expect(monthOfHistoryUrl(INSTANCE, `${INSTANCE}/catalog.ttl`)).toBeNull();
+  });
+});
+
+describe("decks and their documents", () => {
+  it("finds the instance a deck is in from its catalog entry", () => {
+    expect(instanceUrlOfDeck("https://pod.example/solid-memo/main/catalog.ttl#deck-1")).toBe(
+      "https://pod.example/solid-memo/main/",
+    );
+  });
+
+  it("lists every document the decks use, once", () => {
+    const deck = (cards: string, reviews: string) => ({ cardsDocumentUrl: cards, reviewsDocumentUrl: reviews }) as Deck;
+    expect([...documentsInUse([deck("a", "b"), deck("a", "c")])]).toEqual(["a", "b", "c"]);
   });
 });

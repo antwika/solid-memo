@@ -170,6 +170,28 @@ export interface DeckRepository {
     deck: Deck,
     changes: { save: (CardContent & { id: string; retired?: true })[]; remove: string[] },
   ): Promise<void>;
+  /** The deck as its catalog entry says now; null when it has none (any more). */
+  readDeck(deckUrl: string): Promise<Deck | null>;
+  /**
+   * For a library upgrade (domain/deckUpgrade.ts): write the deck's cards
+   * document, with the changes applyCardChanges would make, as a NEW
+   * document at `stagedUrl` (only if nothing is there yet), every IRI of
+   * the original moved to it. The original is only read.
+   */
+  stageCardChanges(
+    deck: Deck,
+    stagedUrl: string,
+    changes: { save: (CardContent & { id: string; retired?: true })[]; remove: string[] },
+  ): Promise<void>;
+  /**
+   * Move the deck over to `next` in one write of its catalog entry —
+   * what changed from `current`, as withDeckChanges puts it — only if
+   * the entry still says what `current` does (sameDeckState); else
+   * throws deckChangedDuringUpgrade and writes nothing.
+   */
+  switchDeck(current: Deck, next: Deck): Promise<Deck>;
+  /** Delete one of a deck's documents (an upgrade's leftovers); one that is gone counts as deleted. */
+  deleteDocument(url: string): Promise<void>;
 }
 
 /** Driven port: the app's read-only library of ready-made decks. */
@@ -196,6 +218,13 @@ export interface ReviewStateRepository {
     deck: Deck,
     changes: { save: ReviewState[]; remove: ReviewKey[] },
   ): Promise<void>;
+  /**
+   * For a library upgrade: write the deck's reviews document without the
+   * given states as a NEW document at `stagedUrl` (only if nothing is
+   * there yet), every IRI of the original moved to it. The original is
+   * only read; a deck without one gets an empty document.
+   */
+  stageReviewChanges(deck: Deck, stagedUrl: string, remove: ReviewKey[]): Promise<void>;
 }
 
 /** Driven port: per-instance study preferences. */
@@ -248,7 +277,11 @@ export interface ShapeValidator {
   validateDocumentSince(url: string, version: string | undefined): Promise<Since<DocumentReport>>;
 }
 
-/** Where an update moves an instance: every IRI under `from` becomes one under `to`. */
+/**
+ * Where an update moves an instance: every IRI under `from` becomes one
+ * under `to`. A move of a document (a URL not ending in "/", as a deck
+ * upgrade makes) moves the document and its fragments alone.
+ */
 export interface ContainerMove {
   from: string;
   to: string;
@@ -266,7 +299,8 @@ export interface InstanceCopier {
   createContainer(url: string): Promise<void>;
   /**
    * Copy a resource's own access control (WAC .acl or ACP .acr),
-   * rebased; false when it has none of its own (it inherits).
+   * rebased; false when it has none of its own (it inherits). The new
+   * resource must exist: the pod says where its access control goes.
    */
   copyAccessControl(from: string, to: string, move: ContainerMove): Promise<boolean>;
   /**
@@ -312,13 +346,17 @@ export interface UpdateJournal {
 }
 
 /**
- * Driven port: makes a container read-only for a while. The format update
- * holds the instance it copies, so nothing — neither the update nor
- * anything else in this tab — writes to it until the update is over.
+ * Driven port: makes a container, or a document, read-only for a while.
+ * The format update holds the instance it copies, a library deck upgrade
+ * the documents it replaces, so nothing — neither the update nor
+ * anything else in this tab — writes to them until the update is over.
  */
 export interface WriteFence {
-  /** Refuse every write under the container until the returned release is called. */
-  hold(containerUrl: string): () => void;
+  /**
+   * Refuse every write under the container (a URL ending in "/") or to
+   * the document until the returned release is called.
+   */
+  hold(url: string): () => void;
 }
 
 /** Driven port: repairs of what an instance check found (docs/validation.md). */
