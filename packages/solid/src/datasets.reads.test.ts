@@ -96,6 +96,15 @@ describe("reading a document more than once", () => {
     expect(server.gets.map((g) => g.ifNoneMatch)).toEqual([null, null, '"v1"']);
   });
 
+  it("asks without a version after a write to the document it read by one of its subjects (a WebID)", async () => {
+    // A server whose ETag an edit in the same second keeps would say 304 to the version read before.
+    const server = pod();
+    const profile = await readDataset(`${DOC}#me`, server.fetch);
+    await saveDataset(DOC, edited(profile), server.fetch);
+    await readDataset(`${DOC}#me`, server.fetch);
+    expect(server.gets.map((g) => g.ifNoneMatch)).toEqual([null, null]);
+  });
+
   it("asks without a version after deleting the document", async () => {
     const server = pod();
     const dataset = await readDataset(DOC, server.fetch);
