@@ -31,6 +31,18 @@ describe("createWriteFence", () => {
     },
   );
 
+  it("refuses writes to a held document, naming it, but not to its neighbours", async () => {
+    const { inner, fetch, hold } = fence();
+    const cards = `${MAIN}decks/deck-1.ttl`;
+    hold(cards);
+    await expect(fetch(cards, { method: "PATCH" })).rejects.toThrow(
+      `Solid Memo is updating the deck in ${cards} and writes nothing to it until the update is over (refused: PATCH ${cards})`,
+    );
+    await fetch(cards);
+    await fetch(`${MAIN}decks/deck-1-0f3a.ttl`, { method: "PUT" });
+    expect(inner).toHaveBeenCalledTimes(2);
+  });
+
   it("still reads a held container, and writes beside it", async () => {
     const { inner, fetch, hold } = fence();
     hold(MAIN);

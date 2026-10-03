@@ -28,6 +28,9 @@ import type { Session } from "@solid-memo/domain/session";
 import type { Storage } from "@solid-memo/domain/storage";
 import type { WebIdDocument } from "@solid-memo/domain/webIdDocument";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
+import { librarySeriesUrlOf } from "@solid-memo/domain/libraryLayout";
+import { sameDeckState, withDeckChanges, type DeckUpgradeProgress } from "@solid-memo/domain/deckUpgrade";
+import type { LibraryCard } from "@solid-memo/domain/library";
 
 const session: Session = { webId: "https://alice.example/profile/card#me" };
 const document: WebIdDocument = {
@@ -133,6 +136,10 @@ function makeDeps() {
     applyCardChanges: vi.fn(async () => undefined),
     importDeck: vi.fn(async () => deck),
     readCardsSince: vi.fn(async (d) => ({ unchanged: false as const, value: await deckRepository.listCards(d), version: null })),
+    readDeck: vi.fn(async () => deck),
+    stageCardChanges: vi.fn(async () => undefined),
+    switchDeck: vi.fn(async (_current, next) => next),
+    deleteDocument: vi.fn(async () => undefined),
   };
   const deckLibrary: DeckLibrary = {
     listLibraryDecks: vi.fn(async () => [libraryDeck]),
@@ -152,6 +159,7 @@ function makeDeps() {
       value: await reviewStateRepository.listReviewStates(d),
       version: null,
     })),
+    stageReviewChanges: vi.fn(async () => undefined),
   };
   const shapeValidator: ShapeValidator = {
     validateDocument: vi.fn(async (url) => ({
@@ -1104,41 +1112,6 @@ describe("createUseCases", () => {
     expect(deps.deckRepository.saveDeck).toHaveBeenCalledOnce();
   });
 
-  it("applyLibraryUpgrade writes the cards, drops the removed cards' review states, and moves the deck to the release", async () => {
-    const deps = makeDeps();
-    const copy: Deck = { ...deck, sourceUrl: libraryDeck.url };
-    const retired = { ...card, id: "yugoslavia" };
-    const plan = {
-      fromVersion: "1",
-      toVersion: "2",
-      releaseUrl: "https://solid-memo.com/decks/capitals/2.ttl",
-      notes: [],
-      add: [{ id: "norway", front: { "": "Norway" }, back: { "": "Oslo" }, formatVersion: 1 }],
-      change: [{ id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 }],
-      retire: [retired],
-      restore: [],
-      remove: [card],
-      kept: [],
-    };
-    await expect(createUseCases(deps).applyLibraryUpgrade(copy, plan)).resolves.toEqual({
-      ...copy,
-      sourceUrl: plan.releaseUrl,
-    });
-    expect(deps.deckRepository.applyCardChanges).toHaveBeenCalledWith(copy, {
-      save: [...plan.add, ...plan.change, { ...retired, retired: true }],
-      remove: [card.id],
-    });
-    expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledWith(copy, {
-      save: [],
-      remove: [
-        { cardId: card.id, direction: "front-to-back" },
-        { cardId: card.id, direction: "back-to-front" },
-      ],
-    });
-    await createUseCases(deps).applyLibraryUpgrade(copy, { ...plan, remove: [] });
-    expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledOnce();
-  });
-
   it("importLibraryDeck fetches the deck's content and imports it", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
@@ -1801,5 +1774,425 @@ describe("the answer log", () => {
     expect(deps.shapeValidator.validateDocument).toHaveBeenCalledWith(`${instance.url}history/2026-09.ttl`);
     const plain = createUseCases(makeDeps());
     await expect(plain.getStatistics(instance.url, noon)).resolves.toMatchObject({ totals: { answers: 0, studyDays: 0, cards: 0 } });
+  });
+});
+
+describe("library deck upgrade", () => {
+  const LIB = "https://solid-memo.com/decks/capitals/";
+  const STAGED_CARDS = `${instance.url}decks/deck-1-0f3a.ttl`;
+  const STAGED_REVIEWS = `${instance.url}reviews/deck-1-0f3a.ttl`;
+  const libraryCard = (id: string, back: string): LibraryCard => ({ id, front: { "": id }, back: { "": back }, formatVersion: 4 });
+  const reviewOf = (cardId: string): ReviewState => ({
+    cardId,
+    direction: "front-to-back",
+    easeFactor: 2.5,
+    intervalDays: 1,
+    repetitions: 1,
+    due: "2026-09-29",
+    firstReviewedAt: "2026-09-28T08:00:00.000Z",
+    lastReviewedAt: "2026-09-28T08:00:00.000Z",
+    formatVersion: 2,
+  });
+
+  /** A pod holding a copy of release 1, with the library at release 2: Sweden fixed, Latvia removed, Norway added. */
+  async function world({
+    reviews = [reviewOf("sweden"), reviewOf("latvia")],
+    removesLatvia = true,
+  }: { reviews?: ReviewState[]; removesLatvia?: boolean } = {}) {
+    const deps = makeDeps();
+    const fence = vi.fn();
+    const writeFence = { hold: vi.fn(() => fence) };
+    const v1: LibraryDeckContent = {
+      ...libraryContent,
+      url: `${LIB}1.ttl`,
+      seriesUrl: librarySeriesUrlOf(`${LIB}1.ttl`),
+      cards: [libraryCard("sweden", "Stockholm?"), libraryCard("denmark", "Copenhagen"), libraryCard("latvia", "Riga")],
+    };
+    const v2: LibraryDeckContent = {
+      ...v1,
+      url: `${LIB}2.ttl`,
+      version: "2",
+      title: { en: "Capitals", sv: "Huvudstäder" },
+      cards: [
+        libraryCard("sweden", "Stockholm"),
+        libraryCard("denmark", "Copenhagen"),
+        ...(removesLatvia ? [] : [libraryCard("latvia", "Riga")]),
+        libraryCard("norway", "Oslo"),
+      ],
+    };
+    vi.mocked(deps.deckLibrary.listLibraryDecks).mockResolvedValue([
+      {
+        ...libraryDeck,
+        url: v2.url,
+        seriesUrl: v1.seriesUrl,
+        version: "2",
+        releases: [
+          { url: v1.url, version: "1" },
+          { url: v2.url, version: "2" },
+        ],
+      },
+    ]);
+    vi.mocked(deps.deckLibrary.fetchLibraryDeck).mockImplementation(async (url) => (url === v2.url ? v2 : v1));
+    const copy: Deck = { ...deck, title: { en: "Capitals" }, sourceUrl: v1.url };
+    const toPodCard = (documentUrl: string, { formatVersion: _version, ...content }: LibraryCard | Card): Card => ({
+      ...content,
+      url: `${documentUrl}#${content.id}`,
+      createdAt: "createdAt" in content ? content.createdAt : "2026-09-28T10:00:00.000Z",
+      formatVersion: 4,
+    });
+    const pod = {
+      deck: copy as Deck | null,
+      /** Other decks of the catalog. */
+      others: [] as Deck[],
+      cards: new Map<string, Card[]>([[copy.cardsDocumentUrl, v1.cards.map((c) => toPodCard(copy.cardsDocumentUrl, c))]]),
+      reviews: new Map<string, ReviewState[]>([[copy.reviewsDocumentUrl, reviews]]),
+      writes: new Map<string, number>(),
+    };
+    const versionOf = (url: string) => `v${pod.writes.get(url) ?? 0}`;
+    const wrote = (url: string) => pod.writes.set(url, (pod.writes.get(url) ?? 0) + 1);
+    const repo = deps.deckRepository;
+    vi.mocked(repo.readDeck).mockImplementation(async (url) => (pod.deck?.url === url ? pod.deck : null));
+    vi.mocked(repo.listDecks).mockImplementation(async () => [...(pod.deck === null ? [] : [pod.deck]), ...pod.others]);
+    vi.mocked(repo.listCards).mockImplementation(async (d) => pod.cards.get(d.cardsDocumentUrl) ?? []);
+    vi.mocked(repo.readCardsSince).mockImplementation(async (d, version) =>
+      version === versionOf(d.cardsDocumentUrl)
+        ? { unchanged: true }
+        : { unchanged: false, value: pod.cards.get(d.cardsDocumentUrl) ?? [], version: versionOf(d.cardsDocumentUrl) },
+    );
+    vi.mocked(repo.stageCardChanges).mockImplementation(async (d, url, { save, remove }) => {
+      const cards = new Map((pod.cards.get(d.cardsDocumentUrl) ?? []).map((c) => [c.id, toPodCard(url, c)]));
+      for (const id of remove) cards.delete(id);
+      for (const { retired, ...c } of save) {
+        const { retired: _was, ...before } = cards.get(c.id) ?? toPodCard(url, { ...c, formatVersion: 4 });
+        cards.set(c.id, { ...before, ...c, url: `${url}#${c.id}`, formatVersion: 4, ...(retired === true ? { retired } : {}) });
+      }
+      pod.cards.set(url, [...cards.values()]);
+      wrote(url);
+    });
+    vi.mocked(repo.switchDeck).mockImplementation(async (current, next) => {
+      if (pod.deck === null || !sameDeckState(pod.deck, current)) throw new AppError("deckChangedDuringUpgrade", { url: current.url });
+      pod.deck = withDeckChanges(pod.deck, current, next);
+      return pod.deck;
+    });
+    vi.mocked(repo.deleteDocument).mockImplementation(async (url) => {
+      pod.cards.delete(url);
+      pod.reviews.delete(url);
+    });
+    const reviewRepo = deps.reviewStateRepository;
+    vi.mocked(reviewRepo.readReviewStatesSince).mockImplementation(async (d, version) =>
+      version === versionOf(d.reviewsDocumentUrl)
+        ? { unchanged: true }
+        : { unchanged: false, value: pod.reviews.get(d.reviewsDocumentUrl) ?? [], version: versionOf(d.reviewsDocumentUrl) },
+    );
+    vi.mocked(reviewRepo.stageReviewChanges).mockImplementation(async (d, url, remove) => {
+      const dropped = new Set(remove.map((key) => `${key.cardId} ${key.direction}`));
+      pod.reviews.set(url, (pod.reviews.get(d.reviewsDocumentUrl) ?? []).filter((s) => !dropped.has(`${s.cardId} ${s.direction}`)));
+      wrote(url);
+    });
+    const useCases = createUseCases({ ...deps, writeFence });
+    const plan = (await useCases.planLibraryUpgrade(copy))!;
+    return { deps, pod, copy, plan, useCases, writeFence, fence, wrote, v2 };
+  }
+
+  it("writes the upgrade into new documents, checks them, switches the deck over, and deletes the old ones", async () => {
+    const { deps, pod, copy, plan, useCases, writeFence, fence } = await world();
+    const progress: DeckUpgradeProgress[] = [];
+    const outcome = await useCases.applyLibraryUpgrade(copy, plan, (p) => progress.push(p));
+
+    expect(outcome).toMatchObject({ ok: true, tidied: true });
+    expect(pod.deck).toMatchObject({
+      url: copy.url,
+      cardsDocumentUrl: STAGED_CARDS,
+      reviewsDocumentUrl: STAGED_REVIEWS,
+      sourceUrl: `${LIB}2.ttl`,
+      title: { en: "Capitals", sv: "Huvudstäder" },
+    });
+    expect(outcome.ok && outcome.deck).toEqual(pod.deck);
+    expect([...pod.cards.keys()]).toEqual([STAGED_CARDS]);
+    expect(pod.cards.get(STAGED_CARDS)!.map((c) => [c.id, c.back[""]])).toEqual([
+      ["sweden", "Stockholm"],
+      ["denmark", "Copenhagen"],
+      ["norway", "Oslo"],
+    ]);
+    expect([...pod.reviews.keys()]).toEqual([STAGED_REVIEWS]);
+    expect(pod.reviews.get(STAGED_REVIEWS)!.map((s) => s.cardId)).toEqual(["sweden"]);
+    expect(progress.map((p) => [p.step, p.done])).toEqual([
+      ["read", 0],
+      ["write", 1],
+      ["check", 2],
+      ["verify", 3],
+      ["switch", 4],
+      ["tidy", 5],
+      ["tidy", 6],
+    ]);
+    expect(progress.every((p) => p.total === 6)).toBe(true);
+    expect(deps.updateJournal.begin).toHaveBeenCalledWith(copy.url, expect.stringContaining(STAGED_CARDS));
+    expect(deps.updateJournal.end).toHaveBeenCalledWith(copy.url);
+    expect(writeFence.hold).toHaveBeenCalledWith(copy.cardsDocumentUrl);
+    expect(writeFence.hold).toHaveBeenCalledWith(copy.reviewsDocumentUrl);
+    expect(fence).toHaveBeenCalledTimes(2);
+    expect(deps.instanceCopier.copyAccessControl).toHaveBeenCalledWith(copy.cardsDocumentUrl, STAGED_CARDS, {
+      from: copy.cardsDocumentUrl,
+      to: STAGED_CARDS,
+    });
+    expect(deps.instanceCopier.copyAccessControl).toHaveBeenCalledWith(copy.reviewsDocumentUrl, STAGED_REVIEWS, {
+      from: copy.reviewsDocumentUrl,
+      to: STAGED_REVIEWS,
+    });
+  });
+
+  it("lets go of the old documents before deleting them, after a switch or a failure", async () => {
+    const { deps, copy, plan, useCases, fence } = await world();
+    vi.mocked(deps.deckRepository.deleteDocument).mockImplementation(async () => {
+      expect(fence).toHaveBeenCalledTimes(2);
+    });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ ok: true, tidied: true });
+
+    const failing = await world();
+    vi.mocked(failing.deps.deckRepository.deleteDocument).mockImplementation(async () => {
+      expect(failing.fence).toHaveBeenCalledTimes(2);
+    });
+    vi.mocked(failing.deps.deckRepository.switchDeck).mockRejectedValueOnce(new Error("pod down"));
+    await expect(failing.useCases.applyLibraryUpgrade(failing.copy, failing.plan)).resolves.toMatchObject({
+      ok: false,
+      step: "switch",
+      cleanedUp: true,
+    });
+    expect(failing.deps.deckRepository.deleteDocument).toHaveBeenCalledTimes(2);
+  });
+
+  it("never deletes an old document another deck of the catalog uses too", async () => {
+    const { deps, pod, copy, plan, useCases } = await world();
+    pod.others = [{ ...copy, id: "deck-2", url: `${instance.url}catalog.ttl#deck-2` }];
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ ok: true, tidied: true });
+    expect(deps.deckRepository.listDecks).toHaveBeenCalledWith(instance.url);
+    expect(deps.deckRepository.deleteDocument).not.toHaveBeenCalled();
+    expect([...pod.cards.keys()]).toEqual([copy.cardsDocumentUrl, STAGED_CARDS]);
+    expect(deps.updateJournal.end).toHaveBeenCalledWith(copy.url);
+  });
+
+  it("keeps the reviews document when no card with review states is removed", async () => {
+    const { deps, pod, copy, plan, useCases, writeFence } = await world({ reviews: [reviewOf("sweden")] });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ ok: true });
+    expect(pod.deck).toMatchObject({ cardsDocumentUrl: STAGED_CARDS, reviewsDocumentUrl: copy.reviewsDocumentUrl });
+    expect([...pod.reviews.keys()]).toEqual([copy.reviewsDocumentUrl]);
+    expect(deps.reviewStateRepository.stageReviewChanges).not.toHaveBeenCalled();
+    expect(writeFence.hold).toHaveBeenCalledOnce();
+  });
+
+  it("does not read the review states when no card is removed", async () => {
+    const { deps, pod, copy, plan, useCases } = await world({ removesLatvia: false });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ ok: true });
+    expect(deps.reviewStateRepository.readReviewStatesSince).not.toHaveBeenCalled();
+    expect(pod.deck).toMatchObject({ cardsDocumentUrl: STAGED_CARDS, reviewsDocumentUrl: copy.reviewsDocumentUrl });
+  });
+
+  it("refuses, writing nothing, when the deck no longer calls for what the user agreed to, has moved, or is gone", async () => {
+    const { deps, pod, copy, plan, useCases } = await world();
+    pod.cards.get(copy.cardsDocumentUrl)![0] = { ...pod.cards.get(copy.cardsDocumentUrl)![0], back: { "": "Mine" } };
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toEqual({
+      ok: false,
+      step: "read",
+      error: expect.objectContaining({ code: "deckChangedSinceOffer" }),
+      cleanedUp: true,
+    });
+    pod.deck = { ...copy, cardsDocumentUrl: "elsewhere" };
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ error: expect.objectContaining({ code: "deckChangedSinceOffer" }) });
+    pod.deck = { ...copy, sourceUrl: undefined };
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ error: expect.objectContaining({ code: "deckChangedSinceOffer" }) });
+    pod.deck = null;
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ error: expect.objectContaining({ code: "deckGone" }) });
+    expect(deps.deckRepository.stageCardChanges).not.toHaveBeenCalled();
+    expect(deps.updateJournal.begin).not.toHaveBeenCalled();
+  });
+
+  it("deletes the new documents and leaves the deck as it was when they do not read back as written", async () => {
+    const { deps, pod, copy, plan, useCases } = await world();
+    vi.mocked(deps.deckRepository.stageCardChanges).mockImplementationOnce(async (_d, url) => {
+      pod.cards.set(url, []);
+    });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toEqual({
+      ok: false,
+      step: "check",
+      error: expect.objectContaining({ code: "upgradedCardsDiffer", vars: { url: STAGED_CARDS } }),
+      cleanedUp: true,
+    });
+    expect(pod.deck).toEqual(copy);
+    expect([...pod.cards.keys()]).toEqual([copy.cardsDocumentUrl]);
+    expect(deps.updateJournal.end).toHaveBeenCalledWith(copy.url);
+  });
+
+  it("deletes the new documents when the review states do not read back as written", async () => {
+    const { deps, pod, copy, plan, useCases } = await world();
+    vi.mocked(deps.reviewStateRepository.stageReviewChanges).mockImplementationOnce(async (_d, url) => {
+      pod.reviews.set(url, []);
+    });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({
+      ok: false,
+      step: "check",
+      error: expect.objectContaining({ code: "upgradedReviewsDiffer" }),
+      cleanedUp: true,
+    });
+    expect([...pod.reviews.keys()]).toEqual([copy.reviewsDocumentUrl]);
+  });
+
+  it("gives up when a card or review state changed while the upgrade was writing", async () => {
+    const { deps, pod, copy, plan, useCases, wrote } = await world();
+    const stage = vi.mocked(deps.reviewStateRepository.stageReviewChanges).getMockImplementation()!;
+    vi.mocked(deps.reviewStateRepository.stageReviewChanges).mockImplementationOnce(async (d, url, remove) => {
+      await stage(d, url, remove);
+      pod.reviews.set(copy.reviewsDocumentUrl, [{ ...reviewOf("sweden"), intervalDays: 6 }, reviewOf("latvia")]);
+      wrote(copy.reviewsDocumentUrl);
+    });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({
+      ok: false,
+      step: "verify",
+      error: expect.objectContaining({ code: "deckChangedDuringUpgrade", vars: { url: copy.reviewsDocumentUrl } }),
+      cleanedUp: true,
+    });
+    expect(pod.deck).toEqual(copy);
+
+    const stageCards = vi.mocked(deps.deckRepository.stageCardChanges).getMockImplementation()!;
+    vi.mocked(deps.deckRepository.stageCardChanges).mockImplementationOnce(async (d, url, changes) => {
+      await stageCards(d, url, changes);
+      const [first, ...rest] = pod.cards.get(copy.cardsDocumentUrl)!;
+      pod.cards.set(copy.cardsDocumentUrl, [{ ...first, front: { "": "Sverige" } }, ...rest]);
+      wrote(copy.cardsDocumentUrl);
+    });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({
+      step: "verify",
+      error: expect.objectContaining({ code: "deckChangedDuringUpgrade", vars: { url: copy.cardsDocumentUrl } }),
+    });
+    expect(pod.deck).toEqual(copy);
+  });
+
+  it("goes on when a document was written meanwhile but still says the same", async () => {
+    const { deps, copy, plan, useCases, wrote } = await world();
+    const stage = vi.mocked(deps.deckRepository.stageCardChanges).getMockImplementation()!;
+    vi.mocked(deps.deckRepository.stageCardChanges).mockImplementationOnce(async (d, url, changes) => {
+      await stage(d, url, changes);
+      wrote(copy.cardsDocumentUrl);
+      wrote(copy.reviewsDocumentUrl);
+    });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ ok: true });
+  });
+
+  it("compares contents when the pod says no versions", async () => {
+    const { deps, pod, copy, plan, useCases } = await world();
+    vi.mocked(deps.deckRepository.readCardsSince).mockImplementation(async (d) => ({
+      unchanged: false,
+      value: pod.cards.get(d.cardsDocumentUrl) ?? [],
+      version: null,
+    }));
+    vi.mocked(deps.reviewStateRepository.readReviewStatesSince).mockImplementation(async (d) => ({
+      unchanged: false,
+      value: pod.reviews.get(d.reviewsDocumentUrl) ?? [],
+      version: null,
+    }));
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ ok: true });
+    expect(deps.deckRepository.readCardsSince).toHaveBeenCalledWith(copy, undefined);
+  });
+
+  it("fails at reading when a read without a version answers unchanged", async () => {
+    const { deps, copy, plan, useCases } = await world();
+    vi.mocked(deps.deckRepository.readCardsSince).mockResolvedValue({ unchanged: true });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ ok: false, step: "read" });
+  });
+
+  it("deletes the new documents when the switch is refused", async () => {
+    const { deps, pod, copy, plan, useCases } = await world();
+    const stage = vi.mocked(deps.reviewStateRepository.stageReviewChanges).getMockImplementation()!;
+    vi.mocked(deps.reviewStateRepository.stageReviewChanges).mockImplementationOnce(async (d, url, remove) => {
+      await stage(d, url, remove);
+      pod.deck = { ...copy, title: { en: "Renamed" } };
+    });
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({
+      ok: false,
+      step: "switch",
+      error: expect.objectContaining({ code: "deckChangedDuringUpgrade" }),
+      cleanedUp: true,
+    });
+    expect(pod.deck).toEqual({ ...copy, title: { en: "Renamed" } });
+    expect([...pod.cards.keys()]).toEqual([copy.cardsDocumentUrl]);
+    expect([...pod.reviews.keys()]).toEqual([copy.reviewsDocumentUrl]);
+  });
+
+  it("counts a switch whose answer was lost as done, when the deck says it happened", async () => {
+    const { deps, pod, copy, plan, useCases } = await world();
+    const switchDeck = vi.mocked(deps.deckRepository.switchDeck).getMockImplementation()!;
+    vi.mocked(deps.deckRepository.switchDeck).mockImplementationOnce(async (current, next) => {
+      await switchDeck(current, next);
+      throw new TypeError("Failed to fetch");
+    });
+    const outcome = await useCases.applyLibraryUpgrade(copy, plan);
+    expect(outcome).toMatchObject({ ok: true, deck: { cardsDocumentUrl: STAGED_CARDS }, tidied: true });
+    expect([...pod.cards.keys()]).toEqual([STAGED_CARDS]);
+  });
+
+  it("keeps the note of an upgrade whose new documents it could not delete", async () => {
+    const { deps, copy, plan, useCases } = await world();
+    vi.mocked(deps.deckRepository.stageCardChanges).mockRejectedValueOnce(new Error("pod down"));
+    vi.mocked(deps.deckRepository.deleteDocument).mockRejectedValue(new Error("pod down"));
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ ok: false, step: "write", cleanedUp: false });
+    expect(deps.updateJournal.end).not.toHaveBeenCalled();
+  });
+
+  it("succeeds, keeping the note, when the old documents could not be deleted", async () => {
+    const { deps, pod, copy, plan, useCases } = await world();
+    vi.mocked(deps.deckRepository.deleteDocument).mockRejectedValue(new Error("pod down"));
+    await expect(useCases.applyLibraryUpgrade(copy, plan)).resolves.toMatchObject({ ok: true, tidied: false });
+    expect(pod.deck).toMatchObject({ cardsDocumentUrl: STAGED_CARDS });
+    expect(deps.updateJournal.end).not.toHaveBeenCalled();
+  });
+
+  describe("tidyInterruptedDeckUpgrade", () => {
+    const note = (startedAt = "2026-09-28T09:00:00.000Z") =>
+      JSON.stringify({
+        startedAt,
+        cards: { from: deck.cardsDocumentUrl, to: STAGED_CARDS },
+        reviews: { from: deck.reviewsDocumentUrl, to: STAGED_REVIEWS },
+      });
+
+    it("does nothing without a note, or while the upgrade may still be under way", async () => {
+      const { deps, copy, useCases } = await world();
+      await expect(useCases.tidyInterruptedDeckUpgrade(copy)).resolves.toBe(false);
+      vi.mocked(deps.updateJournal.staging).mockReturnValue(note("2026-09-28T09:55:00.000Z"));
+      await expect(useCases.tidyInterruptedDeckUpgrade(copy)).resolves.toBe(false);
+      expect(deps.deckRepository.deleteDocument).not.toHaveBeenCalled();
+    });
+
+    it("deletes the new documents of an upgrade cut off before its switch", async () => {
+      const { deps, pod, copy, useCases } = await world();
+      pod.cards.set(STAGED_CARDS, []);
+      vi.mocked(deps.updateJournal.staging).mockReturnValue(note());
+      await expect(useCases.tidyInterruptedDeckUpgrade(copy)).resolves.toBe(true);
+      expect([...pod.cards.keys()]).toEqual([copy.cardsDocumentUrl]);
+      expect(deps.deckRepository.deleteDocument).toHaveBeenCalledWith(STAGED_REVIEWS);
+      expect(deps.updateJournal.end).toHaveBeenCalledWith(copy.url);
+    });
+
+    it("deletes the old documents of an upgrade cut off after its switch, never what the deck uses", async () => {
+      const { deps, pod, copy, useCases } = await world();
+      pod.cards.set(STAGED_CARDS, []);
+      pod.deck = { ...copy, cardsDocumentUrl: STAGED_CARDS };
+      vi.mocked(deps.updateJournal.staging).mockReturnValue(note());
+      await expect(useCases.tidyInterruptedDeckUpgrade(copy)).resolves.toBe(true);
+      expect(deps.deckRepository.deleteDocument).toHaveBeenCalledWith(copy.cardsDocumentUrl);
+      expect(deps.deckRepository.deleteDocument).not.toHaveBeenCalledWith(copy.reviewsDocumentUrl);
+      expect([...pod.cards.keys()]).toEqual([STAGED_CARDS]);
+    });
+
+    it("deletes every document the note names when the deck is gone", async () => {
+      const { deps, pod, copy, useCases } = await world();
+      pod.deck = null;
+      vi.mocked(deps.updateJournal.staging).mockReturnValue(note());
+      await useCases.tidyInterruptedDeckUpgrade(copy);
+      expect(vi.mocked(deps.deckRepository.deleteDocument).mock.calls.map(([url]) => url)).toEqual([
+        copy.cardsDocumentUrl,
+        STAGED_CARDS,
+        copy.reviewsDocumentUrl,
+        STAGED_REVIEWS,
+      ]);
+    });
   });
 });

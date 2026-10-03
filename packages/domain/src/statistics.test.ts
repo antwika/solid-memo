@@ -56,6 +56,12 @@ describe("retentionOf", () => {
 });
 
 describe("statisticsOf", () => {
+  it("counts a card once, though an upgrade of its deck moved it into a new document", () => {
+    const before = answer("2026-10-01", 4, undefined, "1", "se");
+    const after = { ...answer("2026-10-02", 4, 1, "1", "se"), cardUrl: "https://pod.example/i/decks/deck-1-u1.ttl#se" };
+    expect(statisticsOf([before, after], "2026-10-02").totals.cards).toBe(1);
+  });
+
   it("totals the answers, study days and cards, with each deck's share, most answers first", () => {
     const answers = [
       answer("2026-10-01", 4, undefined, "1", "se"),

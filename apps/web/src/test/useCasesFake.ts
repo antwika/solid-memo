@@ -62,9 +62,11 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     getStatistics: vi.fn(async () => statisticsOf([], "2026-09-21")),
     addReleaseLanguages: vi.fn(async () => null),
     applyLibraryUpgrade: vi.fn(async (deck, plan) => ({
-      ...deck,
-      sourceUrl: plan.releaseUrl,
+      ok: true as const,
+      deck: { ...deck, sourceUrl: plan.releaseUrl },
+      tidied: true,
     })),
+    tidyInterruptedDeckUpgrade: vi.fn(async () => false),
     listCards: vi.fn(async () => []),
     addCard: vi.fn(async () => {
       throw new Error("addCard fake not configured");

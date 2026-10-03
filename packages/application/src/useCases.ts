@@ -34,6 +34,22 @@ import {
   type LibraryUpgradePlan,
 } from "@solid-memo/domain/libraryUpgrade";
 import {
+  DECK_UPGRADE_STEPS,
+  decodeDeckUpgradeNote,
+  encodeDeckUpgradeNote,
+  isAbandoned,
+  sameCardChanges,
+  sameCards,
+  sameReviewStates,
+  stagedDocumentUrl,
+  upgradedCardList,
+  type DeckUpgradeNote,
+  type DeckUpgradeOutcome,
+  type DeckUpgradeProgress,
+  type DeckUpgradeStep,
+} from "@solid-memo/domain/deckUpgrade";
+import { shown } from "@solid-memo/domain/langText";
+import {
   isDeckOutdated,
   isOutdated,
   isPreferencesOutdated,
@@ -44,7 +60,13 @@ import {
   upgradeReviewState,
   type MigrationPlan,
 } from "@solid-memo/domain/migration";
-import { ensureTrailingSlash, historyUrlOf, instanceDocumentUrls } from "@solid-memo/domain/instanceLayout";
+import {
+  documentsInUse,
+  ensureTrailingSlash,
+  historyUrlOf,
+  instanceDocumentUrls,
+  instanceUrlOfDeck,
+} from "@solid-memo/domain/instanceLayout";
 import { summarize, type DocumentReport, type ValidationReport } from "@solid-memo/domain/validation";
 import {
   emptyDigest,
@@ -96,6 +118,7 @@ import type {
   LanguagePreference,
   UpdateJournal,
   WriteFence,
+  Since,
 } from "./ports";
 import { AppError } from "@solid-memo/domain/appError";
 
@@ -192,10 +215,26 @@ export interface UseCases {
    */
   addReleaseLanguages(deck: Deck): Promise<Deck | null>;
   /**
-   * Apply a planned upgrade: one write of the cards, one of the review
-   * states of cards it removes, one of the deck's catalog entry.
+   * Apply the upgrade the user agreed to, safely (domain/deckUpgrade.ts):
+   * the upgraded cards — and the review states, when cards with some are
+   * removed — are written into new documents, read back, and the deck's
+   * catalog entry is switched over to them in one conditional write once
+   * the originals are found unchanged; the originals are deleted then. A
+   * failure before the switch deletes the new documents and leaves the
+   * deck as it was. Refuses (deckChangedSinceOffer) when the deck's cards
+   * no longer call for the changes the user agreed to.
    */
-  applyLibraryUpgrade(deck: Deck, plan: LibraryUpgradePlan): Promise<Deck>;
+  applyLibraryUpgrade(
+    deck: Deck,
+    plan: LibraryUpgradePlan,
+    onProgress?: (progress: DeckUpgradeProgress) => void,
+  ): Promise<DeckUpgradeOutcome>;
+  /**
+   * Tidy away what an upgrade of the deck cut off half-way (a closed tab)
+   * left behind — the new documents before its switch, the old ones after
+   * it — never what the deck uses. Whether there was any to tidy.
+   */
+  tidyInterruptedDeckUpgrade(deck: Deck): Promise<boolean>;
   listCards(deck: Deck): Promise<Card[]>;
   /**
    * Rejects, without any pod write, unless each side has text or an
@@ -317,6 +356,13 @@ export interface Dependencies {
   ruleset?: string;
 }
 
+/** A read made without a known version, which always comes with the contents. */
+async function readNow<T>(read: Promise<Since<T>>): Promise<{ value: T; version: string | null }> {
+  const since = await read;
+  if (since.unchanged) throw new Error("A read without a version came back unchanged.");
+  return since;
+}
+
 const NO_LANGUAGE_PREFERENCE: LanguagePreference = { chosen: () => null, choose: () => undefined };
 const NO_JOURNAL: UpdateJournal = { begin: () => undefined, end: () => undefined, staging: () => null };
 const NO_FENCE: WriteFence = { hold: () => () => undefined };
@@ -354,6 +400,50 @@ export function createUseCases({
       throw validation.error;
     }
     return validation.content;
+  }
+
+  /**
+   * What upgrading the deck to its library deck's current release would
+   * do, of its cards as `cards` reads them; null when nothing (safe).
+   */
+  async function planUpgrade(deck: Deck, cards: () => Promise<Card[]>): Promise<LibraryUpgradePlan | null> {
+    if (deck.sourceUrl === undefined) return null;
+    const series = (await deckLibrary.listLibraryDecks()).find((libraryDeck) => isCopyOf(deck, libraryDeck));
+    if (series === undefined) return null;
+    const [from, to, copy] = await Promise.all([
+      deckLibrary.fetchLibraryDeck(deck.sourceUrl),
+      deckLibrary.fetchLibraryDeck(series.url),
+      cards(),
+    ]);
+    return planLibraryUpgrade({ deck, cards: copy, from, to, releases: series.releases });
+  }
+
+  /**
+   * Settle an upgrade that is over, or was cut off: the side the deck's
+   * catalog entry does not point at is deleted — the new documents
+   * before the switch, the old ones after it (all of them when the deck
+   * is gone) — and the note is forgotten. Never deletes a document any
+   * deck of the catalog uses: another app may have pointed a second deck
+   * at the same one.
+   */
+  async function settleUpgrade(
+    deckUrl: string,
+    note: DeckUpgradeNote,
+  ): Promise<{ switched: boolean; deck: Deck | null }> {
+    const decks = await deckRepository.listDecks(instanceUrlOfDeck(deckUrl));
+    const deck = decks.find((candidate) => candidate.url === deckUrl) ?? null;
+    const switched = deck?.cardsDocumentUrl === note.cards.to;
+    const moves = [note.cards, ...(note.reviews === undefined ? [] : [note.reviews])];
+    const losers =
+      deck === null
+        ? moves.flatMap((move) => [move.from, move.to])
+        : moves.map((move) => (switched ? move.from : move.to));
+    const used = documentsInUse(decks);
+    for (const url of losers) {
+      if (!used.has(url)) await deckRepository.deleteDocument(url);
+    }
+    updateJournal.end(deckUrl);
+    return { switched, deck };
   }
 
   const preferenceReads = new Map<string, Promise<StudyPreferences>>();
@@ -681,41 +771,129 @@ export function createUseCases({
     async listLibraryCards(deck) {
       return (await deckLibrary.fetchLibraryDeck(deck.url)).cards;
     },
-    async planLibraryUpgrade(deck) {
-      if (deck.sourceUrl === undefined) return null;
-      const series = (await deckLibrary.listLibraryDecks()).find((libraryDeck) =>
-        isCopyOf(deck, libraryDeck),
-      );
-      if (series === undefined) return null;
-      const [from, to, cards] = await Promise.all([
-        deckLibrary.fetchLibraryDeck(deck.sourceUrl),
-        deckLibrary.fetchLibraryDeck(series.url),
-        deckRepository.listCards(deck),
-      ]);
-      return planLibraryUpgrade({ deck, cards, from, to, releases: series.releases });
+    planLibraryUpgrade(deck) {
+      return planUpgrade(deck, () => deckRepository.listCards(deck));
     },
     async addReleaseLanguages(deck) {
       if (deck.sourceUrl === undefined) return null;
       const updated = withReleaseLanguages(deck, await deckLibrary.fetchLibraryDeck(deck.sourceUrl));
       return updated === null ? null : deckRepository.saveDeck(updated);
     },
-    async applyLibraryUpgrade(deck, plan) {
-      await deckRepository.applyCardChanges(deck, {
-        save: upgradedCards(plan),
-        remove: plan.remove.map((card) => card.id),
-      });
-      if (plan.remove.length > 0) {
-        await reviewStateRepository.applyReviewChanges(deck, {
-          save: [],
-          remove: plan.remove.flatMap((card) =>
-            (["front-to-back", "back-to-front"] as const).map((direction) => ({
-              cardId: card.id,
-              direction,
-            })),
-          ),
+    async applyLibraryUpgrade(offered, offeredPlan, onProgress = () => undefined) {
+      const uuid = newId();
+      const total = DECK_UPGRADE_STEPS.length;
+      let step: DeckUpgradeStep = "read";
+      let done = 0;
+      let note: DeckUpgradeNote | null = null;
+      const finished = (next: DeckUpgradeStep) => {
+        done += 1;
+        step = next;
+        onProgress({ step, done, total });
+      };
+      // The documents the upgrade replaces are read-only in this tab until
+      // it is over: a review or edit made meanwhile would be lost.
+      const releases = [writeFence.hold(offered.cardsDocumentUrl)];
+      const releaseAll = () => {
+        for (const release of releases.splice(0)) release();
+      };
+      try {
+        onProgress({ step, done, total });
+        const deck = await deckRepository.readDeck(offered.url);
+        if (deck === null) throw new AppError("deckGone", { deck: shown(offered.title) });
+        if (deck.cardsDocumentUrl !== offered.cardsDocumentUrl) throw new AppError("deckChangedSinceOffer");
+        const cards = await readNow(deckRepository.readCardsSince(deck, undefined));
+        const plan = await planUpgrade(deck, async () => cards.value);
+        if (plan === null || !sameCardChanges(plan, offeredPlan)) throw new AppError("deckChangedSinceOffer");
+        const removed = new Set(plan.remove.map((card) => card.id));
+        // The review states move only when some are dropped; else the deck keeps its reviews document.
+        const reviews =
+          removed.size === 0 ? null : await readNow(reviewStateRepository.readReviewStatesSince(deck, undefined));
+        const movesReviews = reviews !== null && reviews.value.some((state) => removed.has(state.cardId));
+        if (movesReviews) releases.push(writeFence.hold(deck.reviewsDocumentUrl));
+        note = {
+          startedAt: now().toISOString(),
+          cards: { from: deck.cardsDocumentUrl, to: stagedDocumentUrl(deck.cardsDocumentUrl, deck.id, uuid) },
+          ...(movesReviews
+            ? { reviews: { from: deck.reviewsDocumentUrl, to: stagedDocumentUrl(deck.reviewsDocumentUrl, deck.id, uuid) } }
+            : {}),
+        };
+        const staged: Deck = {
+          ...applyLibraryUpgrade(deck, plan),
+          cardsDocumentUrl: note.cards.to,
+          reviewsDocumentUrl: note.reviews?.to ?? deck.reviewsDocumentUrl,
+        };
+
+        finished("write");
+        updateJournal.begin(deck.url, encodeDeckUpgradeNote(note));
+        await deckRepository.stageCardChanges(deck, note.cards.to, {
+          save: upgradedCards(plan),
+          remove: [...removed],
         });
+        // A document shared on its own (its own access control) stays shared as it was.
+        await instanceCopier.copyAccessControl(note.cards.from, note.cards.to, note.cards);
+        const keptStates = (reviews?.value ?? []).filter((state) => !removed.has(state.cardId));
+        if (note.reviews !== undefined) {
+          await reviewStateRepository.stageReviewChanges(
+            deck,
+            note.reviews.to,
+            reviews!.value.filter((state) => removed.has(state.cardId)),
+          );
+          await instanceCopier.copyAccessControl(note.reviews.from, note.reviews.to, note.reviews);
+        }
+
+        finished("check");
+        const written = await readNow(deckRepository.readCardsSince(staged, undefined));
+        if (!sameCards(upgradedCardList(cards.value, plan), written.value)) {
+          throw new AppError("upgradedCardsDiffer", { url: note.cards.to });
+        }
+        if (note.reviews !== undefined) {
+          const writtenStates = await readNow(reviewStateRepository.readReviewStatesSince(staged, undefined));
+          if (!sameReviewStates(keptStates, writtenStates.value)) {
+            throw new AppError("upgradedReviewsDiffer", { url: note.reviews.to });
+          }
+        }
+
+        finished("verify");
+        const cardsNow = await deckRepository.readCardsSince(deck, cards.version ?? undefined);
+        if (!cardsNow.unchanged && !sameCards(cards.value, cardsNow.value)) {
+          throw new AppError("deckChangedDuringUpgrade", { url: deck.cardsDocumentUrl });
+        }
+        if (note.reviews !== undefined) {
+          const reviewsNow = await reviewStateRepository.readReviewStatesSince(deck, reviews!.version ?? undefined);
+          if (!reviewsNow.unchanged && !sameReviewStates(reviews!.value, reviewsNow.value)) {
+            throw new AppError("deckChangedDuringUpgrade", { url: deck.reviewsDocumentUrl });
+          }
+        }
+
+        finished("switch");
+        const switched = await deckRepository.switchDeck(deck, staged);
+        // The old documents are no longer the deck's: what is left is to delete them.
+        releaseAll();
+
+        finished("tidy");
+        const tidied = await settleUpgrade(deck.url, note).then(
+          () => true,
+          () => false,
+        );
+        done += 1;
+        onProgress({ step, done, total });
+        return { ok: true, deck: switched, tidied };
+      } catch (error) {
+        releaseAll();
+        if (note === null) return { ok: false, step, error, cleanedUp: true };
+        // A switch whose answer was lost may have happened: the deck says which side won.
+        const settled = await settleUpgrade(offered.url, note).catch(() => null);
+        if (settled?.switched === true) return { ok: true, deck: settled.deck!, tidied: true };
+        return { ok: false, step, error, cleanedUp: settled !== null };
+      } finally {
+        releaseAll();
       }
-      return deckRepository.saveDeck(applyLibraryUpgrade(deck, plan));
+    },
+    async tidyInterruptedDeckUpgrade(deck) {
+      const note = decodeDeckUpgradeNote(updateJournal.staging(deck.url));
+      if (note === null || !isAbandoned(note, now())) return false;
+      await settleUpgrade(deck.url, note);
+      return true;
     },
     listCards(deck) {
       return deckRepository.listCards(deck);

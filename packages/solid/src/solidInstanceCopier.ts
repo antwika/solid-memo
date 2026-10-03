@@ -8,6 +8,7 @@ import {
 } from "@inrupt/solid-client";
 import type { ContainerMove, InstanceCopier } from "@solid-memo/application/ports";
 import { rebaseIri } from "@solid-memo/domain/instanceUpdate";
+import { movedIri } from "./movedDataset";
 import { deleteContainerRecursively, listContainerTree } from "./containers";
 import { getSolidDatasetOrNull, PreconditionFailedError, saveDataset } from "./datasets";
 import { AppError } from "@solid-memo/domain/appError";
@@ -61,6 +62,11 @@ function createOnly(fetch: Fetch): Fetch {
   };
 }
 
+/** An IRI moved: under a container (a URL ending in "/"), or of one document and its fragments. */
+function moveIri(iri: string, move: ContainerMove): string {
+  return move.from.endsWith("/") ? rebaseIri(iri, move.from, move.to) : movedIri(iri, move.from, move.to);
+}
+
 /** The URL a `Link` header gives for `rel`, resolved against the resource; null when none. */
 export function linkedUrl(link: string | null, rel: string, resourceUrl: string): string | null {
   for (const match of (link ?? "").matchAll(/<([^>]*)>\s*;([^,]*)/g)) {
@@ -84,9 +90,17 @@ export function createSolidInstanceCopier({
   fetch: Fetch;
   loadEngine?: () => Promise<{ mapIris: typeof import("@solid-memo/shacl/engine").mapIris }>;
 }): InstanceCopier {
-  async function rebasedDataset(dataset: Parameters<typeof toRdfJsDataset>[0], move: ContainerMove) {
+  async function rebasedDataset(
+    dataset: Parameters<typeof toRdfJsDataset>[0],
+    move: ContainerMove,
+    /** A document moved besides: an access control document's own. */
+    also?: ContainerMove,
+  ) {
     const { mapIris } = await loadEngine();
-    return fromRdfJsDataset(mapIris(toRdfJsDataset(dataset), (iri) => rebaseIri(iri, move.from, move.to)));
+    const map = (iri: string) => moveIri(iri, move);
+    return fromRdfJsDataset(
+      mapIris(toRdfJsDataset(dataset), also === undefined ? map : (iri) => movedIri(map(iri), also.from, also.to)),
+    );
   }
 
   function head(url: string): Promise<Response> {
@@ -116,7 +130,8 @@ export function createSolidInstanceCopier({
       if (targetAcl === null) {
         throw new AppError("accessControlUnknown", { url: to });
       }
-      await saveDataset(targetAcl, await rebasedDataset(acl, move), fetch);
+      // A document's rules name their own document too, which moves with them.
+      await saveDataset(targetAcl, await rebasedDataset(acl, move, { from: sourceAcl!, to: targetAcl }), fetch);
       return true;
     },
 

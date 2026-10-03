@@ -45,6 +45,16 @@ export const ERROR_TEMPLATES = {
   resourceChangedDuringCopy: "<{url}> changed while it was being copied (in another tab or app?); try again.",
   instanceBeingUpdated:
     "Solid Memo is updating the instance at {container} and writes nothing to it until the update is over (refused: {method} {url}).",
+  deckChangedSinceOffer:
+    "The deck changed since the update was offered (in another tab or app?); nothing was changed. Look at the offer again.",
+  upgradedCardsDiffer:
+    "The pod does not hold the new cards as Solid Memo wrote them to <{url}>.",
+  upgradedReviewsDiffer:
+    "The pod does not hold the review states as Solid Memo wrote them to <{url}>.",
+  deckChangedDuringUpgrade:
+    "<{url}> changed while the deck was being updated (in another tab or app?).",
+  deckBeingUpgraded:
+    "Solid Memo is updating the deck in {document} and writes nothing to it until the update is over (refused: {method} {url}).",
   changedElsewhere:
     "{url} was changed elsewhere (in another tab or app?) since Solid Memo read it, so nothing was saved. Reload and try again.",
   createdElsewhere:

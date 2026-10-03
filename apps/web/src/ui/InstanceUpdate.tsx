@@ -1,5 +1,6 @@
 import type { UpdateOutcome, UpdateProgress, UpdateStep } from "@solid-memo/domain/instanceUpdate";
 import { useI18n, type I18n } from "./i18n";
+import { StepProgress } from "./StepProgress";
 
 /** What each step of the update does, as the progress line names it. */
 function stepLabels(t: I18n["t"]): Record<UpdateStep, string> {
@@ -47,21 +48,23 @@ export function InstanceUpdateConfirm({
 /** While the update runs: which step it is on, and how far along it is. It cannot be stopped half-way. */
 export function InstanceUpdateProgress({ progress }: { progress: UpdateProgress }) {
   const { t } = useI18n();
-  const step = stepLabels(t)[progress.step];
+  const labels = stepLabels(t);
+  const step = labels[progress.step];
   return (
-    <div class="warning migration" role="region" aria-label={t("instanceUpdate.progressRegion")}>
-      <p>
-        {progress.step === "copy" && progress.total > 0
+    <StepProgress
+      region={t("instanceUpdate.progressRegion")}
+      steps={(Object.keys(labels) as UpdateStep[]).map((entry) => ({ step: entry, label: labels[entry] }))}
+      current={progress.step}
+      done={progress.done}
+      total={progress.total}
+      status={
+        progress.step === "copy" && progress.total > 0
           ? t("instanceUpdate.runningCount", { step, done: progress.done, total: progress.total })
-          : t("instanceUpdate.running", { step })}
-      </p>
-      <progress
-        value={progress.done}
-        max={Math.max(progress.total, 1)}
-        aria-label={t("instanceUpdate.progressLabel")}
-      />
-      <p class="hint">{t("instanceUpdate.keepOpen")}</p>
-    </div>
+          : t("instanceUpdate.running", { step })
+      }
+      progressLabel={t("instanceUpdate.progressLabel")}
+      hint={t("instanceUpdate.keepOpen")}
+    />
   );
 }
 

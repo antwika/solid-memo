@@ -346,6 +346,32 @@
   "libraryUpgrade": {
     "updated": "Uppdaterad till utgåva {version} från biblioteket."
   },
+  "stepProgress": {
+    "done": "klart",
+    "current": "pågår"
+  },
+  "deckUpgrade": {
+    "progressRegion": "Uppdaterar kortleken",
+    "running": "{step}…",
+    "progressLabel": "Uppdateringens förlopp",
+    "keepOpen": "Håll sidan öppen tills uppdateringen är klar. Kortleken byts över först när allt har kontrollerats.",
+    "step": {
+      "read": "Läser kortleken och dess kort",
+      "write": "Skriver de uppdaterade korten till nya dokument",
+      "check": "Kontrollerar det som skrevs",
+      "verify": "Kontrollerar att inget ändrats under tiden",
+      "switch": "Byter över kortleken",
+      "tidy": "Tar bort de gamla dokumenten",
+      "refresh": "Visar den uppdaterade kortleken"
+    },
+    "failedRegion": "Uppdateringen misslyckades",
+    "failedWhile": "Uppdateringen misslyckades i steget ”{step}”:",
+    "noChanges": "Din kortlek ändrades inte.",
+    "copyRemoved": "De nya dokumenten togs bort.",
+    "copyLeft": "De nya dokumenten kunde inte tas bort än; Solid Memo tar bort dem vid ett senare besök i kortleken.",
+    "tryAgain": "Försök igen",
+    "close": "Stäng"
+  },
   "libraryUpgradeNotice": {
     "region": "Nyare utgåva i biblioteket",
     "heading": "Kortleksbiblioteket har en nyare utgåva av den här kortleken.",
@@ -699,6 +725,11 @@
     "instanceChangedDuringCopy": "Instansen ändrades medan den kopierades (i en annan flik eller app?); försök igen.",
     "resourceChangedDuringCopy": "<{url}> ändrades medan den kopierades (i en annan flik eller app?); försök igen.",
     "instanceBeingUpdated": "Solid Memo uppdaterar instansen på {container} och skriver inget till den förrän uppdateringen är klar (nekades: {method} {url}).",
+    "deckChangedSinceOffer": "Kortleken ändrades efter att uppdateringen erbjöds (i en annan flik eller app?); inget ändrades. Titta på erbjudandet igen.",
+    "upgradedCardsDiffer": "Podden innehåller inte de nya korten så som Solid Memo skrev dem till <{url}>.",
+    "upgradedReviewsDiffer": "Podden innehåller inte repetitionslägena så som Solid Memo skrev dem till <{url}>.",
+    "deckChangedDuringUpgrade": "<{url}> ändrades medan kortleken uppdaterades (i en annan flik eller app?).",
+    "deckBeingUpgraded": "Solid Memo uppdaterar kortleken i {document} och skriver inget till den förrän uppdateringen är klar (nekades: {method} {url}).",
     "changedElsewhere": "{url} ändrades någon annanstans (i en annan flik eller app?) efter att Solid Memo läste den, så inget sparades. Läs in sidan igen och försök på nytt.",
     "createdElsewhere": "{url} skapades någon annanstans (i en annan flik eller app?) just när Solid Memo skulle skapa den, så inget sparades. Läs in sidan igen och försök på nytt.",
     "alreadyExists": "<{url}> finns redan.",

@@ -349,6 +349,32 @@
   "libraryUpgrade": {
     "updated": "Updated to release {version} from the library."
   },
+  "stepProgress": {
+    "done": "done",
+    "current": "in progress"
+  },
+  "deckUpgrade": {
+    "progressRegion": "Updating the deck",
+    "running": "{step}…",
+    "progressLabel": "Update progress",
+    "keepOpen": "Keep this page open until the update is done. Your deck is only switched over once everything checks out.",
+    "step": {
+      "read": "Reading the deck and its cards",
+      "write": "Writing the updated cards to new documents",
+      "check": "Checking what was written",
+      "verify": "Checking nothing changed meanwhile",
+      "switch": "Switching the deck over",
+      "tidy": "Removing the old documents",
+      "refresh": "Showing the updated deck"
+    },
+    "failedRegion": "Update failed",
+    "failedWhile": "The update failed while {step}:",
+    "noChanges": "Your deck was not changed.",
+    "copyRemoved": "The new documents were removed.",
+    "copyLeft": "The new documents could not be removed yet; Solid Memo removes them on a later visit to the deck.",
+    "tryAgain": "Try again",
+    "close": "Close"
+  },
   "libraryUpgradeNotice": {
     "region": "Newer library release",
     "heading": "The deck library has a newer release of this deck.",
@@ -702,6 +728,11 @@
     "instanceChangedDuringCopy": "The instance changed while it was being copied (in another tab or app?); try again.",
     "resourceChangedDuringCopy": "<{url}> changed while it was being copied (in another tab or app?); try again.",
     "instanceBeingUpdated": "Solid Memo is updating the instance at {container} and writes nothing to it until the update is over (refused: {method} {url}).",
+    "deckChangedSinceOffer": "The deck changed since the update was offered (in another tab or app?); nothing was changed. Look at the offer again.",
+    "upgradedCardsDiffer": "The pod does not hold the new cards as Solid Memo wrote them to <{url}>.",
+    "upgradedReviewsDiffer": "The pod does not hold the review states as Solid Memo wrote them to <{url}>.",
+    "deckChangedDuringUpgrade": "<{url}> changed while the deck was being updated (in another tab or app?).",
+    "deckBeingUpgraded": "Solid Memo is updating the deck in {document} and writes nothing to it until the update is over (refused: {method} {url}).",
     "changedElsewhere": "{url} was changed elsewhere (in another tab or app?) since Solid Memo read it, so nothing was saved. Reload and try again.",
     "createdElsewhere": "{url} was created elsewhere (in another tab or app?) while Solid Memo was about to create it, so nothing was saved. Reload and try again.",
     "alreadyExists": "<{url}> already exists.",

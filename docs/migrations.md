@@ -236,8 +236,9 @@ under **Previous version** while the instance's meta names it:
 - **Delete backup** deletes the original and clears `dcterms:replaces`.
 
 A backup that is gone (deleted by another app) is forgotten quietly.
-Library upgrades and repairs still edit in place: they are small,
-single-document writes, and only the format update copies.
+Repairs still edit in place. Library upgrades copy the deck's own
+documents and switch the deck over to them
+([below](#how-an-upgrade-is-applied)).
 
 ## Catching up with the library
 
@@ -280,12 +281,60 @@ before upgrades brought these texts along is given its own release's
 languages, the same way, once a session when its page opens
 (`addReleaseLanguages`): nothing the user wrote changes. The notice lists the notes of every release in between.
 Nothing is offered for a release that is not newer, uses a card format
-this app does not know, or would change nothing. Applying it is one
-write of the cards document (`applyCardChanges`: an existing card keeps
-its creation time and unknown triples; `upgradedCards` says what is
-written), one of the review states of removed cards, and one of the
-catalog entry, which now names the new
-release. Review history of every other card is kept.
+this app does not know, or would change nothing. Review history of every
+card but the removed ones is kept.
+
+### How an upgrade is applied
+
+Like the format update, an upgrade never writes the deck's documents
+([domain/deckUpgrade.ts](../packages/domain/src/deckUpgrade.ts),
+`applyLibraryUpgrade` in
+[useCases.ts](../packages/application/src/useCases.ts)). It writes the
+upgraded deck into new documents beside the old ones, and points the
+deck's catalog entry at them only once everything checks out. The deck
+keeps its URL and its cards keep their ids, so the answer log still
+names them (statistics count a card by its deck and id, not by its
+document).
+
+```mermaid
+flowchart TD
+    offer["Notice: what the upgrade changes"] -->|Update to release n| read["1 read: the deck's entry and cards (and,<br/>when removed cards have some, review states);<br/>the plan again must change the same cards"]
+    read --> write["2 write: decks/&lt;deck&gt;-&lt;uuid&gt;.ttl (and reviews/…)<br/>as new documents (If-None-Match: *), their own ACL copied;<br/>remembered in the browser"]
+    write --> check["3 check: the new documents read back<br/>as what was meant to be written"]
+    check --> verify["4 verify: the old documents still as read<br/>(304, or the same contents)"]
+    verify --> switch["5 switch: the catalog entry, still as read,<br/>points at the new documents (one write, If-Match)"]
+    switch --> tidy["6 tidy: the old documents deleted"]
+    tidy --> refresh["The deck page reads everything again at once"]
+    read & write & check & verify & switch -->|error| undo["Delete the new documents,<br/>show where it failed; the deck is as it was"]
+```
+
+- **One commit.** The catalog entry is the only thing that says where
+  the deck's cards and review states are, so its single conditional
+  write is the switch: before it the deck is the old one, after it the
+  new one. A switch whose answer was lost is settled by reading the
+  entry: whichever documents it points at stay, the others are deleted.
+- **Review states move only when they must.** When no removed card has
+  review states the deck keeps its reviews document, and reviews saved
+  meanwhile on another device land where they always did.
+- **Nothing written meanwhile is lost.** While it runs, the write fence
+  refuses this tab's writes to the documents being replaced; the verify
+  step catches another device's. On a server whose ETag outlives an edit
+  made in the same second (Community Solid Server 6), a change made in
+  that second can look unchanged — as for the format update.
+- **Shared documents are kept.** Solid Memo gives every deck its own
+  documents, but another app may point two decks at one. The tidy, like
+  removing a deck, deletes no document any deck of the catalog still
+  uses.
+- **Sharing.** A document with its own ACL gets a copy of it, rebased;
+  between its creation and that copy the new document inherits its
+  container's access.
+- **Interrupted upgrades.** The browser notes what an upgrade moves
+  before it writes; a note left by a closed tab is settled the same way
+  (by the entry) on a later visit to the deck, once it is ten minutes
+  old, so another tab's upgrade under way is left alone.
+- **Progress.** The deck page shows every step, with a progress bar, in
+  place of the offer; a failure says at which step, and that the deck
+  was not changed.
 
 ## Adding a format version
 

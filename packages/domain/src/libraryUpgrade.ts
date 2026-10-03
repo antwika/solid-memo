@@ -115,7 +115,8 @@ export function withReleaseLanguages(deck: Deck, release: LibraryDeckContent): D
   return { ...deck, ...(title === undefined ? {} : { title }), ...(description === undefined ? {} : { description }) };
 }
 
-function sameContent(a: CardContent, b: CardContent): boolean {
+/** Whether two cards say the same, on both sides; ids, versions and retirement aside. */
+export function sameContent(a: CardContent, b: CardContent): boolean {
   return (
     sameText(a.front, b.front) &&
     sameText(a.back, b.back) &&
