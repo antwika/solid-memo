@@ -1,0 +1,249 @@
+@base <https://solid-memo.com/shapes/review-state/v3.ttl> .
+
+@prefix sh:         <http://www.w3.org/ns/shacl#> .
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms:    <http://purl.org/dc/terms/> .
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Review-state format 3: format 2 plus the FSRS-7 memory (stability,
+# stabilityFast, difficulty), all three or none: a state without them has
+# its memory estimated from the SM-2 interval at its next review. The
+# snapshot carries the memory as well (previousStability,
+# previousStabilityFast, previousDifficulty), all three or none, and only
+# with the other five previous* triples. The format means FSRS-7 as the
+# app's port computes it (packages/domain/src/fsrs.ts): a model that
+# computes memory differently would be another format.
+<#shape>
+    a sh:NodeShape ;
+    sh:name "ReviewStateV3" ;
+    rdfs:comment "Review-state format 3: SM-2 fields and the FSRS-7 memory, each all or nothing, an all-or-nothing previous* snapshot, per-direction subjects." ;
+    sh:nodeKind sh:IRI ;
+    sh:class solid-memo:ReviewState ;
+    sh:pattern "#[^#@]+(@back-to-front)?$" ;
+    sh:and ( <#snapshotRule> <#memoryRule> <#previousMemoryRule> ) ;
+    sh:message "A review state is named #<cardId> or #<cardId>@back-to-front; its previous* snapshot is all five triples or none; its FSRS memory is all three triples or none, and so is the snapshot's, which needs the rest of the snapshot."@en ,
+               "Ett repetitionstillstånd heter #<cardId> eller #<cardId>@back-to-front; dess ögonblicksbild previous* består av alla fem trippler eller ingen; dess FSRS-minne består av alla tre trippler eller inget, liksom ögonblicksbildens, som kräver resten av ögonblicksbilden."@sv ;
+    sh:property <#formatVersion> ,
+                <#easeFactor> ,
+                <#intervalDays> ,
+                <#repetitions> ,
+                <#due> ,
+                <#firstReviewedAt> ,
+                <#lastReviewedAt> ,
+                <#previousEaseFactor> ,
+                <#previousIntervalDays> ,
+                <#previousRepetitions> ,
+                <#previousDue> ,
+                <#previousLastReviewedAt> ,
+                <#stability> ,
+                <#stabilityFast> ,
+                <#difficulty> ,
+                <#previousStability> ,
+                <#previousStabilityFast> ,
+                <#previousDifficulty> .
+
+<#snapshotRule>
+    a sh:NodeShape ;
+    sh:xone ( <#noSnapshot> <#fullSnapshot> ) .
+
+<#memoryRule>
+    a sh:NodeShape ;
+    sh:xone ( <#noMemory> <#fullMemory> ) .
+
+<#previousMemoryRule>
+    a sh:NodeShape ;
+    sh:xone ( <#noPreviousMemory> <#fullPreviousMemory> ) .
+
+# The memory is all three FSRS triples or none of them.
+<#noMemory>
+    a sh:NodeShape ;
+    sh:property [ sh:path solid-memo:stability ; sh:maxCount 0 ] ,
+                [ sh:path solid-memo:stabilityFast ; sh:maxCount 0 ] ,
+                [ sh:path solid-memo:difficulty ; sh:maxCount 0 ] .
+
+<#fullMemory>
+    a sh:NodeShape ;
+    sh:property [ sh:path solid-memo:stability ; sh:minCount 1 ] ,
+                [ sh:path solid-memo:stabilityFast ; sh:minCount 1 ] ,
+                [ sh:path solid-memo:difficulty ; sh:minCount 1 ] .
+
+# The snapshot's memory likewise, and only beside the rest of the snapshot.
+<#noPreviousMemory>
+    a sh:NodeShape ;
+    sh:property [ sh:path solid-memo:previousStability ; sh:maxCount 0 ] ,
+                [ sh:path solid-memo:previousStabilityFast ; sh:maxCount 0 ] ,
+                [ sh:path solid-memo:previousDifficulty ; sh:maxCount 0 ] .
+
+<#fullPreviousMemory>
+    a sh:NodeShape ;
+    sh:property [ sh:path solid-memo:previousStability ; sh:minCount 1 ] ,
+                [ sh:path solid-memo:previousStabilityFast ; sh:minCount 1 ] ,
+                [ sh:path solid-memo:previousDifficulty ; sh:minCount 1 ] ,
+                [ sh:path solid-memo:previousEaseFactor ; sh:minCount 1 ] .
+
+# The snapshot is all five previous* triples or none of them: a partial
+# snapshot could only restore a state that never existed.
+<#noSnapshot>
+    a sh:NodeShape ;
+    sh:property [ sh:path solid-memo:previousEaseFactor ; sh:maxCount 0 ] ,
+                [ sh:path solid-memo:previousIntervalDays ; sh:maxCount 0 ] ,
+                [ sh:path solid-memo:previousRepetitions ; sh:maxCount 0 ] ,
+                [ sh:path solid-memo:previousDue ; sh:maxCount 0 ] ,
+                [ sh:path solid-memo:previousLastReviewedAt ; sh:maxCount 0 ] .
+
+<#fullSnapshot>
+    a sh:NodeShape ;
+    sh:property [ sh:path solid-memo:previousEaseFactor ; sh:minCount 1 ] ,
+                [ sh:path solid-memo:previousIntervalDays ; sh:minCount 1 ] ,
+                [ sh:path solid-memo:previousRepetitions ; sh:minCount 1 ] ,
+                [ sh:path solid-memo:previousDue ; sh:minCount 1 ] ,
+                [ sh:path solid-memo:previousLastReviewedAt ; sh:minCount 1 ] .
+
+<#formatVersion>
+    a sh:PropertyShape ;
+    sh:path solid-memo:formatVersion ;
+    sh:datatype xsd:integer ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:hasValue 3 ;
+    sh:message "Review-state format 3 states its format version, 3."@en ,
+               "Format 3 för repetitionstillstånd anger sin formatversion, 3."@sv .
+
+<#easeFactor>
+    a sh:PropertyShape ;
+    sh:path solid-memo:easeFactor ;
+    sh:datatype xsd:decimal ;
+    sh:minCount 1 ;
+    sh:maxCount 1 .
+
+<#intervalDays>
+    a sh:PropertyShape ;
+    sh:path solid-memo:intervalDays ;
+    sh:datatype xsd:integer ;
+    sh:minCount 1 ;
+    sh:maxCount 1 .
+
+<#repetitions>
+    a sh:PropertyShape ;
+    sh:path solid-memo:repetitions ;
+    sh:datatype xsd:integer ;
+    sh:minCount 1 ;
+    sh:maxCount 1 .
+
+<#due>
+    a sh:PropertyShape ;
+    sh:path solid-memo:due ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" ;
+    sh:message "The due day is a plain \"YYYY-MM-DD\" string."@en ,
+               "Förfallodagen är en vanlig sträng \"YYYY-MM-DD\"."@sv .
+
+<#firstReviewedAt>
+    a sh:PropertyShape ;
+    sh:path solid-memo:firstReviewedAt ;
+    sh:datatype xsd:dateTime ;
+    sh:minCount 1 ;
+    sh:maxCount 1 .
+
+<#lastReviewedAt>
+    a sh:PropertyShape ;
+    sh:path solid-memo:lastReviewedAt ;
+    sh:datatype xsd:dateTime ;
+    sh:minCount 1 ;
+    sh:maxCount 1 .
+
+<#previousEaseFactor>
+    a sh:PropertyShape ;
+    sh:path solid-memo:previousEaseFactor ;
+    sh:datatype xsd:decimal ;
+    sh:maxCount 1 .
+
+<#previousIntervalDays>
+    a sh:PropertyShape ;
+    sh:path solid-memo:previousIntervalDays ;
+    sh:datatype xsd:integer ;
+    sh:maxCount 1 .
+
+<#previousRepetitions>
+    a sh:PropertyShape ;
+    sh:path solid-memo:previousRepetitions ;
+    sh:datatype xsd:integer ;
+    sh:maxCount 1 .
+
+<#previousDue>
+    a sh:PropertyShape ;
+    sh:path solid-memo:previousDue ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" ;
+    sh:message "The previous due day is a plain \"YYYY-MM-DD\" string."@en ,
+               "Den föregående förfallodagen är en vanlig sträng \"YYYY-MM-DD\"."@sv .
+
+<#previousLastReviewedAt>
+    a sh:PropertyShape ;
+    sh:path solid-memo:previousLastReviewedAt ;
+    sh:datatype xsd:dateTime ;
+    sh:maxCount 1 .
+
+<#stability>
+    a sh:PropertyShape ;
+    sh:path solid-memo:stability ;
+    sh:datatype xsd:decimal ;
+    sh:maxCount 1 ;
+    sh:minExclusive 0 ;
+    sh:maxInclusive 36500 ;
+    sh:message "A stability is a decimal number of days, more than 0 and at most 36500 (a hundred years)."@en ,
+               "En stabilitet är ett decimaltal dagar, mer än 0 och högst 36500 (hundra år)."@sv .
+
+<#stabilityFast>
+    a sh:PropertyShape ;
+    sh:path solid-memo:stabilityFast ;
+    sh:datatype xsd:decimal ;
+    sh:maxCount 1 ;
+    sh:minExclusive 0 ;
+    sh:maxInclusive 36500 ;
+    sh:message "A stability is a decimal number of days, more than 0 and at most 36500 (a hundred years)."@en ,
+               "En stabilitet är ett decimaltal dagar, mer än 0 och högst 36500 (hundra år)."@sv .
+
+<#difficulty>
+    a sh:PropertyShape ;
+    sh:path solid-memo:difficulty ;
+    sh:datatype xsd:decimal ;
+    sh:maxCount 1 ;
+    sh:minInclusive 1 ;
+    sh:maxInclusive 10 ;
+    sh:message "A difficulty is a decimal number from 1 to 10."@en ,
+               "En svårighetsgrad är ett decimaltal från 1 till 10."@sv .
+
+<#previousStability>
+    a sh:PropertyShape ;
+    sh:path solid-memo:previousStability ;
+    sh:datatype xsd:decimal ;
+    sh:maxCount 1 ;
+    sh:minExclusive 0 ;
+    sh:maxInclusive 36500 ;
+    sh:message "A stability is a decimal number of days, more than 0 and at most 36500 (a hundred years)."@en ,
+               "En stabilitet är ett decimaltal dagar, mer än 0 och högst 36500 (hundra år)."@sv .
+
+<#previousStabilityFast>
+    a sh:PropertyShape ;
+    sh:path solid-memo:previousStabilityFast ;
+    sh:datatype xsd:decimal ;
+    sh:maxCount 1 ;
+    sh:minExclusive 0 ;
+    sh:maxInclusive 36500 ;
+    sh:message "A stability is a decimal number of days, more than 0 and at most 36500 (a hundred years)."@en ,
+               "En stabilitet är ett decimaltal dagar, mer än 0 och högst 36500 (hundra år)."@sv .
+
+<#previousDifficulty>
+    a sh:PropertyShape ;
+    sh:path solid-memo:previousDifficulty ;
+    sh:datatype xsd:decimal ;
+    sh:maxCount 1 ;
+    sh:minInclusive 1 ;
+    sh:maxInclusive 10 ;
+    sh:message "A difficulty is a decimal number from 1 to 10."@en ,
+               "En svårighetsgrad är ett decimaltal från 1 till 10."@sv .

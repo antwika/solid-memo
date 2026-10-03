@@ -10,8 +10,8 @@ format version under [`packages/vocab/shapes/`](../packages/vocab/shapes/), publ
 shapes/instance/v1.ttl        https://solid-memo.com/shapes/instance/v1.ttl#shape
 shapes/deck/v1.ttl, v2.ttl    …/deck/v2.ttl#inPod  and  …/deck/v2.ttl#inLibrary
 shapes/card/v1.ttl, v2.ttl
-shapes/review-state/v1.ttl, v2.ttl
-shapes/preferences/v1.ttl, v2.ttl
+shapes/review-state/v1.ttl … v3.ttl
+shapes/preferences/v1.ttl … v4.ttl
 shapes/document-receipt/v1.ttl, shapes/deck-schedule/v1.ttl   (the digest)
 ```
 
@@ -52,7 +52,8 @@ share the same named property shapes.
   Swedish by its constraint (`validation.constraint.*` in the message
   catalogues), more generally.
 - **Rules a record cannot carry** — a card side has text or a picture
-  (`sh:or`), the review snapshot is all five triples or none (`sh:xone`),
+  (`sh:or`), the review snapshot is all five triples or none and the FSRS
+  memory all three or none (`sh:xone`),
   a review subject is named `#<cardId>` or `#<cardId>@back-to-front`
   (`sh:pattern` on the node) — are enforced by the record → model
   mappers in code and by SHACL in validation.
@@ -70,11 +71,13 @@ share the same named property shapes.
 | Card 4 | Card 3, but a side's text (`sm:front`, `sm:back`) is either one untagged literal, its language unknown (what the app writes for text typed in it), or language-tagged text, at most one value per language (`sh:or` of `xsd:string` and `rdf:langString`, `sh:uniqueLang`, at most one untagged value), never both (a node-level `sh:or`). English is not required: a Swedish vocabulary deck's back is Swedish. The app shows the reader's language, else the English, else the untagged text; it edits the English, else the untagged or only text, and keeps the other languages |
 | Review state 1 | `sm:easeFactor` decimal, `sm:intervalDays`, `sm:repetitions` integer, `sm:due` `YYYY-MM-DD`, `sm:firstReviewedAt`, `sm:lastReviewedAt` dateTime, all 1..1; the five `sm:previous*` 0..1 each (unversioned pods already hold snapshots); subject named per direction |
 | Review state 2 | Review state 1 with the snapshot all or nothing |
+| Review state 3 | Review state 2 + the FSRS-7 memory `sm:stability`, `sm:stabilityFast` (decimal, more than 0, at most 36500) and `sm:difficulty` (decimal, 1–10), 0..1 each, all three or none; the snapshot's `sm:previousStability`, `sm:previousStabilityFast`, `sm:previousDifficulty` likewise, and only with the other five `sm:previous*` (node-level `sh:and` of three `sh:xone`) |
 | Preferences 1 | `sm:newCardsPerDay`, `sm:maxReviewsPerDay`, `sm:dayBoundaryHour` (0–23) integer 0..1; `sm:answerScale` 0..1, `sm2` or `minimal`; `sm:developerMode` 0..1 boolean |
 | Preferences 2 | Preferences 1 with every field 1..1 |
 | Deck 3 | A `dcat:Dataset` too. `dcterms:title` and `dcterms:description` 1..1; `dcterms:created`, `dcterms:modified` 0..1; `dcterms:creator` 0..n IRIs (foaf:Agent nodes); `dcterms:license` 0..1; `sm:studyDirection` 1..1, a concept of `sm:StudyDirections` (`sm:direction` forbidden); `dcat:theme` 0..n IRIs, `dcat:keyword` 0..n; `dcterms:source` forbidden. In a pod also `dcat:distribution` 0..n, the two document links, `prov:wasDerivedFrom` 0..1 (the library release it came from), and the deck's own study caps `sm:deckNewCardsPerDay` and `sm:deckMaxReviewsPerDay`, integers ≥ 0, 0..1 each (added without a version bump: an older reader ignores them). In the library, one release: `dcterms:publisher`, `dcat:version` (1, 2, …), `dcat:inSeries`, `dcat:isVersionOf` 1..1; `dcat:prev`, `dcat:previousVersion`, `adms:versionNotes`, `dcterms:issued` 0..1; `dcat:theme` including the EU theme EDUC; `dcterms:language` 0..n; `dcat:distribution` 1..n; `prov:wasDerivedFrom` 0..n; no document links and no study caps |
 | Deck 4 | Deck 3, but `dcterms:title` and `dcterms:description` are language-tagged text (`rdf:langString`): one or more values, at most one per language (`sh:uniqueLang`), exactly one of them English (`sh:qualifiedValueShape [ sh:languageIn ("en") ]`, `sh:qualifiedMinCount 1`, `sh:qualifiedMaxCount 1`). The app shows the text in the reader's language (the browser's preferred languages), else the English; it edits the English text and keeps the other languages |
 | Preferences 3 | Preferences 2 + `sm:invalidDataPolicy` 1..1, a concept of `sm:InvalidDataPolicies` |
+| Preferences 4 | Preferences 3 + `sm:scheduler` 1..1, a concept of `sm:Schedulers` (`sm:sm2`, `sm:fsrs`), and `sm:desiredRetention` 1..1, a decimal from 0.7 to 0.97 |
 | Library deck series 1 | The deck across its releases in the library index: a `dcat:DatasetSeries` and `dcat:Dataset`; title, description, publisher 1..1; `dcat:first`, `dcat:last`, `dcat:hasCurrentVersion` 1..1; `dcat:hasVersion` 1..n; themes and keywords 0..n |
 | Library deck series 2 | Library deck series 1 with the version stated (`sh:hasValue 2`) and the title and description as language-tagged text, as in deck format 4 |
 | Catalog 1 | A `dcat:Catalog` (an instance's `catalog.ttl#catalog`, the library index): title, description, `dcterms:publisher` 1..1; licence, modification time 0..1; `dcat:themeTaxonomy`, `dcat:dataset` 0..n |

@@ -74,6 +74,26 @@ export const INVALID_DATA_POLICIES = {
   ],
 } as const satisfies ConceptScheme;
 
+/** The algorithms that can decide when a prompt is next due. */
+export const SCHEDULERS = {
+  iri: "https://solid-memo.com/vocab/v1#Schedulers",
+  title: "Schedulers",
+  concepts: [
+    {
+      iri: "https://solid-memo.com/vocab/v1#sm2",
+      label: { en: "SM-2" },
+      definition: { en: "SuperMemo 2 (Wozniak, 1990): the interval grows by an ease factor that each grade adjusts." },
+      notation: "sm2",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/v1#fsrs",
+      label: { en: "FSRS" },
+      definition: { en: "The Free Spaced Repetition Scheduler, FSRS-7: the interval is the time until the predicted probability of recall falls to the desired retention." },
+      notation: "fsrs",
+    },
+  ],
+} as const satisfies ConceptScheme;
+
 /** What a deck of flashcards is about. */
 export const TOPICS = {
   iri: "https://solid-memo.com/vocab/topics",

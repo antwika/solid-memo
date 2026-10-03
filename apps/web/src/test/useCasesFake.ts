@@ -104,6 +104,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       studiedToday: 0,
     })),
     resetStudyDay: vi.fn(async () => 0),
+    rescheduleWithFsrs: vi.fn(async () => ({ sooner: 0, later: 0 })),
     recordReview: vi.fn(async () => ({
       cardId: "card-1",
       direction: "front-to-back" as const,

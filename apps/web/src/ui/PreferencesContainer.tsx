@@ -36,6 +36,14 @@ export function PreferencesContainer({
     },
   });
 
+  const rescheduleMutation = useMutation({
+    mutationFn: () => useCases.rescheduleWithFsrs(instance.url),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["studyQueue"] });
+      queryClient.removeQueries({ queryKey: ["reviews"] });
+    },
+  });
+
   if (preferencesQuery.error) {
     return <p class="error">{errorText(preferencesQuery.error)}</p>;
   }
@@ -47,8 +55,11 @@ export function PreferencesContainer({
     <PreferencesScreen
       preferences={preferencesQuery.data}
       busy={saveMutation.isPending}
-      error={errorText(saveMutation.error)}
+      error={errorText(saveMutation.error ?? rescheduleMutation.error)}
       onSave={(preferences) => saveMutation.mutate(preferences)}
+      rescheduling={rescheduleMutation.isPending}
+      rescheduled={rescheduleMutation.data ?? null}
+      onReschedule={() => rescheduleMutation.mutate()}
     />
   );
 }

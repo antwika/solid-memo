@@ -5,11 +5,14 @@ import {
   conceptByNotation,
   conceptOfDirection,
   conceptOfPolicy,
+  conceptOfScheduler,
   directionOfConcept,
   policyOfConcept,
+  schedulerOfConcept,
 } from "./concepts";
 import { INVALID_DATA_POLICIES } from "./invalidDataPolicy";
 import { DECK_DIRECTIONS } from "./deck";
+import { SCHEDULERS } from "./scheduler";
 
 const SM = "https://solid-memo.com/vocab/v1#";
 
@@ -53,5 +56,15 @@ describe("invalid data policies as concepts", () => {
     }
     expect(conceptOfPolicy("warn-only")).toBe(`${SM}warnOnly`);
     expect(policyOfConcept(`${SM}frontToBack`)).toBeUndefined();
+  });
+});
+
+describe("scheduler concepts", () => {
+  it("map every scheduler to its concept and back", () => {
+    for (const scheduler of SCHEDULERS) {
+      expect(schedulerOfConcept(conceptOfScheduler(scheduler))).toBe(scheduler);
+    }
+    expect(conceptOfScheduler("fsrs")).toBe(`${SM}fsrs`);
+    expect(schedulerOfConcept(`${SM}warnOnly`)).toBeUndefined();
   });
 });

@@ -17,8 +17,8 @@ import {
   upgradeDeck,
   upgradeReviewState,
 } from "./migration";
-import { DEFAULT_PREFERENCES } from "./preferences";
-import type { ReviewState } from "./review";
+import { DEFAULT_PREFERENCES, PREFERENCES_FORMAT_VERSION } from "./preferences";
+import { REVIEW_STATE_FORMAT_VERSION, type ReviewState } from "./review";
 
 const deck: Deck = {
   id: "deck-1",
@@ -111,13 +111,14 @@ function review(cardId: string, formatVersion: number): ReviewState {
 describe("review states, preferences and the instance record", () => {
   it("are outdated below the current format only", () => {
     expect(isReviewStateOutdated(review("a", 1))).toBe(true);
-    expect(isReviewStateOutdated(review("a", 2))).toBe(false);
-    expect(upgradeReviewState(review("a", 1))).toEqual(review("a", 2));
-    const current = review("a", 3);
+    expect(isReviewStateOutdated(review("a", 2))).toBe(true);
+    expect(isReviewStateOutdated(review("a", REVIEW_STATE_FORMAT_VERSION))).toBe(false);
+    expect(upgradeReviewState(review("a", 1))).toEqual(review("a", REVIEW_STATE_FORMAT_VERSION));
+    const current = review("a", REVIEW_STATE_FORMAT_VERSION + 1);
     expect(upgradeReviewState(current)).toBe(current);
     expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 1 })).toBe(true);
-    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 2 })).toBe(true);
-    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 3 })).toBe(false);
+    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: 3 })).toBe(true);
+    expect(isPreferencesOutdated({ preferences: DEFAULT_PREFERENCES, formatVersion: PREFERENCES_FORMAT_VERSION })).toBe(false);
     expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 0 })).toBe(true);
     expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 1 })).toBe(true);
     expect(isInstanceOutdated({ name: "Main", createdAt: "", formatVersion: 2 })).toBe(false);
@@ -139,7 +140,7 @@ describe("planMigration", () => {
         entries: [
           { deck, cards: [card("a", 1), card("b", CARD_FORMAT_VERSION), card("c", 1)], reviews: [review("a", 1)] },
           { deck: other, cards: [card("d", 1)], reviews: [] },
-          { deck: oldEntry, cards: [card("e", CARD_FORMAT_VERSION)], reviews: [review("e", 2)] },
+          { deck: oldEntry, cards: [card("e", CARD_FORMAT_VERSION)], reviews: [review("e", REVIEW_STATE_FORMAT_VERSION)] },
           { deck: upToDate, cards: [card("f", CARD_FORMAT_VERSION)], reviews: [] },
           { deck: oldReviews, cards: [], reviews: [review("g", 1), review("h", 1)] },
         ],
@@ -173,7 +174,7 @@ describe("planMigration", () => {
       isPlanEmpty(
         planMigration({
           instance: { name: "Main", createdAt: "", formatVersion: 2 },
-          preferences: { preferences: DEFAULT_PREFERENCES, formatVersion: 3 },
+          preferences: { preferences: DEFAULT_PREFERENCES, formatVersion: PREFERENCES_FORMAT_VERSION },
           catalog,
           entries: [],
         }),
@@ -184,7 +185,7 @@ describe("planMigration", () => {
   it("is empty when everything is current or absent", () => {
     const plan = planMigration({
       ...nothingElse,
-      entries: [{ deck, cards: [card("a", CARD_FORMAT_VERSION)], reviews: [review("a", 2)] }],
+      entries: [{ deck, cards: [card("a", CARD_FORMAT_VERSION)], reviews: [review("a", REVIEW_STATE_FORMAT_VERSION)] }],
     });
     expect(plan).toEqual({
       decks: [],

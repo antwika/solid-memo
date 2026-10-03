@@ -27,8 +27,10 @@ import type {
   PreferencesV1,
   PreferencesV2,
   PreferencesV3,
+  PreferencesV4,
   ReviewStateV1,
   ReviewStateV2,
+  ReviewStateV3,
 } from "./types.generated.ts";
 
 export const AGENT_V1: ShapeDescriptor<AgentV1> = {
@@ -559,6 +561,27 @@ export const PREFERENCES_V3: ShapeDescriptor<PreferencesV3> = {
   ],
 };
 
+export const PREFERENCES_V4: ShapeDescriptor<PreferencesV4> = {
+  shape: "preferences",
+  version: 4,
+  targetClass: "https://solid-memo.com/vocab/v1#Preferences",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/preferences/v4.ttl#shape",
+  shapeDocument: "preferences/v4.ttl",
+  context: "any",
+  fields: [
+    { name: "newCardsPerDay", predicate: "https://solid-memo.com/vocab/v1#newCardsPerDay", kind: "integer", cardinality: "one" },
+    { name: "maxReviewsPerDay", predicate: "https://solid-memo.com/vocab/v1#maxReviewsPerDay", kind: "integer", cardinality: "one" },
+    { name: "dayBoundaryHour", predicate: "https://solid-memo.com/vocab/v1#dayBoundaryHour", kind: "integer", cardinality: "one" },
+    { name: "answerScale", predicate: "https://solid-memo.com/vocab/v1#answerScale", kind: "enum", cardinality: "one", values: ["sm2","minimal"] },
+    { name: "developerMode", predicate: "https://solid-memo.com/vocab/v1#developerMode", kind: "boolean", cardinality: "one" },
+    { name: "invalidDataPolicy", predicate: "https://solid-memo.com/vocab/v1#invalidDataPolicy", kind: "iriEnum", cardinality: "one", values: ["https://solid-memo.com/vocab/v1#blockInstance","https://solid-memo.com/vocab/v1#blockSubject","https://solid-memo.com/vocab/v1#warnOnly"] },
+    { name: "scheduler", predicate: "https://solid-memo.com/vocab/v1#scheduler", kind: "iriEnum", cardinality: "one", values: ["https://solid-memo.com/vocab/v1#sm2","https://solid-memo.com/vocab/v1#fsrs"] },
+    { name: "desiredRetention", predicate: "https://solid-memo.com/vocab/v1#desiredRetention", kind: "decimal", cardinality: "one" },
+  ],
+};
+
 export const REVIEW_STATE_V1: ShapeDescriptor<ReviewStateV1> = {
   shape: "reviewState",
   version: 1,
@@ -607,6 +630,36 @@ export const REVIEW_STATE_V2: ShapeDescriptor<ReviewStateV2> = {
   ],
 };
 
+export const REVIEW_STATE_V3: ShapeDescriptor<ReviewStateV3> = {
+  shape: "reviewState",
+  version: 3,
+  targetClass: "https://solid-memo.com/vocab/v1#ReviewState",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/review-state/v3.ttl#shape",
+  shapeDocument: "review-state/v3.ttl",
+  context: "any",
+  fields: [
+    { name: "easeFactor", predicate: "https://solid-memo.com/vocab/v1#easeFactor", kind: "decimal", cardinality: "one" },
+    { name: "intervalDays", predicate: "https://solid-memo.com/vocab/v1#intervalDays", kind: "integer", cardinality: "one" },
+    { name: "repetitions", predicate: "https://solid-memo.com/vocab/v1#repetitions", kind: "integer", cardinality: "one" },
+    { name: "due", predicate: "https://solid-memo.com/vocab/v1#due", kind: "string", cardinality: "one" },
+    { name: "firstReviewedAt", predicate: "https://solid-memo.com/vocab/v1#firstReviewedAt", kind: "dateTime", cardinality: "one" },
+    { name: "lastReviewedAt", predicate: "https://solid-memo.com/vocab/v1#lastReviewedAt", kind: "dateTime", cardinality: "one" },
+    { name: "previousEaseFactor", predicate: "https://solid-memo.com/vocab/v1#previousEaseFactor", kind: "decimal", cardinality: "optional" },
+    { name: "previousIntervalDays", predicate: "https://solid-memo.com/vocab/v1#previousIntervalDays", kind: "integer", cardinality: "optional" },
+    { name: "previousRepetitions", predicate: "https://solid-memo.com/vocab/v1#previousRepetitions", kind: "integer", cardinality: "optional" },
+    { name: "previousDue", predicate: "https://solid-memo.com/vocab/v1#previousDue", kind: "string", cardinality: "optional" },
+    { name: "previousLastReviewedAt", predicate: "https://solid-memo.com/vocab/v1#previousLastReviewedAt", kind: "dateTime", cardinality: "optional" },
+    { name: "stability", predicate: "https://solid-memo.com/vocab/v1#stability", kind: "decimal", cardinality: "optional" },
+    { name: "stabilityFast", predicate: "https://solid-memo.com/vocab/v1#stabilityFast", kind: "decimal", cardinality: "optional" },
+    { name: "difficulty", predicate: "https://solid-memo.com/vocab/v1#difficulty", kind: "decimal", cardinality: "optional" },
+    { name: "previousStability", predicate: "https://solid-memo.com/vocab/v1#previousStability", kind: "decimal", cardinality: "optional" },
+    { name: "previousStabilityFast", predicate: "https://solid-memo.com/vocab/v1#previousStabilityFast", kind: "decimal", cardinality: "optional" },
+    { name: "previousDifficulty", predicate: "https://solid-memo.com/vocab/v1#previousDifficulty", kind: "decimal", cardinality: "optional" },
+  ],
+};
+
 /** Every descriptor by kind and version. */
 export const SHAPES = {
   agent: { 1: AGENT_V1 },
@@ -620,8 +673,8 @@ export const SHAPES = {
   instance: { 1: INSTANCE_V1, 2: INSTANCE_V2 },
   libraryDeck: { 1: LIBRARY_DECK_V1, 2: LIBRARY_DECK_V2, 3: LIBRARY_DECK_V3, 4: LIBRARY_DECK_V4 },
   libraryDeckSeries: { 1: LIBRARY_DECK_SERIES_V1, 2: LIBRARY_DECK_SERIES_V2 },
-  preferences: { 1: PREFERENCES_V1, 2: PREFERENCES_V2, 3: PREFERENCES_V3 },
-  reviewState: { 1: REVIEW_STATE_V1, 2: REVIEW_STATE_V2 },
+  preferences: { 1: PREFERENCES_V1, 2: PREFERENCES_V2, 3: PREFERENCES_V3, 4: PREFERENCES_V4 },
+  reviewState: { 1: REVIEW_STATE_V1, 2: REVIEW_STATE_V2, 3: REVIEW_STATE_V3 },
 } as const;
 
 /** Every descriptor, for selection by class, version and context. */
@@ -651,6 +704,8 @@ export const ALL_SHAPES: readonly ShapeDescriptor[] = [
   PREFERENCES_V1,
   PREFERENCES_V2,
   PREFERENCES_V3,
+  PREFERENCES_V4,
   REVIEW_STATE_V1,
   REVIEW_STATE_V2,
+  REVIEW_STATE_V3,
 ];

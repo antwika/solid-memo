@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildThing, createThing, getInteger, getStringNoLocale } from "@inrupt/solid-client";
+import { buildThing, createThing, getDecimal, getInteger, getIri, getStringNoLocale } from "@inrupt/solid-client";
 import { toPreferences, toPreferencesThing } from "./preferencesMapper";
 import { RDF, SM } from "../vocab";
 
@@ -12,6 +12,8 @@ const FULL = {
   answerScale: "minimal" as const,
   developerMode: true,
   invalidDataPolicy: "block-instance" as const,
+  scheduler: "sm2" as const,
+  desiredRetention: 0.9,
 };
 
 describe("toPreferences", () => {
@@ -42,6 +44,8 @@ describe("toPreferences", () => {
         answerScale: "sm2",
         developerMode: false,
         invalidDataPolicy: "block-instance" as const,
+        scheduler: "sm2",
+        desiredRetention: 0.9,
       },
       formatVersion: 1,
     });
@@ -53,7 +57,25 @@ describe("toPreferences", () => {
       answerScale: "sm2",
       developerMode: false,
       invalidDataPolicy: "block-instance" as const,
+      scheduler: "sm2",
+      desiredRetention: 0.9,
     });
+  });
+
+  it("maps a format-4 document's scheduler and desired retention", () => {
+    const thing = buildThing(createThing({ url: SUBJECT }))
+      .addIri(RDF.type, SM.Preferences)
+      .addInteger(SM.formatVersion, 4)
+      .addInteger(SM.newCardsPerDay, 10)
+      .addInteger(SM.maxReviewsPerDay, 50)
+      .addInteger(SM.dayBoundaryHour, 2)
+      .addStringNoLocale(SM.answerScale, "minimal")
+      .addBoolean(SM.developerMode, true)
+      .addIri(SM.invalidDataPolicy, SM.blockInstance)
+      .addIri(SM.scheduler, SM.fsrs)
+      .addDecimal(SM.desiredRetention, 0.85)
+      .build();
+    expect(toPreferences(thing)).toEqual({ preferences: { ...FULL, scheduler: "fsrs", desiredRetention: 0.85 }, formatVersion: 4 });
   });
 
   it("is null for a format-2 document missing a field, or a subject of another class", () => {
@@ -70,9 +92,12 @@ describe("toPreferences", () => {
 
 describe("toPreferencesThing", () => {
   it("writes the current format, in place when the subject exists", () => {
-    const fresh = toPreferencesThing(SUBJECT, FULL, null);
-    expect(getInteger(fresh, SM.formatVersion)).toBe(3);
-    expect(toPreferences(fresh)).toEqual({ preferences: FULL, formatVersion: 3 });
+    const fsrs = { ...FULL, scheduler: "fsrs" as const, desiredRetention: 0.85 };
+    const fresh = toPreferencesThing(SUBJECT, fsrs, null);
+    expect(getInteger(fresh, SM.formatVersion)).toBe(4);
+    expect(getIri(fresh, SM.scheduler)).toBe(SM.fsrs);
+    expect(getDecimal(fresh, SM.desiredRetention)).toBe(0.85);
+    expect(toPreferences(fresh)).toEqual({ preferences: fsrs, formatVersion: 4 });
     const existing = buildThing(createThing({ url: SUBJECT }))
       .addInteger(SM.newCardsPerDay, 99)
       .addStringNoLocale("https://other.example/#note", "kept")

@@ -451,10 +451,10 @@
     "countIn": "{what} in {decks}",
     "instanceFormat": "instance format {version}",
     "catalogueFormat": "a catalogue of each instance's decks, which other apps read as a DCAT catalogue",
-    "preferencesFormat": "preferences format {version}, which records the answer scale, developer mode and what to do with invalid data",
+    "preferencesFormat": "preferences format {version}, which records the answer scale, developer mode, what to do with invalid data and which algorithm schedules your cards",
     "deckFormat": "deck format {version}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages",
     "cardFormat": "card format {version}, which adds pictures on cards, lets a library deck retire a card it no longer uses and lets a card's text state its language",
-    "reviewFormat": "review-state format {version}, which keeps each study direction's state and the day's undo snapshot",
+    "reviewFormat": "review-state format {version}, which keeps each study direction's state, the day's undo snapshot and what FSRS knows of your memory of each card",
     "itemInstanceRecord": "Instance record",
     "itemCatalogue": "Catalogue of the decks",
     "itemPreferences": "Preferences",
@@ -521,6 +521,29 @@
         "hint": "Four buttons. Again repeats the card later in the session."
       }
     },
+    "scheduler": {
+      "legend": "Scheduling",
+      "sm2": {
+        "label": "SM-2",
+        "hint": "The classic algorithm: each interval grows by an ease factor that your grades adjust."
+      },
+      "fsrs": {
+        "label": "FSRS",
+        "hint": "Predicts how likely you are to remember each card, and schedules its next review for when that falls to your desired retention. Switching keeps every due day as it is: cards follow the new choice from their next review."
+      }
+    },
+    "retention": {
+      "label": "Desired retention (0.70 to 0.97)",
+      "hint": "The chance of remembering a card that FSRS schedules for. Higher means more reviews; 0.90 suits most."
+    },
+    "answerScaleWithFsrs": "With FSRS, grades 0, 1 and 2 all count as Again.",
+    "reschedule": {
+      "button": "Reschedule due dates with FSRS",
+      "busy": "Rescheduling…",
+      "hint": "Sets every studied card's next due day as FSRS would have at its last review, for your desired retention. Use it after switching to FSRS or changing the retention.",
+      "confirm": "Reschedule every studied card in this instance with FSRS? Due days will move, some sooner and some later.",
+      "done": "Rescheduled. Due sooner: {sooner}. Due later: {later}."
+    },
     "policy": {
       "legend": "When data does not conform",
       "blockInstance": {
@@ -566,7 +589,7 @@
     "action": {
       "describeDeck": "Give the deck the default description",
       "directDeck": "Study the deck front to back",
-      "dropSnapshot": "Drop the review's half-written undo snapshot",
+      "dropSnapshot": "Drop the review's half-written undo snapshot or FSRS memory",
       "recomputeDue": "Recompute the review's due day",
       "nameAgent": "Name the person or organisation after their address",
       "removeSubject": "Remove it"

@@ -20,8 +20,9 @@ import type { InstanceDigest } from "@solid-memo/domain/studyDigest";
 import { CARD_FORMAT_VERSION, DECK_FORMAT_VERSION, type Card, type Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "@solid-memo/domain/library";
-import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
-import type { ReviewState } from "@solid-memo/domain/review";
+import { DEFAULT_PREFERENCES, NEW_INSTANCE_PREFERENCES } from "@solid-memo/domain/preferences";
+import { REVIEW_STATE_FORMAT_VERSION, type ReviewState } from "@solid-memo/domain/review";
+import { initialMemory } from "@solid-memo/domain/fsrs";
 import type { Answer } from "@solid-memo/domain/answer";
 import type { Catalog } from "@solid-memo/domain/catalog";
 import type { Session } from "@solid-memo/domain/session";
@@ -469,6 +470,8 @@ describe("createUseCases", () => {
       description: `Flashcard decks of the Solid Memo instance ${instance.name}.`,
       publisher: { webId: session.webId, name: session.webId },
     });
+    expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledWith(instance.url, NEW_INSTANCE_PREFERENCES);
+    expect(NEW_INSTANCE_PREFERENCES).toMatchObject({ scheduler: "fsrs", answerScale: "minimal" });
   });
 
   it("attachInstanceByUrl trims the URL and passes the WebID", async () => {
@@ -606,7 +609,8 @@ describe("createUseCases", () => {
         preferences: DEFAULT_PREFERENCES,
         formatVersion: 1,
       });
-      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
+      const other: Deck = { ...deck, id: "deck-2", url: `${deck.url}2` };
+    vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
       vi.mocked(deps.deckRepository.readCatalog).mockResolvedValue(null);
       vi.mocked(deps.deckRepository.listCards).mockImplementation(async (d) =>
         d === deck ? [old("a"), current("b"), old("c")] : [current("d")],
@@ -713,7 +717,7 @@ describe("createUseCases", () => {
       );
       vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
         oldReview("a"),
-        { ...oldReview("b"), formatVersion: 2 },
+        { ...oldReview("b"), formatVersion: REVIEW_STATE_FORMAT_VERSION },
       ]);
       await createUseCases(deps).updateInstance(session, instance);
       expect(deps.instanceRepository.readMeta).toHaveBeenCalledWith(COPY);
@@ -730,7 +734,7 @@ describe("createUseCases", () => {
       expect(deps.deckRepository.saveCards).toHaveBeenNthCalledWith(1, deck, [current("a")]);
       expect(deps.deckRepository.saveCards).toHaveBeenNthCalledWith(2, oldEntry, [current("d")]);
       expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledWith(deck, {
-        save: [{ ...oldReview("a"), formatVersion: 2 }],
+        save: [{ ...oldReview("a"), formatVersion: REVIEW_STATE_FORMAT_VERSION }],
         remove: [],
       });
       expect(deps.deckRepository.saveCatalog).not.toHaveBeenCalled();
@@ -1149,6 +1153,8 @@ describe("createUseCases", () => {
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
       answerScale: "sm2",
+      scheduler: "sm2",
+      desiredRetention: 0.9,
       developerMode: false,
       invalidDataPolicy: "block-instance" as const,
     });
@@ -1195,6 +1201,8 @@ describe("createUseCases", () => {
       answerScale: "minimal" as const,
       developerMode: true,
       invalidDataPolicy: "block-instance" as const,
+      scheduler: "fsrs" as const,
+      desiredRetention: 0.85,
     };
     vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
       preferences: stored,
@@ -1216,6 +1224,8 @@ describe("createUseCases", () => {
       answerScale: "minimal" as const,
       developerMode: true,
       invalidDataPolicy: "block-instance" as const,
+      scheduler: "fsrs" as const,
+      desiredRetention: 0.85,
     };
     await useCases.savePreferences(instance.url, preferences);
     expect(deps.preferencesRepository.savePreferences).toHaveBeenCalledWith(
@@ -1302,10 +1312,11 @@ describe("createUseCases", () => {
       easeFactor: 2.6,
       intervalDays: 1,
       repetitions: 1,
+      memory: initialMemory(4),
       due: "2026-09-22",
       firstReviewedAt: now.toISOString(),
       lastReviewedAt: now.toISOString(),
-      formatVersion: 2,
+      formatVersion: REVIEW_STATE_FORMAT_VERSION,
     });
     expect(deps.reviewStateRepository.saveReviewState).toHaveBeenCalledWith(
       deck,
@@ -1350,6 +1361,86 @@ describe("createUseCases", () => {
       due: "2026-09-21",
       lastReviewedAt: "2026-09-15T10:00:00.000Z",
     });
+  });
+
+  it("recordReview schedules by FSRS when the preferences say so", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
+      preferences: { ...DEFAULT_PREFERENCES, scheduler: "fsrs" },
+      formatVersion: 4,
+    });
+    vi.mocked(deps.reviewStateRepository.getReviewState).mockResolvedValue({
+      cardId: card.id,
+      direction: "front-to-back",
+      easeFactor: 2.5,
+      intervalDays: 6,
+      repetitions: 2,
+      memory: initialMemory(3),
+      due: "2026-09-21",
+      firstReviewedAt: "2026-09-10T10:00:00.000Z",
+      lastReviewedAt: "2026-09-15T10:00:00.000Z",
+      formatVersion: REVIEW_STATE_FORMAT_VERSION,
+    });
+    const useCases = createUseCases({ ...deps, random: () => 0 });
+    const state = await useCases.recordReview(instance.url, deck, { card, direction: "front-to-back" }, 4, new Date(2026, 8, 21, 12, 0));
+    expect(state.intervalDays).not.toBe(15);
+    expect(state.memory!.stability).toBeGreaterThan(initialMemory(3).stability);
+    expect(state.previous!.memory).toEqual(initialMemory(3));
+  });
+
+  it("rescheduleWithFsrs moves every deck's reviewed prompts to FSRS's due days, counting which way", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
+      preferences: { ...DEFAULT_PREFERENCES, scheduler: "fsrs" },
+      formatVersion: 4,
+    });
+    const reviewed = (id: string, intervalDays: number, due: string): ReviewState => ({
+      cardId: id,
+      direction: "front-to-back",
+      easeFactor: 2.5,
+      intervalDays,
+      repetitions: 3,
+      due,
+      firstReviewedAt: "2026-08-01T10:00:00.000Z",
+      lastReviewedAt: "2026-09-01T10:00:00.000Z",
+      formatVersion: REVIEW_STATE_FORMAT_VERSION,
+    });
+    const soon = reviewed("soon", 30, "2027-06-01");
+    const far = reviewed("far", 30, "2026-09-02");
+    const other: Deck = { ...deck, id: "deck-2", url: `${deck.url}2` };
+    vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([deck, other]);
+    vi.mocked(deps.reviewStateRepository.listReviewStates).mockImplementation(async (d) => (d === deck ? [soon, far] : []));
+    const useCases = createUseCases({ ...deps, random: () => 0.5 });
+    await expect(useCases.rescheduleWithFsrs(instance.url)).resolves.toEqual({ sooner: 1, later: 1 });
+    expect(deps.reviewStateRepository.applyReviewChanges).toHaveBeenCalledOnce();
+    const saved = vi.mocked(deps.reviewStateRepository.applyReviewChanges).mock.calls[0]![1].save;
+    expect(saved.map((state) => state.cardId)).toEqual(["soon", "far"]);
+    expect(saved.every((state) => state.memory !== undefined)).toBe(true);
+  });
+
+  it("rescheduleWithFsrs counts a prompt whose due day stays as neither", async () => {
+    const deps = makeDeps();
+    vi.mocked(deps.preferencesRepository.getPreferences).mockResolvedValue({
+      preferences: { ...DEFAULT_PREFERENCES, scheduler: "fsrs" },
+      formatVersion: 4,
+    });
+    const useCases = createUseCases({ ...deps, random: () => 0.5 });
+    const state: ReviewState = {
+      cardId: "a",
+      direction: "front-to-back",
+      easeFactor: 2.5,
+      intervalDays: 30,
+      repetitions: 3,
+      due: "2026-10-01",
+      firstReviewedAt: "2026-08-01T10:00:00.000Z",
+      lastReviewedAt: "2026-09-01T10:00:00.000Z",
+      formatVersion: REVIEW_STATE_FORMAT_VERSION,
+    };
+    vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValueOnce([state]);
+    await useCases.rescheduleWithFsrs(instance.url);
+    const [moved] = vi.mocked(deps.reviewStateRepository.applyReviewChanges).mock.calls[0]![1].save;
+    vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValueOnce([{ ...moved!, memory: undefined }]);
+    await expect(useCases.rescheduleWithFsrs(instance.url)).resolves.toEqual({ sooner: 0, later: 0 });
   });
 
   it("recordReview stores no snapshot for a never-reviewed card", async () => {
@@ -1466,6 +1557,8 @@ describe("createUseCases", () => {
           maxReviewsPerDay: 200,
           dayBoundaryHour: 0,
           answerScale: "sm2",
+          scheduler: "sm2",
+          desiredRetention: 0.9,
           developerMode: false,
           invalidDataPolicy: "block-instance" as const,
         },
@@ -1519,7 +1612,7 @@ describe("the instance digest", () => {
     due: "2026-09-27",
     firstReviewedAt: "2026-09-26T10:00:00.000Z",
     lastReviewedAt: "2026-09-26T10:00:00.000Z",
-    formatVersion: 2,
+    formatVersion: REVIEW_STATE_FORMAT_VERSION,
   };
   const current: Card = { ...card, formatVersion: CARD_FORMAT_VERSION };
   const card2: Card = { ...current, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2` };
@@ -1635,7 +1728,7 @@ describe("the instance digest", () => {
     const { deps, useCases, stored, digestRepository } = setup();
     deps.shapeValidator.validateDocumentSince = vi.fn(async (url: string) => ({
       unchanged: false as const,
-      value: { url, status: "checked" as const, subjects: [{ url: `${url}#x`, status: "checked" as const, shape: "reviewState" as const, version: 2, violations: [{ message: { en: "no" }, severity: "violation" as const, constraint: "MinCount" }] }] },
+      value: { url, status: "checked" as const, subjects: [{ url: `${url}#x`, status: "checked" as const, shape: "reviewState" as const, version: REVIEW_STATE_FORMAT_VERSION, violations: [{ message: { en: "no" }, severity: "violation" as const, constraint: "MinCount" }] }] },
       version: "r1",
     }));
     await useCases.refreshStudyDigest(instance.url, deck);

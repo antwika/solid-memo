@@ -4,6 +4,7 @@ import {
   getInteger,
   getStringNoLocale,
   getStringWithLocale,
+  getTermAll,
   getThing,
   removeThing,
   setThing,
@@ -24,6 +25,8 @@ const SNAPSHOT = [
   SM.previousDue,
   SM.previousLastReviewedAt,
 ];
+const SNAPSHOT_MEMORY = [SM.previousStability, SM.previousStabilityFast, SM.previousDifficulty];
+const MEMORY = [SM.stability, SM.stabilityFast, SM.difficulty];
 
 /**
  * Repairs written to the pod (see docs/validation.md): each document is
@@ -83,8 +86,21 @@ function repairedThing(
       return repair.version < 3
         ? builder.setStringNoLocale(SM.direction, "front-to-back").build()
         : builder.removeAll(SM.direction).setIri(SM.studyDirection, SM.frontToBack).build();
-    case "drop-snapshot":
-      return SNAPSHOT.reduce((b, predicate) => b.removeAll(predicate), builder).build();
+    case "drop-snapshot": {
+      // Whichever is half-written goes: the snapshot (its memory with it), the memory, or both.
+      const stated = (predicates: string[]) => predicates.filter((p) => getTermAll(thing, p).length > 0).length;
+      const snapshot = stated(SNAPSHOT);
+      const snapshotMemory = stated(SNAPSHOT_MEMORY);
+      const snapshotWhole =
+        (snapshot === 0 || snapshot === SNAPSHOT.length) &&
+        (snapshotMemory === 0 || (snapshotMemory === SNAPSHOT_MEMORY.length && snapshot === SNAPSHOT.length));
+      const memory = stated(MEMORY);
+      const dropped = [
+        ...(snapshotWhole ? [] : [...SNAPSHOT, ...SNAPSHOT_MEMORY]),
+        ...(memory === 0 || memory === MEMORY.length ? [] : MEMORY),
+      ];
+      return dropped.reduce((b, predicate) => b.removeAll(predicate), builder).build();
+    }
     case "recompute-due": {
       const last = getDatetime(thing, SM.lastReviewedAt);
       const interval = getInteger(thing, SM.intervalDays);

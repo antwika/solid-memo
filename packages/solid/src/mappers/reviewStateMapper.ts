@@ -8,7 +8,7 @@ import {
 } from "@solid-memo/domain/reviewRecord";
 import { migrate } from "@solid-memo/domain/shapes/migrations";
 import { fragmentIdOf } from "@solid-memo/domain/subjectUrl";
-import { REVIEW_STATE_V2 } from "@solid-memo/vocab/descriptors.generated";
+import { REVIEW_STATE_V3 } from "@solid-memo/vocab/descriptors.generated";
 import { readVersioned, recordThing } from "../records";
 
 /** The subject URL of a card's review state in one direction. */
@@ -45,7 +45,7 @@ export function toReviewStateThing(
 ): ThingPersisted {
   return recordThing(
     reviewSubjectUrl(reviewsDocumentUrl, state),
-    REVIEW_STATE_V2,
+    REVIEW_STATE_V3,
     reviewStateToRecord(state),
     existing,
   );

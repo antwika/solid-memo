@@ -50,6 +50,24 @@ reader knows only untagged text: it would read a tagged side as empty
 and drop the card. The step to format 4 changes nothing in the data, as
 a format-3 side's text is untagged and stays so: no language is guessed.
 
+Review-state format 3 adds the FSRS-7 memory (`sm:stability`,
+`sm:stabilityFast`, `sm:difficulty`, all three or none) and the same in
+the snapshot (`sm:previousStability`, …, only beside the rest of it),
+which every review now writes whichever scheduler the user chose (see
+[srs.md](srs.md#two-schedulers)). The version moved because a format-2
+reader would drop the memory the next time it wrote the state. The step
+to format 3 changes nothing: a state without memory has one estimated
+from its SM-2 interval at its next review. The format means FSRS-7 as
+the app's port computes it; a model that computes memory differently
+would be another format.
+
+Preferences format 4 states the scheduler (`sm:scheduler`, a concept of
+`sm:Schedulers`) and the desired retention FSRS schedules for
+(`sm:desiredRetention`, 0.70–0.97). The step to format 4 keeps SM-2,
+which scheduled the instance's cards so far, with the default retention
+0.90 for when the user switches; an instance the app creates states FSRS
+from the start.
+
 Rules that hold across versions:
 
 - **Readers never refuse older data.** A subject is read with the shape
@@ -77,8 +95,10 @@ flowchart LR
     l3 -->|libraryDeck/3-to-4<br/>title and description tagged English| l4["LibraryDeckV4"]
     s1["LibraryDeckSeriesV1"] -->|libraryDeckSeries/1-to-2<br/>title and description tagged English| s2["LibraryDeckSeriesV2"]
     r1["ReviewStateV1"] -->|reviewState/1-to-2<br/>partial snapshot dropped| r2["ReviewStateV2"]
+    r2 -->|reviewState/2-to-3<br/>no memory yet: nothing to change| r3["ReviewStateV3"]
     p1["PreferencesV1"] -->|preferences/1-to-2<br/>defaults filled| p2["PreferencesV2"]
     p2 -->|preferences/2-to-3<br/>block the instance on invalid data| p3["PreferencesV3"]
+    p3 -->|preferences/3-to-4<br/>SM-2, retention 0.90| p4["PreferencesV4"]
 ```
 
 One module per step (`<class>/<n>-to-<n+1>.ts`), each a pure, total

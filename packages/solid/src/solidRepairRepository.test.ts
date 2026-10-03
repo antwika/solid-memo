@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildThing,
   createThing,
+  getDecimal,
   getStringNoLocale,
   getStringWithLocale,
   getThing,
@@ -124,6 +125,42 @@ describe("applyRepairs", () => {
     expect(getStringNoLocale(a, SM.previousDue)).toBeNull();
     expect(getStringNoLocale(a, SM.due)).toBe("2026-09-27");
     expect(getStringNoLocale(getThing(saved(), `${REVIEWS}#b`)!, SM.due)).toBe("soon");
+  });
+
+  it("drops only what is half-written of a format-3 state: the memory, the snapshot's memory, or the snapshot", async () => {
+    const state = (fragment: string) =>
+      buildThing(createThing({ url: `${REVIEWS}#${fragment}` })).addIri(RDF.type, SM.ReviewState);
+    const snapshot = (b: ReturnType<typeof state>) =>
+      b
+        .addDecimal(SM.previousEaseFactor, 2.5)
+        .addInteger(SM.previousIntervalDays, 1)
+        .addInteger(SM.previousRepetitions, 1)
+        .addStringNoLocale(SM.previousDue, "2026-09-20")
+        .addDatetime(SM.previousLastReviewedAt, new Date("2026-09-19T10:00:00Z"));
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      documentOf(
+        REVIEWS,
+        // A half-written memory beside a whole snapshot: the memory goes.
+        snapshot(state("memory")).addDecimal(SM.stability, 3).build(),
+        // A snapshot's memory without the snapshot: it goes.
+        state("orphan").addDecimal(SM.stability, 3).addDecimal(SM.stabilityFast, 2.4).addDecimal(SM.difficulty, 5)
+          .addDecimal(SM.previousStability, 1).addDecimal(SM.previousStabilityFast, 0.8).addDecimal(SM.previousDifficulty, 5).build(),
+        // A half-written snapshot's memory: the whole snapshot goes, the memory stays.
+        snapshot(state("partial")).addDecimal(SM.stability, 3).addDecimal(SM.stabilityFast, 2.4).addDecimal(SM.difficulty, 5)
+          .addDecimal(SM.previousStability, 1).build(),
+      ),
+    );
+    await repository().applyRepairs(["memory", "orphan", "partial"].map((f) => repair("drop-snapshot", `${REVIEWS}#${f}`, 3, REVIEWS)));
+    const memory = getThing(saved(), `${REVIEWS}#memory`)!;
+    expect(getDecimal(memory, SM.stability)).toBeNull();
+    expect(getStringNoLocale(memory, SM.previousDue)).toBe("2026-09-20");
+    const orphan = getThing(saved(), `${REVIEWS}#orphan`)!;
+    expect(getDecimal(orphan, SM.previousStability)).toBeNull();
+    expect(getDecimal(orphan, SM.stability)).toBe(3);
+    const partial = getThing(saved(), `${REVIEWS}#partial`)!;
+    expect(getStringNoLocale(partial, SM.previousDue)).toBeNull();
+    expect(getDecimal(partial, SM.previousStability)).toBeNull();
+    expect(getDecimal(partial, SM.difficulty)).toBe(5);
   });
 
   it("names an agent after its address, and removes a subject the user gave up on", async () => {

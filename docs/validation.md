@@ -152,6 +152,7 @@ the subject's own stored format:
 | A deck without a description | The default description, "Flashcards: <title>." |
 | A deck without a study direction, or an unknown one | Front to back, as format 1 studied every deck |
 | A review state with half an undo snapshot | The snapshot dropped (as the review-state 1 → 2 migration does) |
+| A review state with half an FSRS memory, or a snapshot memory without the rest of the snapshot | What is half-written dropped: the memory is estimated again at the next review, a snapshot goes whole |
 | A malformed due day | Recomputed from the last review and the interval |
 | An agent without a name | Named after its IRI |
 

@@ -448,10 +448,10 @@
     "countIn": "{what} i {decks}",
     "instanceFormat": "instansformat {version}",
     "catalogueFormat": "en katalog över varje instans kortlekar, som andra appar läser som en DCAT-katalog",
-    "preferencesFormat": "inställningsformat {version}, som sparar svarsskalan, utvecklarläget och vad som ska hända med ogiltiga data",
+    "preferencesFormat": "inställningsformat {version}, som sparar svarsskalan, utvecklarläget, vad som ska hända med ogiltiga data och vilken algoritm som schemalägger dina kort",
     "deckFormat": "kortleksformat {version}, som beskriver kortlekar med standarderna DCAT och SKOS, ger varje kortlek en beskrivning och låter en kortleks titel och beskrivning finnas på flera språk",
     "cardFormat": "kortformat {version}, som lägger till bilder på kort, låter en bibliotekskortlek ta ur bruk ett kort den inte längre använder och låter ett korts text ange sitt språk",
-    "reviewFormat": "repetitionstillståndsformat {version}, som sparar varje studieriktnings tillstånd och dagens ångra-ögonblicksbild",
+    "reviewFormat": "repetitionstillståndsformat {version}, som sparar varje studieriktnings tillstånd, dagens ångra-ögonblicksbild och vad FSRS vet om ditt minne av varje kort",
     "itemInstanceRecord": "Instanspost",
     "itemCatalogue": "Katalog över kortlekarna",
     "itemPreferences": "Inställningar",
@@ -518,6 +518,29 @@
         "hint": "Fyra knappar. Igen visar kortet på nytt senare i studiepasset."
       }
     },
+    "scheduler": {
+      "legend": "Schemaläggning",
+      "sm2": {
+        "label": "SM-2",
+        "hint": "Den klassiska algoritmen: varje intervall växer med en lätthetsfaktor som dina betyg justerar."
+      },
+      "fsrs": {
+        "label": "FSRS",
+        "hint": "Förutsäger hur troligt det är att du minns varje kort och schemalägger nästa repetition till när det sjunker till din önskade minnesgrad. Ett byte låter alla förfallodagar vara som de är: korten följer det nya valet från sin nästa repetition."
+      }
+    },
+    "retention": {
+      "label": "Önskad minnesgrad (0,70 till 0,97)",
+      "hint": "Sannolikheten att minnas ett kort som FSRS schemalägger för. Högre ger fler repetitioner; 0,90 passar de flesta."
+    },
+    "answerScaleWithFsrs": "Med FSRS räknas betygen 0, 1 och 2 alla som Igen.",
+    "reschedule": {
+      "button": "Schemalägg om förfallodagar med FSRS",
+      "busy": "Schemalägger om…",
+      "hint": "Sätter varje studerat korts nästa förfallodag så som FSRS skulle ha gjort vid dess senaste repetition, för din önskade minnesgrad. Använd det efter bytet till FSRS eller när du ändrat minnesgraden.",
+      "confirm": "Schemalägga om alla studerade kort i den här instansen med FSRS? Förfallodagarna flyttas, en del tidigare och en del senare.",
+      "done": "Omschemalagt. Förfaller tidigare: {sooner}. Förfaller senare: {later}."
+    },
     "policy": {
       "legend": "När data inte uppfyller formerna",
       "blockInstance": {
@@ -563,7 +586,7 @@
     "action": {
       "describeDeck": "Ge kortleken standardbeskrivningen",
       "directDeck": "Studera kortleken från framsida till baksida",
-      "dropSnapshot": "Ta bort repetitionens halvskrivna ångra-ögonblicksbild",
+      "dropSnapshot": "Ta bort repetitionens halvskrivna ångra-ögonblicksbild eller FSRS-minne",
       "recomputeDue": "Räkna om när kortet ska repeteras nästa gång",
       "nameAgent": "Namnge personen eller organisationen efter dess adress",
       "removeSubject": "Ta bort det"

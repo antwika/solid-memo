@@ -6,6 +6,11 @@ import {
 } from "@solid-memo/domain/invalidDataPolicy";
 import { LOCALES } from "@solid-memo/domain/locale";
 import type { StudyPreferences } from "@solid-memo/domain/preferences";
+import {
+  MAX_DESIRED_RETENTION,
+  MIN_DESIRED_RETENTION,
+  type Scheduler,
+} from "@solid-memo/domain/scheduler";
 import { useI18n, type I18n } from "./i18n";
 import { LANGUAGE_NAMES } from "./LanguageSelector";
 
@@ -25,6 +30,26 @@ function answerScaleOptions(t: I18n["t"]): {
       value: "minimal",
       label: t("preferences.answerScale.minimal.label"),
       hint: t("preferences.answerScale.minimal.hint"),
+    },
+  ];
+}
+
+/** The schedulers on offer, each with its label and meaning. */
+function schedulerOptions(t: I18n["t"]): {
+  value: Scheduler;
+  label: string;
+  hint: string;
+}[] {
+  return [
+    {
+      value: "sm2",
+      label: t("preferences.scheduler.sm2.label"),
+      hint: t("preferences.scheduler.sm2.hint"),
+    },
+    {
+      value: "fsrs",
+      label: t("preferences.scheduler.fsrs.label"),
+      hint: t("preferences.scheduler.fsrs.hint"),
     },
   ];
 }
@@ -64,11 +89,19 @@ export function PreferencesScreen({
   busy,
   error,
   onSave,
+  rescheduling,
+  rescheduled,
+  onReschedule,
 }: {
   preferences: StudyPreferences;
   busy: boolean;
   error: string | null;
   onSave: (preferences: StudyPreferences) => void;
+  rescheduling: boolean;
+  /** How many cards the last reschedule moved, once it is done. */
+  rescheduled: { sooner: number; later: number } | null;
+  /** Reschedule with FSRS; offered while the saved preferences schedule by FSRS. */
+  onReschedule: () => void;
 }) {
   const { t, locale, chooseLocale } = useI18n();
   const [newCardsPerDay, setNewCardsPerDay] = useState(
@@ -84,6 +117,10 @@ export function PreferencesScreen({
   const [answerScale, setAnswerScale] = useState<AnswerScale>(
     preferences.answerScale,
   );
+  const [scheduler, setScheduler] = useState<Scheduler>(preferences.scheduler);
+  const [desiredRetention, setDesiredRetention] = useState(
+    String(preferences.desiredRetention),
+  );
   const [developerMode, setDeveloperMode] = useState(
     preferences.developerMode,
   );
@@ -98,6 +135,8 @@ export function PreferencesScreen({
       maxReviewsPerDay: Number(maxReviewsPerDay),
       dayBoundaryHour: Number(dayBoundaryHour),
       answerScale,
+      scheduler,
+      desiredRetention: Number(desiredRetention),
       developerMode,
       invalidDataPolicy,
     });
@@ -172,6 +211,60 @@ export function PreferencesScreen({
               <span class="hint">{option.hint}</span>
             </label>
           ))}
+          {scheduler === "fsrs" && answerScale === "sm2" && (
+            <p class="hint">{t("preferences.answerScaleWithFsrs")}</p>
+          )}
+        </fieldset>
+        <fieldset>
+          <legend>{t("preferences.scheduler.legend")}</legend>
+          {schedulerOptions(t).map((option) => (
+            <label key={option.value} class="radio-option">
+              <input
+                type="radio"
+                name="scheduler"
+                value={option.value}
+                checked={scheduler === option.value}
+                onChange={() => setScheduler(option.value)}
+                disabled={busy}
+              />
+              {option.label}
+              <span class="hint">{option.hint}</span>
+            </label>
+          ))}
+          {scheduler === "fsrs" && (
+            <>
+              <label for="pref-retention">{t("preferences.retention.label")}</label>
+              <input
+                id="pref-retention"
+                type="number"
+                min={MIN_DESIRED_RETENTION}
+                max={MAX_DESIRED_RETENTION}
+                step="0.01"
+                value={desiredRetention}
+                onInput={(e) => setDesiredRetention(e.currentTarget.value)}
+                required
+                disabled={busy}
+              />
+              <p class="hint">{t("preferences.retention.hint")}</p>
+            </>
+          )}
+          {preferences.scheduler === "fsrs" && (
+            <>
+              <button
+                type="button"
+                disabled={busy || rescheduling}
+                onClick={() => {
+                  if (window.confirm(t("preferences.reschedule.confirm"))) onReschedule();
+                }}
+              >
+                {rescheduling ? t("preferences.reschedule.busy") : t("preferences.reschedule.button")}
+              </button>
+              <p class="hint">{t("preferences.reschedule.hint")}</p>
+              {rescheduled !== null && (
+                <p role="status">{t("preferences.reschedule.done", rescheduled)}</p>
+              )}
+            </>
+          )}
         </fieldset>
         <fieldset>
           <legend>{t("preferences.policy.legend")}</legend>
