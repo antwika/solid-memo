@@ -310,8 +310,10 @@ sequenceDiagram
 - **Writes** are edits like any other (If-Match; [write check](validation.md#the-write-check)).
   Changes learned while a write is under way go in the next one; if the
   digest changed elsewhere meanwhile (412), it is read and changed again,
-  up to three times. A failed write is dropped: the next visit learns it
-  again.
+  six times in all, waiting a little longer before each (50 ms, then 100
+  ms, …): another page learning a check's documents writes the digest
+  several times running, and a write that tried again at once could lose
+  to each. A failed write is dropped: the next visit learns it again.
 - **Read leniently.** A subject that does not fit its shape is left out
   (and so relearned). The digest is not one of the documents an instance
   is [checked](validation.md) by: it is derived, and an invalid copy must
