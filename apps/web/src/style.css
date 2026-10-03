@@ -1617,6 +1617,16 @@ details summary:hover {
   header img.logo {
     height: 3rem;
   }
+
+  /* A guest's two buttons go below the logo and title, which keep the width. */
+  .masthead:has(.masthead-actions) {
+    flex-wrap: wrap;
+  }
+
+  .masthead-actions {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .loading {
@@ -2020,4 +2030,51 @@ table.deck-statistics td {
   padding: 0.3rem 0.75rem 0.3rem 0;
   text-align: left;
   border-bottom: 1px solid var(--border);
+}
+
+/* Trying the app as a guest (docs/guest-mode.md). */
+.session-line.guest-line {
+  white-space: normal;
+}
+
+.masthead-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* The first thing a visitor is offered: one big button. */
+.guest-start {
+  margin-bottom: 1.25rem;
+}
+
+.guest-start button.primary {
+  width: 100%;
+  margin: 0.35rem 0 0;
+  padding: 0.85rem 1.25rem;
+  font-size: 1.15rem;
+}
+
+.guest-transfer {
+  margin-bottom: 1.5rem;
+}
+
+.guest-moved {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.85rem;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.guest-moved p {
+  margin: 0;
 }

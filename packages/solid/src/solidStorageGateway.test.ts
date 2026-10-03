@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getPodUrlAll } from "@inrupt/solid-client";
+import { getPodUrlAllFrom, getProfileAll } from "@inrupt/solid-client";
+import { readDataset } from "./datasets";
 import {
   candidateStorageUrls,
   createSolidStorageGateway,
@@ -9,8 +10,9 @@ import {
 vi.mock("@inrupt/solid-client", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@inrupt/solid-client")>();
-  return { ...actual, getPodUrlAll: vi.fn() };
+  return { ...actual, getPodUrlAllFrom: vi.fn(), getProfileAll: vi.fn() };
 });
+vi.mock("./datasets", () => ({ readDataset: vi.fn() }));
 
 const WEBID = "https://alice.example/profile/card#me";
 const STORAGE_LINK =
@@ -58,12 +60,14 @@ describe("hasStorageLink", () => {
 
 describe("createSolidStorageGateway", () => {
   beforeEach(() => {
-    vi.mocked(getPodUrlAll).mockReset();
+    vi.mocked(getPodUrlAllFrom).mockReset();
+    vi.mocked(readDataset).mockResolvedValue("profile" as never);
+    vi.mocked(getProfileAll).mockResolvedValue("profiles" as never);
   });
 
   describe("discoverStorages", () => {
     it("returns profile storages when pim:storage triples exist", async () => {
-      vi.mocked(getPodUrlAll).mockResolvedValue([
+      vi.mocked(getPodUrlAllFrom).mockReturnValue([
         "https://alice.example/",
         "https://backup.example/",
       ]);
@@ -75,10 +79,14 @@ describe("createSolidStorageGateway", () => {
         { url: "https://backup.example/", source: "profile" },
       ]);
       expect(fetch).not.toHaveBeenCalled();
+      // The WebID document too is read through the fetch given, never the browser's own.
+      expect(readDataset).toHaveBeenCalledWith(WEBID, fetch);
+      expect(getProfileAll).toHaveBeenCalledWith(WEBID, { fetch, webIdProfile: "profile" });
+      expect(getPodUrlAllFrom).toHaveBeenCalledWith("profiles", WEBID);
     });
 
     it("falls back to the Link-header walk-up when the profile has none", async () => {
-      vi.mocked(getPodUrlAll).mockResolvedValue([]);
+      vi.mocked(getPodUrlAllFrom).mockReturnValue([]);
       const fetch = vi
         .fn<typeof globalThis.fetch>()
         .mockResolvedValueOnce(headResponse())
@@ -95,7 +103,7 @@ describe("createSolidStorageGateway", () => {
     });
 
     it("skips candidates whose HEAD request fails", async () => {
-      vi.mocked(getPodUrlAll).mockResolvedValue([]);
+      vi.mocked(getPodUrlAllFrom).mockReturnValue([]);
       const fetch = vi
         .fn<typeof globalThis.fetch>()
         .mockRejectedValueOnce(new Error("network"))
@@ -108,7 +116,7 @@ describe("createSolidStorageGateway", () => {
     });
 
     it("returns an empty list when nothing advertises a storage", async () => {
-      vi.mocked(getPodUrlAll).mockResolvedValue([]);
+      vi.mocked(getPodUrlAllFrom).mockReturnValue([]);
       const fetch = vi
         .fn<typeof globalThis.fetch>()
         .mockResolvedValue(headResponse());

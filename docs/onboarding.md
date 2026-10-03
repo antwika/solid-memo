@@ -10,6 +10,9 @@ stays behind use cases (see [boundaries.md](boundaries.md)).
 stateDiagram-v2
     [*] --> Choose: no session
     [*] --> App: session silently restored
+    [*] --> Guest: a guest studied here before
+    Choose --> Guest: Try it without logging in
+    Guest --> WebID: Keep my study — log in
     Choose --> ProviderSite: Create a Pod ↗ (new tab)
     ProviderSite --> Choose: user comes back
     Choose --> WebID: I already have a Pod
@@ -33,7 +36,8 @@ stateDiagram-v2
 | Orchestration (session, account query) | `App` |
 
 A user who logged out or whose session expired starts at **WebID**, not
-**Choose**. A silently restored session skips onboarding entirely:
+**Choose**. A guest studies in a pod kept in the browser until they log in
+and move their study into their Pod ([guest-mode.md](guest-mode.md)). A silently restored session skips onboarding entirely:
 `SessionGateway.restore()` reports `origin: "login"` only when a login
 redirect just completed.
 

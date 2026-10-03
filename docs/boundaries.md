@@ -54,6 +54,7 @@ nowhere else):
 | `n3` | `turtle`, and the node tooling of `shacl` and `deck-library` | never in the browser |
 | `@solid/community-server` | `e2e-pod` | the local pod the end-to-end tests run against |
 | `ts-fsrs` | the root (dev) | `scripts/generateFsrsVectors.ts` only: the FSRS-7 test vectors the domain's port is held to |
+| `fake-indexeddb` | `browser` | tests only: IndexedDB in node, for the guest's pod's store |
 
 ## Further rules
 

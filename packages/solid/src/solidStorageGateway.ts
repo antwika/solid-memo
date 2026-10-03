@@ -1,6 +1,7 @@
-import { getPodUrlAll } from "@inrupt/solid-client";
+import { getPodUrlAllFrom, getProfileAll } from "@inrupt/solid-client";
 import type { StorageGateway } from "@solid-memo/application/ports";
 import type { Storage } from "@solid-memo/domain/storage";
+import { readDataset } from "./datasets";
 import { ensureTrailingSlash } from "./urls";
 import { AppError } from "@solid-memo/domain/appError";
 
@@ -15,7 +16,11 @@ export function createSolidStorageGateway({
 }: SolidStorageGatewayDeps): StorageGateway {
   return {
     async discoverStorages(webId): Promise<Storage[]> {
-      const fromProfile = await getPodUrlAll(webId, { fetch });
+      // The WebID document read through `fetch`, as every pod read is: left to
+      // itself, @inrupt/solid-client reads it with the browser's own fetch,
+      // which cannot reach the guest's pod (docs/guest-mode.md).
+      const profiles = await getProfileAll(webId, { fetch, webIdProfile: await readDataset(webId, fetch) });
+      const fromProfile = getPodUrlAllFrom(profiles, webId);
       if (fromProfile.length > 0) {
         return fromProfile.map((url) => ({ url, source: "profile" }));
       }

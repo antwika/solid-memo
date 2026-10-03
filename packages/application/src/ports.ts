@@ -285,6 +285,11 @@ export interface ShapeValidator {
 export interface ContainerMove {
   from: string;
   to: string;
+  /**
+   * IRIs outside `from` that become others: the guest's WebID becomes the
+   * user's when a guest's study moves into their pod.
+   */
+  renames?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -317,6 +322,8 @@ export interface InstanceCopier {
    * answers 304 when it is.
    */
   isUnchanged(url: string, version: string): Promise<boolean>;
+  /** Whether the resource's content holds `text` anywhere (a URL, as an IRI or in a literal). */
+  mentions(url: string, text: string): Promise<boolean>;
   /** Delete a container and everything below it; one that is gone counts as deleted. */
   deleteRecursively(url: string): Promise<void>;
 }
@@ -374,4 +381,47 @@ export interface StorageGateway {
   discoverStorages(webId: string): Promise<Storage[]>;
   /** Validate a manually entered storage URL; rejects if unreachable. */
   probeStorage(url: string): Promise<Storage>;
+}
+
+/**
+ * A resource of the pod kept in the browser for guests (docs/guest-mode.md):
+ * a container, an RDF document (its triples as N-Triples lines, IRIs
+ * absolute) or any other file. Every write gives it a new `etag`.
+ */
+export type StoredResource =
+  | { kind: "container"; etag: string }
+  | { kind: "rdf"; etag: string; triples: string[] }
+  | { kind: "file"; etag: string; contentType: string; bytes: Uint8Array };
+
+/**
+ * Driven port: where the guest's pod keeps its resources, by URL, on this
+ * device. Implemented over IndexedDB in the browser, in memory in tests.
+ */
+export interface ResourceStore {
+  get(url: string): Promise<StoredResource | undefined>;
+  set(url: string, resource: StoredResource): Promise<void>;
+  delete(url: string): Promise<void>;
+  /** The URL of every resource kept, in no particular order. */
+  urls(): Promise<string[]>;
+  /** Forget every resource. */
+  clear(): Promise<void>;
+  /**
+   * Run `work` while no other exclusive work runs on the same store, in
+   * this tab or another, so a read-check-write is never interleaved.
+   */
+  exclusive<T>(work: () => Promise<T>): Promise<T>;
+}
+
+/**
+ * Driven port: the pod a guest studies in before logging in, kept on this
+ * device (docs/guest-mode.md). Its WebID is GUEST_WEBID; every resource
+ * is below GUEST_ORIGIN.
+ */
+export interface GuestPod {
+  /** Whether a guest pod was started on this device (and not discarded). */
+  exists(): Promise<boolean>;
+  /** Start one, with a WebID profile naming its storage; one already started is kept. */
+  start(): Promise<void>;
+  /** Delete everything in it. */
+  discard(): Promise<void>;
 }

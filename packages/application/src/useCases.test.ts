@@ -14,7 +14,9 @@ import type {
   ShapeValidator,
   RepairRepository,
   InstanceCopier,
+  GuestPod,
 } from "./ports";
+import { GUEST_INSTANCE_URL, GUEST_ORIGIN, GUEST_SESSION, GUEST_WEBID } from "@solid-memo/domain/guest";
 import { createUseCases } from "./useCases";
 import type { InstanceDigest } from "@solid-memo/domain/studyDigest";
 import { CARD_FORMAT_VERSION, DECK_FORMAT_VERSION, type Card, type Deck } from "@solid-memo/domain/deck";
@@ -184,6 +186,7 @@ function makeDeps() {
     copyAccessControl: vi.fn(async () => false),
     copyResource: vi.fn(async (from: string) => `version of ${from}`),
     isUnchanged: vi.fn(async () => true),
+    mentions: vi.fn(async () => false),
     deleteRecursively: vi.fn(async () => undefined),
   };
   const updateJournal = { begin: vi.fn(), end: vi.fn(), staging: vi.fn((): string | null => null) };
@@ -2310,6 +2313,290 @@ describe("library deck upgrade", () => {
         copy.reviewsDocumentUrl,
         STAGED_REVIEWS,
       ]);
+    });
+  });
+
+  describe("guests", () => {
+    const guestInstance: Instance = { url: GUEST_INSTANCE_URL, name: "My study" };
+    const TARGET = "https://alice.example/solid-memo/main/";
+
+    function guestDeps({ started = true }: { started?: boolean } = {}) {
+      const deps = makeDeps();
+      let exists = started;
+      const guestPod: GuestPod = {
+        exists: vi.fn(async () => exists),
+        start: vi.fn(async () => {
+          exists = true;
+        }),
+        discard: vi.fn(async () => {
+          exists = false;
+        }),
+      };
+      vi.mocked(deps.instanceRepository.listInstances).mockImplementation(async (webId) =>
+        webId === GUEST_WEBID ? (exists ? [guestInstance] : []) : [instance],
+      );
+      vi.mocked(deps.instanceRepository.attachInstance).mockResolvedValue({ url: TARGET, name: "My study" });
+      vi.mocked(deps.instanceCopier.listResources).mockResolvedValue([
+        `${GUEST_INSTANCE_URL}catalog.ttl`,
+        `${GUEST_INSTANCE_URL}digest.ttl`,
+        `${GUEST_INSTANCE_URL}history/`,
+        `${GUEST_INSTANCE_URL}history/2026-10.ttl`,
+      ]);
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([]);
+      return { deps: { ...deps, guestPod }, guestPod };
+    }
+
+    it("restoreSession gives a guest's session when no one logged in and a guest studied here", async () => {
+      const { deps } = guestDeps();
+      vi.mocked(deps.sessionGateway.restore).mockResolvedValue(null);
+      expect(await createUseCases(deps).restoreSession()).toEqual({ session: GUEST_SESSION, origin: "restored" });
+      vi.mocked(deps.guestPod.exists).mockResolvedValue(false);
+      expect(await createUseCases(deps).restoreSession()).toBeNull();
+    });
+
+    it("restoreSession prefers a login to a guest's study", async () => {
+      const { deps } = guestDeps();
+      expect(await createUseCases(deps).restoreSession()).toEqual({ session, origin: "login" });
+    });
+
+    it("startGuest starts the guest's pod and makes their instance, published by the guest", async () => {
+      const { deps, guestPod } = guestDeps({ started: false });
+      vi.mocked(deps.instanceRepository.listInstances).mockResolvedValue([]);
+      vi.mocked(deps.instanceRepository.createInstance).mockResolvedValue(guestInstance);
+      vi.mocked(deps.webIdDocumentRepository.fetchWebIdDocument).mockRejectedValue(new Error("no name"));
+      expect(await createUseCases(deps).startGuest(" My study ")).toEqual(GUEST_SESSION);
+      expect(guestPod.start).toHaveBeenCalledOnce();
+      expect(deps.instanceRepository.createInstance).toHaveBeenCalledWith({
+        webId: GUEST_WEBID,
+        containerUrl: GUEST_INSTANCE_URL,
+        name: "My study",
+        registrationTarget: "private",
+      });
+      expect(deps.deckRepository.saveCatalog).toHaveBeenCalledWith(GUEST_INSTANCE_URL, {
+        title: "My study",
+        description: "Flashcard decks of the Solid Memo instance My study.",
+        publisher: { webId: GUEST_WEBID, name: GUEST_WEBID },
+      });
+    });
+
+    it("startGuest keeps the instance a guest already has", async () => {
+      const { deps } = guestDeps();
+      await createUseCases(deps).startGuest("My study");
+      expect(deps.instanceRepository.createInstance).not.toHaveBeenCalled();
+    });
+
+    it("cannot start a guest without a guest pod", async () => {
+      const useCases = createUseCases(makeDeps());
+      await expect(useCases.startGuest("x")).rejects.toThrow("There is no guest pod on this device.");
+      expect(await useCases.findGuestStudy()).toBeNull();
+      await expect(useCases.discardGuest()).resolves.toBeUndefined();
+    });
+
+    it("discoverAccount asks no identity provider about a guest", async () => {
+      const { deps } = guestDeps();
+      const account = await createUseCases(deps).discoverAccount(GUEST_SESSION);
+      expect(account.oidcIssuer).toBeUndefined();
+      expect(deps.sessionGateway.discoverOidcIssuer).not.toHaveBeenCalled();
+    });
+
+    it("discardGuest deletes the guest's pod", async () => {
+      const { deps, guestPod } = guestDeps();
+      await createUseCases(deps).discardGuest();
+      expect(guestPod.discard).toHaveBeenCalledOnce();
+    });
+
+    it("findGuestStudy lists the guest's instances with their decks counted; null when no guest studied here", async () => {
+      const { deps } = guestDeps();
+      expect(await createUseCases(deps).findGuestStudy()).toEqual({ instances: [{ instance: guestInstance, deckCount: 1 }] });
+      expect(deps.deckRepository.listDecks).toHaveBeenCalledWith(GUEST_INSTANCE_URL);
+      vi.mocked(deps.guestPod.exists).mockResolvedValue(false);
+      expect(await createUseCases(deps).findGuestStudy()).toBeNull();
+    });
+
+    it("transferGuestStudy copies the study into the user's pod as theirs, checks and registers it, then deletes the guest's", async () => {
+      const { deps, guestPod } = guestDeps();
+      vi.mocked(deps.webIdDocumentRepository.fetchWebIdDocument).mockResolvedValue({
+        url: document.url,
+        subjects: [
+          {
+            url: session.webId,
+            properties: [{ predicate: "http://xmlns.com/foaf/0.1/name", values: [{ type: "literal", value: "Alice" }] }],
+          },
+        ],
+      } as WebIdDocument);
+      const hold = vi.fn(() => vi.fn());
+      const progress: string[] = [];
+      const outcome = await createUseCases({ ...deps, writeFence: { hold } }).transferGuestStudy(
+        session,
+        guestInstance,
+        { containerUrl: ` ${TARGET.slice(0, -1)} `, registrationTarget: "private" },
+        (p) => progress.push(`${p.step} ${p.done}/${p.total}${p.part === undefined ? "" : ` (${p.part.done} of ${p.part.total})`}`),
+      );
+      expect(outcome).toEqual({ ok: true, instance: { url: TARGET, name: "My study" }, tidied: true });
+      const move = { from: GUEST_INSTANCE_URL, to: TARGET, renames: { [GUEST_WEBID]: session.webId } };
+      expect(hold).toHaveBeenCalledWith(GUEST_INSTANCE_URL);
+      expect(deps.instanceCopier.ensureAbsent).toHaveBeenCalledWith(TARGET);
+      expect(deps.instanceCopier.createContainer).toHaveBeenCalledWith(TARGET);
+      // The digest stays behind; access control is the user's pod's own.
+      expect(vi.mocked(deps.instanceCopier.copyResource).mock.calls).toEqual([
+        [`${GUEST_INSTANCE_URL}catalog.ttl`, `${TARGET}catalog.ttl`, move],
+        [`${GUEST_INSTANCE_URL}history/`, `${TARGET}history/`, move],
+        [`${GUEST_INSTANCE_URL}history/2026-10.ttl`, `${TARGET}history/2026-10.ttl`, move],
+      ]);
+      expect(deps.instanceCopier.copyAccessControl).not.toHaveBeenCalled();
+      expect(deps.deckRepository.saveCatalog).toHaveBeenCalledExactlyOnceWith(TARGET, {
+        ...catalog,
+        publisher: { webId: session.webId, name: "Alice" },
+      });
+      expect(vi.mocked(deps.instanceCopier.mentions).mock.calls).toEqual([
+        [`${TARGET}catalog.ttl`, GUEST_ORIGIN],
+        [`${TARGET}history/2026-10.ttl`, GUEST_ORIGIN],
+      ]);
+      expect(deps.shapeValidator.validateDocument).toHaveBeenCalledWith(`${TARGET}meta.ttl`);
+      expect(deps.instanceRepository.attachInstance).toHaveBeenCalledWith({
+        webId: session.webId,
+        instanceUrl: TARGET,
+        registrationTarget: "private",
+      });
+      expect(deps.instanceRepository.registerCatalog).toHaveBeenCalledWith({
+        webId: session.webId,
+        instanceUrl: TARGET,
+        title: "My study",
+      });
+      expect(deps.instanceRepository.deleteInstance).toHaveBeenCalledWith({ webId: GUEST_WEBID, instance: guestInstance });
+      expect(guestPod.discard).not.toHaveBeenCalled();
+      expect(deps.updateJournal.begin).toHaveBeenCalledWith(GUEST_INSTANCE_URL, TARGET);
+      expect(deps.updateJournal.end).toHaveBeenCalledWith(GUEST_INSTANCE_URL);
+      expect(deps.instanceCopier.deleteRecursively).not.toHaveBeenCalled();
+      expect(progress).toEqual([
+        "stage 0/7 (0 of 3)",
+        "stage 0/7 (1 of 3)",
+        "stage 0/7 (2 of 3)",
+        "copy 1/7 (0 of 3)",
+        "copy 1/7 (1 of 3)",
+        "copy 1/7 (2 of 3)",
+        "adopt 2/7 (0 of 3)",
+        "adopt 2/7 (1 of 3)",
+        "adopt 2/7 (2 of 3)",
+        "validate 3/7",
+        "validate 3/7 (0 of 5)",
+        "validate 3/7 (1 of 5)",
+        "validate 3/7 (2 of 5)",
+        "validate 3/7 (3 of 5)",
+        "validate 3/7 (4 of 5)",
+        "verify 4/7 (0 of 4)",
+        "verify 4/7 (1 of 4)",
+        "verify 4/7 (2 of 4)",
+        "verify 4/7 (3 of 4)",
+        "register 5/7",
+        "tidy 6/7",
+        "tidy 7/7",
+      ]);
+    });
+
+    it("transferGuestStudy deletes the whole guest pod with its last instance", async () => {
+      const { deps, guestPod } = guestDeps();
+      vi.mocked(deps.instanceRepository.deleteInstance).mockImplementation(async () => {
+        vi.mocked(deps.instanceRepository.listInstances).mockResolvedValue([]);
+      });
+      await createUseCases(deps).transferGuestStudy(session, guestInstance, { containerUrl: TARGET, registrationTarget: "public" });
+      expect(guestPod.discard).toHaveBeenCalledOnce();
+    });
+
+    it("transferGuestStudy keeps a catalogue-less study as it is, and adds answers still on their way first", async () => {
+      const { deps } = guestDeps();
+      vi.mocked(deps.deckRepository.readCatalog).mockResolvedValue(null);
+      const answerLog: AnswerLog = { append: vi.fn(async () => undefined), months: vi.fn(async () => []), readMonth: vi.fn(async () => []), removeDay: vi.fn(async () => undefined) };
+      vi.mocked(answerLog.append).mockRejectedValueOnce(new Error("offline"));
+      const useCases = createUseCases({ ...deps, answerLog });
+      const guestDeck = { ...deck, url: `${GUEST_INSTANCE_URL}catalog.ttl#deck-1` };
+      await useCases.recordReview(GUEST_INSTANCE_URL, guestDeck, { card, direction: "front-to-back" }, 4, new Date("2026-10-03T10:00:00.000Z"));
+      await vi.waitFor(() => expect(answerLog.append).toHaveBeenCalledOnce());
+      await useCases.transferGuestStudy(session, guestInstance, { containerUrl: TARGET, registrationTarget: "private" });
+      expect(answerLog.append).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(answerLog.append).mock.invocationCallOrder[1]).toBeLessThan(
+        vi.mocked(deps.instanceCopier.listResources).mock.invocationCallOrder[0]!,
+      );
+      expect(deps.deckRepository.saveCatalog).not.toHaveBeenCalled();
+    });
+
+    it("transferGuestStudy says the study moved even when the guest's could not be tidied away", async () => {
+      const { deps } = guestDeps();
+      vi.mocked(deps.instanceRepository.registerCatalog).mockRejectedValue(new Error("offline"));
+      expect(
+        await createUseCases(deps).transferGuestStudy(session, guestInstance, { containerUrl: TARGET, registrationTarget: "private" }),
+      ).toEqual({ ok: true, instance: { url: TARGET, name: "My study" }, tidied: false });
+      expect(deps.instanceRepository.deleteInstance).not.toHaveBeenCalled();
+    });
+
+    it("transferGuestStudy moves only from the guest's pod into a user's", async () => {
+      const { deps } = guestDeps();
+      const useCases = createUseCases(deps);
+      const target = { containerUrl: TARGET, registrationTarget: "private" as const };
+      const refusal = "A guest's study moves from the guest's pod into the pod of a user who logged in.";
+      await expect(useCases.transferGuestStudy(GUEST_SESSION, guestInstance, target)).rejects.toThrow(refusal);
+      await expect(useCases.transferGuestStudy(session, instance, target)).rejects.toThrow(refusal);
+      await expect(
+        useCases.transferGuestStudy(session, guestInstance, { ...target, containerUrl: `${GUEST_ORIGIN}x/` }),
+      ).rejects.toThrow(refusal);
+    });
+
+    it.each([
+      ["stage", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.instanceCopier.ensureAbsent).mockRejectedValueOnce(new Error("boom")), false],
+      ["copy", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.instanceCopier.copyResource).mockRejectedValueOnce(new Error("boom")), true],
+      ["adopt", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.deckRepository.saveCatalog).mockRejectedValueOnce(new Error("boom")), true],
+      ["register", (deps: ReturnType<typeof makeDeps>) => vi.mocked(deps.instanceRepository.attachInstance).mockRejectedValueOnce(new Error("boom")), true],
+    ] as const)("transferGuestStudy failing at %s leaves the guest's study as it was and removes the copy", async (step, fail, copied) => {
+      const { deps } = guestDeps();
+      fail(deps);
+      const outcome = await createUseCases(deps).transferGuestStudy(session, guestInstance, { containerUrl: TARGET, registrationTarget: "private" });
+      expect(outcome).toEqual({ ok: false, step, error: new Error("boom"), cleanedUp: true });
+      expect(deps.instanceCopier.deleteRecursively).toHaveBeenCalledTimes(copied ? 1 : 0);
+      if (copied) expect(deps.instanceCopier.deleteRecursively).toHaveBeenCalledWith(TARGET);
+      expect(deps.instanceRepository.deleteInstance).not.toHaveBeenCalled();
+    });
+
+    it("transferGuestStudy refuses a copy that still names the guest's pod, or does not conform", async () => {
+      const { deps } = guestDeps();
+      vi.mocked(deps.instanceCopier.mentions).mockImplementation(async (url) => url.endsWith("2026-10.ttl"));
+      expect(
+        await createUseCases(deps).transferGuestStudy(session, guestInstance, { containerUrl: TARGET, registrationTarget: "private" }),
+      ).toEqual({
+        ok: false,
+        step: "adopt",
+        error: new AppError("guestUrlsLeft", { url: `${TARGET}history/2026-10.ttl` }),
+        cleanedUp: true,
+      });
+      vi.mocked(deps.instanceCopier.mentions).mockResolvedValue(false);
+      const violation = { message: { en: "x" }, severity: "violation" as const, constraint: "MinCount" };
+      vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([]);
+      vi.mocked(deps.shapeValidator.validateDocument).mockImplementation(async (url) =>
+        url.endsWith("meta.ttl")
+          ? { url, status: "checked" as const, subjects: [{ url: `${url}#it`, status: "checked" as const, shape: "instance" as const, version: 2, violations: [violation] }] }
+          : { url, status: "missing" as const, subjects: [] },
+      );
+      expect(
+        await createUseCases(deps).transferGuestStudy(session, guestInstance, { containerUrl: TARGET, registrationTarget: "private" }),
+      ).toMatchObject({ ok: false, step: "validate", error: new AppError("movedCopyInvalid", { count: 1 }) });
+    });
+
+    it("transferGuestStudy refuses to register when the guest's study changed while it was copied", async () => {
+      const { deps } = guestDeps();
+      vi.mocked(deps.instanceCopier.isUnchanged).mockResolvedValueOnce(false);
+      expect(
+        await createUseCases(deps).transferGuestStudy(session, guestInstance, { containerUrl: TARGET, registrationTarget: "private" }),
+      ).toMatchObject({ ok: false, step: "verify", error: new AppError("resourceChangedDuringCopy", { url: `${GUEST_INSTANCE_URL}catalog.ttl` }) });
+      expect(deps.instanceRepository.attachInstance).not.toHaveBeenCalled();
+    });
+
+    it("transferGuestStudy names the copy it could not remove", async () => {
+      const { deps } = guestDeps();
+      vi.mocked(deps.instanceCopier.copyResource).mockRejectedValueOnce("offline");
+      vi.mocked(deps.instanceCopier.deleteRecursively).mockRejectedValueOnce(new Error("still offline"));
+      expect(
+        await createUseCases(deps).transferGuestStudy(session, guestInstance, { containerUrl: TARGET, registrationTarget: "private" }),
+      ).toEqual({ ok: false, step: "copy", error: "offline", cleanedUp: false, leftoverUrl: TARGET });
+      expect(deps.updateJournal.end).not.toHaveBeenCalled();
     });
   });
 });

@@ -7,6 +7,7 @@ import type { Session } from "@solid-memo/domain/session";
 import illustrationUrl from "../assets/illustration.svg";
 import { ExternalLink } from "./ExternalLink";
 import { Footer } from "./Footer";
+import { GuestStudyOffer } from "./GuestStudyOffer";
 import { I18nProvider, useI18n } from "./i18n";
 import { LanguageSelector } from "./LanguageSelector";
 import { Loading } from "./Loading";
@@ -55,6 +56,9 @@ function AppContent({ useCases }: { useCases: UseCases }) {
   const [returning, setReturning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState<unknown>(null);
+  // A guest on their way to logging in, to keep their study; and one about to discard it.
+  const [guestLoggingIn, setGuestLoggingIn] = useState(false);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -100,6 +104,33 @@ function AppContent({ useCases }: { useCases: UseCases }) {
     }
   }
 
+  async function handleTryAsGuest() {
+    setAuthError(null);
+    setBusy(true);
+    try {
+      setSession(await useCases.startGuest(t("guest.instanceName")));
+    } catch (e) {
+      setAuthError(e);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDiscardGuest() {
+    setBusy(true);
+    try {
+      await useCases.discardGuest();
+      setSession(null);
+      setConfirmingDiscard(false);
+      setAuthError(null);
+      queryClient.clear();
+    } catch (e) {
+      setAuthError(e);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleLogout() {
     await useCases.logout();
     setSession(null);
@@ -117,7 +148,9 @@ function AppContent({ useCases }: { useCases: UseCases }) {
     );
   }
 
-  if (!session) {
+  // Signed out, or a guest logging in to keep their study: the guest's study stays where it is meanwhile.
+  if (!session || (session.guest === true && guestLoggingIn)) {
+    const guest = session?.guest === true;
     return (
       <main class="landing">
         <img
@@ -127,11 +160,11 @@ function AppContent({ useCases }: { useCases: UseCases }) {
           width={640}
           height={427}
         />
-        <p class="tagline">{t("app.tagline")}</p>
+        <p class="tagline">{guest ? t("app.loginToKeep") : t("app.tagline")}</p>
         <OnboardingFlow
           providers={POD_PROVIDERS}
           busy={busy}
-          returning={returning}
+          returning={returning || guest}
           onLogin={(webId) =>
             void startLogin(() => useCases.loginWithWebId(webId))
           }
@@ -140,7 +173,15 @@ function AppContent({ useCases }: { useCases: UseCases }) {
               useCases.loginWithProvider(provider.oidcIssuer),
             )
           }
+          onTryAsGuest={guest ? undefined : () => void handleTryAsGuest()}
         />
+        {guest && (
+          <div class="onboarding-actions">
+            <button onClick={() => setGuestLoggingIn(false)} disabled={busy}>
+              {t("app.backToStudy")}
+            </button>
+          </div>
+        )}
         {authError !== null && <p class="error">{errorText(authError)}</p>}
       </main>
     );
@@ -186,18 +227,44 @@ function AppContent({ useCases }: { useCases: UseCases }) {
               Solid Memo
             </a>
           </h1>
-          <p class="session-line">
-            {tx("app.loggedInAs", {
-              name: (
-                <ExternalLink url={session.webId}>
-                  {accountQuery.data?.name}
-                </ExternalLink>
-              ),
-            })}
-          </p>
+          {session.guest === true ? (
+            <p class="session-line guest-line">{t("app.guestLine")}</p>
+          ) : (
+            <p class="session-line">
+              {tx("app.loggedInAs", {
+                name: (
+                  <ExternalLink url={session.webId}>
+                    {accountQuery.data?.name}
+                  </ExternalLink>
+                ),
+              })}
+            </p>
+          )}
         </div>
-        <button onClick={handleLogout}>{t("app.logOut")}</button>
+        {session.guest === true ? (
+          <div class="masthead-actions">
+            <button onClick={() => setGuestLoggingIn(true)}>{t("app.keepStudy")}</button>
+            <button onClick={() => setConfirmingDiscard(true)}>{t("app.discardGuest")}</button>
+          </div>
+        ) : (
+          <button onClick={handleLogout}>{t("app.logOut")}</button>
+        )}
       </header>
+      {confirmingDiscard && (
+        <div class="warning" role="region" aria-label={t("app.discardRegion")}>
+          <p>{t("app.discardConfirm")}</p>
+          <div class="edit-actions">
+            <button class="danger" onClick={() => void handleDiscardGuest()} disabled={busy}>
+              {t("app.discardYes")}
+            </button>
+            <button onClick={() => setConfirmingDiscard(false)} disabled={busy}>
+              {t("app.cancel")}
+            </button>
+          </div>
+          {authError !== null && <p class="error">{errorText(authError)}</p>}
+        </div>
+      )}
+      {session.guest !== true && <GuestStudyOffer useCases={useCases} session={session} />}
       <Workspace useCases={useCases} session={session} />
     </main>
   );

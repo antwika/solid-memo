@@ -111,6 +111,26 @@ describe("copyResource", () => {
     expect(getDatetime(deck, "http://purl.org/dc/terms/created")?.toISOString()).toBe("2026-09-21T10:00:00.000Z");
   });
 
+  it("renames the IRIs it is told to, wherever they are", async () => {
+    const guest = "https://guest.example/profile/card#me";
+    const user = "https://alice.example/profile/card#me";
+    vi.mocked(getSolidDataset).mockResolvedValue(
+      setThing(
+        mockSolidDatasetFrom(`${FROM}catalog.ttl`),
+        buildThing(createThing({ url: `${FROM}catalog.ttl#catalog` }))
+          .addIri("http://purl.org/dc/terms/publisher", guest)
+          .addIri("http://purl.org/dc/terms/rightsHolder", "https://someone.example/#me")
+          .build(),
+      ) as never,
+    );
+    const fetch = fetchOf({ [`${FROM}catalog.ttl`]: { headers: { "Content-Type": "text/turtle" } } });
+    await copier(fetch).copyResource(`${FROM}catalog.ttl`, `${TO}catalog.ttl`, { ...MOVE, renames: { [guest]: user } });
+    const saved = vi.mocked(saveSolidDatasetAt).mock.calls[0]![1] as SolidDataset;
+    const catalog = getThing(saved, `${TO}catalog.ttl#catalog`)!;
+    expect(getUrl(catalog, "http://purl.org/dc/terms/publisher")).toBe(user);
+    expect(getUrl(catalog, "http://purl.org/dc/terms/rightsHolder")).toBe("https://someone.example/#me");
+  });
+
   it("copies any other file byte for byte, with its content type", async () => {
     const picture = new Blob(["png"], { type: "image/png" });
     vi.mocked(getFile).mockResolvedValue(picture as never);
@@ -281,6 +301,18 @@ describe("the version a copy was made from", () => {
     );
     vi.mocked(overwriteFile).mockRejectedValueOnce(new Error("offline"));
     await expect(copier(target.fetch).copyResource(`${FROM}a.png`, `${TO}a.png`, MOVE)).rejects.toThrow("offline");
+  });
+});
+
+describe("mentions", () => {
+  it("says whether a resource's content holds the text", async () => {
+    const fetch = fetchOf({ [`${TO}a.ttl`]: { body: "<https://guest.example/x> <p> <o> ." } });
+    expect(await copier(fetch).mentions(`${TO}a.ttl`, "https://guest.example/")).toBe(true);
+    expect(await copier(fetch).mentions(`${TO}a.ttl`, "https://other.example/")).toBe(false);
+  });
+
+  it("fails when the resource cannot be read", async () => {
+    await expect(copier().mentions(`${TO}a.ttl`, "x")).rejects.toThrow(`Could not check <${TO}a.ttl>: 404.`);
   });
 });
 
