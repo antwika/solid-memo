@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toReviewState, toReviewStateThing } from "./reviewStateMapper";
-import type { ReviewState } from "@solid-memo/domain/review";
+import { REVIEW_STATE_FORMAT_VERSION, type ReviewState } from "@solid-memo/domain/review";
 
 const REVIEWS_DOC = "https://pod.example/solid-memo/a/reviews/deck-1.ttl";
 
@@ -13,7 +13,7 @@ const state: ReviewState = {
   due: "2026-09-27",
   firstReviewedAt: "2026-09-15T08:00:00.000Z",
   lastReviewedAt: "2026-09-21T08:12:00.000Z",
-  formatVersion: 2,
+  formatVersion: REVIEW_STATE_FORMAT_VERSION,
 };
 
 describe("review state mapping", () => {
@@ -78,6 +78,18 @@ describe("review state mapping", () => {
     const withSnapshot: ReviewState = { ...state, previous: snapshot };
     const thing = toReviewStateThing(REVIEWS_DOC, withSnapshot);
     expect(toReviewState(thing)).toEqual(withSnapshot);
+  });
+
+  it("round-trips the FSRS memory, the snapshot's too", () => {
+    const memory = { stability: 12.34567891, stabilityFast: 3.5, difficulty: 6.25 };
+    const withMemory: ReviewState = { ...state, memory, previous: { ...snapshot, memory: { stability: 2, stabilityFast: 1.6, difficulty: 6 } } };
+    expect(toReviewState(toReviewStateThing(REVIEWS_DOC, withMemory))).toEqual(withMemory);
+  });
+
+  it("writes a state without memory over one with it, dropping the old memory", () => {
+    const memory = { stability: 12, stabilityFast: 3.5, difficulty: 6 };
+    const existing = toReviewStateThing(REVIEWS_DOC, { ...state, memory, previous: { ...snapshot, memory } });
+    expect(toReviewState(toReviewStateThing(REVIEWS_DOC, state, existing))).toEqual(state);
   });
 
   it("reads states written before snapshots existed", () => {

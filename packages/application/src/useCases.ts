@@ -82,25 +82,20 @@ import {
 } from "@solid-memo/domain/studyDigest";
 import {
   DEFAULT_PREFERENCES,
+  NEW_INSTANCE_PREFERENCES,
   type StudyPreferences,
 } from "@solid-memo/domain/preferences";
-import {
-  REVIEW_STATE_FORMAT_VERSION,
-  type ReviewQuality,
-  type ReviewState,
-} from "@solid-memo/domain/review";
+import { reviewKeyOf, type ReviewQuality, type ReviewState } from "@solid-memo/domain/review";
 import {
   buildStudyQueue,
-  nextDueDate,
   resetStudyDay,
-  snapshotBeforeReview,
   studyDayOf,
   type StudyQueue,
 } from "@solid-memo/domain/scheduling";
+import { nextReviewState, rescheduleByFsrs } from "@solid-memo/domain/nextReview";
 import { answerIdOf, type Answer } from "@solid-memo/domain/answer";
 import { statisticsOf, type Statistics } from "@solid-memo/domain/statistics";
 import type { EstablishedSession, Session } from "@solid-memo/domain/session";
-import { applySm2, INITIAL_SM2_STATE } from "@solid-memo/domain/sm2";
 import type { Storage } from "@solid-memo/domain/storage";
 import { isSecureUrl, validateWebId } from "@solid-memo/domain/webId";
 import {
@@ -341,8 +336,9 @@ export interface UseCases {
   /** Keep the deck's schedule in the digest, as of now: when a study session ends. */
   refreshStudyDigest(instanceUrl: string, deck: Deck): Promise<void>;
   /**
-   * Apply one SM-2 review: load the prompt's state (or start fresh),
-   * transition it, persist it, and return the new state.
+   * Apply one review: load the prompt's state (or start fresh), move SM-2
+   * and FSRS on, schedule by the instance's scheduler, persist it, and
+   * return the new state.
    */
   recordReview(
     instanceUrl: string,
@@ -357,6 +353,13 @@ export interface UseCases {
    * Resolves to the number of cards reset.
    */
   resetStudyDay(instanceUrl: string, deck: Deck, now: Date): Promise<number>;
+  /**
+   * Set every reviewed prompt's due day in the instance as FSRS would
+   * have at its last review, for the preferences' desired retention: what
+   * the user asks for after switching to FSRS. Resolves to how many
+   * prompts became due sooner and later.
+   */
+  rescheduleWithFsrs(instanceUrl: string): Promise<{ sooner: number; later: number }>;
   /**
    * The study statistics of the answers given in the last `months` study
    * months (12 by default), up to now: of every deck, or of one. Answers
@@ -835,6 +838,8 @@ export function createUseCases({
       registrationTarget,
     });
     await deckRepository.saveCatalog(instance.url, await catalogOf(session, instance.name));
+    // Stated, not left to the defaults: an instance without preferences studies as before FSRS.
+    await preferencesRepository.savePreferences(instance.url, NEW_INSTANCE_PREFERENCES);
     return instance;
   }
 
@@ -1378,21 +1383,7 @@ export function createUseCases({
         getPreferences(instanceUrl),
         reviewStateRepository.getReviewState(deck, key),
       ]);
-      const next = applySm2(current ?? INITIAL_SM2_STATE, quality);
-      const previous = snapshotBeforeReview(
-        current,
-        now,
-        prefs.dayBoundaryHour,
-      );
-      const state: ReviewState = {
-        ...key,
-        ...next,
-        due: nextDueDate(now, next.intervalDays, prefs.dayBoundaryHour),
-        firstReviewedAt: current?.firstReviewedAt ?? now.toISOString(),
-        lastReviewedAt: now.toISOString(),
-        formatVersion: REVIEW_STATE_FORMAT_VERSION,
-        ...(previous === undefined ? {} : { previous }),
-      };
+      const state = nextReviewState({ key, current, quality, now, prefs, random });
       await reviewStateRepository.saveReviewState(deck, state);
       unlogged.push({
         instanceUrl,
@@ -1405,7 +1396,7 @@ export function createUseCases({
           answeredAt: state.lastReviewedAt,
           studyDay: studyDayOf(now, prefs.dayBoundaryHour),
           ...(current === null ? {} : { priorIntervalDays: current.intervalDays }),
-          nextIntervalDays: next.intervalDays,
+          nextIntervalDays: state.intervalDays,
         },
       });
       void logAnswers();
@@ -1428,6 +1419,24 @@ export function createUseCases({
         await answerLog.removeDay(instanceUrl, deck.url, studyDayOf(now, prefs.dayBoundaryHour));
       }
       return count;
+    },
+    async rescheduleWithFsrs(instanceUrl) {
+      const [prefs, decks] = await Promise.all([getPreferences(instanceUrl), deckRepository.listDecks(instanceUrl)]);
+      let sooner = 0;
+      let later = 0;
+      for (const deck of decks) {
+        const reviews = await reviewStateRepository.listReviewStates(deck);
+        const changed = rescheduleByFsrs({ reviews, prefs, random });
+        if (changed.length === 0) continue;
+        const dueBefore = new Map(reviews.map((review) => [reviewKeyOf(review), review.due]));
+        for (const review of changed) {
+          const before = dueBefore.get(reviewKeyOf(review))!;
+          if (review.due < before) sooner += 1;
+          else if (review.due > before) later += 1;
+        }
+        await reviewStateRepository.applyReviewChanges(deck, { save: changed, remove: [] });
+      }
+      return { sooner, later };
     },
     async getStatistics(instanceUrl, at, { months = 12, deckUrl } = {}) {
       await logAnswers();

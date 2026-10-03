@@ -24,8 +24,8 @@ export const LATEST_VERSION = {
   instance: 2,
   libraryDeck: 4,
   libraryDeckSeries: 2,
-  preferences: 3,
-  reviewState: 2,
+  preferences: 4,
+  reviewState: 3,
 } as const;
 
 /** A creator or publisher: a foaf:Agent with a name. */
@@ -331,6 +331,18 @@ export interface PreferencesV3 {
   readonly invalidDataPolicy: "https://solid-memo.com/vocab/v1#blockInstance" | "https://solid-memo.com/vocab/v1#blockSubject" | "https://solid-memo.com/vocab/v1#warnOnly";
 }
 
+/** Preferences format 4: every field required, the scheduler and the desired retention among them. */
+export interface PreferencesV4 {
+  readonly newCardsPerDay: number;
+  readonly maxReviewsPerDay: number;
+  readonly dayBoundaryHour: number;
+  readonly answerScale: "sm2" | "minimal";
+  readonly developerMode: boolean;
+  readonly invalidDataPolicy: "https://solid-memo.com/vocab/v1#blockInstance" | "https://solid-memo.com/vocab/v1#blockSubject" | "https://solid-memo.com/vocab/v1#warnOnly";
+  readonly scheduler: "https://solid-memo.com/vocab/v1#sm2" | "https://solid-memo.com/vocab/v1#fsrs";
+  readonly desiredRetention: number;
+}
+
 /** Review-state format 1: the SM-2 fields; the previous* snapshot is admitted. */
 export interface ReviewStateV1 {
   readonly easeFactor: number;
@@ -361,6 +373,27 @@ export interface ReviewStateV2 {
   readonly previousLastReviewedAt?: string;
 }
 
+/** Review-state format 3: SM-2 fields and the FSRS-7 memory, each all or nothing, an all-or-nothing previous* snapshot, per-direction subjects. */
+export interface ReviewStateV3 {
+  readonly easeFactor: number;
+  readonly intervalDays: number;
+  readonly repetitions: number;
+  readonly due: string;
+  readonly firstReviewedAt: string;
+  readonly lastReviewedAt: string;
+  readonly previousEaseFactor?: number;
+  readonly previousIntervalDays?: number;
+  readonly previousRepetitions?: number;
+  readonly previousDue?: string;
+  readonly previousLastReviewedAt?: string;
+  readonly stability?: number;
+  readonly stabilityFast?: number;
+  readonly difficulty?: number;
+  readonly previousStability?: number;
+  readonly previousStabilityFast?: number;
+  readonly previousDifficulty?: number;
+}
+
 export type AgentRecord = { version: 1; data: AgentV1 };
 export type AnswerRecord = { version: 1; data: AnswerV1 };
 export type CardRecord = { version: 1; data: CardV1 } | { version: 2; data: CardV2 } | { version: 3; data: CardV3 } | { version: 4; data: CardV4 };
@@ -372,8 +405,8 @@ export type DocumentReceiptRecord = { version: 1; data: DocumentReceiptV1 };
 export type InstanceRecord = { version: 1; data: InstanceV1 } | { version: 2; data: InstanceV2 };
 export type LibraryDeckRecord = { version: 1; data: LibraryDeckV1 } | { version: 2; data: LibraryDeckV2 } | { version: 3; data: LibraryDeckV3 } | { version: 4; data: LibraryDeckV4 };
 export type LibraryDeckSeriesRecord = { version: 1; data: LibraryDeckSeriesV1 } | { version: 2; data: LibraryDeckSeriesV2 };
-export type PreferencesRecord = { version: 1; data: PreferencesV1 } | { version: 2; data: PreferencesV2 } | { version: 3; data: PreferencesV3 };
-export type ReviewStateRecord = { version: 1; data: ReviewStateV1 } | { version: 2; data: ReviewStateV2 };
+export type PreferencesRecord = { version: 1; data: PreferencesV1 } | { version: 2; data: PreferencesV2 } | { version: 3; data: PreferencesV3 } | { version: 4; data: PreferencesV4 };
+export type ReviewStateRecord = { version: 1; data: ReviewStateV1 } | { version: 2; data: ReviewStateV2 } | { version: 3; data: ReviewStateV3 };
 
 /** A record of any version, by kind. */
 export type VersionedRecord = {
@@ -405,6 +438,6 @@ export type LatestRecord = {
   instance: InstanceV2;
   libraryDeck: LibraryDeckV4;
   libraryDeckSeries: LibraryDeckSeriesV2;
-  preferences: PreferencesV3;
-  reviewState: ReviewStateV2;
+  preferences: PreferencesV4;
+  reviewState: ReviewStateV3;
 };

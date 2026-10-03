@@ -80,6 +80,8 @@ describe("getPreferences", () => {
         answerScale: "minimal",
         developerMode: true,
         invalidDataPolicy: "block-instance" as const,
+        scheduler: "sm2",
+        desiredRetention: 0.9,
       },
       formatVersion: 1,
     });
@@ -106,6 +108,8 @@ describe("savePreferences", () => {
     answerScale: "minimal" as const,
     developerMode: true,
     invalidDataPolicy: "block-instance" as const,
+    scheduler: "fsrs" as const,
+    desiredRetention: 0.9,
   };
 
   it("creates the document on first save", async () => {
@@ -121,7 +125,7 @@ describe("savePreferences", () => {
     expect(getInteger(thing, SM.dayBoundaryHour)).toBe(3);
     expect(getStringNoLocale(thing, SM.answerScale)).toBe("minimal");
     expect(getBoolean(thing, SM.developerMode)).toBe(true);
-    expect(getInteger(thing, SM.formatVersion)).toBe(3);
+    expect(getInteger(thing, SM.formatVersion)).toBe(4);
   });
 
   it("rewrites the subject in place in an existing document, keeping foreign triples", async () => {
@@ -141,6 +145,6 @@ describe("savePreferences", () => {
     const thing = getThing(saved as SolidDataset, `${DOCUMENT}#it`)!;
     expect(getInteger(thing, SM.newCardsPerDay)).toBe(5);
     expect(getStringNoLocale(thing, "https://other.example/#note")).toBe("kept");
-    expect(getInteger(thing, SM.formatVersion)).toBe(3);
+    expect(getInteger(thing, SM.formatVersion)).toBe(4);
   });
 });

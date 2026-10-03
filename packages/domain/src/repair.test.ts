@@ -45,6 +45,7 @@ describe("planRepair", () => {
         subjects: [
           checked(`${REVIEWS}#a`, "reviewState", [v("Xone"), v("Pattern", `${SM}due`)], 2),
           checked(`${REVIEWS}#b`, "reviewState", [v("Pattern", `${SM}due`, "warning")], 2),
+          checked(`${REVIEWS}#c`, "reviewState", [v("And")], 3),
         ],
       },
     ]);
@@ -58,6 +59,7 @@ describe("planRepair", () => {
       ["pub", "name-agent", 1],
       ["a", "drop-snapshot", 2],
       ["a", "recompute-due", 2],
+      ["c", "drop-snapshot", 3],
     ]);
     expect(plan.repairs[0].documentUrl).toBe(CATALOG);
     expect(plan.unrepairable).toEqual([]);
@@ -95,7 +97,7 @@ describe("describeRepair", () => {
     expect(kinds.map((kind) => describeRepair({ kind, documentUrl: "d", subjectUrl: "s", version: 1 }))).toEqual([
       "Give the deck the default description",
       "Study the deck front to back",
-      "Drop the review's half-written undo snapshot",
+      "Drop the review's half-written undo snapshot or FSRS memory",
       "Recompute the review's due day",
       "Name the person or organisation after their address",
       "Remove it",

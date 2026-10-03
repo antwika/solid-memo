@@ -1,17 +1,22 @@
 import {
   INVALID_DATA_POLICIES,
+  SCHEDULERS,
   STUDY_DIRECTIONS,
   type Concept,
   type ConceptScheme,
 } from "@solid-memo/vocab/concepts.generated";
 import { isDeckDirection, type DeckDirection } from "./deck";
 import { isInvalidDataPolicy, type InvalidDataPolicy } from "./invalidDataPolicy";
+import { isScheduler, type Scheduler } from "./scheduler";
 
 /** The IRI of a concept of the StudyDirections scheme. */
 export type StudyDirectionConcept = (typeof STUDY_DIRECTIONS.concepts)[number]["iri"];
 
 /** The IRI of a concept of the InvalidDataPolicies scheme. */
 export type InvalidDataPolicyConcept = (typeof INVALID_DATA_POLICIES.concepts)[number]["iri"];
+
+/** The IRI of a concept of the Schedulers scheme. */
+export type SchedulerConcept = (typeof SCHEDULERS.concepts)[number]["iri"];
 
 /**
  * Lookups over Solid Memo's SKOS concept schemes (generated from
@@ -51,4 +56,15 @@ export function policyOfConcept(iri: string): InvalidDataPolicy | undefined {
 /** The concept of the InvalidDataPolicies scheme that names a policy. */
 export function conceptOfPolicy(policy: InvalidDataPolicy): InvalidDataPolicyConcept {
   return conceptByNotation(INVALID_DATA_POLICIES, policy)!.iri as InvalidDataPolicyConcept;
+}
+
+/** The scheduler a concept of the Schedulers scheme names. */
+export function schedulerOfConcept(iri: string): Scheduler | undefined {
+  const notation = conceptByIri(SCHEDULERS, iri)?.notation;
+  return notation !== undefined && isScheduler(notation) ? notation : undefined;
+}
+
+/** The concept of the Schedulers scheme that names a scheduler. */
+export function conceptOfScheduler(scheduler: Scheduler): SchedulerConcept {
+  return conceptByNotation(SCHEDULERS, scheduler)!.iri as SchedulerConcept;
 }

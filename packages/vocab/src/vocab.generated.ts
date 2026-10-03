@@ -1,6 +1,6 @@
 /* Generated from vocab/v1.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
-/** Solid Memo's own vocabulary, version 1.10 (see docs/vocab.md). */
+/** Solid Memo's own vocabulary, version 1.11 (see docs/vocab.md). */
 export const SM_NS = "https://solid-memo.com/vocab/v1#";
 
 export const SM = {
@@ -72,6 +72,18 @@ export const SM = {
   previousDue: `${SM_NS}previousDue`,
   /** Snapshot: lastReviewedAt before the first review of the study day. (Added in 1.2 for resetting the study day.) */
   previousLastReviewedAt: `${SM_NS}previousLastReviewedAt`,
+  /** FSRS-7 memory: the slow trace's stability, in days. The three FSRS terms are written all together or not at all; a state without them has its memory estimated from its SM-2 interval. (Added in 1.11 for review-state format 3.) */
+  stability: `${SM_NS}stability`,
+  /** FSRS-7 memory: the fast trace's stability, in days. (Added in 1.11 for review-state format 3.) */
+  stabilityFast: `${SM_NS}stabilityFast`,
+  /** FSRS-7 memory: how hard the prompt is, 1 to 10. (Added in 1.11 for review-state format 3.) */
+  difficulty: `${SM_NS}difficulty`,
+  /** Snapshot: the stability before the first review of the study day, written with the other previous* terms when the state had an FSRS memory. (Added in 1.11 for review-state format 3.) */
+  previousStability: `${SM_NS}previousStability`,
+  /** Snapshot: the fast stability before the first review of the study day. (Added in 1.11 for review-state format 3.) */
+  previousStabilityFast: `${SM_NS}previousStabilityFast`,
+  /** Snapshot: the difficulty before the first review of the study day. (Added in 1.11 for review-state format 3.) */
+  previousDifficulty: `${SM_NS}previousDifficulty`,
   /** Maximum unseen cards introduced per study day. (Since 1.0.) */
   newCardsPerDay: `${SM_NS}newCardsPerDay`,
   /** Maximum due-card reviews per study day. (Since 1.0.) */
@@ -84,6 +96,10 @@ export const SM = {
   developerMode: `${SM_NS}developerMode`,
   /** What the app does when data in the instance does not conform to its shapes: a concept of solid-memo:InvalidDataPolicies. (Added in 1.6 for preferences format 3.) */
   invalidDataPolicy: `${SM_NS}invalidDataPolicy`,
+  /** Which algorithm decides a prompt's next interval: a concept of solid-memo:Schedulers. (Added in 1.11 for preferences format 4.) */
+  scheduler: `${SM_NS}scheduler`,
+  /** The probability of recall FSRS schedules a prompt's next review for, 0.70 to 0.97. (Added in 1.11 for preferences format 4.) */
+  desiredRetention: `${SM_NS}desiredRetention`,
   /** The document a receipt is about. (Added in 1.9.) */
   receiptOf: `${SM_NS}receiptOf`,
   /** The version of the document a receipt is about: its ETag, as the pod gave it. (Added in 1.9.) */
@@ -144,4 +160,10 @@ export const SM = {
   blockSubject: `${SM_NS}blockSubject`,
   /** Invalid data is reported, and the app keeps working with it. (Added in 1.6.) */
   warnOnly: `${SM_NS}warnOnly`,
+  /** The algorithms that can decide when a prompt is next due. (Added in 1.11.) */
+  Schedulers: `${SM_NS}Schedulers`,
+  /** SuperMemo 2 (Wozniak, 1990): the interval grows by an ease factor that each grade adjusts. (Added in 1.11.) */
+  sm2: `${SM_NS}sm2`,
+  /** The Free Spaced Repetition Scheduler, FSRS-7: the interval is the time until the predicted probability of recall falls to the desired retention. (Added in 1.11.) */
+  fsrs: `${SM_NS}fsrs`,
 } as const;

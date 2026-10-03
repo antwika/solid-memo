@@ -82,11 +82,13 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
   reviewState: {
     1: { easeFactor: 2.5, intervalDays: 1, repetitions: 1, due: "2026-09-22", firstReviewedAt: "2026-09-21T10:00:00.000Z", lastReviewedAt: "2026-09-21T10:00:00.000Z", previousDue: "2026-09-21" },
     2: { easeFactor: 2.5, intervalDays: 1, repetitions: 1, due: "2026-09-22", firstReviewedAt: "2026-09-21T10:00:00.000Z", lastReviewedAt: "2026-09-21T10:00:00.000Z", previousEaseFactor: 2.4, previousIntervalDays: 1, previousRepetitions: 1, previousDue: "2026-09-21", previousLastReviewedAt: "2026-09-20T10:00:00.000Z" },
+    3: { easeFactor: 2.5, intervalDays: 5, repetitions: 1, stability: 4.7123, stabilityFast: 3.76984, difficulty: 5.5, due: "2026-09-26", firstReviewedAt: "2026-09-21T10:00:00.000Z", lastReviewedAt: "2026-09-21T10:00:00.000Z", previousEaseFactor: 2.4, previousIntervalDays: 1, previousRepetitions: 1, previousDue: "2026-09-21", previousLastReviewedAt: "2026-09-20T10:00:00.000Z", previousStability: 1.5, previousStabilityFast: 1.2, previousDifficulty: 6 },
   },
   preferences: {
     1: { newCardsPerDay: 20 },
     2: { newCardsPerDay: 20, maxReviewsPerDay: 200, dayBoundaryHour: 4, answerScale: "sm2", developerMode: false },
     3: { newCardsPerDay: 20, maxReviewsPerDay: 200, dayBoundaryHour: 4, answerScale: "sm2", developerMode: false, invalidDataPolicy: `${SM_NS}warnOnly` },
+    4: { newCardsPerDay: 20, maxReviewsPerDay: 200, dayBoundaryHour: 4, answerScale: "minimal", developerMode: false, invalidDataPolicy: `${SM_NS}warnOnly`, scheduler: `${SM_NS}fsrs`, desiredRetention: 0.9 },
   },
   documentReceipt: {
     1: { document: "https://pod.example/solid-memo/a/decks/d.ttl", version: '"v1"', conformedTo: "0123abcd", latestFormat: true },

@@ -1,5 +1,6 @@
+import type { FsrsMemory } from "./fsrs";
 import type { ReviewKey, ReviewSnapshot, ReviewState } from "./review";
-import type { ReviewStateV2 } from "@solid-memo/vocab/types.generated";
+import type { ReviewStateV3 } from "@solid-memo/vocab/types.generated";
 
 /**
  * Review states between their latest shape record and the model. The
@@ -29,21 +30,23 @@ export function reviewKeyOf(fragment: string): ReviewKey {
 }
 
 /**
- * The state from its record. The snapshot is all or nothing: a partial
- * one could only restore a state that never existed, so it reads as
- * absent.
+ * The state from its record. The snapshot and the FSRS memory are each
+ * all or nothing: a partial one could only restore or continue a state
+ * that never existed, so it reads as absent.
  */
 export function reviewStateFromRecord(
   key: ReviewKey,
   storedVersion: number,
-  data: ReviewStateV2,
+  data: ReviewStateV3,
 ): ReviewState {
   const previous = snapshotOf(data);
+  const memory = memoryOf(data.stability, data.stabilityFast, data.difficulty);
   return {
     ...key,
     easeFactor: data.easeFactor,
     intervalDays: data.intervalDays,
     repetitions: data.repetitions,
+    ...(memory === undefined ? {} : { memory }),
     due: data.due,
     firstReviewedAt: data.firstReviewedAt,
     lastReviewedAt: data.lastReviewedAt,
@@ -52,7 +55,17 @@ export function reviewStateFromRecord(
   };
 }
 
-function snapshotOf(data: ReviewStateV2): ReviewSnapshot | undefined {
+function memoryOf(
+  stability: number | undefined,
+  stabilityFast: number | undefined,
+  difficulty: number | undefined,
+): FsrsMemory | undefined {
+  return stability === undefined || stabilityFast === undefined || difficulty === undefined
+    ? undefined
+    : { stability, stabilityFast, difficulty };
+}
+
+function snapshotOf(data: ReviewStateV3): ReviewSnapshot | undefined {
   if (
     data.previousEaseFactor === undefined ||
     data.previousIntervalDays === undefined ||
@@ -62,16 +75,18 @@ function snapshotOf(data: ReviewStateV2): ReviewSnapshot | undefined {
   ) {
     return undefined;
   }
+  const memory = memoryOf(data.previousStability, data.previousStabilityFast, data.previousDifficulty);
   return {
     easeFactor: data.previousEaseFactor,
     intervalDays: data.previousIntervalDays,
     repetitions: data.previousRepetitions,
     due: data.previousDue,
     lastReviewedAt: data.previousLastReviewedAt,
+    ...(memory === undefined ? {} : { memory }),
   };
 }
 
-export function reviewStateToRecord(state: ReviewState): ReviewStateV2 {
+export function reviewStateToRecord(state: ReviewState): ReviewStateV3 {
   return {
     easeFactor: state.easeFactor,
     intervalDays: state.intervalDays,
@@ -79,6 +94,13 @@ export function reviewStateToRecord(state: ReviewState): ReviewStateV2 {
     due: state.due,
     firstReviewedAt: state.firstReviewedAt,
     lastReviewedAt: state.lastReviewedAt,
+    ...(state.memory === undefined
+      ? {}
+      : {
+          stability: state.memory.stability,
+          stabilityFast: state.memory.stabilityFast,
+          difficulty: state.memory.difficulty,
+        }),
     ...(state.previous === undefined
       ? {}
       : {
@@ -87,6 +109,13 @@ export function reviewStateToRecord(state: ReviewState): ReviewStateV2 {
           previousRepetitions: state.previous.repetitions,
           previousDue: state.previous.due,
           previousLastReviewedAt: state.previous.lastReviewedAt,
+        }),
+    ...(state.previous?.memory === undefined
+      ? {}
+      : {
+          previousStability: state.previous.memory.stability,
+          previousStabilityFast: state.previous.memory.stabilityFast,
+          previousDifficulty: state.previous.memory.difficulty,
         }),
   };
 }

@@ -38,6 +38,7 @@ string, so other applications can look up what it means:
 |---|---|---|---|
 | `sm:StudyDirections` | `packages/vocab/vocab/v1.ttl` | `sm:frontToBack`, `sm:backToFront`, `sm:bidirectional` | `sm:studyDirection` on a deck |
 | `sm:InvalidDataPolicies` | `packages/vocab/vocab/v1.ttl` | `sm:blockInstance` (default), `sm:blockSubject`, `sm:warnOnly` | `sm:invalidDataPolicy` in preferences |
+| `sm:Schedulers` | `packages/vocab/vocab/v1.ttl` | `sm:sm2`, `sm:fsrs` | `sm:scheduler` in preferences |
 | Topics (`https://solid-memo.com/vocab/topics`) | [`packages/vocab/vocab/topics.ttl`](../packages/vocab/vocab/topics.ttl) | languages (swedish), geography, computing, science (chemistry), art, labour-market | `dcat:theme` on a deck, next to the EU data theme `EDUC` |
 
 - Every scheme has a `dcterms:title` and a `skos:definition`; every
@@ -52,7 +53,7 @@ string, so other applications can look up what it means:
   so the mapping between them is data.
 - `npm run generate` renders every scheme into
   `packages/vocab/src/concepts.generated.ts` (`STUDY_DIRECTIONS`,
-  `INVALID_DATA_POLICIES`, `TOPICS`), which the app lists and labels
+  `INVALID_DATA_POLICIES`, `SCHEDULERS`, `TOPICS`), which the app lists and labels
   from, in the language the user reads; [concepts.ts](../packages/domain/src/concepts.ts) looks concepts up by
   IRI or notation. The topics scheme's IRI lands on an HTML page
   (`vocab/topics/`), as the vocabulary's does.

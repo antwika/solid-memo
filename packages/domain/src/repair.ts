@@ -17,7 +17,7 @@ export type RepairKind =
   | "describe-deck"
   /** Study a deck without a (known) direction front to back, as format 1 did. */
   | "direct-deck"
-  /** Drop a review state's half-written undo snapshot. */
+  /** Drop a review state's half-written undo snapshot or FSRS memory. */
   | "drop-snapshot"
   /** Recompute a malformed due day from the last review and the interval. */
   | "recompute-due"
@@ -57,7 +57,8 @@ function repairFor(shape: ShapeName | null, violation: Violation): RepairKind | 
   ) {
     return "direct-deck";
   }
-  if (shape === "reviewState" && constraint === "Xone") return "drop-snapshot";
+  // Format 2 says the snapshot rule with sh:xone; format 3 joins it to the memory's with sh:and.
+  if (shape === "reviewState" && (constraint === "Xone" || constraint === "And")) return "drop-snapshot";
   if (shape === "reviewState" && path === `${SM}due` && constraint === "Pattern") return "recompute-due";
   if (path === `${FOAF}name` && constraint === "MinCount") return "name-agent";
   return null;
@@ -111,7 +112,7 @@ export function describeRepair(repair: Repair): string {
     case "direct-deck":
       return "Study the deck front to back";
     case "drop-snapshot":
-      return "Drop the review's half-written undo snapshot";
+      return "Drop the review's half-written undo snapshot or FSRS memory";
     case "recompute-due":
       return "Recompute the review's due day";
     case "name-agent":

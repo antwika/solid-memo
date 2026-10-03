@@ -13,6 +13,7 @@ replacing one would cost.
 | Fontsource | `@fontsource-variable/fredoka`, `@fontsource/bangers` (both SIL OFL-1.1) | `apps/web/src/style.css` (`@import`) | Typefaces — Fredoka for text, Bangers (comic lettering) for `h1`/`h2` — self-hosted: bundled into `dist/`, no third-party font requests |
 | Zazuko | `rdf-validate-shacl` (MIT; with `@rdfjs/*`, `clownface`) | `@solid-memo/shacl` (`src/engine.ts`, a lazily loaded chunk) | SHACL validation of pod and library documents against `packages/vocab/shapes/` |
 | RDF/JS community | `n3` | `@solid-memo/turtle` and the node tooling of `shacl` and `deck-library` | Build-time Turtle parsing for the generators, the library index and validation |
+| open-spaced-repetition | `ts-fsrs` (MIT), pinned exactly, a root dev dependency | `scripts/generateFsrsVectors.ts` | The reference FSRS-7 the domain's own port ([fsrs.ts](../packages/domain/src/fsrs.ts)) is tested against, through the vectors it generates; never shipped |
 
 ## Vendor-independent code
 

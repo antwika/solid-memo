@@ -1,8 +1,9 @@
-# Spaced repetition (SM-2)
+# Spaced repetition (SM-2 and FSRS)
 
 How Solid Memo schedules cards. Implemented entirely in the domain layer
-([sm2.ts](../packages/domain/src/sm2.ts), [scheduling.ts](../packages/domain/src/scheduling.ts))
-as pure functions.
+([sm2.ts](../packages/domain/src/sm2.ts), [fsrs.ts](../packages/domain/src/fsrs.ts),
+[nextReview.ts](../packages/domain/src/nextReview.ts),
+[scheduling.ts](../packages/domain/src/scheduling.ts)) as pure functions.
 
 ## Prompts and directions
 
@@ -21,8 +22,9 @@ Each prompt (card + direction) carries one `ReviewState`:
 | Field | Meaning |
 |---|---|
 | `easeFactor` | SM-2 easiness (starts 2.5, never below 1.3) |
-| `intervalDays` | Days until the next review |
+| `intervalDays` | Days from the last review to the due day, as whichever scheduler decided |
 | `repetitions` | Consecutive correct answers |
+| `memory` | FSRS-7's memory: `stability`, `stabilityFast` (days), `difficulty` (1–10); absent until the prompt's first review by an app that knows FSRS |
 | `due` | Study day ("YYYY-MM-DD") the card is next due |
 | `firstReviewedAt` | Introduction timestamp (counts against the new-card budget) |
 | `lastReviewedAt` | Latest review timestamp (counts against the review budget) |
@@ -30,6 +32,28 @@ Each prompt (card + direction) carries one `ReviewState`:
 A prompt with no `ReviewState` is *new*. Changing a deck's direction
 keeps every state: a card's front→back state waits, unused, while the
 deck is studied back→front.
+
+## Two schedulers
+
+An instance's preferences choose the scheduler (`sm:scheduler`, a
+concept of `sm:Schedulers`): **SM-2** or **FSRS** (FSRS-7). Every
+answer moves both on (`nextReviewState` in
+[nextReview.ts](../packages/domain/src/nextReview.ts)): SM-2's ease and
+repetitions, and FSRS's memory. The chosen scheduler alone decides the
+interval, and with it the due day. So switching takes effect at the
+next review, either way, with nothing to convert; due days set by the
+other scheduler stay until then, unless the user reschedules (below).
+After a switch back, SM-2 grows from the prompt's current interval,
+whoever set it.
+
+| Instance | Scheduler | Answer scale |
+|---|---|---|
+| created by this app | FSRS (`NEW_INSTANCE_PREFERENCES`, written at creation) | `minimal` |
+| preferences saved before FSRS | SM-2 (the step to preferences format 4) | as saved |
+| no preferences document | SM-2 (`DEFAULT_PREFERENCES`) | `sm2` |
+
+An instance without preferences reads as SM-2 on purpose: every
+instance before FSRS was one, and it must not be rescheduled silently.
 
 ## The SM-2 transition
 
@@ -58,17 +82,77 @@ Decisions fixed in code (and tests):
   full SM-2 review, so the state stored after the repeat is the one that
   counts.
 
+## FSRS-7
+
+FSRS models each prompt's memory as two traces, a slow and a fast one,
+and a difficulty; its forgetting curve, the probability of recall over
+time, mixes the two. [fsrs.ts](../packages/domain/src/fsrs.ts) is a port
+of ts-fsrs's FSRS-7 (itself a port of fsrs-rs), with its 34 default
+weights: the domain imports no vendor code. Test vectors generated with
+ts-fsrs, pinned exactly in the root `package.json`, hold the port to it
+(`node scripts/generateFsrsVectors.ts` writes
+[fsrsVectors.ts](../packages/domain/src/testing/fsrsVectors.ts); run it
+again when the pin moves, and look at what changed). A review-state
+format means the formulas of its day: a model that computes memory
+differently is another format.
+
+- **Ratings.** The grade stays an SM-2 quality, in the state and in the
+  answer log; FSRS's rating is derived from it: 0–2 Again, 3 Hard,
+  4 Good, 5 Easy (`ratingOfQuality`).
+- **Time.** FSRS is given the exact time since the prompt's last
+  review, in fractional days — ten minutes for a card repeated in the
+  session, months for a mature one. FSRS-7 is designed for that; same-day
+  repeats need no rule of their own. Due days stay study days.
+- **A prompt FSRS has not seen** (a state from before FSRS, or written by
+  an older app) gets a memory estimated from its SM-2 interval first:
+  the one whose curve falls to 90% exactly at that interval, the fast
+  trace at 0.8 of the slow one and the difficulty neutral, 5
+  (`memoryFromSm2`, after fsrs-rs's `memory_state_from_sm2`, which for
+  FSRS-7 has no use for the ease factor).
+- **The interval** (`fsrsIntervalDays`) is the time until the
+  probability of recall falls to the **desired retention**
+  (`sm:desiredRetention`, 0.70–0.97, default 0.90), solved numerically
+  (`intervalFor`). Then, as ts-fsrs schedules:
+  - fuzzed when 2.5 days or more: spread at random over a range around
+    it (±15% of the part from 2.5 to 7 days, ±10% from 7 to 20, ±5%
+    beyond, plus a day; `fuzzRange`), so cards learnt together do not
+    stay due together; shorter ones are only rounded;
+  - never shorter than a lower rating's interval would have been, and a
+    day longer once that is a day or more: Easy > Good > Hard;
+  - whole study days, **at least one**, at most a hundred years. There
+    are no minute-long learning steps: a card forgotten today comes back
+    within today's session (`requeueCard`), not on another day.
+
+With the default weights and no learning steps, a new card graded Good
+comes back in about five days, and Easy in about two months: FSRS-7's
+prediction of 90% recall, where SM-2 says one day.
+
+## Rescheduling with FSRS
+
+Switching to FSRS leaves every due day as it was. **Reschedule due
+dates with FSRS** (Preferences, offered while FSRS is the saved
+scheduler) sets every reviewed prompt's due day as FSRS would have at
+its last review, for the current desired retention
+(`rescheduleByFsrs`, use case `rescheduleWithFsrs`): the memory is
+estimated where there is none, the interval fuzzed, and only the states
+that change are written, one write per deck. The last review, the
+snapshot and the answer log stay as they are. The user confirms first,
+and is told how many prompts became due sooner and later.
+
 ## Answer scales
 
 Sessions grade with one of two button sets, chosen per instance in the
-preferences (`sm:answerScale`, default `sm2`):
+preferences (`sm:answerScale`: `minimal` in an instance the app creates,
+`sm2` where none is stated):
 
-| Scale | Buttons | Records |
-|---|---|---|
-| `sm2` | 0 — Blackout … 5 — Easy | that grade |
-| `minimal` | Again · Hard · Good · Easy | 1 · 3 · 4 · 5 |
+| Scale | Buttons | Records | FSRS rating |
+|---|---|---|---|
+| `sm2` | 0 — Blackout … 5 — Easy | that grade | 0–2 Again, then Hard, Good, Easy |
+| `minimal` | Again · Hard · Good · Easy | 1 · 3 · 4 · 5 | Again · Hard · Good · Easy |
 
-The minimal scale is a view over SM-2, not a second algorithm. Again stands
+Either scale works with either scheduler: the grade recorded is always
+an SM-2 quality. The minimal scale is FSRS's own four ratings, and on SM-2
+a view over its grades, not a second algorithm. Again stands
 for 0–1 and Hard for 2–3, but each button must record one value: Again
 records 1 (0 and 1 schedule identically) and Hard records **3**, the lowest
 passing grade — recording 2 would make Hard a lapse, indistinguishable from
@@ -134,9 +218,9 @@ the only card left, in which case it simply repeats until it passes. The
 "Card x of y" counter grows with each repeat. Each answer runs the
 `recordReview` use case
 ([useCases.ts](../packages/application/src/useCases.ts)): load the card's stored
-state (or start from the initial SM-2 state), apply the transition, compute
-the next due day, persist to `reviews/<deckId>.ttl`, and return the new
-state. A failed save keeps the card in place with an error; the queue only
+state (or start fresh), move SM-2 and FSRS on and schedule by the
+instance's scheduler (`nextReviewState`), persist to
+`reviews/<deckId>.ttl`, and return the new state. A failed save keeps the card in place with an error; the queue only
 advances on success. Ending the session invalidates the review caches so
 other screens see fresh state.
 
@@ -178,7 +262,7 @@ decides, per card reviewed today:
 | Card | Reset does |
 |---|---|
 | introduced today (`firstReviewedAt` is today) | removes its state — it is a new card again |
-| reviewed today, has a snapshot | restores the snapshot (ease, interval, repetitions, due, last review) |
+| reviewed today, has a snapshot | restores the snapshot (ease, interval, repetitions, due, last review, FSRS memory — or none, when the morning had none) |
 | reviewed today, no snapshot (state written before snapshots existed) | can't be restored: made due today, so it can at least be studied again |
 | not reviewed today | untouched |
 

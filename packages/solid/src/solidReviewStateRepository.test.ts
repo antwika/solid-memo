@@ -13,7 +13,7 @@ import {
   toReviewStateThing,
 } from "./mappers/reviewStateMapper";
 import type { Deck } from "@solid-memo/domain/deck";
-import type { ReviewState } from "@solid-memo/domain/review";
+import { REVIEW_STATE_FORMAT_VERSION, type ReviewState } from "@solid-memo/domain/review";
 
 vi.mock("@inrupt/solid-client", async (importOriginal) => {
   const actual =
@@ -48,7 +48,7 @@ const state: ReviewState = {
   due: "2026-09-27",
   firstReviewedAt: "2026-09-15T08:00:00.000Z",
   lastReviewedAt: "2026-09-21T08:12:00.000Z",
-  formatVersion: 2,
+  formatVersion: REVIEW_STATE_FORMAT_VERSION,
 };
 
 function reviewsDataset() {

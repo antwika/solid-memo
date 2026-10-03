@@ -16,9 +16,9 @@
     a owl:Ontology ;
     dcterms:title "Solid Memo vocabulary, v1" ;
     dcterms:description "Terms for spaced-repetition flashcards stored in a Solid pod: instances, decks, cards, SM-2 review state and study preferences." ;
-    owl:versionInfo "1.10" ;
+    owl:versionInfo "1.11" ;
     rdfs:seeAlso <https://solid-memo.com/vocab/v1.ttl> ;
-    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed. 1.10: Answer, the answer log the study statistics are computed from." .
+    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed. 1.10: Answer, the answer log the study statistics are computed from. 1.11: stability, stabilityFast, difficulty and their previous* snapshot (review-state format 3, the FSRS-7 memory); the Schedulers concept scheme, scheduler and desiredRetention (preferences format 4)." .
 
 #################### Classes ####################
 
@@ -321,6 +321,60 @@ solid-memo:previousLastReviewedAt
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.2 for resetting the study day." .
 
+solid-memo:stability
+    a owl:DatatypeProperty ;
+    rdfs:label "stability" ;
+    rdfs:comment "FSRS-7 memory: the slow trace's stability, in days. The three FSRS terms are written all together or not at all; a state without them has its memory estimated from its SM-2 interval." ;
+    rdfs:domain solid-memo:ReviewState ;
+    rdfs:range xsd:decimal ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11 for review-state format 3." .
+
+solid-memo:stabilityFast
+    a owl:DatatypeProperty ;
+    rdfs:label "fast stability" ;
+    rdfs:comment "FSRS-7 memory: the fast trace's stability, in days." ;
+    rdfs:domain solid-memo:ReviewState ;
+    rdfs:range xsd:decimal ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11 for review-state format 3." .
+
+solid-memo:difficulty
+    a owl:DatatypeProperty ;
+    rdfs:label "difficulty" ;
+    rdfs:comment "FSRS-7 memory: how hard the prompt is, 1 to 10." ;
+    rdfs:domain solid-memo:ReviewState ;
+    rdfs:range xsd:decimal ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11 for review-state format 3." .
+
+solid-memo:previousStability
+    a owl:DatatypeProperty ;
+    rdfs:label "previous stability" ;
+    rdfs:comment "Snapshot: the stability before the first review of the study day, written with the other previous* terms when the state had an FSRS memory." ;
+    rdfs:domain solid-memo:ReviewState ;
+    rdfs:range xsd:decimal ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11 for review-state format 3." .
+
+solid-memo:previousStabilityFast
+    a owl:DatatypeProperty ;
+    rdfs:label "previous fast stability" ;
+    rdfs:comment "Snapshot: the fast stability before the first review of the study day." ;
+    rdfs:domain solid-memo:ReviewState ;
+    rdfs:range xsd:decimal ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11 for review-state format 3." .
+
+solid-memo:previousDifficulty
+    a owl:DatatypeProperty ;
+    rdfs:label "previous difficulty" ;
+    rdfs:comment "Snapshot: the difficulty before the first review of the study day." ;
+    rdfs:domain solid-memo:ReviewState ;
+    rdfs:range xsd:decimal ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11 for review-state format 3." .
+
 #################### Preferences ####################
 
 solid-memo:newCardsPerDay
@@ -376,6 +430,24 @@ solid-memo:invalidDataPolicy
     rdfs:range skos:Concept ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.6 for preferences format 3." .
+
+solid-memo:scheduler
+    a owl:ObjectProperty ;
+    rdfs:label "scheduler" ;
+    rdfs:comment "Which algorithm decides a prompt's next interval: a concept of solid-memo:Schedulers." ;
+    rdfs:domain solid-memo:Preferences ;
+    rdfs:range skos:Concept ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11 for preferences format 4." .
+
+solid-memo:desiredRetention
+    a owl:DatatypeProperty ;
+    rdfs:label "desired retention" ;
+    rdfs:comment "The probability of recall FSRS schedules a prompt's next review for, 0.70 to 0.97." ;
+    rdfs:domain solid-memo:Preferences ;
+    rdfs:range xsd:decimal ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11 for preferences format 4." .
 
 #################### Digest ####################
 
@@ -660,3 +732,32 @@ solid-memo:warnOnly
     skos:topConceptOf solid-memo:InvalidDataPolicies ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.6." .
+
+solid-memo:Schedulers
+    a skos:ConceptScheme ;
+    dcterms:title "Schedulers"@en ;
+    skos:definition "The algorithms that can decide when a prompt is next due."@en ;
+    skos:hasTopConcept solid-memo:sm2 ,
+                       solid-memo:fsrs ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11." .
+
+solid-memo:sm2
+    a skos:Concept ;
+    skos:prefLabel "SM-2"@en ;
+    skos:definition "SuperMemo 2 (Wozniak, 1990): the interval grows by an ease factor that each grade adjusts."@en ;
+    skos:notation "sm2" ;
+    skos:inScheme solid-memo:Schedulers ;
+    skos:topConceptOf solid-memo:Schedulers ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11." .
+
+solid-memo:fsrs
+    a skos:Concept ;
+    skos:prefLabel "FSRS"@en ;
+    skos:definition "The Free Spaced Repetition Scheduler, FSRS-7: the interval is the time until the predicted probability of recall falls to the desired retention."@en ;
+    skos:notation "fsrs" ;
+    skos:inScheme solid-memo:Schedulers ;
+    skos:topConceptOf solid-memo:Schedulers ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.11." .

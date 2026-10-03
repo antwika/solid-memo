@@ -67,6 +67,34 @@ describe("review state records", () => {
     expect(reviewStateFromRecord(key, 1, record)).toEqual(withSnapshot);
   });
 
+  it("round-trip the FSRS memory, and the snapshot's", () => {
+    const memory = { stability: 12.5, stabilityFast: 3.25, difficulty: 6.1 };
+    const before = { stability: 4, stabilityFast: 3.2, difficulty: 6 };
+    const withMemory = { ...state, formatVersion: 3, memory, previous: { ...snapshot, memory: before } };
+    const record = reviewStateToRecord(withMemory);
+    expect(record).toMatchObject({
+      stability: 12.5,
+      stabilityFast: 3.25,
+      difficulty: 6.1,
+      previousStability: 4,
+      previousStabilityFast: 3.2,
+      previousDifficulty: 6,
+    });
+    expect(reviewStateFromRecord(key, 3, record)).toEqual(withMemory);
+  });
+
+  it.each(["stability", "stabilityFast", "difficulty"])("read a memory missing %s as no memory", (field) => {
+    const record = { ...reviewStateToRecord({ ...state, memory: { stability: 1, stabilityFast: 1, difficulty: 5 } }) };
+    delete (record as Record<string, unknown>)[field];
+    expect(reviewStateFromRecord(key, 2, record)).toEqual(state);
+  });
+
+  it("read a snapshot whose memory is partial as a snapshot without memory", () => {
+    const record = { ...reviewStateToRecord({ ...state, previous: { ...snapshot, memory: { stability: 1, stabilityFast: 1, difficulty: 5 } } }) };
+    delete (record as Record<string, unknown>).previousDifficulty;
+    expect(reviewStateFromRecord(key, 2, record)).toEqual({ ...state, previous: snapshot });
+  });
+
   it.each([
     "previousEaseFactor",
     "previousIntervalDays",

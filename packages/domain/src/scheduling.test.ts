@@ -277,6 +277,11 @@ describe("snapshotBeforeReview", () => {
     });
   });
 
+  it("snapshots the FSRS memory with the rest, when the state has one", () => {
+    const memory = { stability: 4, stabilityFast: 3.2, difficulty: 5 };
+    expect(snapshotBeforeReview({ ...review("a", "2026-09-21", yesterday), memory }, now, 4)).toMatchObject({ memory });
+  });
+
   it("keeps the morning's snapshot on a second review the same day", () => {
     const morning = {
       easeFactor: 2.36,
@@ -338,6 +343,14 @@ describe("resetStudyDay", () => {
       },
     ]);
     expect(restore[0]).not.toHaveProperty("previous");
+  });
+
+  it("restores the morning's memory, and drops today's when the morning had none", () => {
+    const today = { stability: 9, stabilityFast: 7, difficulty: 4 };
+    const before = { stability: 4, stabilityFast: 3.2, difficulty: 5 };
+    const reviewed = { ...review("a", "2026-09-27", now, yesterday), memory: today };
+    expect(resetStudyDay([{ ...reviewed, previous: { ...morning, memory: before } }], now, 4).restore[0]!.memory).toEqual(before);
+    expect(resetStudyDay([{ ...reviewed, previous: morning }], now, 4).restore[0]).not.toHaveProperty("memory");
   });
 
   it("makes a card without a snapshot due today, as the best it can do", () => {

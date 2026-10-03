@@ -167,6 +167,7 @@ export function snapshotBeforeReview(
     repetitions: current.repetitions,
     due: current.due,
     lastReviewedAt: current.lastReviewedAt,
+    ...(current.memory === undefined ? {} : { memory: current.memory }),
   };
 }
 
@@ -201,7 +202,8 @@ export function resetStudyDay(
     if (isToday(review.firstReviewedAt)) {
       reset.remove.push({ cardId: review.cardId, direction: review.direction });
     } else if (review.previous !== undefined) {
-      const { previous, ...state } = review;
+      // A snapshot without memory restores a state that had none: today's goes too.
+      const { previous, memory: _today, ...state } = review;
       reset.restore.push({ ...state, ...previous });
     } else {
       reset.restore.push({ ...review, due: today });

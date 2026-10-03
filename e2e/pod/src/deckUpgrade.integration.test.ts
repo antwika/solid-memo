@@ -14,7 +14,7 @@ import type { DeckLibrary } from "@solid-memo/application/ports";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { LibraryCard, LibraryDeckContent } from "@solid-memo/domain/library";
 import { librarySeriesUrlOf } from "@solid-memo/domain/libraryLayout";
-import type { ReviewState } from "@solid-memo/domain/review";
+import { REVIEW_STATE_FORMAT_VERSION, type ReviewState } from "@solid-memo/domain/review";
 import { createShaclShapeValidator } from "@solid-memo/solid/shaclShapeValidator";
 import { createSolidDeckRepository } from "@solid-memo/solid/solidDeckRepository";
 import { createSolidInstanceCopier } from "@solid-memo/solid/solidInstanceCopier";
@@ -91,7 +91,7 @@ const review = (cardId: string, intervalDays: number): ReviewState => ({
   due: "2026-10-09",
   firstReviewedAt: "2026-09-20T10:00:00.000Z",
   lastReviewedAt: "2026-10-03T10:00:00.000Z",
-  formatVersion: 2,
+  formatVersion: REVIEW_STATE_FORMAT_VERSION,
 });
 
 interface Recorded {

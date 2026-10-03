@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { buildThing, createSolidDataset, createThing, mockSolidDatasetFrom, setThing } from "@inrupt/solid-client";
-import type { Quad, Term } from "@rdfjs/types";
+import type { Literal, Quad, Term } from "@rdfjs/types";
 import { patchBody, saveDataset } from "./datasets";
 
 const DOC = "https://pod.example/doc.ttl";
 const NS = "https://example.com/ns#";
 
 const named = (value: string) => ({ termType: "NamedNode", value }) as Term;
+const literalOf = (value: string) =>
+  ({ termType: "Literal", value, language: "", datatype: named("http://www.w3.org/2001/XMLSchema#decimal") }) as Literal;
 const changes = (additions: Partial<Quad>[], deletions: Partial<Quad>[] = []) =>
   ({ ...createSolidDataset(), internal_changeLog: { additions, deletions } }) as unknown as Parameters<typeof patchBody>[0];
 
@@ -38,6 +40,40 @@ describe("patchBody", () => {
         "};",
         "",
       ].join("\n"),
+    );
+  });
+
+  it("deletes a whole-number decimal as the integer it spells, as node-solid-server stores it", () => {
+    const decimal = (value: string) =>
+      ({ termType: "Literal", value, language: "", datatype: named("http://www.w3.org/2001/XMLSchema#decimal") }) as Term;
+    const at = (object: Term) => ({ subject: named(`${DOC}#a`), predicate: named(`${NS}d`), object }) as Quad;
+    expect(patchBody(changes([at(decimal("1.0"))], [at(decimal("1.0")), at(decimal("-10.00")), at(decimal("2.50")), at(named(`${NS}x`))]))).toBe(
+      [
+        "DELETE DATA {",
+        `<${DOC}#a> <${NS}d> "1"^^<http://www.w3.org/2001/XMLSchema#decimal> .`,
+        `<${DOC}#a> <${NS}d> "-10"^^<http://www.w3.org/2001/XMLSchema#decimal> .`,
+        `<${DOC}#a> <${NS}d> "2.50"^^<http://www.w3.org/2001/XMLSchema#decimal> .`,
+        `<${DOC}#a> <${NS}d> <${NS}x> .`,
+        "};",
+        "INSERT DATA {",
+        `<${DOC}#a> <${NS}d> "1.0"^^<http://www.w3.org/2001/XMLSchema#decimal> .`,
+        "};",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("respells the whole-number decimals of a dataset @inrupt/solid-client read", () => {
+    const read = setThing(
+      mockSolidDatasetFrom(DOC),
+      buildThing(createThing({ url: `${DOC}#it` })).addLiteral(`${NS}d`, literalOf("10.0")).build(),
+    );
+    const edited = setThing(
+      { ...read, internal_changeLog: { additions: [], deletions: [] } },
+      buildThing(createThing({ url: `${DOC}#it` })).addDecimal(`${NS}d`, 9.5).build(),
+    );
+    expect(patchBody(edited)).toBe(
+      `DELETE DATA {\n<${DOC}#it> <${NS}d> "10"^^<http://www.w3.org/2001/XMLSchema#decimal> .\n};\nINSERT DATA {\n<${DOC}#it> <${NS}d> "9.5"^^<http://www.w3.org/2001/XMLSchema#decimal> .\n};\n`,
     );
   });
 

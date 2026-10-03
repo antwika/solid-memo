@@ -112,7 +112,7 @@ describe("a missing catalogue", () => {
 describe("describeFormats", () => {
   it("names the formats the plan touches, with what each added", () => {
     expect(describeFormats(plan, t)).toBe(
-      "deck format 4, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages, card format 4, which adds pictures on cards, lets a library deck retire a card it no longer uses and lets a card's text state its language and review-state format 2, which keeps each study direction's state and the day's undo snapshot",
+      "deck format 4, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages, card format 4, which adds pictures on cards, lets a library deck retire a card it no longer uses and lets a card's text state its language and review-state format 3, which keeps each study direction's state, the day's undo snapshot and what FSRS knows of your memory of each card",
     );
     expect(
       describeFormats({
@@ -125,7 +125,7 @@ describe("describeFormats", () => {
         catalogMissing: false,
       }, t),
     ).toBe(
-      "instance format 2 and preferences format 3, which records the answer scale, developer mode and what to do with invalid data",
+      "instance format 2 and preferences format 4, which records the answer scale, developer mode, what to do with invalid data and which algorithm schedules your cards",
     );
   });
 });

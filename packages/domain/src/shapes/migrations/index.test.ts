@@ -7,6 +7,7 @@ const CONTEXT = { subject: "https://pod.example/x.ttl#it" };
 const SM = "https://solid-memo.com/vocab/v1#";
 const EDUC = "http://publications.europa.eu/resource/authority/data-theme/EDUC";
 const BLOCK = { invalidDataPolicy: `${SM}blockInstance` };
+const SM2 = { scheduler: `${SM}sm2`, desiredRetention: 0.9 };
 
 const SHAPES = Object.keys(LATEST_VERSION) as ShapeName[];
 
@@ -137,14 +138,27 @@ describe("migrate", () => {
     expect(
       migrate("reviewState", { version: 1, data: { ...review, previousDue: "2026-09-21" } }, CONTEXT),
     ).toEqual(review);
+    // Format 3's memory is estimated at the next review, not by the step.
+    expect(migrate("reviewState", { version: 2, data: { ...review, ...snapshot } }, CONTEXT)).toEqual({ ...review, ...snapshot });
+    const preferences = {
+      newCardsPerDay: 20,
+      maxReviewsPerDay: 200,
+      dayBoundaryHour: 4,
+      answerScale: "minimal" as const,
+      developerMode: false,
+      invalidDataPolicy: `${SM}blockInstance` as const,
+    };
+    expect(migrate("preferences", { version: 3, data: preferences }, CONTEXT)).toEqual({ ...preferences, ...SM2 });
     expect(migrate("preferences", { version: 1, data: { newCardsPerDay: 5 } }, CONTEXT)).toEqual({
       ...DEFAULT_PREFERENCES,
       ...BLOCK,
+      ...SM2,
       newCardsPerDay: 5,
     });
     expect(migrate("preferences", { version: 1, data: { answerScale: "minimal", developerMode: true } }, CONTEXT)).toEqual({
       ...DEFAULT_PREFERENCES,
       ...BLOCK,
+      ...SM2,
       answerScale: "minimal",
       developerMode: true,
     });

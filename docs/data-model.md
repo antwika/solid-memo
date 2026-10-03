@@ -69,9 +69,12 @@ flowchart LR
 ├── meta.ttl        #it: a sm:Instance; dcterms:title; dcterms:created;
 │                        after a format update dcterms:replaces (the
 │                        backup) and dcterms:modified; sm:formatVersion 2
-├── preferences.ttl #it: a sm:Preferences (created on first explicit save):
-│                        study caps, sm:answerScale, sm:developerMode,
-│                        sm:invalidDataPolicy, sm:formatVersion 3
+├── preferences.ttl #it: a sm:Preferences (written when the app creates
+│                        the instance; before FSRS, on first explicit
+│                        save): study caps, sm:answerScale,
+│                        sm:developerMode, sm:invalidDataPolicy,
+│                        sm:scheduler, sm:desiredRetention,
+│                        sm:formatVersion 4
 ├── catalog.ttl     one subject per deck (titles live ONLY here), a
 │                        sm:Deck and dcat:Dataset: sm:formatVersion 4,
 │                        dcterms:description, sm:studyDirection, optional
@@ -87,12 +90,15 @@ flowchart LR
 │                        side and sm:backLabel above the back, each with
 │                        sm:formatVersion; a retired card
 │                        (owl:deprecated true) is kept but not studied
-├── reviews/<deckId>.ttl  SM-2 state: one sm:ReviewState per card and
-│                        direction (fast churn) — #<cardId> front→back,
-│                        #<cardId>@back-to-front the other way; optional
+├── reviews/<deckId>.ttl  scheduling state: one sm:ReviewState per card
+│                        and direction (fast churn) — #<cardId> front→back,
+│                        #<cardId>@back-to-front the other way; the SM-2
+│                        fields and, once reviewed by an app that knows
+│                        FSRS, the FSRS-7 memory (sm:stability,
+│                        sm:stabilityFast, sm:difficulty); optional
 │                        sm:previous* snapshot = state before the day's
 │                        first review (restored by "reset the day");
-│                        sm:formatVersion 2
+│                        sm:formatVersion 3
 ├── history/<YYYY-MM>.ttl  the answer log (below): one sm:Answer per grade
 │                        given in study that month, appended, never
 │                        edited; sm:formatVersion 1
@@ -121,7 +127,7 @@ graph LR
     C -->|dcterms:creator| A
     C -->|dcat:distribution| X
     D["decks/deck-X.ttl#card-N<br/>a sm:Card<br/>sm:front / sm:back<br/>sm:frontImage / sm:backImage<br/>sm:formatVersion<br/>owl:deprecated (retired)"]
-    R["reviews/deck-X.ttl#card-N<br/>reviews/deck-X.ttl#card-N@back-to-front<br/>a sm:ReviewState<br/>SM-2 fields"]
+    R["reviews/deck-X.ttl#card-N<br/>reviews/deck-X.ttl#card-N@back-to-front<br/>a sm:ReviewState<br/>SM-2 fields, FSRS-7 memory"]
     C -->|sm:cardsDocument| D
     C -->|sm:reviewsDocument| R
     D -. same fragment id, per direction .- R
@@ -165,7 +171,8 @@ graph LR
 - **Format versions**: every subject the app writes carries
   `sm:formatVersion`, saying which version of its class's
   [shape](shapes.md) it conforms to: instance 1, decks 3 (DCAT),
-  cards 2 (pictures), review states 2, preferences 3; the catalogue,
+  cards 2 (pictures), review states 3 (FSRS memory), preferences 4
+  (scheduler); the catalogue,
   agent and distribution nodes 1. Readers treat a
   missing version as 1 — data written before the field existed — read
   older versions as they are, and pass a newer stored version through
