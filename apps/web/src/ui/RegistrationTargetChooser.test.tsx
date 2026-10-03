@@ -23,6 +23,10 @@ describe("RegistrationTargetChooser", () => {
       />,
     );
     expect(screen.queryByText(/no private type index/i)).toBeNull();
+    // What a type index is describes the group alone.
+    expect(screen.getByRole("group", { name: "Register in" })).toHaveAccessibleDescription(
+      "A type index is a list in your profile that tells apps where your data is. Only you can see a private one.",
+    );
     expect(screen.getByLabelText("Private type index")).toBeChecked();
   });
 
@@ -37,6 +41,10 @@ describe("RegistrationTargetChooser", () => {
     expect(
       screen.getByText(/no private type index yet/i),
     ).toBeInTheDocument();
+    // The warning describes the group, heard on tabbing to a choice.
+    expect(screen.getByRole("group", { name: "Register in" })).toHaveAccessibleDescription(
+      /^A type index is a list in your profile.*no private type index yet/i,
+    );
     expect(
       screen.getByLabelText("Private type index (will be created)"),
     ).toBeInTheDocument();

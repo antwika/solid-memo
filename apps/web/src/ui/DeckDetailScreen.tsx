@@ -1,8 +1,10 @@
 import type { ComponentChildren } from "preact";
 import type { Deck } from "@solid-memo/domain/deck";
 import { DeckProvenance } from "./DeckProvenance";
+import { ErrorMessage } from "./ErrorMessage";
 import { DeckIcon } from "./icons";
-import { useI18n } from "./i18n";
+import { useI18n, type ErrorText } from "./i18n";
+import { ReaderText } from "./ReaderText";
 
 export function DeckDetailScreen({
   deck,
@@ -12,10 +14,9 @@ export function DeckDetailScreen({
   studiedToday,
   busy,
   error,
-  deckHref,
+  preferencesHref,
+  browseHref,
   onStudy,
-  onPreferences,
-  onBrowse,
   onResetDay,
   notice,
 }: {
@@ -29,15 +30,13 @@ export function DeckDetailScreen({
   studiedToday: number;
   /** A reset is in progress. */
   busy: boolean;
-  error: string | null;
-  /** URL of this deck's page; its name links here wherever it is shown. */
-  deckHref: string;
+  error: ErrorText | null;
+  /** URL of the deck's preferences: its own daily limits. */
+  preferencesHref: string;
+  /** URL of the Browser view, where the deck and its cards are edited. */
+  browseHref: string;
   /** Today's session: due prompts and new ones, interleaved. */
   onStudy: () => void;
-  /** Open the deck's preferences: its own daily limits. */
-  onPreferences: () => void;
-  /** Open the Browser view, where the deck and its cards are edited. */
-  onBrowse: () => void;
   /** Undo today's reviews of this deck. */
   onResetDay: () => void;
   /** Anything to say about the deck before its study state, e.g. an offer. */
@@ -61,23 +60,23 @@ export function DeckDetailScreen({
     <section>
       <header>
         <h2>
-          <a href={deckHref}>
-            <DeckIcon />
-            {readerText(deck.title)}
-          </a>
+          <DeckIcon />
+          <ReaderText text={deck.title} />
         </h2>
         <div class="header-actions">
-          <button onClick={onPreferences} aria-label={t("deckDetail.preferencesLabel")}>
+          <a class="button" href={preferencesHref} aria-label={t("deckDetail.preferencesLabel")}>
             {t("deckDetail.preferencesButton")}
-          </button>
-          <button onClick={onBrowse}>{t("deckDetail.browseButton")}</button>
+          </a>
+          <a class="button" href={browseHref}>
+            {t("deckDetail.browseButton")}
+          </a>
         </div>
       </header>
       <DeckProvenance
         authors={deck.authors}
         license={deck.license}
         modifiedAt={deck.modifiedAt}
-        description={deck.description === undefined ? undefined : readerText(deck.description)}
+        description={deck.description}
       />
       {notice}
       {!canStudy && (
@@ -114,7 +113,7 @@ export function DeckDetailScreen({
           </button>
         </div>
       )}
-      {error && <p class="error">{error}</p>}
+      <ErrorMessage error={error} />
       <p class="hint">
         {t("deckDetail.cardsInDeck", { cards: t("common.cardCount", { count: cardCount }) })}
       </p>

@@ -4,7 +4,9 @@ import {
   type DeckUpgradeStep,
   type StepPart,
 } from "@solid-memo/domain/deckUpgrade";
+import { useId } from "preact/hooks";
 import { useI18n, type I18n } from "./i18n";
+import { usePanelFocus } from "./panelFocus";
 import { StepProgress } from "./StepProgress";
 
 /** The upgrade's steps as the screen shows them: the use case's, then refreshing what is shown. */
@@ -37,18 +39,17 @@ export function DeckUpgradeProgress({
       done={done}
       total={DECK_UPGRADE_SCREEN_STEPS.length}
       part={part}
-      status={
-        part === undefined
-          ? t("deckUpgrade.running", { step: label })
-          : t("deckUpgrade.runningCount", { step: label, done: part.done, total: part.total })
-      }
+      status={t("deckUpgrade.running", { step: label })}
       progressLabel={t("deckUpgrade.progressLabel")}
       hint={t("deckUpgrade.keepOpen")}
     />
   );
 }
 
-/** When the upgrade failed: where, why, and that the deck is as it was. */
+/**
+ * When the upgrade failed: where, why, and that the deck is as it was.
+ * It takes the progress's place and its focus, so the failure is read out.
+ */
 export function DeckUpgradeFailure({
   outcome,
   onRetry,
@@ -59,12 +60,21 @@ export function DeckUpgradeFailure({
   onDismiss: () => void;
 }) {
   const { t, errorText } = useI18n();
+  const ref = usePanelFocus<HTMLDivElement>();
+  const whyId = useId();
   return (
-    <div class="warning migration" role="region" aria-label={t("deckUpgrade.failedRegion")}>
-      <p>
+    <div
+      ref={ref}
+      class="warning migration"
+      role="region"
+      aria-label={t("deckUpgrade.failedRegion")}
+      aria-describedby={whyId}
+      tabIndex={-1}
+    >
+      <div id={whyId} class="failure-why">
         <strong>{t("deckUpgrade.failedWhile", { step: stepLabel(t, outcome.step).toLowerCase() })}</strong>{" "}
         {errorText(outcome.error)}
-      </p>
+      </div>
       <p>
         {t("deckUpgrade.noChanges")}{" "}
         {outcome.cleanedUp ? t("deckUpgrade.copyRemoved") : t("deckUpgrade.copyLeft")}

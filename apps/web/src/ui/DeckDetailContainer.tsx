@@ -4,9 +4,10 @@ import { activeCards, type Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import { DeckDetailScreen } from "./DeckDetailScreen";
 import { DeckStatisticsContainer } from "./DeckStatisticsContainer";
+import { ErrorMessage } from "./ErrorMessage";
 import { LibraryUpgradeContainer } from "./LibraryUpgradeContainer";
 import { Loading } from "./Loading";
-import { deckHref } from "./router";
+import { routeToHash } from "./router";
 import { useI18n } from "./i18n";
 
 /** Owns the card count, today's study queue and the day reset for one deck. */
@@ -15,15 +16,11 @@ export function DeckDetailContainer({
   instance,
   deck,
   onStudy,
-  onPreferences,
-  onBrowse,
 }: {
   useCases: UseCases;
   instance: Instance;
   deck: Deck;
   onStudy: () => void;
-  onPreferences: () => void;
-  onBrowse: () => void;
 }) {
   const { t, errorText } = useI18n();
   const cardsQuery = useQuery({
@@ -55,7 +52,7 @@ export function DeckDetailContainer({
 
   const error = cardsQuery.error ?? queueQuery.error;
   if (error) {
-    return <p class="error">{errorText(error)}</p>;
+    return <ErrorMessage error={errorText(error)} />;
   }
   if (
     cardsQuery.data === undefined ||
@@ -76,10 +73,9 @@ export function DeckDetailContainer({
       busy={resetDayMutation.isPending}
       error={errorText(resetDayMutation.error)}
       onResetDay={() => resetDayMutation.mutate()}
-      deckHref={deckHref(instance.url, deck.url)}
+      preferencesHref={routeToHash({ screen: "deckPreferences", instanceUrl: instance.url, deckUrl: deck.url })}
+      browseHref={routeToHash({ screen: "browser", instanceUrl: instance.url, deckUrl: deck.url })}
       onStudy={onStudy}
-      onPreferences={onPreferences}
-      onBrowse={onBrowse}
       notice={
         <LibraryUpgradeContainer
           useCases={useCases}

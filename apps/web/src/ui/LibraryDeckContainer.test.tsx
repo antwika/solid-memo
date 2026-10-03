@@ -42,39 +42,32 @@ function renderContainer(useCases: UseCases) {
     defaultOptions: { queries: { retry: false } },
   });
   const onDone = vi.fn();
-  const onBrowse = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
       <LibraryDeckContainer
         useCases={useCases}
         instance={instance}
         deck={capitals}
-        onBrowse={onBrowse}
         onDone={onDone}
       />
     </QueryClientProvider>,
   );
-  return { onDone, onBrowse, queryClient };
+  return { onDone, queryClient };
 }
 
 describe("LibraryDeckContainer", () => {
-  it("shows the deck under a link to its own page", () => {
+  it("shows the deck, with links to its card list and its preview", () => {
     renderContainer(makeUseCasesFake());
-    expect(screen.getByRole("link", { name: "Capitals" })).toHaveAttribute(
+    expect(screen.getByRole("heading", { name: "Capitals" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Browse cards" })).toHaveAttribute(
       "href",
-      `#/library-deck?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.seriesUrl)}`,
+      `#/library-browse?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.seriesUrl)}`,
     );
     expect(screen.queryByText("Already imported")).toBeNull();
     expect(screen.getByRole("link", { name: "Preview" })).toHaveAttribute(
       "href",
       `#/library-preview?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.seriesUrl)}`,
     );
-  });
-
-  it("hands the card list over to its owner", () => {
-    const { onBrowse } = renderContainer(makeUseCasesFake());
-    fireEvent.click(screen.getByRole("button", { name: "Browse cards" }));
-    expect(onBrowse).toHaveBeenCalledOnce();
   });
 
   it("marks the deck when the instance already holds a copy", async () => {
@@ -110,7 +103,7 @@ describe("LibraryDeckContainer", () => {
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Import this deck" }));
-    expect(await screen.findByText("pod refused")).toHaveClass("error");
+    expect((await screen.findByText("pod refused")).closest(".error")).toBeInTheDocument();
     expect(onDone).not.toHaveBeenCalled();
   });
 });

@@ -84,7 +84,9 @@ flowchart LR
 │                        foaf:Agent nodes of its creators (#agent-…)
 ├── decks/<deckId>.ttl    card corpus: one sm:Card per fragment (slow churn),
 │                        sm:front/back text and/or sm:frontImage/backImage
-│                        IRIs, optional sm:frontNote/backNote under each
+│                        IRIs, optional sm:frontImageDescription/
+│                        backImageDescription (a picture's alt text),
+│                        sm:frontNote/backNote under each
 │                        side and sm:backLabel above the back, each with
 │                        sm:formatVersion; a retired card
 │                        (owl:deprecated true) is kept but not studied
@@ -149,7 +151,12 @@ graph LR
   a picture (`sm:frontImage` / `sm:backImage`, always an IRI — a string in
   its place is ignored) or both; a side with neither makes the subject
   not a card. Pictures are shown only when their URL is http(s); pod data
-  is untrusted.
+  is untrusted. A picture may have a description
+  (`sm:frontImageDescription` / `sm:backImageDescription`,
+  language-tagged), read to whoever cannot see it in its place; without
+  one it is named by its side ("Picture on the front of the card"). The
+  description is read while its side is asked, so it says what the
+  picture shows without giving the answer away.
 - **Direction**: a deck's `sm:studyDirection` says how it is studied — a
   concept of `sm:StudyDirections`: `sm:frontToBack`, `sm:backToFront` or
   `sm:bidirectional` (every card asked both ways). Formats 1 and 2 said

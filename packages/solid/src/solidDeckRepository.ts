@@ -8,7 +8,7 @@ import {
   type SolidDataset,
   type ThingPersisted,
 } from "@inrupt/solid-client";
-import { inEnglish, shown, withEnglish, type LangText } from "@solid-memo/domain/langText";
+import type { LangText } from "@solid-memo/domain/langText";
 import type { DeckRepository } from "@solid-memo/application/ports";
 import {
   CARD_FORMAT_VERSION,
@@ -89,8 +89,8 @@ export function createSolidDeckRepository({
       ]);
     },
 
-    createDeck(instanceUrl, name): Promise<Deck> {
-      return registerDeck(newDeck(instanceUrl, inEnglish(name)));
+    createDeck(instanceUrl, title): Promise<Deck> {
+      return registerDeck(newDeck(instanceUrl, title));
     },
 
     async importDeck(instanceUrl, content): Promise<Deck> {
@@ -107,8 +107,8 @@ export function createSolidDeckRepository({
       return registerDeck(deck);
     },
 
-    renameDeck(deck, name): Promise<Deck> {
-      return saveDeck({ ...deck, title: withEnglish(deck.title, name) });
+    renameDeck(deck, title): Promise<Deck> {
+      return saveDeck({ ...deck, title });
     },
 
     saveDeck,
@@ -165,7 +165,7 @@ export function createSolidDeckRepository({
         fetch,
       );
       if (dataset === null) {
-        throw new AppError("cardsDocumentGone", { deck: shown(deck.title) });
+        throw new AppError("cardsDocumentGone", { deck: deck.title });
       }
       const thing = getThing(dataset, card.url);
       if (thing === null) {
@@ -284,7 +284,7 @@ export function createSolidDeckRepository({
     const dataset = await getSolidDatasetOrNull(catalogUrl, fetch);
     const thing = dataset === null ? null : getThing(dataset, deck.url);
     if (dataset === null || thing === null) {
-      throw new AppError("deckGone", { deck: shown(deck.title) });
+      throw new AppError("deckGone", { deck: deck.title });
     }
     const written: Deck = { ...deck, formatVersion: DECK_FORMAT_VERSION };
     await save(catalogUrl, withDeck(dataset, written), deckSubjects(written));

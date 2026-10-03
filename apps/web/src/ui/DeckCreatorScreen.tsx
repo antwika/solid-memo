@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
-import { useI18n } from "./i18n";
+import { ErrorMessage } from "./ErrorMessage";
+import { useI18n, type ErrorText } from "./i18n";
 
 export function DeckCreatorScreen({
   busy,
@@ -7,7 +8,7 @@ export function DeckCreatorScreen({
   onCreate,
 }: {
   busy: boolean;
-  error: string | null;
+  error: ErrorText | null;
   onCreate: (name: string) => void;
 }) {
   const { t } = useI18n();
@@ -15,6 +16,7 @@ export function DeckCreatorScreen({
 
   function handleSubmit(event: Event) {
     event.preventDefault();
+    if (busy) return;
     onCreate(name.trim());
   }
 
@@ -34,11 +36,12 @@ export function DeckCreatorScreen({
           required
           disabled={busy}
         />
-        <button type="submit" disabled={busy}>
+        {/* Only aria-disabled while it creates, so it keeps the focus should that fail. */}
+        <button type="submit" aria-disabled={busy}>
           {t("deckCreator.createButton")}
         </button>
       </form>
-      {error && <p class="error">{error}</p>}
+      <ErrorMessage error={error} />
     </section>
   );
 }

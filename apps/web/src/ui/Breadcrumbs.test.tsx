@@ -206,6 +206,18 @@ describe("Breadcrumbs", () => {
     expect(current).toHaveAttribute("href", routeToHash(browser));
   });
 
+  it("marks a deck's or card's name in another language than the page's with its language", () => {
+    const cardRoute: RouteRef = { screen: "card", instanceUrl, deckUrl, cardUrl: `${instanceUrl}decks/deck-1.ttl#card-1` };
+    render(
+      <Breadcrumbs
+        crumbs={breadcrumbsFor(cardRoute, { deck: "Kanji N5", card: "水", libraryDeck: "", deckLang: "en", cardLang: "ja" })}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute("lang", "en");
+    expect(screen.getByRole("link", { name: "水" })).toHaveAttribute("lang", "ja");
+    expect(screen.getByRole("link", { name: "Browser" })).not.toHaveAttribute("lang");
+  });
+
   it("copes with a deck named like another crumb", () => {
     render(<Breadcrumbs crumbs={breadcrumbsFor(browser, { deck: "Decks", card: "", libraryDeck: "" })} />);
     expect(screen.getAllByRole("link", { name: "Decks" })).toHaveLength(2);

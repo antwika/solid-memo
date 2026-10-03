@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { GuestTransferProgress } from "@solid-memo/domain/guest";
 import type { Session } from "@solid-memo/domain/session";
 import { AppError } from "@solid-memo/domain/appError";
+import { alertTexts, unexpectedText } from "../test/liveRegions";
 import { makeUseCasesFake } from "../test/useCasesFake";
 import { I18nProvider } from "./i18n";
 import { GuestStudyOffer } from "./GuestStudyOffer";
@@ -62,6 +63,101 @@ describe("GuestStudyOffer", () => {
     expect(useCases.discardGuest).toHaveBeenCalledOnce();
   });
 
+  it("moves the focus with each stage, all but the offer as the page loads, and back to the offer", async () => {
+    renderOffer();
+    const offer = await screen.findByRole("region", { name: "Your study as a guest" });
+    expect(offer).not.toHaveFocus();
+    expect(offer).toHaveAccessibleDescription(/My study has 1 deck/);
+
+    fireEvent.click(screen.getByRole("button", { name: "Discard it" }));
+    const question = screen.getByRole("region", { name: "Your study as a guest" });
+    expect(question).toHaveFocus();
+    expect(question).toHaveAccessibleDescription("Delete everything you studied as a guest? This cannot be undone.");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("region", { name: "Your study as a guest" })).toHaveFocus();
+
+    expect(await openForm()).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("region", { name: "Your study as a guest" })).toHaveFocus();
+  });
+
+  it("keeps the pressed button focused while the study is discarded, and ignores the buttons meanwhile", async () => {
+    const useCases = renderOffer({ discardGuest: vi.fn(() => new Promise<void>(() => {})) });
+    fireEvent.click(await screen.findByRole("button", { name: "Discard it" }));
+    const deleteIt = screen.getByRole("button", { name: "Delete it" });
+    deleteIt.focus();
+    fireEvent.click(deleteIt);
+    await waitFor(() => expect(deleteIt).toHaveAttribute("aria-disabled", "true"));
+    expect(deleteIt).toHaveFocus();
+    fireEvent.click(deleteIt);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(useCases.discardGuest).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("keeps the form's buttons focusable while the move starts, and ignores them meanwhile", async () => {
+    const transferGuestStudy = vi.fn(() => new Promise<never>(() => {}));
+    renderOffer({ transferGuestStudy });
+    await openForm();
+    await waitFor(() => expect(screen.getByLabelText("Location in your Pod")).toHaveValue("https://alice.example/solid-memo/main/"));
+    const start = screen.getByRole("button", { name: "Move it" });
+    start.focus();
+    fireEvent.click(start);
+    await waitFor(() => expect(start).toHaveAttribute("aria-disabled", "true"));
+    expect(start).toHaveFocus();
+    fireEvent.submit(start.closest("form")!);
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(transferGuestStudy).toHaveBeenCalledOnce();
+    expect(screen.getByRole("region", { name: "Move your study into your Pod" })).toBeInTheDocument();
+  });
+
+  it("says why the study could not be discarded, and forgets it on cancel", async () => {
+    const useCases = renderOffer({
+      discardGuest: vi.fn(async () => {
+        throw new Error("storage blocked");
+      }),
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Discard it" }));
+    expect(alertTexts()).toEqual([]);
+    fireEvent.click(screen.getByRole("button", { name: "Delete it" }));
+    await waitFor(() => expect(alertTexts()).toEqual([unexpectedText("storage blocked")]));
+    expect(useCases.discardGuest).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard it" }));
+    expect(alertTexts()).toEqual([]);
+  });
+
+  it("says why a move that threw could not start, with no steps left on screen, and forgets it on going back", async () => {
+    let report!: (progress: GuestTransferProgress) => void;
+    let fail!: (error: unknown) => void;
+    renderOffer({
+      transferGuestStudy: vi.fn(
+        (_session: Session, _instance: unknown, _target: unknown, onProgress?: (p: GuestTransferProgress) => void) =>
+          new Promise<never>((_resolve, reject) => {
+            report = onProgress!;
+            fail = reject;
+          }),
+      ),
+    });
+    await openForm();
+    await waitFor(() => expect(screen.getByLabelText("Location in your Pod")).toHaveValue("https://alice.example/solid-memo/main/"));
+    fireEvent.click(screen.getByRole("button", { name: "Move it" }));
+    await waitFor(() => expect(report).toBeDefined());
+    report({ step: "copy", done: 1, total: 7 });
+    // The steps take the place of the form, and its focus.
+    expect(await screen.findByRole("region", { name: "Moving your study" })).toHaveFocus();
+    fail(new Error("pod unreachable"));
+    await waitFor(() => expect(alertTexts()).toEqual([unexpectedText("pod unreachable")]));
+    // The form comes back with the error holding the focus, so it is heard.
+    expect(screen.getByRole("alert")).toHaveFocus();
+    expect(screen.queryByRole("region", { name: "Moving your study" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Move it" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Move it into my Pod" }));
+    expect(alertTexts()).toEqual([]);
+  });
+
   it("moves the study where the user's first instance would go, showing each step, then opens it", async () => {
     let report!: (progress: GuestTransferProgress) => void;
     let finish!: () => void;
@@ -74,6 +170,8 @@ describe("GuestStudyOffer", () => {
     );
     const useCases = renderOffer({ transferGuestStudy });
     await openForm();
+    const announced = screen.getByRole("status");
+    expect(announced.textContent).toBe("");
     const location = screen.getByLabelText("Location in your Pod");
     await waitFor(() => expect(location).toHaveValue("https://alice.example/solid-memo/main/"));
     fireEvent.click(screen.getByLabelText("Public type index"));
@@ -87,15 +185,22 @@ describe("GuestStudyOffer", () => {
       ),
     );
     report({ step: "copy", done: 1, total: 7, part: { done: 1, total: 4 } });
-    expect(await screen.findByText("Copying your study… (1 of 4)")).toBeInTheDocument();
+    expect(await screen.findByText("Copying your study…")).toBeInTheDocument();
+    expect(screen.getByText("1 of 4")).toBeInTheDocument();
     report({ step: "register", done: 5, total: 7 });
     expect(await screen.findByText("Registering it in your Pod…")).toBeInTheDocument();
     vi.mocked(useCases.findGuestStudy).mockResolvedValue(null);
     finish();
-    expect(await screen.findByText("Your study is in your Pod now.")).toBeInTheDocument();
+    // Said by a status line mounted all along, which a screen reader hears; the Close button is not in it.
+    await waitFor(() => expect(announced).toHaveTextContent("Your study is in your Pod now."));
+    // Not focused: an element with nothing to read, and the instance the move opens takes the focus.
+    expect(screen.getByText("Your study is in your Pod now.", { ignore: "[role=status]" }).parentElement).not.toHaveFocus();
+    expect(within(announced).queryByRole("button")).toBeNull();
+    expect(screen.getByText("Your study is in your Pod now.", { ignore: "[role=status]" })).toHaveAttribute("aria-hidden", "true");
     await waitFor(() => expect(window.location.hash).toContain(encodeURIComponent("https://alice.example/solid-memo/main/")));
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByText("Your study is in your Pod now.")).toBeNull());
+    expect(announced.textContent).toBe("");
   });
 
   it("says when the study moved but stayed in this browser too", async () => {
@@ -109,7 +214,7 @@ describe("GuestStudyOffer", () => {
     await openForm();
     await waitFor(() => expect(screen.getByLabelText("Location in your Pod")).toHaveValue("https://alice.example/solid-memo/main/"));
     fireEvent.click(screen.getByRole("button", { name: "Move it" }));
-    expect(await screen.findByText(/It could not be removed from this browser/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/It could not be removed from this browser/));
   });
 
   it("suggests another folder when an instance is where the first goes, and lets the user pick storage and folder", async () => {
@@ -162,7 +267,17 @@ describe("GuestStudyOffer", () => {
     await waitFor(() => expect(screen.getByLabelText("Location in your Pod")).toHaveValue("https://alice.example/solid-memo/main/"));
     fireEvent.click(screen.getByRole("button", { name: "Move it" }));
     const failed = await screen.findByRole("region", { name: "Moving failed" });
+    // It takes the focus, read out with why as its description.
+    expect(failed).toHaveFocus();
+    expect(failed).toHaveAccessibleDescription(/Moving your study failed while copying your study/);
+    // Heard through the focus alone: the status line does not say it again.
+    expect(screen.getByRole("status").textContent).toBe("");
+    expect(failed).toHaveAccessibleDescription(/Something is already kept at that place in your Pod\. Choose another place\./);
+    // The address is under the failure's technical details.
     expect(failed).toHaveTextContent("Moving your study failed while copying your study:");
+    expect(within(failed).getByText("Technical details").closest("details")).toHaveTextContent(
+      "url: https://alice.example/solid-memo/main/",
+    );
     expect(failed).toHaveTextContent("Your study is still in this browser. The partial copy was removed from your Pod.");
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     fireEvent.click(await screen.findByRole("button", { name: "Move it" }));

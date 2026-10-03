@@ -2,10 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import { isCopyOf, type LibraryDeck } from "@solid-memo/domain/library";
+import { ErrorMessage } from "./ErrorMessage";
 import { useI18n } from "./i18n";
-import { LibraryScreen } from "./LibraryScreen";
+import { forgetLibrarySelection, LibraryScreen } from "./LibraryScreen";
 import { Loading } from "./Loading";
-import { libraryDeckHref, libraryHref, libraryPreviewHref } from "./router";
+import { libraryDeckHref, libraryPreviewHref } from "./router";
 
 /**
  * Owns the library listing and the import mutation for one instance;
@@ -23,6 +24,8 @@ export function LibraryContainer({
 }) {
   const { t, errorText } = useI18n();
   const queryClient = useQueryClient();
+  // Per instance: another instance's library is a fresh list.
+  const memoryKey = `library:${instance.url}`;
 
   const libraryQuery = useQuery({
     queryKey: ["library"],
@@ -42,6 +45,8 @@ export function LibraryContainer({
       }
     },
     onSuccess: async () => {
+      // The ticked decks are in now; the next visit starts with none.
+      forgetLibrarySelection(memoryKey);
       await queryClient.invalidateQueries({
         queryKey: ["decks", instance.url],
       });
@@ -52,7 +57,7 @@ export function LibraryContainer({
   });
 
   if (libraryQuery.error) {
-    return <p class="error">{errorText(libraryQuery.error)}</p>;
+    return <ErrorMessage error={errorText(libraryQuery.error)} />;
   }
   if (libraryQuery.data === undefined) {
     return <Loading label={t("library.loading")} />;
@@ -60,8 +65,9 @@ export function LibraryContainer({
 
   return (
     <LibraryScreen
+      key={memoryKey}
+      memoryKey={memoryKey}
       decks={libraryQuery.data}
-      libraryHref={libraryHref(instance.url)}
       deckHref={(deck) => libraryDeckHref(instance.url, deck.seriesUrl)}
       previewHref={(deck) => libraryPreviewHref(instance.url, deck.seriesUrl)}
       isImported={(deck) => podDecks.some((podDeck) => isCopyOf(podDeck, deck))}

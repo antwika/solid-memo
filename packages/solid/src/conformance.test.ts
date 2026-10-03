@@ -77,7 +77,8 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
     1: { front: "Sweden", back: "Stockholm" },
     2: { frontImage: "https://flagcdn.com/se.svg", back: "Sweden" },
     3: { front: "Yugoslavia", frontNote: { en: "Dissolved in 1992." }, backLabel: { en: "Capital" }, back: "Belgrade", backNote: { en: "The capital until 1992." }, deprecated: true },
-    4: { front: { en: "Mona Lisa", sv: "Mona Lisa" }, back: { "": "Leonardo da Vinci" }, frontNote: { en: "In the Louvre." } },
+    // Card format 4 gained the picture descriptions without a version bump: an older reader ignores them.
+    4: { front: { en: "Mona Lisa", sv: "Mona Lisa" }, back: { "": "Leonardo da Vinci" }, frontNote: { en: "In the Louvre." }, frontImage: "https://example.org/mona-lisa.jpg", frontImageDescription: { sv: "Ett porträtt av en kvinna med knäppta händer" }, backImage: "https://example.org/leonardo.jpg", backImageDescription: { en: "A drawing of an old man with a long beard", sv: "En teckning av en gammal man med långt skägg" } },
   },
   reviewState: {
     1: { easeFactor: 2.5, intervalDays: 1, repetitions: 1, due: "2026-09-22", firstReviewedAt: "2026-09-21T10:00:00.000Z", lastReviewedAt: "2026-09-21T10:00:00.000Z", previousDue: "2026-09-21" },

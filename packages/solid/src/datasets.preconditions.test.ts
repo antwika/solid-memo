@@ -74,7 +74,7 @@ describe("saving with preconditions", () => {
     const error = await saveDataset(DOC, edited(dataset!), server.fetch).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(PreconditionFailedError);
     expect(error).toMatchObject({ url: DOC, expected: "unchanged" });
-    expect(String(error)).toContain(`${DOC} was changed elsewhere (in another tab or app?) since Solid Memo read it`);
+    expect(String(error)).toContain(`This was changed elsewhere, perhaps in another tab or app, since Solid Memo read it, so nothing was saved. Reload the page and try again.\nurl: ${DOC}`);
   });
 
   it("creates a document only if nothing is there yet (If-None-Match: *), naming it when something is", async () => {
@@ -83,7 +83,7 @@ describe("saving with preconditions", () => {
     expect(server.writes[0]).toMatchObject({ method: "PUT", url: NEW, ifNoneMatch: "*", ifMatch: null });
     const error = await saveDataset(NEW, edited(createSolidDataset()), server.fetch).catch((e: unknown) => e);
     expect(error).toMatchObject({ url: NEW, expected: "absent" });
-    expect(String(error)).toContain(`${NEW} was created elsewhere`);
+    expect(String(error)).toContain(`was created elsewhere, perhaps in another tab or app, just as Solid Memo was about to create it, so nothing was saved. Reload the page and try again.\nurl: ${NEW}`);
   });
 
   it("sends no If-Match for a weak ETag or none, nor for a dataset saved since it was read", async () => {

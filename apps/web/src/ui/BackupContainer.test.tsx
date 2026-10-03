@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/preact";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BackupContainer } from "./BackupContainer";
 import { I18nProvider } from "./i18n";
@@ -43,8 +43,8 @@ describe("BackupContainer", () => {
     });
     const { onRestored } = renderContainer(useCases);
     const section = await screen.findByRole("region", { name: "Previous version" });
-    expect(section).toHaveTextContent(previous.url);
-    expect(section).toHaveTextContent("(");
+    expect(within(section).getByRole("link", { name: "a backup folder in your Pod (opens in a new tab)" })).toHaveAttribute("href", previous.url);
+    expect(section).toHaveTextContent("as it was before (September 28, 2026), in a backup folder");
     fireEvent.click(screen.getByRole("button", { name: "Restore previous version" }));
     expect(useCases.restoreBackup).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Restore previous version" }));
@@ -84,11 +84,11 @@ describe("BackupContainer", () => {
     });
     const { container } = renderContainer(useCases);
     const section = await screen.findByRole("region", { name: "Previous version" });
-    expect(section).not.toHaveTextContent("(");
+    expect(section).toHaveTextContent("as it was before, in a backup folder in your Pod");
     fireEvent.click(screen.getByRole("button", { name: "Delete backup" }));
     expect(useCases.deleteBackup).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Delete backup" }));
-    expect(await screen.findByText("not allowed")).toHaveClass("error");
+    expect((await screen.findByText("not allowed")).closest(".error")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Delete backup" }));
     await waitFor(() => expect(container).toBeEmptyDOMElement());
     expect(useCases.deleteBackup).toHaveBeenCalledWith(instance);

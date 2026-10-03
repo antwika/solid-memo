@@ -31,18 +31,17 @@ function renderContainer(useCases: UseCases) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const onBack = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
       <CardCreatorContainer
         useCases={useCases}
         deck={deck}
         deckHref="#/deck?deck=d"
-        onBack={onBack}
+        backHref="#/browser?deck=d"
       />
     </QueryClientProvider>,
   );
-  return { onBack, queryClient };
+  return { queryClient };
 }
 
 function submitCard(front: string, back: string) {
@@ -58,7 +57,7 @@ function submitCard(front: string, back: string) {
 describe("CardCreatorContainer", () => {
   it("adds a card and stays on the page for the next one", async () => {
     const useCases = makeUseCasesFake({ addCard: vi.fn(async () => card) });
-    const { onBack, queryClient } = renderContainer(useCases);
+    const { queryClient } = renderContainer(useCases);
     const queueKey = ["studyQueue", deck.url];
     queryClient.setQueryData(queueKey, { due: [], newCards: [], studiedToday: 0 });
 
@@ -73,11 +72,12 @@ describe("CardCreatorContainer", () => {
     await waitFor(() => {
       expect(queryClient.getQueryData(queueKey)).toBeUndefined();
     });
-    expect(onBack).not.toHaveBeenCalled();
     expect(
       screen.getByRole("heading", { name: "New card" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Front")).toHaveValue("");
+    await waitFor(() => expect(screen.getByLabelText("Front")).toHaveValue(""));
+    expect(screen.getByText("Card added.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Front")).toHaveFocus());
   });
 
   it("shows an add error", async () => {
@@ -91,11 +91,12 @@ describe("CardCreatorContainer", () => {
 
     submitCard("x", "y");
     expect(await screen.findByText("write refused")).toBeInTheDocument();
+    // What was typed stays, to try again.
+    expect(screen.getByLabelText("Front")).toHaveValue("x");
   });
 
-  it("navigates back", () => {
-    const { onBack } = renderContainer(makeUseCasesFake());
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(onBack).toHaveBeenCalledOnce();
+  it("links back to the Browser", () => {
+    renderContainer(makeUseCasesFake());
+    expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute("href", "#/browser?deck=d");
   });
 });

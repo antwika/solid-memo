@@ -90,7 +90,7 @@ async function seed(server: string): Promise<{ instanceUrl: string; deck: Deck }
   await put(typeIndex, `<> a <http://www.w3.org/ns/solid/terms#TypeIndex>, <http://www.w3.org/ns/solid/terms#UnlistedDocument> .`);
   const { useCases } = page();
   const instance = await useCases.createInstance({ webId }, { containerUrl: `${base}solid-memo/`, name: "Main", registrationTarget: "private" });
-  const deck = await useCases.createDeck(instance.url, "Capitals");
+  const deck = await useCases.createDeck(instance.url, "Capitals", "en");
   for (const [front, back] of [["Sweden", "Stockholm"], ["Norway", "Oslo"], ["Finland", "Helsinki"]]) {
     await useCases.addCard(deck, { front: { "": front }, back: { "": back } });
   }

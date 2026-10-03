@@ -1,0 +1,10 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+
+<#se>
+    a solid-memo:Card ;
+    solid-memo:front "Which country's flag?" ;
+    solid-memo:back "Sweden" ;
+    solid-memo:backImage <https://flagcdn.com/se.svg> ;
+    solid-memo:backImageDescription "A yellow cross on blue"@en ,
+                                    "A blue flag with a yellow Nordic cross"@en ;
+    solid-memo:formatVersion 4 .

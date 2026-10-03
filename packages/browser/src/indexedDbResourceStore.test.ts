@@ -54,7 +54,7 @@ describe("createIndexedDbResourceStore", () => {
       this.transaction.abort();
       return {} as IDBRequest;
     });
-    await expect(store.get(URL_A)).rejects.toThrow("The guest pod's storage gave up a change.");
+    await expect(store.get(URL_A)).rejects.toMatchObject({ code: "guestStorageAborted" });
     get.mockRestore();
   });
 

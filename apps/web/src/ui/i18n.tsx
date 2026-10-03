@@ -1,9 +1,9 @@
-import { createContext, Fragment, type ComponentChildren } from "preact";
+import { createContext, Fragment, type ComponentChildren, type VNode } from "preact";
 import { useContext } from "preact/hooks";
 import type { DeckDirection } from "@solid-memo/domain/deck";
 import type { Violation } from "@solid-memo/domain/validation";
-import { AppError } from "@solid-memo/domain/appError";
-import { shown, type LangText } from "@solid-memo/domain/langText";
+import { AppError, type ErrorVars } from "@solid-memo/domain/appError";
+import { editedTag, shown, shownTag, typedTag, typedText as typedTextIn, type LangText } from "@solid-memo/domain/langText";
 import { DEFAULT_LOCALE, type Locale } from "@solid-memo/domain/locale";
 import en from "../i18n/en.json";
 import sv from "../i18n/sv.json";
@@ -17,6 +17,15 @@ interface Messages {
 
 /** Values for a message's `{name}` placeholders. */
 export type Vars = Record<string, string | number>;
+
+/**
+ * What went wrong, for the user: plain text in this language, or markup
+ * when part of it is in another (an English detail marked as such).
+ */
+export type ErrorText = string | VNode;
+
+/** A browser's own words for a request that never reached the server. */
+const NETWORK_FAILURE = /fetch|network|load failed/i;
 
 /**
  * The key of every message in English, the language every other is
@@ -62,28 +71,66 @@ export interface I18n {
   tx(key: MessageKey, vars: Record<string, ComponentChildren>): ComponentChildren;
   /** Deck text in this language when the deck has it, else in the browser's, else English. */
   readerText(text: LangText): string;
+  /**
+   * The language to mark `readerText(text)` with, for a screen reader to
+   * speak it in its own voice; undefined when it is this page's language
+   * or unknown (untagged card text).
+   */
+  readerLang(text: LangText): string | undefined;
+  /** The language to mark text tagged `tag` with: as `readerLang`, for a tag already known. */
+  partLang(tag: string | undefined): string | undefined;
+  /**
+   * For a field that edits `text` (editedText, the English): the language
+   * to mark the field with, as `partLang`; and, when the reader is shown
+   * the text in another language than the one edited, a hint saying which
+   * one is (the others are kept). Null for text not yet written.
+   */
+  editedPart(text: LangText | undefined): { lang: string | undefined; hint: string | null };
+  /**
+   * As `editedPart`, for a field where the user types text of their own
+   * in this language (typedText: a deck's name or description, a note).
+   */
+  typedPart(text: LangText | undefined): { lang: string | undefined; hint: string | null };
+  /** The text such a field starts from: typedText in this language. */
+  typedText(text: LangText | undefined): string;
   /** A day, written out ("September 22, 2026" / "22 september 2026"). */
   formatDate(iso: string): string;
   /** How a study direction is named. */
   directionLabel(direction: DeckDirection): string;
   /**
    * What went wrong, for the user: an AppError in this language
-   * (`errors.<code>`, its values filled in), any other error as its own
-   * message; null when there is no error.
+   * (`errors.<code>`, its values filled in), its technical detail folded
+   * away behind "Technical details" unless `detail` is false (where only
+   * a sentence fits, as a status line); a request that never got through
+   * as a network failure; any other error as its own message (marked
+   * English, and said to be, in another language); null when there is no
+   * error.
    */
-  errorText(error: unknown): string | null;
+  errorText(error: unknown, options?: { detail?: boolean }): ErrorText | null;
   /**
    * What a shape check found, for the user: the shape's message in this
    * language; else, for the validator's own English, a word on the
    * constraint in this language; else the message in English.
    */
   violationText(violation: Violation): string;
+  /** The language to mark `violationText(violation)` with, as `partLang`. */
+  violationLang(violation: Violation): string | undefined;
   /** A result's severity: "violation", "warning", "info". */
   severityLabel(severity: Violation["severity"]): string;
 }
 
 export function createI18n(locale: Locale): I18n {
   const plurals = new Intl.PluralRules(locale);
+  const languageNames = new Intl.DisplayNames(locale, { type: "language" });
+
+  /** A language's name in this language ("engelska"); a tag Intl cannot read, as itself. */
+  function languageName(tag: string): string {
+    try {
+      return languageNames.of(tag)!;
+    } catch {
+      return tag;
+    }
+  }
 
   function template(key: string, count: unknown): string {
     const message = lookup(CATALOGS[locale], key) ?? key;
@@ -96,35 +143,111 @@ export function createI18n(locale: Locale): I18n {
       name in vars ? String(vars[name]) : whole,
     );
 
+  const tx: I18n["tx"] = (key, vars) => {
+    const pieces = template(key, vars.count).split(PLACEHOLDER);
+    // split() puts each placeholder's name at the odd indexes.
+    return pieces.map((piece, index) =>
+      index % 2 === 0 ? piece : <Fragment key={index}>{piece in vars ? vars[piece] : `{${piece}}`}</Fragment>,
+    );
+  };
+
+  // A regional tag ("en-gb") on an English page is in the page's language.
+  const partLang: I18n["partLang"] = (tag) =>
+    tag === undefined || tag === "" || tag.split("-")[0] === locale ? undefined : tag;
+
+  /** A message whose values are English text, each in its own span, marked as English on another page. */
+  function markedEnglish(key: MessageKey, vars: Vars): ErrorText {
+    const lang = partLang("en");
+    const marked = Object.fromEntries(Object.entries(vars).map(([name, value]) => [name, <span lang={lang}>{value}</span>]));
+    return <>{tx(key, marked)}</>;
+  }
+
+  /** A field's language and hint, for a field that edits `text` under `tag`; as `editedPart`. */
+  function fieldPart(text: LangText | undefined, tag: string | undefined): { lang: string | undefined; hint: string | null } {
+    if (tag === undefined || shownTag(text!, [locale, ...navigator.languages]) === tag) {
+      return { lang: partLang(tag), hint: null };
+    }
+    const hint =
+      tag === "" ? t("common.editingUntagged") : t("common.editingLanguage", { language: languageName(tag) });
+    return { lang: partLang(tag), hint };
+  }
+
+  /**
+   * An error's text with its values filled in: a deck's title (text in
+   * several languages) in the reader's language, marked when that is not
+   * this page's.
+   */
+  function errorSentence(key: MessageKey, vars: ErrorVars): ErrorText {
+    if (!Object.values(vars).some((value) => typeof value === "object")) return t(key, vars as Vars);
+    const marked = Object.fromEntries(
+      Object.entries(vars).map(([name, value]) => {
+        if (typeof value !== "object") return [name, value];
+        const lang = partLang(shownTag(value, [locale, ...navigator.languages]));
+        const text = shown(value, [locale, ...navigator.languages]);
+        return [name, lang === undefined ? text : <span lang={lang}>{text}</span>];
+      }),
+    );
+    return <>{tx(key, marked)}</>;
+  }
+
+  /** Whether a violation is the validator's own, its constraint worded in this language. */
+  function translatedConstraint(violation: Violation): boolean {
+    return violation.builtIn === true && lookup(CATALOGS[locale], `validation.constraint.${violation.constraint}`) !== undefined;
+  }
+
   return {
     locale,
     t,
-    tx(key, vars) {
-      const pieces = template(key, vars.count).split(PLACEHOLDER);
-      // split() puts each placeholder's name at the odd indexes.
-      return pieces.map((piece, index) =>
-        index % 2 === 0 ? piece : <Fragment key={index}>{piece in vars ? vars[piece] : `{${piece}}`}</Fragment>,
-      );
-    },
+    tx,
     readerText(text) {
       return shown(text, [locale, ...navigator.languages]);
+    },
+    readerLang(text) {
+      return partLang(shownTag(text, [locale, ...navigator.languages]));
+    },
+    partLang,
+    editedPart(text) {
+      return fieldPart(text, text === undefined ? undefined : editedTag(text));
+    },
+    typedPart(text) {
+      return fieldPart(text, text === undefined ? undefined : typedTag(text, locale));
+    },
+    typedText(text) {
+      return typedTextIn(text, locale);
     },
     formatDate(iso) {
       return new Date(iso).toLocaleDateString(locale, { dateStyle: "long", timeZone: "UTC" });
     },
     violationText(violation) {
       if (locale in violation.message) return violation.message[locale];
-      const key = `validation.constraint.${violation.constraint}`;
-      if (violation.builtIn && lookup(CATALOGS[locale], key) !== undefined) return t(key as MessageKey);
+      if (translatedConstraint(violation)) return t(`validation.constraint.${violation.constraint}` as MessageKey);
       return shown(violation.message, [locale]);
+    },
+    violationLang(violation) {
+      if (locale in violation.message || translatedConstraint(violation)) return undefined;
+      return partLang(shownTag(violation.message, [locale]));
     },
     severityLabel(severity) {
       return t(`validation.severityLevel.${severity}`);
     },
-    errorText(error) {
+    errorText(error, { detail = true } = {}) {
       if (error === null || error === undefined) return null;
-      if (error instanceof AppError) return t(`errors.${error.code}`, error.vars);
-      return error instanceof Error ? error.message : String(error);
+      if (error instanceof AppError) {
+        const text = errorSentence(`errors.${error.code}`, error.vars);
+        if (!detail || error.detail === "") return text;
+        // Addresses and statuses are for whoever looks into it: folded away, so the sentence reads plainly.
+        return (
+          <>
+            {text}
+            <details class="error-detail">
+              <summary>{t("common.technicalDetails")}</summary>
+              <code lang={partLang("en")}>{error.detail}</code>
+            </details>
+          </>
+        );
+      }
+      if (error instanceof TypeError && NETWORK_FAILURE.test(error.message)) return t("common.networkError");
+      return markedEnglish("common.unexpectedError", { detail: error instanceof Error ? error.message : String(error) });
     },
     directionLabel(direction) {
       switch (direction) {

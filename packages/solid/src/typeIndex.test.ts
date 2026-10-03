@@ -390,7 +390,7 @@ describe("createTypeIndex", () => {
 
     await expect(
       createTypeIndex("private", WEBID, "https://alice.example/x/", fetch),
-    ).rejects.toThrow("No subject");
+    ).rejects.toThrow("Your profile does not describe you");
   });
 
   describe("with a read-only WebID document (Inrupt PodSpaces style)", () => {
@@ -472,10 +472,10 @@ describe("createTypeIndex", () => {
 
       await expect(
         createTypeIndex("private", WEBID, "https://alice.example/x/", fetch),
-      ).rejects.toMatchObject({ code: "privateTypeIndexNotLinked", message: expect.stringContaining("Could not link the private type index") });
+      ).rejects.toMatchObject({ code: "privateTypeIndexNotLinked", message: expect.stringContaining("could not link its private list") });
       await expect(
         createTypeIndex("public", WEBID, "https://alice.example/x/", fetch),
-      ).rejects.toMatchObject({ code: "publicTypeIndexNotLinked", message: expect.stringContaining("Could not link the public type index") });
+      ).rejects.toMatchObject({ code: "publicTypeIndexNotLinked", message: expect.stringContaining("could not link its public list") });
     });
 
     it("describes non-Error rejections too", async () => {

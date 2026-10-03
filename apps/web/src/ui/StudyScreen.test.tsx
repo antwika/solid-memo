@@ -22,6 +22,7 @@ function renderScreen(
     prompt: { card, direction: "front-to-back" } as Prompt | null,
     position: 1,
     total: 3,
+    putBack: false,
     answerScale: "sm2" as const,
     busy: false,
     error: null,
@@ -40,6 +41,11 @@ describe("StudyScreen", () => {
       "href",
       "#/deck?deck=d",
     );
+  });
+
+  it("marks the deck's name with its language when it is not the page's", () => {
+    renderScreen({ deckName: "Huvudstäder", deckLang: "sv" });
+    expect(screen.getByRole("link", { name: "Huvudstäder" })).toHaveAttribute("lang", "sv");
   });
 
   it("shows the front and hides the back until revealed", () => {
@@ -153,7 +159,7 @@ describe("StudyScreen", () => {
     renderScreen({ prompt: null, position: 1, total: 0 });
     expect(
       screen.getByText("Nothing to study today — come back tomorrow!"),
-    ).toBeInTheDocument();
+    ).toHaveFocus();
   });
 
   it("ends the session", () => {
@@ -162,10 +168,130 @@ describe("StudyScreen", () => {
     expect(props.onExit).toHaveBeenCalledOnce();
   });
 
-  it("disables grading while busy and shows errors", () => {
-    renderScreen({ busy: true, error: "review failed" });
-    expect(screen.getByRole("button", { name: "Reveal" })).toBeDisabled();
-    expect(screen.getByText("review failed")).toBeInTheDocument();
+  it("only marks Reveal disabled while busy, and ignores it", () => {
+    renderScreen({ busy: true });
+    const reveal = screen.getByRole("button", { name: "Reveal" });
+    expect(reveal).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(reveal);
+    expect(screen.queryByText("water")).toBeNull();
+  });
+
+  it("keeps the pressed grade focused while its answer saves, and ignores more presses", () => {
+    const { rerender, props } = renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    const good = screen.getByRole("button", { name: "4 — Good" });
+    good.focus();
+    fireEvent.click(good);
+    rerender(<StudyScreen {...props} busy />);
+    expect(good).toHaveAttribute("aria-disabled", "true");
+    expect(good).toHaveFocus();
+    fireEvent.click(good);
+    expect(props.onAnswer).toHaveBeenCalledOnce();
+  });
+
+  it("alerts errors", () => {
+    renderScreen({ error: "review failed" });
+    expect(screen.getByRole("alert")).toHaveTextContent("review failed");
+  });
+
+  it("focuses the question, unnamed so its text is read, when a card comes up", () => {
+    const { rerender, props } = renderScreen();
+    const first = document.activeElement!;
+    expect(first).toHaveClass("study-face");
+    expect(first).toHaveTextContent("Question: 水");
+    expect(first).not.toHaveAttribute("role");
+    expect(first).not.toHaveAttribute("aria-label");
+
+    rerender(<StudyScreen {...props} position={2} />);
+    expect(document.activeElement).toHaveClass("study-face");
+    expect(document.activeElement).not.toBe(first);
+    expect(document.activeElement).toHaveTextContent("Question: 水");
+  });
+
+  it("focuses the answer once revealed, not a grade, and labels the grades", () => {
+    renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    expect(document.activeElement).toHaveTextContent("Answer: water");
+    expect(document.activeElement!.closest(".quality-buttons")).toBeNull();
+    const grades = screen.getByRole("group", {
+      name: "How well did you remember it?",
+    });
+    expect(grades).toHaveClass("quality-buttons");
+    expect(grades.querySelectorAll("button")).toHaveLength(6);
+  });
+
+  it("says the position in one status line, and when the last card was put back", () => {
+    const { rerender, props } = renderScreen({ position: 2, total: 4, putBack: true });
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent(
+      "Card 2 of 4. You'll see the last card again later in this session.",
+    );
+    rerender(<StudyScreen {...props} position={3} putBack={false} />);
+    expect(status).toHaveTextContent(/^Card 3 of 4$/);
+  });
+
+  it("says the session is over by focusing the message, outside the status line", () => {
+    const { rerender, props } = renderScreen({ position: 3, total: 3 });
+    const status = screen.getByRole("status");
+    rerender(<StudyScreen {...props} prompt={null} position={4} />);
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toBeEmptyDOMElement();
+    const end = screen.getByText("Session finished — all cards reviewed.");
+    expect(end).toHaveFocus();
+    expect(status).not.toContainElement(end);
+  });
+
+  it("reveals with Space while the focus is in the card, and says so", () => {
+    renderScreen();
+    expect(screen.getByText("Press Space to reveal the answer.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reveal" })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Space",
+    );
+    fireEvent.keyDown(document.activeElement!, { key: "x" });
+    fireEvent.keyDown(document.activeElement!, { key: " ", ctrlKey: true });
+    expect(screen.queryByText("water")).toBeNull();
+    fireEvent.keyDown(document.activeElement!, { key: " " });
+    expect(document.activeElement).toHaveTextContent("Answer: water");
+  });
+
+  it("leaves Space on Reveal to the button itself", () => {
+    renderScreen();
+    fireEvent.keyDown(screen.getByRole("button", { name: "Reveal" }), { key: " " });
+    expect(screen.queryByText("water")).toBeNull();
+  });
+
+  it("answers an SM-2 grade by its own number, and ignores other keys", () => {
+    const { props } = renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    expect(screen.getByText("Press 0 to 5 to answer.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "0 — Blackout" })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "0",
+    );
+    fireEvent.keyDown(document.activeElement!, { key: "9" });
+    fireEvent.keyDown(document.activeElement!, { key: " " });
+    expect(props.onAnswer).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.activeElement!, { key: "0" });
+    expect(props.onAnswer).toHaveBeenCalledWith(0);
+  });
+
+  it("answers the minimal scale with 1 to 4", () => {
+    const { props } = renderScreen({ answerScale: "minimal" });
+    fireEvent.keyDown(document.activeElement!, { key: " " });
+    expect(screen.getByText("Press 1 to 4 to answer.")).toBeInTheDocument();
+    fireEvent.keyDown(document.activeElement!, { key: "1" });
+    expect(props.onAnswer).toHaveBeenLastCalledWith(1);
+    fireEvent.keyDown(document.activeElement!, { key: "4" });
+    expect(props.onAnswer).toHaveBeenLastCalledWith(5);
+  });
+
+  it("ignores the keys while an answer saves", () => {
+    const { rerender, props } = renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
+    rerender(<StudyScreen {...props} busy />);
+    fireEvent.keyDown(document.activeElement!, { key: "4" });
+    expect(props.onAnswer).not.toHaveBeenCalled();
   });
 
   it("speaks Swedish", () => {
@@ -177,6 +303,7 @@ describe("StudyScreen", () => {
           prompt={{ card, direction: "front-to-back" }}
           position={1}
           total={3}
+          putBack={false}
           answerScale="minimal"
           busy={false}
           error={null}
@@ -187,7 +314,13 @@ describe("StudyScreen", () => {
     );
     expect(screen.getByRole("heading", { name: "Studera: Kanji N5" })).toBeInTheDocument();
     expect(screen.getByText("Kort 1 av 3")).toBeInTheDocument();
+    expect(screen.getByText("Tryck på mellanslag för att visa svaret.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Visa svar" }));
     expect(screen.getByRole("button", { name: "Igen" })).toBeInTheDocument();
+    expect(screen.getByText("Tryck 1 till 4 för att svara.")).toBeInTheDocument();
+    expect(document.activeElement).toHaveTextContent("Svar: water");
+    expect(
+      screen.getByRole("group", { name: "Hur väl mindes du det?" }),
+    ).toBeInTheDocument();
   });
 });

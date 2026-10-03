@@ -124,7 +124,7 @@ describe.each(SERVERS)("a guest's study on $name", ({ url: server }) => {
     const { useCases, guestStore } = app();
     await useCases.startGuest("My study");
     const [guestInstance] = await useCases.listInstances(GUEST_SESSION);
-    const deck = await useCases.createDeck(guestInstance!.url, "Capitals");
+    const deck = await useCases.createDeck(guestInstance!.url, "Capitals", "en");
     await useCases.addCard(deck, { front: { "": "Sweden" }, back: { "": "Stockholm" } });
     const now = new Date();
     const queue = await useCases.getStudyQueue(guestInstance!.url, deck, now);

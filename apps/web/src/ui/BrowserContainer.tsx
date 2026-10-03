@@ -3,6 +3,7 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import type { Card, Deck, DeckDirection } from "@solid-memo/domain/deck";
 import type { DeckAbout } from "@solid-memo/domain/deckAbout";
 import { BrowserScreen } from "./BrowserScreen";
+import { ErrorMessage } from "./ErrorMessage";
 import { useI18n } from "./i18n";
 import { Loading } from "./Loading";
 
@@ -12,7 +13,7 @@ export function BrowserContainer({
   deck,
   deckHref,
   page,
-  onAddCard,
+  addCardHref,
   cardHref,
   onPageChange,
 }: {
@@ -21,12 +22,13 @@ export function BrowserContainer({
   deckHref: string;
   /** 1-based Browser page, from the route. */
   page: number;
-  onAddCard: () => void;
+  /** URL of the card creator. */
+  addCardHref: string;
   /** URL of a card's own page. */
   cardHref: (card: Card) => string;
   onPageChange: (page: number) => void;
 }) {
-  const { t, errorText } = useI18n();
+  const { t, locale, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const cardsQuery = useQuery({
@@ -35,7 +37,7 @@ export function BrowserContainer({
   });
 
   const describeDeckMutation = useMutation({
-    mutationFn: (about: DeckAbout) => useCases.describeDeck(deck, about),
+    mutationFn: (about: DeckAbout) => useCases.describeDeck(deck, about, locale),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["decks"] }),
   });
 
@@ -62,7 +64,7 @@ export function BrowserContainer({
   });
 
   if (cardsQuery.error) {
-    return <p class="error">{errorText(cardsQuery.error)}</p>;
+    return <ErrorMessage error={errorText(cardsQuery.error)} />;
   }
   if (cardsQuery.data === undefined) {
     return <Loading label={t("browser.loading")} />;
@@ -86,7 +88,7 @@ export function BrowserContainer({
       }
       onDescribeDeck={(about) => describeDeckMutation.mutate(about)}
       onChangeDirection={(direction) => setDirectionMutation.mutate(direction)}
-      onAddCard={onAddCard}
+      addCardHref={addCardHref}
       cardHref={cardHref}
       onRemoveCard={(card) => removeCardMutation.mutate(card)}
       onPageChange={onPageChange}

@@ -2,6 +2,7 @@ import type { Deck } from "@solid-memo/domain/deck";
 import type { Statistics } from "@solid-memo/domain/statistics";
 import { useI18n } from "./i18n";
 import { ActivityCalendar, RecallTile, StatTile } from "./StatisticsCharts";
+import { ReaderText } from "./ReaderText";
 
 /**
  * The instance's study statistics: totals and streaks, the activity of
@@ -9,11 +10,11 @@ import { ActivityCalendar, RecallTile, StatTile } from "./StatisticsCharts";
  * share. A deck that has since been removed is named as such.
  */
 export function StatisticsScreen({ statistics, decks }: { statistics: Statistics; decks: readonly Deck[] }) {
-  const { t, formatDate, readerText } = useI18n();
+  const { t, formatDate } = useI18n();
   const { totals, streaks, retention } = statistics;
   const nameOf = (deckUrl: string) => {
     const deck = decks.find((d) => d.url === deckUrl);
-    return deck === undefined ? t("statistics.removedDeck") : readerText(deck.title);
+    return deck === undefined ? t("statistics.removedDeck") : <ReaderText text={deck.title} />;
   };
   return (
     <section class="statistics" aria-labelledby="statistics-heading">

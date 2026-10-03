@@ -1,7 +1,7 @@
 import { AppError } from "./appError";
 import { TOPICS } from "@solid-memo/vocab/concepts.generated";
 import type { Deck } from "./deck";
-import { withEnglish } from "./langText";
+import { withTyped } from "./langText";
 
 /**
  * What a deck says about itself beyond its name (see docs/data-model.md):
@@ -10,7 +10,7 @@ import { withEnglish } from "./langText";
  * free-text keywords.
  */
 export interface DeckAbout {
-  /** The English description: what the app edits. */
+  /** The description as typed: the text the app edits (typedText). */
   description: string;
   /** IRIs of concepts of the topics scheme. */
   topics: string[];
@@ -30,12 +30,13 @@ export function parseKeywords(text: string): string[] {
 }
 
 /**
- * The deck with what it says about itself replaced: the English
- * description trimmed (the other languages kept), the topics replacing the ones it named (other themes, such as
+ * The deck with what it says about itself replaced: the description,
+ * typed on a page in `locale`, trimmed (the other languages kept, see
+ * withTyped), the topics replacing the ones it named (other themes, such as
  * the EU education theme of a library deck, are kept), the keywords.
  * Refuses an empty description.
  */
-export function withAbout(deck: Deck, about: DeckAbout): Deck {
+export function withAbout(deck: Deck, about: DeckAbout, locale: string): Deck {
   const description = about.description.trim();
   if (description === "") throw new AppError("deckNeedsDescription");
   const themes = [
@@ -45,7 +46,7 @@ export function withAbout(deck: Deck, about: DeckAbout): Deck {
   const { themes: _themes, keywords: _keywords, ...rest } = deck;
   return {
     ...rest,
-    description: withEnglish(deck.description, description),
+    description: withTyped(deck.description, description, locale),
     ...(themes.length === 0 ? {} : { themes }),
     ...(about.keywords.length === 0 ? {} : { keywords: about.keywords }),
   };

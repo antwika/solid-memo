@@ -1,5 +1,7 @@
 import type { UpdateOutcome, UpdateProgress, UpdateStep } from "@solid-memo/domain/instanceUpdate";
+import { useId } from "preact/hooks";
 import { useI18n, type I18n } from "./i18n";
+import { usePanelFocus } from "./panelFocus";
 import { StepProgress } from "./StepProgress";
 
 /** What each step of the update does, as the progress line names it. */
@@ -17,7 +19,8 @@ function stepLabels(t: I18n["t"]): Record<UpdateStep, string> {
 
 /**
  * Before the update starts: how it keeps the user's data safe, and what
- * changes for them. Nothing happens until they start it.
+ * changes for them. Nothing happens until they start it. It takes the
+ * notice's place, and the focus with it, so the question is read out.
  */
 export function InstanceUpdateConfirm({
   instanceName,
@@ -29,9 +32,18 @@ export function InstanceUpdateConfirm({
   onCancel: () => void;
 }) {
   const { t } = useI18n();
+  const ref = usePanelFocus<HTMLDivElement>();
+  const bodyId = useId();
   return (
-    <div class="warning migration" role="region" aria-label={t("instanceUpdate.confirmRegion")}>
-      <p>
+    <div
+      ref={ref}
+      class="warning migration"
+      role="region"
+      aria-label={t("instanceUpdate.confirmRegion")}
+      aria-describedby={bodyId}
+      tabIndex={-1}
+    >
+      <p id={bodyId}>
         <strong>{t("instanceUpdate.confirmHeading")}</strong>{" "}
         {t("instanceUpdate.confirmBody", { name: instanceName })}
       </p>
@@ -58,18 +70,17 @@ export function InstanceUpdateProgress({ progress }: { progress: UpdateProgress 
       done={progress.done}
       total={progress.total}
       part={progress.part}
-      status={
-        progress.part === undefined
-          ? t("instanceUpdate.running", { step })
-          : t("instanceUpdate.runningCount", { step, done: progress.part.done, total: progress.part.total })
-      }
+      status={t("instanceUpdate.running", { step })}
       progressLabel={t("instanceUpdate.progressLabel")}
       hint={t("instanceUpdate.keepOpen")}
     />
   );
 }
 
-/** When the update failed: where, why, and that the user's data is as it was. */
+/**
+ * When the update failed: where, why, and that the user's data is as it
+ * was. It takes the progress's place and its focus, so the failure is read out.
+ */
 export function InstanceUpdateFailure({
   outcome,
   busy,
@@ -82,12 +93,21 @@ export function InstanceUpdateFailure({
   onDismiss: () => void;
 }) {
   const { t, errorText } = useI18n();
+  const ref = usePanelFocus<HTMLDivElement>();
+  const whyId = useId();
   return (
-    <div class="warning migration" role="region" aria-label={t("instanceUpdate.failedRegion")}>
-      <p>
+    <div
+      ref={ref}
+      class="warning migration"
+      role="region"
+      aria-label={t("instanceUpdate.failedRegion")}
+      aria-describedby={whyId}
+      tabIndex={-1}
+    >
+      <div id={whyId} class="failure-why">
         <strong>{t("instanceUpdate.failedWhile", { step: stepLabels(t)[outcome.step].toLowerCase() })}</strong>{" "}
         {errorText(outcome.error)}
-      </p>
+      </div>
       <p>
         {t("instanceUpdate.noChanges")}{" "}
         {outcome.cleanedUp
@@ -96,11 +116,21 @@ export function InstanceUpdateFailure({
       </p>
       <div class="edit-actions">
         {!outcome.cleanedUp && (
-          <button onClick={onRemoveLeftover} disabled={busy}>
+          <button
+            onClick={() => {
+              if (!busy) onRemoveLeftover();
+            }}
+            aria-disabled={busy}
+          >
             {t("instanceUpdate.tryAgain")}
           </button>
         )}
-        <button onClick={onDismiss} disabled={busy}>
+        <button
+          onClick={() => {
+            if (!busy) onDismiss();
+          }}
+          aria-disabled={busy}
+        >
           {t("instanceUpdate.close")}
         </button>
       </div>

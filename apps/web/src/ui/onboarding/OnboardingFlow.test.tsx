@@ -126,13 +126,20 @@ describe("OnboardingFlow", () => {
     ).toBeDisabled();
   });
 
-  it("goes back from the WebID step to the choice", () => {
+  it("goes back from the WebID step to the choice, focused on the button that led there", () => {
     renderFlow();
     fireEvent.click(screen.getByRole("button", { name: "I already have a Pod" }));
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(
       screen.getByRole("heading", { name: "Set up your Solid Pod" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "I already have a Pod" })).toHaveFocus();
+  });
+
+  it("goes back for a returning user too, focused", () => {
+    renderFlow({ returning: true });
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("button", { name: "I already have a Pod" })).toHaveFocus();
   });
 
   it("starts a returning user at the WebID step without stealing focus", () => {
@@ -145,6 +152,6 @@ describe("OnboardingFlow", () => {
 
   it("passes the busy state to the form", () => {
     renderFlow({ returning: true, busy: true });
-    expect(screen.getByRole("button", { name: "Redirecting…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Redirecting…" })).toHaveAttribute("aria-disabled", "true");
   });
 });

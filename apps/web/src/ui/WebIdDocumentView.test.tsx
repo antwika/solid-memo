@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { WebIdDocumentView } from "./WebIdDocumentView";
 import type { WebIdDocument } from "@solid-memo/domain/webIdDocument";
+import { newTab } from "../test/links";
 
 const document: WebIdDocument = {
   url: "https://alice.example/profile/card",
@@ -38,7 +39,7 @@ describe("WebIdDocumentView", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "https://alice.example/profile/card#me",
+        name: newTab("https://alice.example/profile/card#me"),
       }),
     ).toBeInTheDocument();
     expect(screen.getByText("http://xmlns.com/foaf/0.1/name")).toBeInTheDocument();
@@ -52,10 +53,10 @@ describe("WebIdDocumentView", () => {
   it("makes subject and predicate URLs clickable links", () => {
     render(<WebIdDocumentView document={document} />);
     expect(
-      screen.getByRole("link", { name: "https://alice.example/profile/card#me" }),
+      screen.getByRole("link", { name: newTab("https://alice.example/profile/card#me") }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "http://xmlns.com/foaf/0.1/name" }),
+      screen.getByRole("link", { name: newTab("http://xmlns.com/foaf/0.1/name") }),
     ).toHaveAttribute("href", "http://xmlns.com/foaf/0.1/name");
   });
 
@@ -84,7 +85,7 @@ describe("WebIdDocumentView", () => {
   it("renders IRI values as links", () => {
     render(<WebIdDocumentView document={document} />);
 
-    const link = screen.getByRole("link", { name: "https://iri.example/x" });
+    const link = screen.getByRole("link", { name: newTab("https://iri.example/x") });
     expect(link).toHaveAttribute("href", "https://iri.example/x");
   });
 });

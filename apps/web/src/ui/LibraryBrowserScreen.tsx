@@ -1,11 +1,11 @@
 import type { LibraryCard, LibraryDeck } from "@solid-memo/domain/library";
 import { CARDS_PER_PAGE } from "./BrowserScreen";
-import { CardThumbnail } from "./CardFace";
+import { CardRowBack, CardRowFront } from "./CardFace";
 import { BrowserIcon } from "./icons";
 import { useI18n } from "./i18n";
 import { Pager, paginate } from "./Pager";
 import { RetiredTag, useRetiredCards } from "./RetiredCards";
-import { breakable } from "./breakable";
+import { ReaderText } from "./ReaderText";
 
 /**
  * A library deck's cards, to look through before importing it: the
@@ -30,7 +30,7 @@ export function LibraryBrowserScreen({
   page: number;
   onPageChange: (page: number) => void;
 }) {
-  const { t, tx, readerText } = useI18n();
+  const { t, tx } = useI18n();
   const { listed, toggle } = useRetiredCards(cards);
   const {
     pageCount,
@@ -45,7 +45,11 @@ export function LibraryBrowserScreen({
         <h2>
           <BrowserIcon />
           {tx("libraryBrowser.heading", {
-            deck: <a href={deckHref}>{readerText(deck.title)}</a>,
+            deck: (
+              <a href={deckHref}>
+                <ReaderText text={deck.title} />
+              </a>
+            ),
           })}
         </h2>
       </header>
@@ -67,8 +71,8 @@ export function LibraryBrowserScreen({
           <table class="card-table">
             <thead>
               <tr>
-                <th>{t("libraryBrowser.front")}</th>
-                <th>{t("libraryBrowser.back")}</th>
+                <th scope="col">{t("libraryBrowser.front")}</th>
+                <th scope="col">{t("libraryBrowser.back")}</th>
               </tr>
             </thead>
             <tbody>
@@ -76,16 +80,30 @@ export function LibraryBrowserScreen({
                 <tr key={card.id} class={card.retired ? "retired" : undefined}>
                   <td class="clickable">
                     <a href={cardHref(card)}>
-                      <CardThumbnail imageUrl={card.frontImageUrl} />
-                      {breakable(readerText(card.front))}
+                      <CardRowFront
+                        front={card.front}
+                        back={card.back}
+                        imageUrl={card.frontImageUrl}
+                        imageDescription={card.frontImageDescription}
+                      />
                       {card.retired && <RetiredTag />}
                     </a>
                   </td>
-                  <td class="clickable">
-                    <a href={cardHref(card)} tabIndex={-1} aria-hidden="true">
-                      <CardThumbnail imageUrl={card.backImageUrl} />
-                      {breakable(readerText(card.back))}
-                    </a>
+                  {/* The back stays readable to screen readers; only the
+                      pointer target over it is hidden, since the front's
+                      link already opens the card. */}
+                  <td class="clickable back-cell">
+                    <CardRowBack
+                      back={card.back}
+                      imageUrl={card.backImageUrl}
+                      imageDescription={card.backImageDescription}
+                    />
+                    <a
+                      class="cell-overlay"
+                      href={cardHref(card)}
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    />
                   </td>
                 </tr>
               ))}

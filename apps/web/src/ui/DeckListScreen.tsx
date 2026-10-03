@@ -2,19 +2,17 @@ import type { ComponentChildren } from "preact";
 import type { Deck } from "@solid-memo/domain/deck";
 import { CollectionIcon, DeckIcon, LibraryIcon } from "./icons";
 import { useI18n } from "./i18n";
+import { ReaderText } from "./ReaderText";
 
 /** Decks to open or study. Decks are renamed and removed in the Browser. */
 export function DeckListScreen({
   decks,
-  decksHref,
   libraryHref,
   deckHref,
   renderStudyAction,
-  onCreateDeck,
+  createDeckHref,
 }: {
   decks: Deck[];
-  /** URL of this deck list; wherever the UI says "Decks", it links here. */
-  decksHref: string;
   /** URL of the deck library, where ready-made decks are imported from. */
   libraryHref: string;
   /** URL of a deck's page; wherever the UI names a deck, it links there. */
@@ -24,18 +22,16 @@ export function DeckListScreen({
    * by the container: it depends on each deck's queue.
    */
   renderStudyAction: (deck: Deck) => ComponentChildren;
-  /** Navigate to the deck creator view. */
-  onCreateDeck: () => void;
+  /** URL of the deck creator. */
+  createDeckHref: string;
 }) {
-  const { t, readerText } = useI18n();
+  const { t } = useI18n();
   return (
     <section>
       <header>
         <h2>
-          <a href={decksHref}>
-            <CollectionIcon />
-            {t("deckList.heading")}
-          </a>
+          <CollectionIcon />
+          {t("deckList.heading")}
         </h2>
         <span class="hint">
           {t("deckList.deckCount", { count: decks.length })}
@@ -49,7 +45,7 @@ export function DeckListScreen({
             <li key={deck.url}>
               <a class="deck-open" href={deckHref(deck)}>
                 <DeckIcon />
-                {readerText(deck.title)}
+                <ReaderText text={deck.title} />
               </a>
               <span class="deck-meta">{renderStudyAction(deck)}</span>
             </li>
@@ -57,9 +53,9 @@ export function DeckListScreen({
         </ul>
       )}
       <div class="actions">
-        <button class="primary" onClick={onCreateDeck}>
+        <a class="button primary" href={createDeckHref}>
           {t("deckList.createButton")}
-        </button>
+        </a>
         <a class="button" href={libraryHref}>
           <LibraryIcon />
           {t("deckList.libraryLink")}

@@ -7,7 +7,7 @@ import type { Card, Deck, Prompt } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { StudyQueue } from "@solid-memo/domain/scheduling";
 import { makeUseCasesFake } from "../test/useCasesFake";
-import { deckHref, decksHref } from "./router";
+import { deckHref, routeToHash } from "./router";
 
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
@@ -45,18 +45,16 @@ function renderContainer(
   });
   seed(queryClient);
   const onStudyDeck = vi.fn();
-  const onCreateDeck = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
       <DeckListContainer
         useCases={useCases}
         instance={instance}
         onStudyDeck={onStudyDeck}
-        onCreateDeck={onCreateDeck}
       />
     </QueryClientProvider>,
   );
-  return { onStudyDeck, onCreateDeck };
+  return { onStudyDeck };
 }
 
 describe("DeckListContainer", () => {
@@ -69,10 +67,7 @@ describe("DeckListContainer", () => {
     expect(
       await screen.findByRole("link", { name: "Kanji N5" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Decks" })).toHaveAttribute(
-      "href",
-      decksHref(instance.url),
-    );
+    expect(screen.getByRole("heading", { name: "Decks" })).toBeInTheDocument();
   });
 
   it("shows an error when listing decks fails", async () => {
@@ -88,14 +83,11 @@ describe("DeckListContainer", () => {
     ).toBeInTheDocument();
   });
 
-  it("forwards deck-creator navigation", async () => {
-    const { onCreateDeck } = renderContainer(
-      makeUseCasesFake({ listDecks: vi.fn(async () => []) }),
-    );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Create deck" }),
-    );
-    expect(onCreateDeck).toHaveBeenCalledOnce();
+  it("links to this instance's deck creator", async () => {
+    renderContainer(makeUseCasesFake({ listDecks: vi.fn(async () => []) }));
+    expect(
+      await screen.findByRole("link", { name: "Create deck" }),
+    ).toHaveAttribute("href", routeToHash({ screen: "deckCreator", instanceUrl: instance.url }));
   });
 
   it("links a deck's name to its page in this instance", async () => {
@@ -145,7 +137,7 @@ describe("DeckListContainer", () => {
     await waitFor(() => {
       expect(useCases.getStudyQueue).toHaveBeenCalledOnce();
     });
-    expect(screen.queryByRole("status", { name: "Checking what is due" })).toBeNull();
+    expect(screen.queryByText("Checking what is due")).toBeNull();
   });
 
   it("shows a loader in the action slot until the first queue arrives", async () => {
@@ -159,7 +151,7 @@ describe("DeckListContainer", () => {
     renderContainer(useCases);
 
     expect(
-      await screen.findByRole("status", { name: "Checking what is due" }),
+      await screen.findByText("Checking what is due"),
     ).toBeInTheDocument();
     expect(screen.queryByText("Done for today")).toBeNull();
 
@@ -170,7 +162,7 @@ describe("DeckListContainer", () => {
     expect(
       await screen.findByText("Done for today"),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("status", { name: "Checking what is due" })).toBeNull();
+    expect(screen.queryByText("Checking what is due")).toBeNull();
   });
 
   it("suggests Study when only new cards remain", async () => {
@@ -219,7 +211,7 @@ describe("DeckListContainer", () => {
     ).toBeNull();
     await waitFor(() => {
       expect(
-        screen.queryByRole("status", { name: "Checking what is due" }),
+        screen.queryByText("Checking what is due"),
       ).toBeNull();
     });
     expect(screen.queryByText("reviews unreachable")).toBeNull();

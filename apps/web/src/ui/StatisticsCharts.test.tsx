@@ -44,7 +44,8 @@ describe("ActivityCalendar", () => {
     expect(container.querySelector('[data-day="2026-09-14"]')).toHaveClass("level-4");
     expect(container.querySelector('[data-day="2026-09-20"]')).toHaveClass("level-1");
     expect(container.querySelector('[data-day="2026-09-15"]')).toHaveClass("level-0");
-    expect(screen.getByText("Point at a day to see what it held.")).toBeInTheDocument();
+    const inspector = screen.getByText("Point at a day to see what it held, or open the table below.");
+    expect(inspector).not.toHaveAttribute("aria-live");
     fireEvent.pointerEnter(container.querySelector('[data-day="2026-09-14"]')!);
     expect(screen.getByText("September 14, 2026: 40 answers, 10 new, 4 forgotten.")).toBeInTheDocument();
     expect(container.querySelector('[data-day="2026-09-14"]')).toHaveClass("pointed");

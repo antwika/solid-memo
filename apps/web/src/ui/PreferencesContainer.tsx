@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { StudyPreferences } from "@solid-memo/domain/preferences";
+import { ErrorMessage } from "./ErrorMessage";
 import { Loading } from "./Loading";
 import { PreferencesScreen } from "./PreferencesScreen";
 import { useI18n } from "./i18n";
@@ -40,7 +41,7 @@ export function PreferencesContainer({
   });
 
   if (preferencesQuery.error) {
-    return <p class="error">{errorText(preferencesQuery.error)}</p>;
+    return <ErrorMessage error={errorText(preferencesQuery.error)} />;
   }
   if (preferencesQuery.data === undefined) {
     return <Loading label={t("preferences.loading")} />;

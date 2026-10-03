@@ -66,7 +66,16 @@ describe("DeckPreferencesScreen", () => {
   it("advises a small, steady number of new cards", () => {
     renderScreen();
     expect(screen.getByLabelText("New cards per day")).toHaveAccessibleDescription(/Better to start small and be consistent/);
-    expect(screen.getByLabelText("Max reviews per day")).not.toHaveAccessibleDescription();
+    expect(screen.getByLabelText("Max reviews per day")).not.toHaveAccessibleDescription(/start small/);
+  });
+
+  it("describes each limit by what it counts and by what an empty field does", () => {
+    renderScreen();
+    const newCards = screen.getByLabelText("New cards per day");
+    expect(newCards).toHaveAccessibleDescription(/^new cards per day .*An empty field defaults to your study preferences ?\.$/);
+    expect(screen.getByLabelText("Max reviews per day")).toHaveAccessibleDescription(
+      /^max reviews per day An empty field defaults to your study preferences ?\.$/,
+    );
   });
 
   it("says what each number counts, in the singular for one", () => {
@@ -90,11 +99,61 @@ describe("DeckPreferencesScreen", () => {
 
   it("is disabled while busy and shows an error", () => {
     renderScreen({ busy: true, error: "pod unreachable" });
-    expect(screen.getByRole("button", { name: "Save preferences" })).toBeDisabled();
+    // The buttons only aria-disabled, so the one pressed keeps the focus.
+    expect(screen.getByRole("button", { name: "Save preferences" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByLabelText("New cards per day")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Rename deck" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Remove deck" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Rename deck" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "Remove deck" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("pod unreachable")).toHaveClass("error");
+  });
+
+  it("ignores its buttons while it saves", () => {
+    const confirm = vi.fn(() => true);
+    vi.stubGlobal("confirm", confirm);
+    const props = renderScreen({ busy: true });
+    fireEvent.click(screen.getByRole("button", { name: "Save preferences" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove deck" }));
+    expect(props.onSave).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText("Deck name")).toBeNull();
+    expect(confirm).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("focuses the name's field on Rename, and Rename again on Save or Cancel", () => {
+    renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
+    const field = screen.getByLabelText("Deck name");
+    expect(field).toHaveFocus();
+    expect((field as HTMLInputElement).selectionStart).toBe(0);
+    expect((field as HTMLInputElement).selectionEnd).toBe("Kanji N5".length);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel renaming" }));
+    expect(screen.getByRole("button", { name: "Rename deck" })).toHaveFocus();
+
+    fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+    expect(screen.getByRole("button", { name: "Rename deck" })).toHaveFocus();
+  });
+
+  it("ignores the rename form's buttons while something else saves", () => {
+    const props = {
+      deck,
+      deckHref: "#/deck?deck=d",
+      preferences: { newCardsPerDay: 20, maxReviewsPerDay: 200 },
+      preferencesHref: "#/preferences?instance=a",
+      busy: false,
+      error: null,
+      onSave: vi.fn(),
+      onRename: vi.fn(),
+      onRemove: vi.fn(),
+    };
+    const { rerender } = render(<DeckPreferencesScreen {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
+    rerender(<DeckPreferencesScreen {...props} busy />);
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel renaming" }));
+    expect(props.onRename).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Deck name")).toBeInTheDocument();
   });
 
   it("renames the deck, trimmed, and closes the form", () => {
@@ -150,5 +209,55 @@ describe("DeckPreferencesScreen", () => {
     expect(screen.getByRole("heading", { name: "Inställningar: Kanji N5" })).toBeInTheDocument();
     expect(screen.getByLabelText("Nya kort per dag").nextElementSibling).toHaveTextContent("nytt kort per dag");
     expect(screen.getByRole("link", { name: "studieinställningar" })).toBeInTheDocument();
+    expect(screen.getByText("Kanji N5")).toHaveAttribute("lang", "en");
+  });
+
+  it("renames the deck in the page's language, the field marked with the language when that is not the page's", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <DeckPreferencesScreen
+          deck={{ ...deck, title: { en: "Capitals", sv: "Huvudstäder" } }}
+          deckHref="#/deck?deck=d"
+          preferences={{ newCardsPerDay: 1, maxReviewsPerDay: 200 }}
+          preferencesHref="#/preferences?instance=a"
+          busy={false}
+          error={null}
+          onSave={vi.fn()}
+          onRename={vi.fn()}
+          onRemove={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Byt namn på kortleken" }));
+    const name = screen.getByLabelText("Kortlekens namn");
+    expect(name).toHaveValue("Huvudstäder");
+    expect(name).not.toHaveAttribute("lang");
+    expect(name).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("says which language the name field edits when the reader sees another", () => {
+    // A reader who prefers German sees the German; a Swedish page edits the English.
+    const languages = vi.spyOn(navigator, "languages", "get").mockReturnValue(["de"]);
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <DeckPreferencesScreen
+          deck={{ ...deck, title: { en: "Capitals", de: "Hauptstädte" } }}
+          deckHref="#/deck?deck=d"
+          preferences={{ newCardsPerDay: 1, maxReviewsPerDay: 200 }}
+          preferencesHref="#/preferences?instance=a"
+          busy={false}
+          error={null}
+          onSave={vi.fn()}
+          onRename={vi.fn()}
+          onRemove={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Byt namn på kortleken" }));
+    const name = screen.getByLabelText("Kortlekens namn");
+    expect(name).toHaveValue("Capitals");
+    expect(name).toHaveAttribute("lang", "en");
+    expect(name).toHaveAccessibleDescription("Du redigerar texten på engelska. Översättningarna ändras inte.");
+    languages.mockRestore();
   });
 });

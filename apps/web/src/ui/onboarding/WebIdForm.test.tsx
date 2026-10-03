@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { WebIdForm } from "./WebIdForm";
+import { alertTexts, statusTexts } from "../../test/liveRegions";
 
 function renderForm(overrides: Partial<Parameters<typeof WebIdForm>[0]> = {}) {
   const props = {
@@ -35,25 +36,27 @@ describe("WebIdForm", () => {
     const { onSubmit } = renderForm();
     submit("http://bob.example/profile/card#me");
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "A WebID must start with https://.",
-    );
+    expect(alertTexts()).toEqual(["A WebID must start with https://."]);
     expect(screen.getByLabelText("WebID")).toHaveAttribute(
       "aria-invalid",
       "true",
     );
+    // The field says why when the user comes back to it, and has the focus.
+    expect(screen.getByLabelText("WebID")).toHaveAccessibleDescription(/^A WebID must start with https:\/\/\. Your WebID is/);
+    expect(screen.getByLabelText("WebID")).toHaveFocus();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it("clears the validation message once the user edits the field", () => {
     renderForm();
     submit("nonsense");
-    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(alertTexts()).toHaveLength(1);
 
     fireEvent.input(screen.getByLabelText("WebID"), {
       target: { value: "https://" },
     });
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(alertTexts()).toEqual([]);
+    expect(screen.getByLabelText("WebID")).toHaveAccessibleDescription(/^Your WebID is/);
   });
 
   it("never asks for a password", () => {
@@ -79,10 +82,15 @@ describe("WebIdForm", () => {
     expect(onBack).toHaveBeenCalledOnce();
   });
 
-  it("disables the form and changes the button label while busy", () => {
-    renderForm({ busy: true });
+  it("disables the form and changes the button label while busy, and says so", () => {
+    const { onSubmit } = renderForm({ busy: true });
     expect(screen.getByLabelText("WebID")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Redirecting…" })).toBeDisabled();
+    // Only aria-disabled, so it keeps the focus while the page redirects.
+    const button = screen.getByRole("button", { name: "Redirecting…" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByRole("button", { name: "Back" })).toBeDisabled();
+    expect(statusTexts()).toEqual(["Redirecting…"]);
+    fireEvent.submit(button.closest("form")!);
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });

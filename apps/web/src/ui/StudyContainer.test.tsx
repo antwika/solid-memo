@@ -67,7 +67,7 @@ function renderContainer(
 /** Reveal the current card and grade it. */
 async function answer(grade: string) {
   const reveal = await screen.findByRole("button", { name: "Reveal" });
-  await waitFor(() => expect(reveal).toBeEnabled());
+  await waitFor(() => expect(reveal).toHaveAttribute("aria-disabled", "false"));
   fireEvent.click(reveal);
   fireEvent.click(screen.getByRole("button", { name: grade }));
 }
@@ -154,7 +154,7 @@ describe("StudyContainer", () => {
         }),
       }),
     );
-    expect(await screen.findByText("queue failed")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("queue failed");
   });
 
   it("advances through the queue as answers are recorded", async () => {
@@ -182,7 +182,9 @@ describe("StudyContainer", () => {
     const secondReveal = await screen.findByRole("button", {
       name: "Reveal",
     });
-    await waitFor(() => expect(secondReveal).toBeEnabled());
+    await waitFor(() =>
+      expect(secondReveal).toHaveAttribute("aria-disabled", "false"),
+    );
     fireEvent.click(secondReveal);
     fireEvent.click(screen.getByRole("button", { name: "3 — Hard" }));
 
@@ -243,11 +245,13 @@ describe("StudyContainer", () => {
     await answer("1 — Wrong");
 
     expect(await screen.findByText("front-b")).toBeInTheDocument();
-    expect(screen.getByText("Card 2 of 4")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Card 2 of 4. You'll see the last card again later in this session.",
+    );
     await answer("4 — Good");
 
     expect(await screen.findByText("front-a")).toBeInTheDocument();
-    expect(screen.getByText("Card 3 of 4")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/^Card 3 of 4$/);
     await answer("5 — Easy");
 
     expect(await screen.findByText("front-c")).toBeInTheDocument();
@@ -269,7 +273,11 @@ describe("StudyContainer", () => {
     renderContainer(useCases);
 
     await answer("0 — Blackout");
-    expect(await screen.findByText("Card 2 of 2")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Card 2 of 2. You'll see the last card again later in this session.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("front-a")).toBeInTheDocument();
     expect(screen.queryByText("front-a-back")).toBeNull();
 
@@ -323,7 +331,9 @@ describe("StudyContainer", () => {
       1,
       expect.any(Date),
     );
-    expect(screen.getByText("Card 2 of 3")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Card 2 of 3. You'll see the last card again later in this session.",
+    );
   });
 
   it("falls back to the default answer buttons when preferences are unreadable", async () => {

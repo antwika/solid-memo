@@ -1,0 +1,8 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+
+<#q12418>
+    a solid-memo:Card ;
+    solid-memo:frontImage <https://upload.wikimedia.org/wikipedia/commons/e/ec/Mona_Lisa.jpg> ;
+    solid-memo:frontImageDescription "A painted portrait of a woman with folded hands" ;
+    solid-memo:back "Mona Lisa — Leonardo da Vinci, 1500s"@en ;
+    solid-memo:formatVersion 4 .

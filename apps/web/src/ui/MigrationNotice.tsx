@@ -3,7 +3,10 @@ import { INSTANCE_FORMAT_VERSION } from "@solid-memo/domain/instance";
 import type { MigrationPlan } from "@solid-memo/domain/migration";
 import { PREFERENCES_FORMAT_VERSION } from "@solid-memo/domain/preferences";
 import { REVIEW_STATE_FORMAT_VERSION } from "@solid-memo/domain/review";
-import { useI18n, type I18n } from "./i18n";
+import { ErrorMessage } from "./ErrorMessage";
+import { usePanelFocus } from "./panelFocus";
+import { useI18n, type I18n, type ErrorText } from "./i18n";
+import { ReaderText } from "./ReaderText";
 
 /** "a, b and c". */
 function list(parts: string[], t: I18n["t"]): string {
@@ -72,20 +75,25 @@ function updateLabel(plan: MigrationPlan, t: I18n["t"]): string {
 /**
  * Tells the user their data is stored in an older format, what an update
  * would touch, and lets them start it. Nothing happens until they do:
- * the app works on the old format meanwhile.
+ * the app works on the old format meanwhile. Shown with the screen, it
+ * leaves the focus be; back from the confirmation (`focus`), it takes it.
  */
 export function MigrationNotice({
   plan,
   busy,
   error,
+  focus = false,
   onMigrate,
 }: {
   plan: MigrationPlan;
   busy: boolean;
-  error: string | null;
+  error: ErrorText | null;
+  /** Take the focus on mount: the user came back to the notice. */
+  focus?: boolean;
   onMigrate: () => void;
 }) {
-  const { t, readerText } = useI18n();
+  const { t } = useI18n();
+  const ref = usePanelFocus<HTMLDivElement>(focus);
   const singular =
     plan.deckCount +
       plan.cardCount +
@@ -95,7 +103,7 @@ export function MigrationNotice({
       Number(plan.catalogMissing) ===
     1;
   return (
-    <div class="warning migration" role="region" aria-label={t("migrationNotice.region")}>
+    <div ref={ref} class="warning migration" role="region" aria-label={t("migrationNotice.region")} tabIndex={-1}>
       <p>
         <strong>{t("migrationNotice.heading")}</strong>{" "}
         {t("migrationNotice.stored", { count: singular ? 1 : 2, outdated: describeOutdated(plan, t) })}{" "}
@@ -107,7 +115,7 @@ export function MigrationNotice({
         {plan.preferencesOutdated && <li>{t("migrationNotice.itemPreferences")}</li>}
         {plan.decks.map(({ deck, deckOutdated, cardCount, reviewCount }) => (
           <li key={deck.url}>
-            {readerText(deck.title)} —{" "}
+            <ReaderText text={deck.title} /> —{" "}
             {[
               ...(deckOutdated ? [t("migrationNotice.deckEntry")] : []),
               ...(cardCount > 0 ? [t("common.cardCount", { count: cardCount })] : []),
@@ -119,7 +127,7 @@ export function MigrationNotice({
       <button class="primary" onClick={onMigrate} disabled={busy}>
         {busy ? t("migrationNotice.updating") : updateLabel(plan, t)}
       </button>
-      {error && <p class="error">{error}</p>}
+      <ErrorMessage error={error} />
     </div>
   );
 }

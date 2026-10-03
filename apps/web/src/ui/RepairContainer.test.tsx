@@ -3,8 +3,10 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
+import type { LangText } from "@solid-memo/domain/langText";
 import type { ValidationReport } from "@solid-memo/domain/validation";
 import { DataCheckNotice } from "./DataCheckNotice";
+import { I18nProvider } from "./i18n";
 import { RepairContainer } from "./RepairContainer";
 import { makeUseCasesFake } from "../test/useCasesFake";
 
@@ -17,6 +19,7 @@ const report: ValidationReport = {
   documents: [],
 };
 const repair = (subject: string) => ({ kind: "describe-deck" as const, documentUrl: CATALOG, subjectUrl: `${CATALOG}#${subject}`, version: 3 });
+const second = { message: { sv: "Ett andra fel." }, severity: "violation" as const, constraint: "Or" };
 const problem = { documentUrl: `${instance.url}decks/deck-1.ttl`, subjectUrl: `${instance.url}decks/deck-1.ttl#x`, violations: [{ message: { en: "Each side of a card needs text or a picture.", sv: "Varje sida av ett kort behöver text eller en bild." }, severity: "violation" as const, constraint: "Or" }] };
 
 function renderRepair(useCases: UseCases) {
@@ -50,13 +53,16 @@ describe("RepairContainer", () => {
     const confirm = vi.fn(() => false);
     vi.stubGlobal("confirm", confirm);
     const useCases = makeUseCasesFake({
-      planRepair: vi.fn(() => ({ repairs: [], unrepairable: [problem] })),
+      planRepair: vi.fn(() => ({ repairs: [], unrepairable: [{ ...problem, violations: [...problem.violations, second] }] })),
       applyRepairs: vi.fn(async () => {
         throw new Error("write refused");
       }),
     });
     renderRepair(useCases);
-    expect(screen.getByText(/Each side of a card needs text or a picture\./)).toBeInTheDocument();
+    expect(screen.getByText(/Each side of a card needs text or a picture\./)).toHaveTextContent(
+      "Each side of a card needs text or a picture. Ett andra fel.",
+    );
+    expect(screen.getByText("Ett andra fel.")).toHaveAttribute("lang", "sv");
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     expect(useCases.applyRepairs).not.toHaveBeenCalled();
     confirm.mockReturnValue(true);
@@ -83,13 +89,31 @@ describe("RepairContainer", () => {
 describe("DataCheckNotice", () => {
   it("names the decks set aside, one or several", () => {
     const queryClient = new QueryClient();
-    const notice = (setAside: string[]) =>
+    const notice = (setAside: LangText[]) =>
       render(
         <QueryClientProvider client={queryClient}>
           <DataCheckNotice useCases={makeUseCasesFake()} instance={instance} report={report} policy="block-subject" setAside={setAside} />
         </QueryClientProvider>,
       );
-    notice(["Kanji", "Capitals"]);
+    notice([{ en: "Kanji" }, { en: "Capitals" }]);
     expect(screen.getByRole("region", { name: "Data check" })).toHaveTextContent("Kanji, Capitals are set aside until repaired");
+  });
+
+  it("marks a set-aside deck's name with its language when that is not the page's", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <QueryClientProvider client={new QueryClient()}>
+          <DataCheckNotice
+            useCases={makeUseCasesFake()}
+            instance={instance}
+            report={report}
+            policy="block-subject"
+            setAside={[{ en: "Capitals", sv: "Huvudstäder" }, { en: "Kanji" }]}
+          />
+        </QueryClientProvider>
+      </I18nProvider>,
+    );
+    expect(screen.getByText("Kanji")).toHaveAttribute("lang", "en");
+    expect(screen.getByText(/Huvudstäder/)).not.toHaveAttribute("lang");
   });
 });

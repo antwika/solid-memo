@@ -16,7 +16,7 @@ import type { Instance } from "@solid-memo/domain/instance";
 import type { Session } from "@solid-memo/domain/session";
 import type { Storage } from "@solid-memo/domain/storage";
 import { makeUseCasesFake } from "../test/useCasesFake";
-import { routeToHash } from "./router";
+import { routeToHash, statisticsHref } from "./router";
 import { CARDS_PER_PAGE } from "./BrowserScreen";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
 import { librarySeriesUrlOf } from "@solid-memo/domain/libraryLayout";
@@ -210,7 +210,9 @@ describe("Workspace", () => {
           }),
         }),
       );
-      expect(await screen.findByText("Could not check this instance's data: shapes offline")).toBeInTheDocument();
+      expect((await screen.findByText("shapes offline")).closest(".warning")).toHaveTextContent(
+        "Could not check this instance's data: Something went wrong. Try again, or reload the page. Details: shapes offline",
+      );
       expect(await screen.findByText("Kanji N5")).toBeInTheDocument();
     });
   });
@@ -245,7 +247,7 @@ describe("Workspace", () => {
       await screen.findByRole("heading", { name: "Decks" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Deck set A")).toBeInTheDocument();
-    expect(screen.getByText(instanceA.url)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open in your Pod (opens in a new tab)" })).toHaveAttribute("href", instanceA.url);
   });
 
   it("offers the instance picker with several instances, then opens one", async () => {
@@ -371,7 +373,7 @@ describe("Workspace", () => {
   it("navigates back from the creator to the instance picker", async () => {
     renderWorkspace(makeUseCases({ listStorages: vi.fn(async () => [storageA]) }));
 
-    fireEvent.click(await screen.findByRole("button", { name: "Back" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Back" }));
     expect(
       await screen.findByRole("heading", {
         name: "Choose a Solid Memo instance",
@@ -390,7 +392,7 @@ describe("Workspace", () => {
     );
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "New instance…" }),
+      await screen.findByRole("link", { name: "New instance…" }),
     );
     fireEvent.click(
       await screen.findByRole("button", { name: "https://pod.example/" }),
@@ -477,7 +479,7 @@ describe("Workspace", () => {
     renderWorkspace(makeUseCases({ listInstances: vi.fn(async () => [instanceA]) }));
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Switch instance" }),
+      await screen.findByRole("link", { name: "Switch instance" }),
     );
     expect(
       await screen.findByRole("heading", {
@@ -524,7 +526,7 @@ describe("Workspace", () => {
         }),
       }),
     );
-    fireEvent.click(await screen.findByRole("button", { name: "Preferences" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Preferences" }));
     fireEvent.click(await screen.findByRole("button", { name: "Restore previous version" }));
     expect(await screen.findByRole("heading", { name: "Decks" })).toBeInTheDocument();
     expect(screen.getByText("Deck set B")).toBeInTheDocument();
@@ -537,7 +539,7 @@ describe("Workspace", () => {
     );
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Preferences" }),
+      await screen.findByRole("link", { name: "Preferences" }),
     );
     expect(
       await screen.findByRole("heading", { name: "Study preferences" }),
@@ -552,9 +554,15 @@ describe("Workspace", () => {
 
   it("opens the statistics from the instance bar", async () => {
     renderWorkspace(makeUseCases({ listInstances: vi.fn(async () => [instanceA]) }));
-    fireEvent.click(await screen.findByRole("button", { name: "Statistics" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Statistics" }));
     expect(await screen.findByRole("heading", { name: "Statistics" })).toBeInTheDocument();
     expect(screen.getByText("No answers yet: the statistics begin with your next study session.")).toBeInTheDocument();
+  });
+
+  it("opens the statistics straight from their address, before any deck is loaded", async () => {
+    window.history.replaceState(null, "", statisticsHref(instanceA.url));
+    renderWorkspace(makeUseCases({ listInstances: vi.fn(async () => [instanceA]) }));
+    expect(await screen.findByRole("heading", { name: "Statistics" })).toBeInTheDocument();
   });
 
   it("creates a deck in the deck creator and returns to the deck list", async () => {
@@ -582,7 +590,7 @@ describe("Workspace", () => {
     );
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Create deck" }),
+      await screen.findByRole("link", { name: "Create deck" }),
     );
     expect(
       await screen.findByRole("heading", { name: "New deck" }),
@@ -752,7 +760,7 @@ describe("Workspace", () => {
 
     fireEvent.click(await screen.findByRole("link", { name: "Deck library" }));
     fireEvent.click(await screen.findByRole("link", { name: "Capitals" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Browse cards" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Browse cards" }));
 
     expect(
       await screen.findByRole("heading", { name: "Cards: Capitals" }),
@@ -840,7 +848,7 @@ describe("Workspace", () => {
 
     fireEvent.click(await screen.findByRole("link", { name: "Deck library" }));
     fireEvent.click(await screen.findByRole("link", { name: "Capitals" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Browse cards" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Browse cards" }));
     fireEvent.click(await screen.findByRole("link", { name: "Sweden" }));
 
     expect(await screen.findByRole("heading", { name: "Card" })).toBeInTheDocument();
@@ -907,7 +915,7 @@ describe("Workspace", () => {
         }),
       }),
     );
-    expect(await screen.findByText("library offline")).toHaveClass("error");
+    expect((await screen.findByText("library offline")).closest(".error")).toBeInTheDocument();
   });
 
   it("opens a library deck's page from a link to one of its releases", async () => {
@@ -996,7 +1004,7 @@ describe("Workspace", () => {
     );
 
     expect(screen.getByText("Loading your Solid Memo instances…")).toBeInTheDocument();
-    expect(await screen.findByText("library offline")).toHaveClass("error");
+    expect((await screen.findByText("library offline")).closest(".error")).toBeInTheDocument();
   });
 
   it("opens a deck from home and navigates back", async () => {
@@ -1050,17 +1058,17 @@ describe("Workspace", () => {
     );
 
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
-    const browserButton = await screen.findByRole("button", {
+    const browserLink = await screen.findByRole("link", {
       name: "Browser",
     });
-    expect(screen.queryByRole("button", { name: "Add card" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Add card" })).toBeNull();
 
-    fireEvent.click(browserButton);
-    fireEvent.click(await screen.findByRole("button", { name: "Add card" }));
+    fireEvent.click(browserLink);
+    fireEvent.click(await screen.findByRole("link", { name: "Add card" }));
     expect(
       await screen.findByRole("heading", { name: "New card" }),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(screen.getByRole("link", { name: "Back" }));
     expect(
       await screen.findByRole("heading", { name: "Browser: Kanji N5" }),
     ).toBeInTheDocument();
@@ -1094,7 +1102,7 @@ describe("Workspace", () => {
     renderWorkspace(useCases);
 
     fireEvent.click(await screen.findByRole("link", { name: "Capitals" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Browser" }));
     const browserHash = window.location.hash;
     const historyBefore = window.history.length;
 
@@ -1138,7 +1146,7 @@ describe("Workspace", () => {
     renderWorkspace(useCases);
 
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Deck preferences" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Deck preferences" }));
     fireEvent.click(await screen.findByRole("button", { name: "Remove deck" }));
 
     expect(await screen.findByText(/No decks yet/)).toBeInTheDocument();
@@ -1171,7 +1179,7 @@ describe("Workspace", () => {
     );
 
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Deck preferences" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Deck preferences" }));
     fireEvent.click(await screen.findByRole("button", { name: "Rename deck" }));
     fireEvent.input(screen.getByLabelText("Deck name"), {
       target: { value: "Kanji N4" },
@@ -1203,7 +1211,7 @@ describe("Workspace", () => {
     );
 
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Browser" }));
     expect(
       await screen.findByRole("heading", { name: "Browser: Kanji N5" }),
     ).toBeInTheDocument();
@@ -1213,6 +1221,43 @@ describe("Workspace", () => {
     expect(
       await screen.findByRole("heading", { name: "Kanji N5" }),
     ).toBeInTheDocument();
+  });
+
+  it("titles each screen and gives its heading focus after the user moves there", async () => {
+    const deck: Deck = {
+      id: "deck-1",
+      url: `${instanceA.url}catalog.ttl#deck-1`,
+      title: { en: "Kanji N5" },
+      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
+      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
+    };
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+    renderWorkspace(
+      makeUseCases({
+        listInstances: vi.fn(async () => [instanceA]),
+        listDecks: vi.fn(async () => [deck]),
+      }),
+    );
+
+    // Opening on the deck list is a redirect: nothing takes focus.
+    const link = await screen.findByRole("link", { name: "Kanji N5" });
+    await waitFor(() => expect(document.title).toBe("Decks – Solid Memo"));
+    expect(screen.getByRole("heading", { name: /Decks/ })).not.toHaveFocus();
+
+    fireEvent.click(link);
+    const deckHeading = await screen.findByRole("heading", { name: "Kanji N5" });
+    await waitFor(() => expect(deckHeading).toHaveFocus());
+    expect(document.title).toBe("Kanji N5 – Decks – Solid Memo");
+
+    fireEvent.click(screen.getByRole("link", { name: "Browser" }));
+    const browserHeading = await screen.findByRole("heading", { name: "Browser: Kanji N5" });
+    await waitFor(() => expect(browserHeading).toHaveFocus());
+    await waitFor(() => expect(document.title).toBe("Browser – Kanji N5 – Solid Memo"));
+    scrollTo.mockRestore();
   });
 
   it("opens the deck's preferences from the deck detail and returns there after saving", async () => {
@@ -1237,7 +1282,7 @@ describe("Workspace", () => {
     );
 
     fireEvent.click(await screen.findByRole("link", { name: "Kanji N5" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Deck preferences" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Deck preferences" }));
     expect(
       await screen.findByRole("heading", { name: "Preferences: Kanji N5" }),
     ).toBeInTheDocument();
@@ -1449,7 +1494,7 @@ describe("Workspace", () => {
       renderWorkspace(useCases);
       return (async () => {
         fireEvent.click(await screen.findByRole("link", { name: deck.title.en }));
-        fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+        fireEvent.click(await screen.findByRole("link", { name: "Browser" }));
       })();
     }
 
@@ -1685,8 +1730,8 @@ describe("Workspace", () => {
         routeToHash({ screen: "validation", instanceUrl: instanceA.url }),
       );
       renderWorkspace(useCases);
-      expect(await screen.findByText(/Developer mode is off/)).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+      const hint = await screen.findByText(/Developer mode is off/);
+      expect(within(hint).getByRole("link", { name: "Preferences" })).toHaveAttribute(
         "href",
         routeToHash({ screen: "preferences", instanceUrl: instanceA.url }),
       );
@@ -1708,7 +1753,7 @@ describe("Workspace", () => {
       renderWorkspace(useCases);
 
       fireEvent.click(
-        await screen.findByRole("button", { name: "Preferences" }),
+        await screen.findByRole("link", { name: "Preferences" }),
       );
       fireEvent.click(await screen.findByLabelText("Developer mode"));
       fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -1734,7 +1779,7 @@ describe("Workspace", () => {
     ).toHaveAttribute("aria-current", "page");
 
     fireEvent.click(screen.getByRole("link", { name: "Kanji N5" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Browser" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Browser" }));
     await screen.findByRole("heading", { name: "Browser: Kanji N5" });
 
     const trail = within(

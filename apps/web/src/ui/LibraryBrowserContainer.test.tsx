@@ -54,6 +54,6 @@ describe("LibraryBrowserContainer", () => {
         }),
       }),
     );
-    expect(await screen.findByText("library offline")).toHaveClass("error");
+    expect((await screen.findByText("library offline")).closest(".error")).toBeInTheDocument();
   });
 });

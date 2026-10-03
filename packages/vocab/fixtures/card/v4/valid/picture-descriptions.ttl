@@ -1,0 +1,17 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+
+<#q12418>
+    a solid-memo:Card ;
+    solid-memo:frontImage <https://upload.wikimedia.org/wikipedia/commons/e/ec/Mona_Lisa.jpg> ;
+    solid-memo:frontImageDescription "A painted portrait of a woman with folded hands"@en ,
+                                     "Ett målat porträtt av en kvinna med knäppta händer"@sv ;
+    solid-memo:back "Mona Lisa — Leonardo da Vinci, 1500s"@en ;
+    solid-memo:formatVersion 4 .
+
+<#se>
+    a solid-memo:Card ;
+    solid-memo:front "Which country's flag?" ;
+    solid-memo:back "Sweden" ;
+    solid-memo:backImage <https://flagcdn.com/se.svg> ;
+    solid-memo:backImageDescription "Flagga med ett gult kors på blått"@sv ;
+    solid-memo:formatVersion 4 .

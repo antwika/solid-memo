@@ -123,7 +123,7 @@ describe("planLibraryUpgrade", () => {
     ]);
   });
 
-  it("takes a changed label or note for a changed card", () => {
+  it("takes a changed label, note or picture description for a changed card", () => {
     const now = release(2, from.cards.map((card) => (card.id === "dk" ? { ...card, backNote: { en: "Since 1443." } } : card)));
     expect(planLibraryUpgrade({ deck, cards, from, to: now, releases })?.change).toEqual([
       { ...libraryCard("dk", "Copenhagen"), backNote: { en: "Since 1443." } },
@@ -134,6 +134,10 @@ describe("planLibraryUpgrade", () => {
     ]);
     const frontNoted = release(2, from.cards.map((card) => (card.id === "dk" ? { ...card, frontNote: { en: "A kingdom." } } : card)));
     expect(planLibraryUpgrade({ deck, cards, from, to: frontNoted, releases })?.change).toHaveLength(1);
+    const described = release(2, from.cards.map((card) => (card.id === "dk" ? { ...card, frontImageDescription: { en: "A red flag" } } : card)));
+    expect(planLibraryUpgrade({ deck, cards, from, to: described, releases })?.change).toHaveLength(1);
+    const backDescribed = release(2, from.cards.map((card) => (card.id === "dk" ? { ...card, backImageDescription: { en: "A harbour" } } : card)));
+    expect(planLibraryUpgrade({ deck, cards, from, to: backDescribed, releases })?.change).toHaveLength(1);
   });
 
   it("takes a retirement the copy already has as done", () => {

@@ -1,3 +1,4 @@
+import { ExternalLink } from "./ExternalLink";
 import { useI18n } from "./i18n";
 
 /** Site-wide attribution and build version, shown under every screen. */
@@ -12,25 +13,16 @@ export function Footer({
     <footer class="site-footer">
       <p>
         {tx("footer.createdBy", {
-          author: (
-            <a href="https://github.com/antwika" target="_blank" rel="noopener noreferrer">
-              antwika
-            </a>
-          ),
+          author: <ExternalLink url="https://github.com/antwika">antwika</ExternalLink>,
         })}
       </p>
       {commitSha !== null && (
         <p>
           {tx("footer.version", {
             version: (
-              <a
-                href={`https://github.com/antwika/solid-memo/commit/${commitSha}`}
-                title={commitSha}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <ExternalLink url={`https://github.com/antwika/solid-memo/commit/${commitSha}`} title={commitSha}>
                 {commitSha.slice(0, 7)}
-              </a>
+              </ExternalLink>
             ),
           })}
         </p>

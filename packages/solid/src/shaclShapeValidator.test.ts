@@ -229,7 +229,7 @@ describe("createShaclShapeValidator", () => {
       buildThing(createThing({ url: `${DOC}#other` })).addStringNoLocale(DCTERMS.title, "x").build(),
     );
     await expect(validator.checkSubjects(dataset, [`${DOC}#deck-1`])).rejects.toThrow(
-      `Solid Memo did not save data that does not conform to its shapes:\n  <${DOC}#deck-1>: Each side needs text or a picture.`,
+      `Solid Memo did not save this: it is not in the format Solid Memo expects. Nothing was changed. Reload the page and try again.\nproblems: <${DOC}#deck-1>: Each side needs text or a picture.`,
     );
   });
 
@@ -271,8 +271,8 @@ describe("createShaclShapeValidator", () => {
     it("refuses a write that breaks a shape or DCAT-AP, naming every problem", async () => {
       await expect(validator.checkSubjects(deck((t) => t), [`${DOC}#deck-1`])).rejects.toThrow(
         [
-          "Solid Memo did not save data that does not conform to its shapes:",
-          `  <${DOC}#deck-1> (${DCTERMS.description}): A format-3 deck has a description, as DCAT-AP asks of every dataset.`,
+          "Solid Memo did not save this: it is not in the format Solid Memo expects. Nothing was changed. Reload the page and try again.",
+          `problems: <${DOC}#deck-1> (${DCTERMS.description}): A format-3 deck has a description, as DCAT-AP asks of every dataset.`,
           `  <${DOC}#deck-1> (${DCTERMS.description}): DCAT-AP: Less than 1 values`,
         ].join("\n"),
       );

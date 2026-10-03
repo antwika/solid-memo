@@ -34,6 +34,8 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "card/v4/invalid/tagged-and-untagged-back.ttl": { message: "Each side of a card needs text or a picture, its text either untagged or language-tagged, never both" },
   "card/v4/invalid/two-untagged-fronts.ttl": { path: `${SM}front`, message: "A side's text is one untagged text" },
   "card/v4/invalid/two-english-backs.ttl": { path: `${SM}back`, message: 'Language "en" has been used by 2 values' },
+  "card/v4/invalid/untagged-image-description.ttl": { path: `${SM}frontImageDescription`, message: "A picture's description is language-tagged text" },
+  "card/v4/invalid/two-english-image-descriptions.ttl": { path: `${SM}backImageDescription`, message: 'Language "en" has been used by 2 values' },
   "card/v4/invalid/back-as-iri.ttl": { path: `${SM}back`, message: "A side's text is one untagged text" },
   "deck/v1/invalid/missing-title.ttl": { path: `${DC}title`, message: "Less than 1 values" },
   "deck/v2/invalid/bad-direction.ttl": { path: `${SM}direction`, message: "A format-2 deck states its direction" },

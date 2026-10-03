@@ -22,10 +22,10 @@ describe("createWriteFence", () => {
       hold(MAIN);
       for (const url of [MAIN, `${MAIN}decks/deck-1.ttl`, `${MAIN}.acl`, "https://POD.example:443/solid-memo/main/meta.ttl", "https://pod.example/solid-memo/%6Dain/x.ttl"]) {
         await expect(fetch(url, { method })).rejects.toThrow(
-          `Solid Memo is updating the instance at ${MAIN} and writes nothing to it until the update is over`,
+          `Solid Memo is updating this instance and saves nothing to it until the update is done. Wait for the update to finish, then try again.\ncontainer: ${MAIN}`,
         );
       }
-      await expect(fetch(new Request(`${MAIN}meta.ttl`, { method: "DELETE" }))).rejects.toThrow("refused: DELETE");
+      await expect(fetch(new Request(`${MAIN}meta.ttl`, { method: "DELETE" }))).rejects.toThrow("method: DELETE");
       await expect(fetch(new URL(`${MAIN}meta.ttl`), { method })).rejects.toThrow();
       expect(inner).not.toHaveBeenCalled();
     },
@@ -36,7 +36,7 @@ describe("createWriteFence", () => {
     const cards = `${MAIN}decks/deck-1.ttl`;
     hold(cards);
     await expect(fetch(cards, { method: "PATCH" })).rejects.toThrow(
-      `Solid Memo is updating the deck in ${cards} and writes nothing to it until the update is over (refused: PATCH ${cards})`,
+      `Solid Memo is updating this deck and saves nothing to it until the update is done. Wait for the update to finish, then try again.\ndocument: ${cards}\nmethod: PATCH\nurl: ${cards}`,
     );
     await fetch(cards);
     await fetch(`${MAIN}decks/deck-1-0f3a.ttl`, { method: "PUT" });

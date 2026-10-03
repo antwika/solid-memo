@@ -12,7 +12,7 @@
 <#shape>
     a sh:NodeShape ;
     sh:name "CardV4" ;
-    rdfs:comment "Card format 4: each side has text, a picture or both (a picture is always an IRI); a side's text is untagged, its language unknown, or language-tagged, one text per language; each side may have a note under it, shown once the answer is revealed, and the back a label above it that says how the answer relates to the front, all three language-tagged text with an English value; a retired card, which is kept but no longer studied, states owl:deprecated true." ;
+    rdfs:comment "Card format 4: each side has text, a picture or both (a picture is always an IRI); a side's text is untagged, its language unknown, or language-tagged, one text per language; a side's picture may have a description, its text alternative, language-tagged text, one per language (added without a version bump: an older reader ignores it); each side may have a note under it, shown once the answer is revealed, and the back a label above it that says how the answer relates to the front, all three language-tagged text with an English value; a retired card, which is kept but no longer studied, states owl:deprecated true." ;
     sh:nodeKind sh:IRI ;
     sh:class solid-memo:Card ;
     sh:property <#formatVersion> ,
@@ -20,6 +20,8 @@
                 <#back> ,
                 <#frontImage> ,
                 <#backImage> ,
+                <#frontImageDescription> ,
+                <#backImageDescription> ,
                 <#frontNote> ,
                 <#backLabel> ,
                 <#backNote> ,
@@ -92,6 +94,22 @@
     sh:maxCount 1 ;
     sh:message "A picture is an IRI (<https://…>), never a string literal."@en ,
                "En bild är en IRI (<https://…>), aldrig en strängliteral."@sv .
+
+<#frontImageDescription>
+    a sh:PropertyShape ;
+    sh:path solid-memo:frontImageDescription ;
+    sh:datatype rdf:langString ;
+    sh:uniqueLang true ;
+    sh:message "A picture's description is language-tagged text, one per language (\"…\"@en)."@en ,
+               "En bildbeskrivning är språktaggad text, en per språk (\"…\"@en)."@sv .
+
+<#backImageDescription>
+    a sh:PropertyShape ;
+    sh:path solid-memo:backImageDescription ;
+    sh:datatype rdf:langString ;
+    sh:uniqueLang true ;
+    sh:message "A picture's description is language-tagged text, one per language (\"…\"@en)."@en ,
+               "En bildbeskrivning är språktaggad text, en per språk (\"…\"@en)."@sv .
 
 <#frontNote>
     a sh:PropertyShape ;

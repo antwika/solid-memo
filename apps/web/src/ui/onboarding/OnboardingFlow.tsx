@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { PodProvider } from "@solid-memo/domain/podProvider";
 import { useI18n } from "../i18n";
 import { WebIdForm } from "./WebIdForm";
@@ -10,7 +10,9 @@ type Step = "choose" | "webId";
  * existing one — by typing a WebID, or by picking the provider to log in
  * at — or try the app as a guest first (docs/guest-mode.md). Login itself
  * happens on the identity provider's page; this flow only finds out which
- * provider that is.
+ * provider that is. Each step takes the place of the button that leads
+ * to it, so the focus follows: to the WebID field, and back to "I have a
+ * Pod" on Back.
  */
 export function OnboardingFlow({
   providers,
@@ -31,6 +33,16 @@ export function OnboardingFlow({
   const { t } = useI18n();
   const [step, setStep] = useState<Step>(returning ? "webId" : "choose");
   const [cameFromChoice, setCameFromChoice] = useState(false);
+  const havePodRef = useRef<HTMLButtonElement>(null);
+  /** Back was pressed: "I have a Pod" takes the focus once it is back. */
+  const cameBack = useRef(false);
+
+  useLayoutEffect(() => {
+    if (step === "choose" && cameBack.current) {
+      cameBack.current = false;
+      havePodRef.current!.focus();
+    }
+  }, [step]);
 
   const signUpProviders = providers.filter(
     (provider) => provider.signUpUrl !== undefined,
@@ -44,7 +56,10 @@ export function OnboardingFlow({
           busy={busy}
           autoFocus={cameFromChoice}
           onSubmit={onLogin}
-          onBack={() => setStep("choose")}
+          onBack={() => {
+            cameBack.current = true;
+            setStep("choose");
+          }}
         />
         <div class="provider-login">
           <h3>{t("onboardingFlow.providerHeading")}</h3>
@@ -89,6 +104,7 @@ export function OnboardingFlow({
       <p class="hint">{t("onboardingFlow.createPodHint")}</p>
       <div class="onboarding-actions">
         <button
+          ref={havePodRef}
           onClick={() => {
             setCameFromChoice(true);
             setStep("webId");

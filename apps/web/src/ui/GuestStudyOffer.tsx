@@ -1,4 +1,5 @@
-import { useState } from "preact/hooks";
+import type { ComponentChildren } from "preact";
+import { useId, useState } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import {
@@ -10,7 +11,9 @@ import {
 } from "@solid-memo/domain/guest";
 import type { Instance, RegistrationTarget } from "@solid-memo/domain/instance";
 import type { Session } from "@solid-memo/domain/session";
-import { useI18n, type I18n } from "./i18n";
+import { ErrorMessage } from "./ErrorMessage";
+import { useI18n, type I18n, type ErrorText } from "./i18n";
+import { usePanelFocus } from "./panelFocus";
 import { RegistrationTargetChooser } from "./RegistrationTargetChooser";
 import { routeToHash } from "./router";
 import { StepProgress } from "./StepProgress";
@@ -34,14 +37,47 @@ type Stage = "offer" | "discard" | "form" | "dismissed";
  * For a user who logged in where a guest studied before (docs/guest-mode.md):
  * the offer to move the guest's study into their Pod — or to discard it, or
  * to leave it for now — then the move, step by step, and how it ended.
- * Nothing at all when no guest studied in this browser.
+ * Nothing to see when no guest studied in this browser.
  */
 export function GuestStudyOffer({ useCases, session }: { useCases: UseCases; session: Session }) {
   const { t } = useI18n();
+  const [outcome, setOutcome] = useState<GuestTransferOutcome | null>(null);
+  // Mounted throughout, so a screen reader hears that the move succeeded: a
+  // live region inserted along with its text often goes unheard. A failure
+  // is heard through its panel, which takes the focus, so it is not said twice.
+  return (
+    <>
+      <p class="visually-hidden" role="status">
+        {outcome?.ok === true ? (outcome.tidied ? t("guestOffer.moved") : t("guestOffer.movedNotTidied")) : ""}
+      </p>
+      <GuestStudyOfferStage useCases={useCases} session={session} outcome={outcome} onOutcome={setOutcome} />
+    </>
+  );
+}
+
+/**
+ * Where the offer is: the offer itself, the form, the move under way, or
+ * how it ended. Each stage takes the focus from the one it replaces, all
+ * but the offer as the page loads and a move that succeeded (the instance
+ * it opens takes it); Back and Cancel give it to the offer.
+ */
+function GuestStudyOfferStage({
+  useCases,
+  session,
+  outcome,
+  onOutcome,
+}: {
+  useCases: UseCases;
+  session: Session;
+  outcome: GuestTransferOutcome | null;
+  onOutcome: (outcome: GuestTransferOutcome | null) => void;
+}) {
+  const { t, errorText } = useI18n();
   const queryClient = useQueryClient();
   const [stage, setStage] = useState<Stage>("offer");
+  /** The user came back to the offer, from the form or the discard question: it takes the focus. */
+  const [returned, setReturned] = useState(false);
   const [progress, setProgress] = useState<GuestTransferProgress | null>(null);
-  const [outcome, setOutcome] = useState<GuestTransferOutcome | null>(null);
 
   const studyQuery = useQuery({
     queryKey: ["guestStudy"],
@@ -56,9 +92,11 @@ export function GuestStudyOffer({ useCases, session }: { useCases: UseCases; ses
   const move = useMutation({
     mutationFn: (args: { instance: Instance; target: { containerUrl: string; registrationTarget: RegistrationTarget } }) =>
       useCases.transferGuestStudy(session, args.instance, args.target, setProgress),
+    // A new move starts without the last one's steps.
+    onMutate: () => setProgress(null),
     onSuccess: async (result) => {
       setProgress(null);
-      setOutcome(result);
+      onOutcome(result);
       if (!result.ok) return;
       await queryClient.invalidateQueries({ queryKey: ["instances", session.webId] });
       await queryClient.invalidateQueries({ queryKey: ["guestStudy"] });
@@ -66,7 +104,10 @@ export function GuestStudyOffer({ useCases, session }: { useCases: UseCases; ses
     },
   });
 
-  if (progress !== null) {
+  // Only while the move runs: one that threw (rather than ending in a failed
+  // outcome) goes back to the form in the same render as its error, so the
+  // form comes back knowing it has one to show.
+  if (progress !== null && move.isPending) {
     const labels = stepLabels(t);
     const step = labels[progress.step];
     return (
@@ -77,11 +118,7 @@ export function GuestStudyOffer({ useCases, session }: { useCases: UseCases; ses
         done={progress.done}
         total={progress.total}
         part={progress.part}
-        status={
-          progress.part === undefined
-            ? t("guestOffer.running", { step })
-            : t("guestOffer.runningCount", { step, done: progress.part.done, total: progress.part.total })
-        }
+        status={t("guestOffer.running", { step })}
         progressLabel={t("guestOffer.progressLabel")}
         hint={t("guestOffer.keepOpen")}
       />
@@ -89,7 +126,11 @@ export function GuestStudyOffer({ useCases, session }: { useCases: UseCases; ses
   }
 
   if (outcome !== null) {
-    return <GuestTransferResult outcome={outcome} onClose={() => setOutcome(null)} />;
+    return outcome.ok ? (
+      <GuestMoved tidied={outcome.tidied} onClose={() => onOutcome(null)} />
+    ) : (
+      <GuestTransferFailed outcome={outcome} onClose={() => onOutcome(null)} />
+    );
   }
 
   const first = studyQuery.data?.instances[0];
@@ -101,39 +142,92 @@ export function GuestStudyOffer({ useCases, session }: { useCases: UseCases; ses
         useCases={useCases}
         session={session}
         busy={move.isPending}
+        error={errorText(move.error)}
         onMove={(target) => move.mutate({ instance: first.instance, target })}
-        onBack={() => setStage("offer")}
+        onBack={() => {
+          move.reset();
+          setStage("offer");
+          setReturned(true);
+        }}
       />
     );
   }
 
   return (
-    <div class="warning migration" role="region" aria-label={t("guestOffer.region")}>
-      <p>
-        <strong>{t("guestOffer.heading")}</strong>{" "}
-        {t("guestOffer.body", { name: first.instance.name, count: first.deckCount })}
-      </p>
-      {stage === "discard" ? (
+    // Keyed by stage: the discard question is a panel of its own, taking the focus.
+    <GuestOfferRegion key={stage} focus={stage === "discard" || returned}>
+      {(bodyId) => (
         <>
-          <p>{t("guestOffer.discardConfirm")}</p>
-          <div class="edit-actions">
-            <button class="danger" onClick={() => discard.mutate()} disabled={discard.isPending}>
-              {t("guestOffer.discardYes")}
-            </button>
-            <button onClick={() => setStage("offer")} disabled={discard.isPending}>
-              {t("guestOffer.cancel")}
-            </button>
-          </div>
+          <p id={stage === "discard" ? undefined : bodyId}>
+            <strong>{t("guestOffer.heading")}</strong>{" "}
+            {t("guestOffer.body", { name: first.instance.name, count: first.deckCount })}
+          </p>
+          {stage === "discard" ? (
+            <>
+              <p id={bodyId}>{t("guestOffer.discardConfirm")}</p>
+              <div class="edit-actions">
+                <button
+                  class="danger"
+                  onClick={() => {
+                    if (!discard.isPending) discard.mutate();
+                  }}
+                  aria-disabled={discard.isPending}
+                >
+                  {t("guestOffer.discardYes")}
+                </button>
+                <button
+                  onClick={() => {
+                    if (discard.isPending) return;
+                    discard.reset();
+                    setStage("offer");
+                    setReturned(true);
+                  }}
+                  aria-disabled={discard.isPending}
+                >
+                  {t("guestOffer.cancel")}
+                </button>
+              </div>
+              <ErrorMessage error={errorText(discard.error)} />
+            </>
+          ) : (
+            <div class="edit-actions">
+              <button class="primary" onClick={() => setStage("form")}>
+                {t("guestOffer.move")}
+              </button>
+              <button onClick={() => setStage("discard")}>{t("guestOffer.discard")}</button>
+              <button onClick={() => setStage("dismissed")}>{t("guestOffer.notNow")}</button>
+            </div>
+          )}
         </>
-      ) : (
-        <div class="edit-actions">
-          <button class="primary" onClick={() => setStage("form")}>
-            {t("guestOffer.move")}
-          </button>
-          <button onClick={() => setStage("discard")}>{t("guestOffer.discard")}</button>
-          <button onClick={() => setStage("dismissed")}>{t("guestOffer.notNow")}</button>
-        </div>
       )}
+    </GuestOfferRegion>
+  );
+}
+
+/**
+ * The offer's region, described by what it asks (`bodyId`). It takes the
+ * focus when `focus`; shown as the page loads, it leaves it be.
+ */
+function GuestOfferRegion({
+  focus,
+  children,
+}: {
+  focus: boolean;
+  children: (bodyId: string) => ComponentChildren;
+}) {
+  const { t } = useI18n();
+  const ref = usePanelFocus<HTMLDivElement>(focus);
+  const bodyId = useId();
+  return (
+    <div
+      ref={ref}
+      class="warning migration"
+      role="region"
+      aria-label={t("guestOffer.region")}
+      aria-describedby={bodyId}
+      tabIndex={-1}
+    >
+      {children(bodyId)}
     </div>
   );
 }
@@ -143,12 +237,15 @@ function GuestTransferForm({
   useCases,
   session,
   busy,
+  error,
   onMove,
   onBack,
 }: {
   useCases: UseCases;
   session: Session;
   busy: boolean;
+  /** Why the last move could not start, or null. */
+  error: ErrorText | null;
   onMove: (target: { containerUrl: string; registrationTarget: RegistrationTarget }) => void;
   onBack: () => void;
 }) {
@@ -180,14 +277,19 @@ function GuestTransferForm({
         );
   const location = typedLocation ?? suggested;
   const [target, setTarget] = useState<RegistrationTarget>("private");
+  // Back after a move that threw once under way: the steps gave way, and the
+  // error, not the form's heading, is what takes their focus.
+  const [cameWithError] = useState(error !== null);
+  const ref = usePanelFocus<HTMLElement>(!cameWithError);
 
   function handleSubmit(event: Event) {
     event.preventDefault();
+    if (busy) return;
     onMove({ containerUrl: location.trim(), registrationTarget: target });
   }
 
   return (
-    <section class="guest-transfer" aria-label={t("guestOffer.formHeading")}>
+    <section ref={ref} class="guest-transfer" aria-label={t("guestOffer.formHeading")} tabIndex={-1}>
       <h2>{t("guestOffer.formHeading")}</h2>
       <p>{t("guestOffer.explain")}</p>
       <form onSubmit={handleSubmit}>
@@ -221,11 +323,18 @@ function GuestTransferForm({
           disabled={busy}
         />
         <RegistrationTargetChooser options={optionsQuery.data ?? null} value={target} onChange={setTarget} />
+        <ErrorMessage error={error} focus={cameWithError} />
         <div class="edit-actions">
-          <button type="submit" class="primary" disabled={busy}>
+          <button type="submit" class="primary" aria-disabled={busy}>
             {t("guestOffer.start")}
           </button>
-          <button type="button" onClick={onBack} disabled={busy}>
+          <button
+            type="button"
+            onClick={() => {
+              if (!busy) onBack();
+            }}
+            aria-disabled={busy}
+          >
             {t("guestOffer.back")}
           </button>
         </div>
@@ -234,23 +343,49 @@ function GuestTransferForm({
   );
 }
 
-/** How the move ended: the study in the Pod, or where it failed and that the study is still here. */
-function GuestTransferResult({ outcome, onClose }: { outcome: GuestTransferOutcome; onClose: () => void }) {
-  const { t, errorText } = useI18n();
-  if (outcome.ok) {
-    return (
-      <div class="guest-moved" role="status">
-        <p>{outcome.tidied ? t("guestOffer.moved") : t("guestOffer.movedNotTidied")}</p>
-        <button onClick={onClose}>{t("guestOffer.close")}</button>
-      </div>
-    );
-  }
+/**
+ * The move succeeded. It takes no focus: the status line above says so,
+ * and the move opens the new instance, whose screen takes the focus.
+ */
+function GuestMoved({ tidied, onClose }: { tidied: boolean; onClose: () => void }) {
+  const { t } = useI18n();
   return (
-    <div class="warning migration" role="region" aria-label={t("guestOffer.failedRegion")}>
-      <p>
+    <div class="guest-moved">
+      {/* Announced by the status line above; this is what is seen. */}
+      <p aria-hidden="true">{tidied ? t("guestOffer.moved") : t("guestOffer.movedNotTidied")}</p>
+      <button onClick={onClose}>{t("guestOffer.close")}</button>
+    </div>
+  );
+}
+
+/**
+ * Where the move failed and that the study is still here. It takes the
+ * progress's place and its focus, read out with why as its description;
+ * Close hands the focus to the screen.
+ */
+function GuestTransferFailed({
+  outcome,
+  onClose,
+}: {
+  outcome: Extract<GuestTransferOutcome, { ok: false }>;
+  onClose: () => void;
+}) {
+  const { t, errorText } = useI18n();
+  const ref = usePanelFocus<HTMLDivElement>();
+  const whyId = useId();
+  return (
+    <div
+      ref={ref}
+      class="warning migration"
+      role="region"
+      aria-label={t("guestOffer.failedRegion")}
+      aria-describedby={whyId}
+      tabIndex={-1}
+    >
+      <div id={whyId} class="failure-why">
         <strong>{t("guestOffer.failedWhile", { step: stepLabels(t)[outcome.step].toLowerCase() })}</strong>{" "}
         {errorText(outcome.error)}
-      </p>
+      </div>
       <p>
         {t("guestOffer.stillHere")}{" "}
         {outcome.cleanedUp

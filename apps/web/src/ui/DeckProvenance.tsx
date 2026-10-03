@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+import type { LangText } from "@solid-memo/domain/langText";
 import { licenseLabel } from "@solid-memo/domain/license";
 import { AuthorNames } from "./AuthorName";
 import { ExternalLink } from "./ExternalLink";
@@ -23,9 +24,10 @@ export function DeckProvenance({
   license?: string;
   /** ISO dateTime of the deck's last change, when it says. */
   modifiedAt?: string;
-  description?: string;
+  /** Shown in the reader's language, marked when that is not the page's. */
+  description?: LangText;
 }) {
-  const { t, tx, formatDate } = useI18n();
+  const { t, tx, formatDate, readerText, readerLang } = useI18n();
   const parts: ComponentChildren[] = [];
   if (authors.length > 0) {
     parts.push(
@@ -48,7 +50,9 @@ export function DeckProvenance({
         </>
       ))}
       {description !== undefined && (
-        <span class="deck-description">{linkify(description)}</span>
+        <span class="deck-description" lang={readerLang(description)}>
+          {linkify(readerText(description))}
+        </span>
       )}
     </span>
   );
