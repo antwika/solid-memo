@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
@@ -57,7 +57,7 @@ describe.each(SERVER_IDS)("servers/%s/compose.yml", (id) => {
 describe("the servers' folders", () => {
   it("are the table's, besides the images it builds from", () => {
     const folders = readdirSync(join(import.meta.dirname, "servers"), { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && entry.name !== "nss")
+      .filter((entry) => entry.isDirectory() && entry.name !== "nss" && existsSync(join(entry.parentPath, entry.name, "compose.yml")))
       .map((entry) => entry.name);
     expect(folders.sort()).toEqual([...SERVER_IDS].sort());
   });
@@ -90,6 +90,7 @@ describe("the names in the tests", () => {
       "nss-6": expect.stringMatching(/^node-solid-server 6\.\d+\.\d+$/),
       "nss-5": expect.stringMatching(/^node-solid-server 5\.\d+\.\d+$/),
       "css-8": expect.stringMatching(/^Community Solid Server 8\.\d+\.\d+(-[\w.]+)?$/),
+      pivot: expect.stringMatching(/^Pivot \d+\.\d+\.\d+ \(Community Solid Server 7\.\d+\.\d+\)$/),
     });
   });
 });

@@ -30,6 +30,7 @@ the run ends, on Ctrl-C); the test names say which server and version:
 | `nss-6` | node-solid-server 6.x | built here from its lockfile ([servers/nss/](../e2e/pod/servers/nss/Dockerfile)), in a root whose ACL lets anyone read and write | blocking |
 | `nss-5` | node-solid-server 5.x | the same | blocking |
 | `css-8` | Community Solid Server 8, still in alpha, in memory | its own, pinned by digest | advisory |
+| `pivot` | Pivot, the server of solidcommunity.net (the Community Solid Server 7 with Pivot's components), in memory | built here from its lockfile ([servers/pivot/](../e2e/pod/servers/pivot/Dockerfile)) with a configuration of its own, its root open | advisory |
 
 A **blocking** server's tests gate CI, and so deploys and Renovate's
 merges: every test passes or skips, for a reason the tests give. An

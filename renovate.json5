@@ -49,6 +49,17 @@
             matchDepNames: ['node'],
             allowedVersions: '<25',
         },
+        // Pivot, advisory: what it reports is for a person to look at. Its
+        // image keeps to Node 22, which Pivot's own CI runs.
+        {
+            matchFileNames: ['e2e/pod/servers/pivot/**'],
+            automerge: false,
+        },
+        {
+            matchFileNames: ['e2e/pod/servers/pivot/Dockerfile'],
+            matchDepNames: ['node'],
+            allowedVersions: '<23',
+        },
         // The Community Solid Server's tags are pushed again now and then:
         // a new digest for the same version is for a person to look at.
         {

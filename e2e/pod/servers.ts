@@ -50,6 +50,16 @@ export const SERVERS = {
   "nss-6": { label: "node-solid-server", tier: "blocking", internalPort: 8443, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => lockedVersion("nss/6", "solid-server") },
   "nss-5": { label: "node-solid-server", tier: "blocking", internalPort: 8443, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => lockedVersion("nss/5", "solid-server") },
   "css-8": { label: "Community Solid Server", tier: "advisory", internalPort: 3000, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => imageTag("css-8") },
+  pivot: {
+    label: "Pivot",
+    tier: "advisory",
+    internalPort: 3000,
+    podPath: "",
+    readyPath: "",
+    startTimeoutMs: 60_000,
+    // With the Community Solid Server it runs on, which its lockfile and solidcommunity.net's may resolve differently.
+    version: () => `${lockedVersion("pivot", "@solid/pivot")} (Community Solid Server ${lockedVersion("pivot", "@solid/community-server")})`,
+  },
 } satisfies Record<string, Entry>;
 
 export type ServerId = keyof typeof SERVERS;
