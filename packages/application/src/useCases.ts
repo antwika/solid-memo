@@ -8,6 +8,7 @@ import { planRepair, type Repair, type RepairPlan } from "@solid-memo/domain/rep
 import {
   rebaseIri,
   stagingUrlOf,
+  UPDATE_STEP_LABELS,
   type UpdateOutcome,
   type UpdateProgress,
   type UpdateStep,
@@ -47,6 +48,7 @@ import {
   type DeckUpgradeOutcome,
   type DeckUpgradeProgress,
   type DeckUpgradeStep,
+  type StepPart,
 } from "@solid-memo/domain/deckUpgrade";
 import { shown } from "@solid-memo/domain/langText";
 import {
@@ -371,6 +373,48 @@ const nothing = async () => undefined;
 const none = async (): Promise<never[]> => [];
 const NO_ANSWER_LOG: AnswerLog = { append: nothing, months: none, readMonth: none, removeDay: nothing };
 
+/**
+ * The progress of an update through its `total` steps, reported as it
+ * goes: the step it is on, the steps finished and, for a step with more
+ * than one unit of work (documents, decks, writes), how far into it.
+ */
+function stepReporter<Step extends string>(
+  first: Step,
+  total: number,
+  onProgress: (progress: { step: Step; done: number; total: number; part?: StepPart }) => void,
+) {
+  let step = first;
+  let done = 0;
+  let part: StepPart | undefined;
+  const report = () => onProgress({ step, done, total, ...(part === undefined ? {} : { part: { ...part } }) });
+  const enter = (next: Step, parts: number | undefined) => {
+    step = next;
+    part = parts === undefined ? undefined : { done: 0, total: parts };
+    report();
+  };
+  return {
+    step: () => step,
+    /** Under way, at the first step, of `parts` units of work when it has more than one. */
+    start(parts?: number) {
+      enter(first, parts);
+    },
+    /** The step is finished: on to `next` (the same, after the last), of `parts` units of work. */
+    finished(next: Step = step, parts?: number) {
+      done += 1;
+      enter(next, parts);
+    },
+    /** `count` of the step's `of` units done; not reported once all are, the step's finish is. */
+    partly(count: number, of = part!.total) {
+      part = { done: count, total: of };
+      if (count < of) report();
+    },
+    /** One more of the step's units done. */
+    stepped() {
+      this.partly(part!.done + 1);
+    },
+  };
+}
+
 export function createUseCases({
   sessionGateway,
   random = Math.random,
@@ -429,6 +473,7 @@ export function createUseCases({
   async function settleUpgrade(
     deckUrl: string,
     note: DeckUpgradeNote,
+    onDeleted: (count: number, of: number) => void = () => undefined,
   ): Promise<{ switched: boolean; deck: Deck | null }> {
     const decks = await deckRepository.listDecks(instanceUrlOfDeck(deckUrl));
     const deck = decks.find((candidate) => candidate.url === deckUrl) ?? null;
@@ -439,8 +484,11 @@ export function createUseCases({
         ? moves.flatMap((move) => [move.from, move.to])
         : moves.map((move) => (switched ? move.from : move.to));
     const used = documentsInUse(decks);
-    for (const url of losers) {
-      if (!used.has(url)) await deckRepository.deleteDocument(url);
+    const deleting = losers.filter((url) => !used.has(url));
+    onDeleted(0, deleting.length);
+    for (const [index, url] of deleting.entries()) {
+      await deckRepository.deleteDocument(url);
+      onDeleted(index + 1, deleting.length);
     }
     updateJournal.end(deckUrl);
     return { switched, deck };
@@ -475,17 +523,28 @@ export function createUseCases({
     session: Session,
     instanceUrl: string,
     replacing: { replaces: string; replacedAt: string },
+    onDone: (count: number, of: number) => void,
   ): Promise<void> {
+    const decks = await deckRepository.listDecks(instanceUrl);
+    // The documents brought up to date, one by one: meta, preferences, each deck's three, the catalogue.
+    const of = 3 + decks.length * 3;
+    let count = 0;
+    const updated = () => onDone(++count, of);
+    onDone(count, of);
     const meta = await instanceRepository.readMeta(instanceUrl);
     if (meta !== null) await instanceRepository.saveMeta(instanceUrl, { ...meta, ...replacing });
+    updated();
     const stored = await preferencesRepository.getPreferences(instanceUrl);
     if (stored !== null && isPreferencesOutdated(stored)) {
       await preferencesRepository.savePreferences(instanceUrl, stored.preferences);
     }
-    for (const deck of await deckRepository.listDecks(instanceUrl)) {
+    updated();
+    for (const deck of decks) {
       if (isDeckOutdated(deck)) await deckRepository.saveDeck(upgradeDeck(deck));
+      updated();
       const cards = (await deckRepository.listCards(deck)).filter(isOutdated);
       if (cards.length > 0) await deckRepository.saveCards(deck, cards.map(upgradeCard));
+      updated();
       const reviews = (await reviewStateRepository.listReviewStates(deck)).filter(isReviewStateOutdated);
       if (reviews.length > 0) {
         await reviewStateRepository.applyReviewChanges(deck, {
@@ -493,11 +552,13 @@ export function createUseCases({
           remove: [],
         });
       }
+      updated();
     }
     // Last: the catalogue lists the decks as DCAT datasets, which they are only once updated.
     if ((await deckRepository.readCatalog(instanceUrl)) === null) {
       await deckRepository.saveCatalog(instanceUrl, await catalogOf(session, meta?.name ?? instanceUrl));
     }
+    updated();
   }
 
   /**
@@ -610,10 +671,21 @@ export function createUseCases({
   }
 
   /** Every document of the instance, its answer log's too: not checked on every visit, being large and growing. */
-  async function validateInstance(instanceUrl: string): Promise<ValidationReport> {
+  async function validateInstance(
+    instanceUrl: string,
+    onChecked: (count: number, of: number) => void = () => undefined,
+  ): Promise<ValidationReport> {
     const [decks, months] = await Promise.all([deckRepository.listDecks(instanceUrl), answerLog.months(instanceUrl)]);
     const urls = [...instanceDocumentUrls(instanceUrl, decks), ...months.map((month) => historyUrlOf(instanceUrl, month))];
-    const documents = await Promise.all(urls.map((url) => shapeValidator.validateDocument(url)));
+    let checked = 0;
+    onChecked(checked, urls.length);
+    const documents = await Promise.all(
+      urls.map(async (url) => {
+        const document = await shapeValidator.validateDocument(url);
+        onChecked(++checked, urls.length);
+        return document;
+      }),
+    );
     return summarize(instanceUrl, documents);
   }
 
@@ -700,7 +772,7 @@ export function createUseCases({
     applyRepairs(repairs) {
       return repairRepository.applyRepairs(repairs);
     },
-    validateInstance,
+    validateInstance: (instanceUrl) => validateInstance(instanceUrl),
     checkInstance,
     viewWebIdDocument(session) {
       return webIdDocumentRepository.fetchWebIdDocument(session.webId);
@@ -781,15 +853,8 @@ export function createUseCases({
     },
     async applyLibraryUpgrade(offered, offeredPlan, onProgress = () => undefined) {
       const uuid = newId();
-      const total = DECK_UPGRADE_STEPS.length;
-      let step: DeckUpgradeStep = "read";
-      let done = 0;
+      const progress = stepReporter<DeckUpgradeStep>("read", DECK_UPGRADE_STEPS.length, onProgress);
       let note: DeckUpgradeNote | null = null;
-      const finished = (next: DeckUpgradeStep) => {
-        done += 1;
-        step = next;
-        onProgress({ step, done, total });
-      };
       // The documents the upgrade replaces are read-only in this tab until
       // it is over: a review or edit made meanwhile would be lost.
       const releases = [writeFence.hold(offered.cardsDocumentUrl)];
@@ -797,14 +862,18 @@ export function createUseCases({
         for (const release of releases.splice(0)) release();
       };
       try {
-        onProgress({ step, done, total });
+        // The deck, its cards, the releases (to plan again), and its review states when cards go.
+        progress.start(3);
         const deck = await deckRepository.readDeck(offered.url);
         if (deck === null) throw new AppError("deckGone", { deck: shown(offered.title) });
         if (deck.cardsDocumentUrl !== offered.cardsDocumentUrl) throw new AppError("deckChangedSinceOffer");
+        progress.stepped();
         const cards = await readNow(deckRepository.readCardsSince(deck, undefined));
+        progress.stepped();
         const plan = await planUpgrade(deck, async () => cards.value);
         if (plan === null || !sameCardChanges(plan, offeredPlan)) throw new AppError("deckChangedSinceOffer");
         const removed = new Set(plan.remove.map((card) => card.id));
+        progress.partly(3, removed.size === 0 ? 3 : 4);
         // The review states move only when some are dropped; else the deck keeps its reviews document.
         const reviews =
           removed.size === 0 ? null : await readNow(reviewStateRepository.readReviewStatesSince(deck, undefined));
@@ -823,14 +892,17 @@ export function createUseCases({
           reviewsDocumentUrl: note.reviews?.to ?? deck.reviewsDocumentUrl,
         };
 
-        finished("write");
+        // Each new document, and who may access it.
+        progress.finished("write", note.reviews === undefined ? 2 : 4);
         updateJournal.begin(deck.url, encodeDeckUpgradeNote(note));
         await deckRepository.stageCardChanges(deck, note.cards.to, {
           save: upgradedCards(plan),
           remove: [...removed],
         });
+        progress.stepped();
         // A document shared on its own (its own access control) stays shared as it was.
         await instanceCopier.copyAccessControl(note.cards.from, note.cards.to, note.cards);
+        progress.stepped();
         const keptStates = (reviews?.value ?? []).filter((state) => !removed.has(state.cardId));
         if (note.reviews !== undefined) {
           await reviewStateRepository.stageReviewChanges(
@@ -838,48 +910,53 @@ export function createUseCases({
             note.reviews.to,
             reviews!.value.filter((state) => removed.has(state.cardId)),
           );
+          progress.stepped();
           await instanceCopier.copyAccessControl(note.reviews.from, note.reviews.to, note.reviews);
         }
 
-        finished("check");
+        // Each new document, read back.
+        progress.finished("check", note.reviews === undefined ? undefined : 2);
         const written = await readNow(deckRepository.readCardsSince(staged, undefined));
         if (!sameCards(upgradedCardList(cards.value, plan), written.value)) {
           throw new AppError("upgradedCardsDiffer", { url: note.cards.to });
         }
         if (note.reviews !== undefined) {
+          progress.stepped();
           const writtenStates = await readNow(reviewStateRepository.readReviewStatesSince(staged, undefined));
           if (!sameReviewStates(keptStates, writtenStates.value)) {
             throw new AppError("upgradedReviewsDiffer", { url: note.reviews.to });
           }
         }
 
-        finished("verify");
+        // Each original, read again.
+        progress.finished("verify", note.reviews === undefined ? undefined : 2);
         const cardsNow = await deckRepository.readCardsSince(deck, cards.version ?? undefined);
         if (!cardsNow.unchanged && !sameCards(cards.value, cardsNow.value)) {
           throw new AppError("deckChangedDuringUpgrade", { url: deck.cardsDocumentUrl });
         }
         if (note.reviews !== undefined) {
+          progress.stepped();
           const reviewsNow = await reviewStateRepository.readReviewStatesSince(deck, reviews!.version ?? undefined);
           if (!reviewsNow.unchanged && !sameReviewStates(reviews!.value, reviewsNow.value)) {
             throw new AppError("deckChangedDuringUpgrade", { url: deck.reviewsDocumentUrl });
           }
         }
 
-        finished("switch");
+        progress.finished("switch");
         const switched = await deckRepository.switchDeck(deck, staged);
         // The old documents are no longer the deck's: what is left is to delete them.
         releaseAll();
 
-        finished("tidy");
-        const tidied = await settleUpgrade(deck.url, note).then(
+        progress.finished("tidy");
+        const tidied = await settleUpgrade(deck.url, note, (count, of) => progress.partly(count, of)).then(
           () => true,
           () => false,
         );
-        done += 1;
-        onProgress({ step, done, total });
+        progress.finished();
         return { ok: true, deck: switched, tidied };
       } catch (error) {
         releaseAll();
+        const step = progress.step();
         if (note === null) return { ok: false, step, error, cleanedUp: true };
         // A switch whose answer was lost may have happened: the deck says which side won.
         const settled = await settleUpgrade(offered.url, note).catch(() => null);
@@ -940,57 +1017,55 @@ export function createUseCases({
       const source = ensureTrailingSlash(instance.url);
       const target = stagingUrlOf(source, newId());
       const move = { from: source, to: target };
-      let step: UpdateStep = "stage";
-      let done = 0;
-      let total = 0;
+      const progress = stepReporter<UpdateStep>("stage", Object.keys(UPDATE_STEP_LABELS).length, onProgress);
+      const partly = (count: number, of: number) => progress.partly(count, of);
       let created = false;
       // The original is read-only from here until the update is over: a
       // write aimed at it by mistake fails instead of changing it.
       const release = writeFence.hold(source);
-      const finished = (next?: UpdateStep) => {
-        done += 1;
-        if (next !== undefined) step = next;
-        onProgress({ step, done, total });
-      };
       try {
-        onProgress({ step, done, total });
+        // Listing the original, making sure the copy's container is free, creating it.
+        progress.start(3);
         const resources = await instanceCopier.listResources(source);
-        total = resources.length + 6;
+        progress.stepped();
         await instanceCopier.ensureAbsent(target);
+        progress.stepped();
         updateJournal.begin(source, target);
         await instanceCopier.createContainer(target);
         created = true;
-        finished("access");
+        progress.finished("access");
         await instanceCopier.copyAccessControl(source, target, move);
-        finished("copy");
+        progress.finished("copy", resources.length);
         const versions = new Map<string, string>();
         for (const resource of resources) {
           const copy = rebaseIri(resource, source, target);
           versions.set(resource, await instanceCopier.copyResource(resource, copy, move));
           await instanceCopier.copyAccessControl(resource, copy, move);
-          finished();
+          progress.stepped();
         }
-        step = "upgrade";
-        onProgress({ step, done, total });
-        await upgradeInPlace(session, target, { replaces: source, replacedAt: now().toISOString() });
-        finished("validate");
-        const report = await validateInstance(target);
+        progress.finished("upgrade");
+        await upgradeInPlace(session, target, { replaces: source, replacedAt: now().toISOString() }, partly);
+        progress.finished("validate");
+        const report = await validateInstance(target, partly);
         if (!report.conforms) {
           throw new AppError("updatedCopyInvalid", { count: report.violationCount });
         }
-        finished("verify");
+        // Listing the original again, then each of its documents.
+        progress.finished("verify", resources.length + 1);
         const listedAgain = await instanceCopier.listResources(source);
         if (listedAgain.join("\n") !== resources.join("\n")) {
           throw new AppError("instanceChangedDuringCopy");
         }
+        progress.stepped();
         for (const resource of resources) {
           if (!(await instanceCopier.isUnchanged(resource, versions.get(resource)!))) {
             throw new AppError("resourceChangedDuringCopy", { url: resource });
           }
+          progress.stepped();
         }
-        finished("switch");
+        progress.finished("switch");
         await instanceRepository.switchInstance({ webId: session.webId, from: source, to: target, title: instance.name });
-        finished();
+        progress.finished();
         updateJournal.end(source);
         return { ok: true, instanceUrl: target, backupUrl: source };
       } catch (error) {
@@ -1004,7 +1079,7 @@ export function createUseCases({
         if (cleanedUp) updateJournal.end(source);
         return {
           ok: false,
-          step,
+          step: progress.step(),
           error,
           cleanedUp,
           ...(cleanedUp ? {} : { leftoverUrl: target }),

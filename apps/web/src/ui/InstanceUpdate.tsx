@@ -57,10 +57,11 @@ export function InstanceUpdateProgress({ progress }: { progress: UpdateProgress 
       current={progress.step}
       done={progress.done}
       total={progress.total}
+      part={progress.part}
       status={
-        progress.step === "copy" && progress.total > 0
-          ? t("instanceUpdate.runningCount", { step, done: progress.done, total: progress.total })
-          : t("instanceUpdate.running", { step })
+        progress.part === undefined
+          ? t("instanceUpdate.running", { step })
+          : t("instanceUpdate.runningCount", { step, done: progress.part.done, total: progress.part.total })
       }
       progressLabel={t("instanceUpdate.progressLabel")}
       hint={t("instanceUpdate.keepOpen")}

@@ -108,9 +108,12 @@ describe("MigrationContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Start the update" }));
     expect(screen.getByRole("region", { name: "Updating" })).toHaveTextContent("Preparing a new copy…");
     await waitFor(() => expect(report).toBeDefined());
-    act(() => report!({ step: "copy", done: 3, total: 10 }));
+    act(() => report!({ step: "copy", done: 2, total: 7, part: { done: 3, total: 10 } }));
     expect(screen.getByRole("region", { name: "Updating" })).toHaveTextContent("Copying documents… (3 of 10)");
-    expect(screen.getByRole("progressbar", { name: "Update progress" })).toHaveAttribute("value", "3");
+    expect(screen.getByRole("progressbar", { name: "Update progress" })).toHaveAttribute("value", "2.3");
+    act(() => report!({ step: "switch", done: 6, total: 7 }));
+    expect(screen.getByRole("status")).toHaveTextContent(/^Switching over to the new copy…$/);
+    expect(screen.getByRole("progressbar", { name: "Update progress" })).toHaveAttribute("value", "6");
     act(() => finish({ ok: true, instanceUrl: "https://pod.example/solid-memo/a-1/", backupUrl: instance.url }));
     await waitFor(() =>
       expect(onUpdated).toHaveBeenCalledWith({ url: "https://pod.example/solid-memo/a-1/", name: "Main" }),

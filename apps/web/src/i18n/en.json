@@ -356,6 +356,7 @@
   "deckUpgrade": {
     "progressRegion": "Updating the deck",
     "running": "{step}…",
+    "runningCount": "{step}… ({done} of {total})",
     "progressLabel": "Update progress",
     "keepOpen": "Keep this page open until the update is done. Your deck is only switched over once everything checks out.",
     "step": {

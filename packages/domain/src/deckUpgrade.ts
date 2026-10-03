@@ -19,11 +19,19 @@ export type DeckUpgradeStep = "read" | "write" | "check" | "verify" | "switch" |
 
 export const DECK_UPGRADE_STEPS: readonly DeckUpgradeStep[] = ["read", "write", "check", "verify", "switch", "tidy"];
 
+/** How far into a step it is, in the step's own units: documents, decks, reads, writes. */
+export interface StepPart {
+  done: number;
+  total: number;
+}
+
 export interface DeckUpgradeProgress {
   step: DeckUpgradeStep;
   /** Steps finished, out of `total`. */
   done: number;
   total: number;
+  /** How far into `step` it is; absent for a step done in one go. */
+  part?: StepPart;
 }
 
 export type DeckUpgradeOutcome =

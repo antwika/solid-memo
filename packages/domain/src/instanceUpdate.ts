@@ -1,3 +1,4 @@
+import type { StepPart } from "./deckUpgrade";
 import { ensureTrailingSlash } from "./instanceLayout";
 
 /**
@@ -30,9 +31,11 @@ export const UPDATE_STEP_LABELS: Record<UpdateStep, string> = {
 
 export interface UpdateProgress {
   step: UpdateStep;
-  /** Units of work done, out of `total`: documents copied, steps finished. */
+  /** Steps finished, out of `total`. */
   done: number;
   total: number;
+  /** How far into `step` it is; absent for a step done in one go. */
+  part?: StepPart;
 }
 
 export type UpdateOutcome =

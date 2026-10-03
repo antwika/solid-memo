@@ -155,6 +155,9 @@ describe("LibraryUpgradeContainer", () => {
       "·Showing the updated deck",
     ]);
     expect(steps[3]).toHaveAttribute("aria-current", "step");
+    act(() => report!({ step: "verify", done: 3, total: 6, part: { done: 1, total: 2 } }));
+    expect(screen.getByRole("status")).toHaveTextContent("Checking nothing changed meanwhile… (1 of 2)");
+    expect(screen.getByRole("progressbar", { name: "Update progress" })).toHaveAttribute("value", "3.5");
     expect(screen.queryByRole("button", { name: "Update to release 2" })).toBeNull();
 
     act(() => finish!());
