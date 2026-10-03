@@ -132,9 +132,13 @@ export function PreferencesScreen({
           min="0"
           value={newCardsPerDay}
           onInput={(e) => setNewCardsPerDay(e.currentTarget.value)}
+          aria-describedby="pref-new-hint"
           required
           disabled={busy}
         />
+        <p id="pref-new-hint" class="hint">
+          {t("studyPace.startSmall")}
+        </p>
         <label for="pref-max">{t("preferences.maxReviewsPerDay")}</label>
         <input
           id="pref-max"

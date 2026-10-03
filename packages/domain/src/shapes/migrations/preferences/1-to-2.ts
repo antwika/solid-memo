@@ -10,7 +10,8 @@ export const PREFERENCES_1_TO_2: MigrationStep<"preferences", 1, 2> = {
   from: 1,
   to: 2,
   up: (data) => ({
-    newCardsPerDay: data.newCardsPerDay ?? DEFAULT_PREFERENCES.newCardsPerDay,
+    // The default of the format-1 era, kept: today's smaller default is for new instances.
+    newCardsPerDay: data.newCardsPerDay ?? 20,
     maxReviewsPerDay: data.maxReviewsPerDay ?? DEFAULT_PREFERENCES.maxReviewsPerDay,
     dayBoundaryHour: data.dayBoundaryHour ?? DEFAULT_PREFERENCES.dayBoundaryHour,
     answerScale: data.answerScale ?? DEFAULT_PREFERENCES.answerScale,

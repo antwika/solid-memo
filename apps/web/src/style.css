@@ -1941,6 +1941,40 @@ p[role="status"]:not(.loading) {
   font-size: 0.8rem;
 }
 
+/* Today's study above the deck list: one slim strip, the streak first. */
+.today-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--primary-soft);
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+  border-radius: var(--radius);
+}
+
+.today-strip p {
+  margin: 0;
+}
+
+.today-strip svg.icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: 0;
+  color: var(--accent-yellow);
+  fill: color-mix(in srgb, var(--accent-yellow) 35%, transparent);
+}
+
+.streak-count {
+  font-size: 1.1rem;
+}
+
+.streak-note,
+.today-numbers {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .statistics figure {
   margin: 0.75rem 0 1.25rem;
 }

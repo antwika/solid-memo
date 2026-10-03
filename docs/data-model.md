@@ -235,7 +235,11 @@ every dataset.
 
 Every grade given in study is kept, so statistics can be computed
 ([statistics.ts](../packages/domain/src/statistics.ts)): activity by
-study day, streaks, and how well reviews were remembered. A review state
+study day, streaks, and how well reviews were remembered. Once a day has
+answers, a slim strip above the deck list (where a session usually
+ends) says what the day came to (`todayOf`), led by the streak (with the record to beat,
+or a new record cheered), then a word of praise and the day's numbers.
+A review state
 says only where a card stands now; the log is the history, and source
 data, since nothing could rebuild it.
 

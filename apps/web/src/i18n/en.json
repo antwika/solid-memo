@@ -186,6 +186,34 @@
     "createButton": "Create deck",
     "libraryLink": "Deck library"
   },
+  "studyPace": {
+    "startSmall": "Every new card comes back for reviews in the days that follow, so a high number now piles up reviews later. Better to start small and be consistent: you can always raise it."
+  },
+  "today": {
+    "heading": "Today",
+    "cheer": {
+      "few": "Nice work!",
+      "some": "Great session!",
+      "many": "Impressive effort!"
+    },
+    "streakCount": {
+      "one": "{count}-day streak",
+      "other": "{count}-day streak"
+    },
+    "streakFirstDay": "Day one! Come back tomorrow for two.",
+    "streakRecord": "Your longest yet!",
+    "streakToBeat": "Record: {count} days",
+    "answers": {
+      "one": "{count} card",
+      "other": "{count} cards"
+    },
+    "introduced": {
+      "one": "{count} new",
+      "other": "{count} new"
+    },
+    "remembered": "{percent} remembered",
+    "allStatistics": "All statistics"
+  },
   "deckPreferences": {
     "loading": "Loading preferences…",
     "heading": "Preferences: {deck}",

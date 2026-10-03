@@ -37,8 +37,12 @@ export interface StoredPreferences {
   formatVersion: number;
 }
 
+/**
+ * A few new cards a day: each comes back for reviews in the days after,
+ * so a small, steady pace keeps the reviews to come manageable.
+ */
 export const DEFAULT_PREFERENCES: StudyPreferences = {
-  newCardsPerDay: 20,
+  newCardsPerDay: 5,
   maxReviewsPerDay: 200,
   dayBoundaryHour: 4,
   answerScale: "sm2",

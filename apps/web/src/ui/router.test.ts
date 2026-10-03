@@ -7,6 +7,7 @@ import {
   libraryHref,
   parseHash,
   routeToHash,
+  statisticsHref,
   type RouteRef,
   useHashRoute,
 } from "./router";
@@ -269,5 +270,14 @@ describe("useHashRoute", () => {
     window.history.replaceState(null, "", "#/storages");
     window.dispatchEvent(new Event("hashchange"));
     expect(result.current.route).toBeNull();
+  });
+});
+
+describe("statisticsHref", () => {
+  it("is the hash URL of the instance's statistics", () => {
+    expect(parseHash(statisticsHref("https://pod.example/a/"))).toEqual({
+      screen: "statistics",
+      instanceUrl: "https://pod.example/a/",
+    });
   });
 });

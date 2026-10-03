@@ -186,6 +186,34 @@
     "createButton": "Skapa kortlek",
     "libraryLink": "Kortleksbiblioteket"
   },
+  "studyPace": {
+    "startSmall": "Varje nytt kort kommer tillbaka för repetition de följande dagarna, så ett högt antal nu ger en hög med repetitioner senare. Börja hellre smått och var regelbunden: du kan alltid öka sen."
+  },
+  "today": {
+    "heading": "Idag",
+    "cheer": {
+      "few": "Bra jobbat!",
+      "some": "Ett riktigt bra pass!",
+      "many": "Imponerande insats!"
+    },
+    "streakCount": {
+      "one": "{count} dag i rad",
+      "other": "{count} dagar i rad"
+    },
+    "streakFirstDay": "Dag ett! Kom tillbaka imorgon så blir det två.",
+    "streakRecord": "Din längsta svit hittills!",
+    "streakToBeat": "Rekord: {count} dagar",
+    "answers": {
+      "one": "{count} kort",
+      "other": "{count} kort"
+    },
+    "introduced": {
+      "one": "{count} nytt",
+      "other": "{count} nya"
+    },
+    "remembered": "{percent} ihågkomna",
+    "allStatistics": "All statistik"
+  },
   "deckPreferences": {
     "loading": "Läser in inställningar…",
     "heading": "Inställningar: {deck}",

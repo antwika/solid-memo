@@ -63,6 +63,12 @@ describe("DeckPreferencesScreen", () => {
     );
   });
 
+  it("advises a small, steady number of new cards", () => {
+    renderScreen();
+    expect(screen.getByLabelText("New cards per day")).toHaveAccessibleDescription(/Better to start small and be consistent/);
+    expect(screen.getByLabelText("Max reviews per day")).not.toHaveAccessibleDescription();
+  });
+
   it("says what each number counts, in the singular for one", () => {
     renderScreen({ preferences: { newCardsPerDay: 1, maxReviewsPerDay: 20 } });
     const newCards = screen.getByLabelText("New cards per day");

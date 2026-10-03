@@ -103,6 +103,12 @@ day's new-card budget on a card introduced both ways.
 
 Both budgets clamp at zero.
 
+New instances start at 5 new cards per day: every new card brings
+reviews in the days after, so a high number now piles them up later. The
+preferences say so beside the field. (A format-1 preferences document
+without the field still means the 20 of its day; see
+[migrations](migrations.md).)
+
 The deck list needs only the counts, which `getStudyCounts` takes from
 the deck's schedule in the instance's [digest](data-model.md#the-digest)
 while neither of its documents has changed (`studyCountsOf` in

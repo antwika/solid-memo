@@ -1148,7 +1148,7 @@ describe("createUseCases", () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
     await expect(useCases.getPreferences(instance.url)).resolves.toEqual({
-      newCardsPerDay: 20,
+      newCardsPerDay: 5,
       maxReviewsPerDay: 200,
       dayBoundaryHour: 4,
       answerScale: "sm2",

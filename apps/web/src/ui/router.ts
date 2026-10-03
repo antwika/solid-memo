@@ -153,6 +153,11 @@ export function decksHref(instanceUrl: string): string {
   return routeToHash({ screen: "home", instanceUrl });
 }
 
+/** Hash URL of an instance's study statistics. */
+export function statisticsHref(instanceUrl: string): string {
+  return routeToHash({ screen: "statistics", instanceUrl });
+}
+
 /** Hash URL of the deck library, where ready-made decks are imported. */
 export function libraryHref(instanceUrl: string): string {
   return routeToHash({ screen: "library", instanceUrl });
