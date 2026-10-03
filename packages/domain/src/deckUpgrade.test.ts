@@ -78,9 +78,10 @@ describe("deck upgrade notes", () => {
     expect(decodeDeckUpgradeNote(null)).toBeNull();
     expect(decodeDeckUpgradeNote("{")).toBeNull();
     expect(decodeDeckUpgradeNote("null")).toBeNull();
-    expect(decodeDeckUpgradeNote('{"cards":{"from":"a","to":"b"}}')).toBeNull();
-    expect(decodeDeckUpgradeNote(`{"startedAt":"${startedAt}","cards":{"from":"a"}}`)).toBeNull();
-    expect(decodeDeckUpgradeNote(`{"startedAt":"${startedAt}","cards":{"from":"a","to":"b"},"reviews":1}`)).toBeNull();
+    const cards = { from: "a", to: "b" };
+    expect(decodeDeckUpgradeNote(JSON.stringify({ cards }))).toBeNull();
+    expect(decodeDeckUpgradeNote(JSON.stringify({ startedAt, cards: { from: "a" } }))).toBeNull();
+    expect(decodeDeckUpgradeNote(JSON.stringify({ startedAt, cards, reviews: 1 }))).toBeNull();
   });
 
   it("count as left behind once an upgrade would long be over, or when they say no time", () => {
