@@ -33,17 +33,23 @@ import { createWriteFence } from "@solid-memo/solid/writeFence";
 const SERVERS = inject("solidServers");
 const SITE = "https://solid-memo.test/";
 
-/** A user's empty pod in a fresh folder of the server: a profile naming its storage and an empty private type index. */
+/**
+ * A user's empty pod in a fresh folder of the server: a profile naming its
+ * storage and an empty private type index. The profile is card.ttl, not
+ * card: servers that serve a document without an extension as
+ * application/octet-stream (the JavaScript Solid Server, Solid-Nextcloud)
+ * then serve it as Turtle, as their own profiles are.
+ */
 async function seedPod(server: string) {
   const base = new URL(`run-${crypto.randomUUID()}/`, server).href;
-  const webId = `${base}profile/card#me`;
+  const webId = `${base}profile/card.ttl#me`;
   const typeIndex = `${base}settings/privateTypeIndex.ttl`;
   const put = async (url: string, body: string) => {
     const response = await fetch(url, { method: "PUT", headers: { "content-type": "text/turtle" }, body });
     if (!response.ok) throw new Error(`Seeding ${url}: ${response.status}`);
   };
   await put(
-    `${base}profile/card`,
+    `${base}profile/card.ttl`,
     `<#me> a <http://xmlns.com/foaf/0.1/Person> ; <http://xmlns.com/foaf/0.1/name> "Alice" ;
     <http://www.w3.org/ns/pim/space#storage> <${base}> ;
     <http://www.w3.org/ns/solid/terms#privateTypeIndex> <${typeIndex}> .`,
