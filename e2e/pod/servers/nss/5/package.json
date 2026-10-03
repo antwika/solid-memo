@@ -1,7 +1,7 @@
 {
   "name": "@solid-memo/e2e-server-nss-5",
   "private": true,
-  "description": "node-solid-server 5.x, for the end-to-end tests (e2e/pod/servers.ts); its own install, outside the workspace.",
+  "description": "node-solid-server 5.x, installed into the end-to-end tests' image (e2e/pod/servers/nss/Dockerfile).",
   "dependencies": {
     "solid-server": "5.8.8"
   },

@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run -c vitest.unit.config.ts",
     "test:pod": "vitest run",
     "pod": "node pod.ts",
-    "servers": "node install-servers.ts"
+    "servers": "node servers.ts prepare",
+    "pod:clean": "node servers.ts clean"
   },
   "dependencies": {
     "@solid-memo/application": "*",
@@ -16,6 +18,7 @@
     "@solid-memo/vocab": "*"
   },
   "devDependencies": {
-    "n3": "^2.0.0"
+    "n3": "^2.0.0",
+    "yaml": "^2.9.1"
   }
 }

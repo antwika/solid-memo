@@ -1,8 +1,0 @@
-{
-  "name": "@solid-memo/e2e-server-css-7",
-  "private": true,
-  "description": "Community Solid Server 7.x, for the end-to-end tests (e2e/pod/servers.ts); its own install, outside the workspace.",
-  "dependencies": {
-    "@solid/community-server": "^7.2.0"
-  }
-}

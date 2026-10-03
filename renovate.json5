@@ -10,17 +10,42 @@
     automergeType: 'branch',
     packageRules: [
         // The end-to-end tests run against two majors of each Solid server,
-        // each from its own project in e2e/pod/servers/ (docs/testing.md):
-        // the older ones stay on their major.
+        // each pinned in e2e/pod/servers/ (docs/testing.md): each stays on
+        // its major, the Community Solid Server's in its compose file,
+        // node-solid-server's in the lockfile its image is built from.
         {
-            matchFileNames: ['e2e/pod/servers/css-6/package.json'],
-            matchDepNames: ['@solid/community-server'],
+            matchFileNames: ['e2e/pod/servers/css-6/compose.yml'],
+            matchDepNames: ['solidproject/community-server'],
             allowedVersions: '<7',
         },
         {
-            matchFileNames: ['e2e/pod/servers/nss-5/package.json'],
+            matchFileNames: ['e2e/pod/servers/css-7/compose.yml'],
+            matchDepNames: ['solidproject/community-server'],
+            allowedVersions: '<8',
+        },
+        {
+            matchFileNames: ['e2e/pod/servers/nss/5/package.json'],
             matchDepNames: ['solid-server'],
             allowedVersions: '<6',
+        },
+        // Its image runs both node-solid-server majors: Node 24, the
+        // newest both support.
+        {
+            matchFileNames: ['e2e/pod/servers/nss/Dockerfile'],
+            matchDepNames: ['node'],
+            allowedVersions: '<25',
+        },
+        // The Community Solid Server's tags are pushed again now and then:
+        // a new digest for the same version is for a person to look at.
+        {
+            matchDepNames: ['solidproject/community-server'],
+            matchUpdateTypes: ['digest'],
+            automerge: false,
+        },
+        // The images the end-to-end tests build themselves are in no registry.
+        {
+            matchDepNames: ['/^localhost\\//'],
+            enabled: false,
         },
     ],
 }
