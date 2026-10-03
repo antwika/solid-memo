@@ -15,6 +15,7 @@ import {
 import type { Literal, Quad } from "@rdfjs/types";
 import { getSolidDatasetLinear } from "./linearDataset";
 import { AppError } from "@solid-memo/domain/appError";
+import { documentUrlOf } from "@solid-memo/domain/subjectUrl";
 
 type Dataset = Awaited<ReturnType<typeof getSolidDataset>>;
 
@@ -75,7 +76,8 @@ export class PreconditionFailedError extends AppError {
  *   so it is as good as a new one, without downloading the document again.
  *
  * A write to the URL forgets both, so no read after it gets what was
- * there before.
+ * there before. Both are kept by document: a read by one of its subjects
+ * (a WebID, `card#me`) is forgotten by a write to the document (`card`).
  */
 const READS = new WeakMap<
   typeof globalThis.fetch,
@@ -94,12 +96,13 @@ function readsOf(fetch: typeof globalThis.fetch) {
 /** Fetch a dataset, remembering its ETag for a later conditional write; see READS. */
 export function readDataset(url: string, fetch: typeof globalThis.fetch): Promise<Dataset> {
   const { inFlight, known } = readsOf(fetch);
-  const shared = inFlight.get(url);
+  const key = documentUrlOf(url);
+  const shared = inFlight.get(key);
   if (shared !== undefined) return shared;
   const read = fetchDataset(url, fetch, known).finally(() => {
-    if (inFlight.get(url) === read) inFlight.delete(url);
+    if (inFlight.get(key) === read) inFlight.delete(key);
   });
-  inFlight.set(url, read);
+  inFlight.set(key, read);
   return read;
 }
 
@@ -107,6 +110,7 @@ export function readDataset(url: string, fetch: typeof globalThis.fetch): Promis
 function forgetRead(url: string, fetch: typeof globalThis.fetch): void {
   const reads = READS.get(fetch);
   if (reads === undefined) return;
+  url = documentUrlOf(url);
   for (const key of reads.inFlight.keys()) {
     // Plain reads are keyed by the URL, reads since a version by the URL, a newline and the version.
     if (key === url || key.startsWith(`${url}\n`)) reads.inFlight.delete(key);
@@ -130,7 +134,7 @@ export function readDatasetSince(
   fetch: typeof globalThis.fetch,
 ): Promise<Dataset | typeof UNCHANGED | null> {
   const { inFlight, known } = readsOf(fetch);
-  const key = `${url}\n${version}`;
+  const key = `${documentUrlOf(url)}\n${version}`;
   const shared = inFlight.get(key);
   if (shared !== undefined) return shared as Promise<Dataset | typeof UNCHANGED | null>;
   const read = fetchDataset(url, fetch, known, version)
@@ -168,7 +172,8 @@ async function fetchDataset(
   known: Map<string, { etag: string; dataset: Dataset }>,
   since?: string,
 ): Promise<Dataset | typeof UNCHANGED> {
-  const before = known.get(url);
+  const document = documentUrlOf(url);
+  const before = known.get(document);
   const asked = since ?? before?.etag;
   let etag: string | null = null;
   let notModified = false;
@@ -188,13 +193,13 @@ async function fetchDataset(
   } catch (error) {
     if (notModified && since !== undefined) return UNCHANGED;
     if (notModified && before !== undefined) return before.dataset;
-    known.delete(url);
+    known.delete(document);
     throw error;
   }
   const info = resourceInfoOf(dataset);
   if (etag !== null && info !== undefined) ETAGS.set(info, etag);
-  if (etag !== null) known.set(url, { etag, dataset });
-  else known.delete(url);
+  if (etag !== null) known.set(document, { etag, dataset });
+  else known.delete(document);
   return dataset;
 }
 
