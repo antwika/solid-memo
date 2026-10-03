@@ -145,6 +145,8 @@ describe("migrate", () => {
     expect(migrate("preferences", { version: 1, data: { answerScale: "minimal", developerMode: true } }, CONTEXT)).toEqual({
       ...DEFAULT_PREFERENCES,
       ...BLOCK,
+      // A format-1 document without the field meant the default of its day.
+      newCardsPerDay: 20,
       answerScale: "minimal",
       developerMode: true,
     });

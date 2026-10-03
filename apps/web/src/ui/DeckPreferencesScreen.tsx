@@ -156,12 +156,18 @@ export function DeckPreferencesScreen({
                 value={draft[limit]}
                 placeholder={String(preferences[limit])}
                 onInput={(e) => setDraft({ ...draft, [limit]: e.currentTarget.value })}
+                aria-describedby={limit === "newCardsPerDay" ? "deck-new-hint" : undefined}
                 disabled={busy}
               />
               <span class="hint">
                 {limitUnit(t, limit, draft[limit] === "" ? preferences[limit] : Number(draft[limit]))}
               </span>
             </span>
+            {limit === "newCardsPerDay" && (
+              <p id="deck-new-hint" class="hint">
+                {t("studyPace.startSmall")}
+              </p>
+            )}
           </Fragment>
         ))}
         <p class="hint">

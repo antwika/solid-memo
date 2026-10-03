@@ -19,6 +19,13 @@ function renderScreen(
 }
 
 describe("PreferencesScreen", () => {
+  it("advises a small, steady number of new cards", () => {
+    renderScreen();
+    expect(screen.getByLabelText("New cards per day")).toHaveAccessibleDescription(
+      /a high number now piles up reviews later\. Better to start small and be consistent/,
+    );
+  });
+
   it("switches the language right away, without saving", () => {
     const onChoose = vi.fn();
     const onSave = vi.fn();

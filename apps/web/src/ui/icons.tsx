@@ -104,3 +104,12 @@ export function LibraryIcon() {
     </Icon>
   );
 }
+
+/** Flame: a streak of study days. */
+export function FlameIcon() {
+  return (
+    <Icon>
+      <path d="M12 2c1 3.5 5 6 5 11a5 5 0 0 1-10 0c0-2.5 1.2-4 2.5-5.5C10 9.5 11 11 12 11c0-3-1-6 0-9z" />
+    </Icon>
+  );
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Answer } from "./answer";
-import { dailyActivity, retentionOf, shiftStudyDay, statisticsOf, streaksOf } from "./statistics";
+import { dailyActivity, retentionOf, shiftStudyDay, statisticsOf, streaksOf, todayOf } from "./statistics";
 
 const DECK = "https://pod.example/i/catalog.ttl#deck-";
 let n = 0;
@@ -80,5 +80,25 @@ describe("statisticsOf", () => {
       [`${DECK}2`, 1, "2026-10-02"],
       [`${DECK}3`, 1, "2026-10-02"],
     ]);
+  });
+});
+
+describe("todayOf", () => {
+  it("sums up today's study, in every deck, with the streak it extends", () => {
+    const statistics = statisticsOf(
+      [
+        answer("2026-10-02", 4, undefined, "1", "a"),
+        answer("2026-10-03", 4, undefined, "1", "b"),
+        answer("2026-10-03", 1, 3, "1", "a"),
+        answer("2026-10-03", 5, 3, "2", "c"),
+        answer("2026-09-20", 5, 3, "3", "d"),
+      ],
+      "2026-10-03",
+    );
+    expect(todayOf(statistics)).toEqual({ answers: 3, introduced: 1, recalled: 2, streak: 2, longestStreak: 2 });
+  });
+
+  it("is null while nothing is studied today", () => {
+    expect(todayOf(statisticsOf([answer("2026-10-02", 4)], "2026-10-03"))).toBeNull();
   });
 });

@@ -6,6 +6,7 @@ import { DeckListScreen } from "./DeckListScreen";
 import { DeckStudyActionContainer } from "./DeckStudyAction";
 import { useI18n } from "./i18n";
 import { Loading } from "./Loading";
+import { TodaySummaryContainer } from "./TodaySummaryContainer";
 import { deckHref, decksHref, libraryHref } from "./router";
 
 /**
@@ -39,24 +40,27 @@ export function DeckListContainer({
   }
 
   return (
-    <DeckListScreen
-      decks={decksQuery.data}
-      decksHref={decksHref(instance.url)}
-      libraryHref={libraryHref(instance.url)}
-      deckHref={(deck) => deckHref(instance.url, deck.url)}
-      renderStudyAction={(deck) =>
-        isSetAside(deck) ? (
-          <span class="hint">{t("deckList.setAside")}</span>
-        ) : (
-          <DeckStudyActionContainer
-            useCases={useCases}
-            instance={instance}
-            deck={deck}
-            onStudy={() => onStudyDeck(deck)}
-          />
-        )
-      }
-      onCreateDeck={onCreateDeck}
-    />
+    <>
+      <TodaySummaryContainer useCases={useCases} instance={instance} />
+      <DeckListScreen
+        decks={decksQuery.data}
+        decksHref={decksHref(instance.url)}
+        libraryHref={libraryHref(instance.url)}
+        deckHref={(deck) => deckHref(instance.url, deck.url)}
+        renderStudyAction={(deck) =>
+          isSetAside(deck) ? (
+            <span class="hint">{t("deckList.setAside")}</span>
+          ) : (
+            <DeckStudyActionContainer
+              useCases={useCases}
+              instance={instance}
+              deck={deck}
+              onStudy={() => onStudyDeck(deck)}
+            />
+          )
+        }
+        onCreateDeck={onCreateDeck}
+      />
+    </>
   );
 }

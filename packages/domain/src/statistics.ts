@@ -138,3 +138,30 @@ export function statisticsOf(answers: readonly Answer[], today: string): Statist
       .sort((a, b) => b.answers - a.answers || a.deckUrl.localeCompare(b.deckUrl)),
   };
 }
+
+/** What today's study came to, for a word of encouragement after it. */
+export interface TodaySummary {
+  answers: number;
+  /** Cards met for the first time today. */
+  introduced: number;
+  /** Answers today that remembered the card. */
+  recalled: number;
+  /** Study days in a row, today included. */
+  streak: number;
+  /** The longest run of study days there has been, today's included. */
+  longestStreak: number;
+}
+
+/** Today's study, or null while nothing is studied today. */
+export function todayOf(statistics: Statistics): TodaySummary | null {
+  const day = statistics.days.find((activity) => activity.studyDay === statistics.today);
+  if (day === undefined) return null;
+  return {
+    answers: day.answers,
+    introduced: day.introduced,
+    recalled: day.answers - day.forgotten,
+    streak: statistics.streaks.current,
+    longestStreak: statistics.streaks.longest,
+  };
+}
+
