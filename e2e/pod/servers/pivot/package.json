@@ -1,0 +1,8 @@
+{
+  "name": "@solid-memo/e2e-server-pivot",
+  "private": true,
+  "description": "Pivot, installed into the end-to-end tests' image (e2e/pod/servers/pivot/Dockerfile).",
+  "dependencies": {
+    "@solid/pivot": "1.8.2"
+  }
+}
