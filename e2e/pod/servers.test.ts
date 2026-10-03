@@ -36,10 +36,11 @@ describe.each(SERVER_IDS)("servers/%s/compose.yml", (id) => {
     expect(server.ports).toEqual([`127.0.0.1:\${E2E_PORT:?}:${SERVERS[id].internalPort}`]);
   });
 
-  it("is told its URL on 127.0.0.1 at E2E_PORT, or the port to make it from", () => {
+  it("is told its URL on 127.0.0.1 at E2E_PORT, or the port to make it from, unless it makes it from each request", () => {
     const told = server.command?.some((arg) => arg.startsWith("http://127.0.0.1:${E2E_PORT:?}"));
     const environment = server.environment as Record<string, string> | undefined;
-    expect(told || environment?.E2E_PORT === "${E2E_PORT:?}").toBe(true);
+    const fromHost = (SERVERS[id] as { urlFromHost?: true }).urlFromHost === true;
+    expect(told || environment?.E2E_PORT === "${E2E_PORT:?}" || fromHost).toBe(true);
   });
 
   it("runs an image pinned by digest, or one it builds and never pulls", () => {
@@ -95,6 +96,7 @@ describe("the names in the tests", () => {
       "css-8": expect.stringMatching(/^Community Solid Server 8\.\d+\.\d+(-[\w.]+)?$/),
       pivot: expect.stringMatching(/^Pivot \d+\.\d+\.\d+ \(Community Solid Server 7\.\d+\.\d+\)$/),
       nextcloud: expect.stringMatching(/^Solid-Nextcloud [0-9a-f]{8} \(Nextcloud 30\.\d+\.\d+\)$/),
+      jss: expect.stringMatching(/^JavaScript Solid Server \d+\.\d+\.\d+$/),
     });
   });
 });

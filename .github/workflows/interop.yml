@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        server: [css-8, pivot, nextcloud]
+        server: [css-8, pivot, nextcloud, jss]
     steps:
       - uses: actions/checkout@v7
         with:
