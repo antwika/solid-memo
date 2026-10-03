@@ -1,0 +1,8 @@
+{
+  "name": "@solid-memo/e2e-server-jss",
+  "private": true,
+  "description": "JavaScript Solid Server, installed into the end-to-end tests' image (e2e/pod/servers/jss/Dockerfile).",
+  "dependencies": {
+    "javascript-solid-server": "0.0.220"
+  }
+}

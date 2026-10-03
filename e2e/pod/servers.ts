@@ -45,6 +45,8 @@ interface Entry {
   rootEntrypoint?: true;
   /** It fails writes made at once from several test files (vitest.config.ts runs one file at a time for it). */
   serialFiles?: true;
+  /** It makes its URLs from each request's Host, so it is told none. */
+  urlFromHost?: true;
 }
 
 /** The servers the end-to-end tests can start, by the id SOLID_SERVERS names them with. */
@@ -76,6 +78,16 @@ export const SERVERS = {
     rootEntrypoint: true,
     // Its SQLite database refuses concurrent writes (500), so tests would fail by chance.
     serialFiles: true,
+  },
+  jss: {
+    label: "JavaScript Solid Server",
+    tier: "advisory",
+    internalPort: 4443,
+    podPath: "",
+    readyPath: "",
+    startTimeoutMs: 30_000,
+    version: () => lockedVersion("jss", "javascript-solid-server"),
+    urlFromHost: true,
   },
 } satisfies Record<string, Entry>;
 

@@ -1,0 +1,19 @@
+# JavaScript Solid Server, built from ./Dockerfile: an advisory server
+# (docs/testing.md), with Turtle (--conneg), open to anyone (--public,
+# which skips its access control: run as it would host several pods, its
+# quota takes each folder for a pod and fails to write into a new one).
+# It makes its URLs from each request's Host, so it needs telling none;
+# the harness (../../servers.ts) sets E2E_PORT, the port on 127.0.0.1 it
+# is reached at.
+services:
+  server:
+    build: .
+    image: localhost/solid-memo-e2e-jss:local
+    pull_policy: never
+    command: [--public, --conneg, --root, /data, --host, 0.0.0.0, --port, "4443"]
+    ports: ["127.0.0.1:${E2E_PORT:?}:4443"]
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    pids_limit: 512

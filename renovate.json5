@@ -82,6 +82,17 @@
             matchDepNames: ['nextcloud'],
             allowedVersions: '<31',
         },
+        // The JavaScript Solid Server, advisory and pre-1.0: every release
+        // may change what it does, so a person looks at each.
+        {
+            matchFileNames: ['e2e/pod/servers/jss/**'],
+            automerge: false,
+        },
+        {
+            matchFileNames: ['e2e/pod/servers/jss/Dockerfile'],
+            matchDepNames: ['node'],
+            allowedVersions: '<25',
+        },
         // The Community Solid Server's tags are pushed again now and then:
         // a new digest for the same version is for a person to look at.
         {
