@@ -41,6 +41,10 @@ interface Entry {
   startTimeoutMs: number;
   /** The version in its name, from what pins it. */
   version: () => string;
+  /** Its image's entrypoint needs root (to install, then hand over), so it keeps its capabilities. */
+  rootEntrypoint?: true;
+  /** It fails writes made at once from several test files (vitest.config.ts runs one file at a time for it). */
+  serialFiles?: true;
 }
 
 /** The servers the end-to-end tests can start, by the id SOLID_SERVERS names them with. */
@@ -59,6 +63,19 @@ export const SERVERS = {
     startTimeoutMs: 60_000,
     // With the Community Solid Server it runs on, which its lockfile and solidcommunity.net's may resolve differently.
     version: () => `${lockedVersion("pivot", "@solid/pivot")} (Community Solid Server ${lockedVersion("pivot", "@solid/community-server")})`,
+  },
+  nextcloud: {
+    label: "Solid-Nextcloud",
+    tier: "advisory",
+    internalPort: 80,
+    podPath: "apps/solid/~alice/storage/",
+    readyPath: "apps/solid/~alice/storage/",
+    // Installing Nextcloud, on every start.
+    startTimeoutMs: 180_000,
+    version: () => `${dockerfileArg("nextcloud", "SOLID_NEXTCLOUD_SHA").slice(0, 8)} (Nextcloud ${baseImageTag("nextcloud")})`,
+    rootEntrypoint: true,
+    // Its SQLite database refuses concurrent writes (500), so tests would fail by chance.
+    serialFiles: true,
   },
 } satisfies Record<string, Entry>;
 
@@ -92,6 +109,20 @@ const compose = (id: ServerId, args: string[], env: Record<string, string>) =>
 function imageTag(id: string): string {
   const tag = /^\s*image:\s*[^\s:]+:([^@\s]+)@sha256:/m.exec(readFileSync(composeFile(id), "utf8"))?.[1];
   if (tag === undefined) throw new Error(`${composeFile(id)} pins no image by tag and digest.`);
+  return tag;
+}
+
+/** A build argument's value in a server's Dockerfile: the commit an image is built from. */
+function dockerfileArg(id: string, name: string): string {
+  const value = new RegExp(`^ARG ${name}=(\\S+)`, "m").exec(readFileSync(join(HERE, "servers", id, "Dockerfile"), "utf8"))?.[1];
+  if (value === undefined) throw new Error(`servers/${id}/Dockerfile sets no ${name}.`);
+  return value;
+}
+
+/** The tag of the image a server's Dockerfile builds on: "30.0.17-apache" says "30.0.17". */
+function baseImageTag(id: string): string {
+  const tag = /^FROM [^\s:]+:(\d[\w.]*?)(-[\w]+)?@sha256:/m.exec(readFileSync(join(HERE, "servers", id, "Dockerfile"), "utf8"))?.[1];
+  if (tag === undefined) throw new Error(`servers/${id}/Dockerfile builds on no image pinned by tag and digest.`);
   return tag;
 }
 

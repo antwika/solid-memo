@@ -3,7 +3,7 @@ import { basename, join } from "node:path";
 
 /** What Vitest's JSON reporter writes, as far as it is read here. */
 export interface Results {
-  testResults: { name: string; assertionResults: { ancestorTitles: string[]; title: string; status: string }[] }[];
+  testResults: { name: string; status: string; assertionResults: { ancestorTitles: string[]; title: string; status: string }[] }[];
 }
 
 export interface Comparison {
@@ -34,6 +34,12 @@ export function compare(results: Results, expected: Record<string, string>): Com
       if (test.status === "failed") comparison[key in expected ? "known" : "failed"].push(key);
       else if (test.status === "passed") comparison[key in expected ? "fixed" : "passed"].push(key);
       else comparison.skipped.push(key);
+    }
+    // A file that failed with none of its tests failing failed around them
+    // (a beforeAll that threw marks them skipped): that is a failure too.
+    if (file.status === "failed" && !file.assertionResults.some((test) => test.status === "failed")) {
+      const key = `${basename(file.name)} > (the file, around its tests)`;
+      comparison[key in expected ? "known" : "failed"].push(key);
     }
   }
   return comparison;
