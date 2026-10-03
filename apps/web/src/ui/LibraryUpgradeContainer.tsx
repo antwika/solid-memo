@@ -34,7 +34,9 @@ export function LibraryUpgradeContainer({
   const queryClient = useQueryClient();
 
   const planQuery = useQuery({
-    queryKey: ["libraryUpgrade", deck.url],
+    // Planned for the deck as it is: once an upgrade moves it to another
+    // release and documents, the plan for the deck as it was no longer applies.
+    queryKey: ["libraryUpgrade", deck.url, deck.sourceUrl, deck.cardsDocumentUrl],
     queryFn: () => useCases.planLibraryUpgrade(deck),
     enabled: deck.sourceUrl !== undefined,
     staleTime: Infinity,
@@ -66,8 +68,11 @@ export function LibraryUpgradeContainer({
       setProgress({ step: "read", done: 0 });
       const outcome = await useCases.applyLibraryUpgrade(deck, plan, setProgress);
       if (!outcome.ok) {
-        // An offer the deck no longer calls for is looked at again.
-        await queryClient.invalidateQueries({ queryKey: ["libraryUpgrade", deck.url] });
+        // An offer the deck no longer calls for is looked at again, with the deck as it now is.
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["decks"] }),
+          queryClient.invalidateQueries({ queryKey: ["libraryUpgrade", deck.url] }),
+        ]);
         return outcome;
       }
       // Everything the upgrade touched is read again at once, so the deck changes on screen in one go.
@@ -78,7 +83,6 @@ export function LibraryUpgradeContainer({
         queryClient.invalidateQueries({ queryKey: ["cards", deck.cardsDocumentUrl] }),
         queryClient.invalidateQueries({ queryKey: ["reviews", deck.reviewsDocumentUrl] }),
         queryClient.invalidateQueries({ queryKey: ["migration", instance.url] }),
-        queryClient.invalidateQueries({ queryKey: ["libraryUpgrade", deck.url] }),
       ]);
       return outcome;
     },
