@@ -24,7 +24,7 @@ import { createSolidRepairRepository } from "@solid-memo/solid/solidRepairReposi
 import { createSolidReviewStateRepository } from "@solid-memo/solid/solidReviewStateRepository";
 import { createSolidWebIdDocumentRepository } from "@solid-memo/solid/solidWebIdDocumentRepository";
 import { createWriteFence } from "@solid-memo/solid/writeFence";
-import { ETAG_OUTLIVES_EDITS, etagMarksEveryEdit } from "./serverTraits";
+import { aclOf, ETAG_OUTLIVES_EDITS, etagMarksEveryEdit } from "./serverTraits";
 
 const SERVERS = inject("solidServers");
 const SITE = "https://solid-memo.test/";
@@ -151,7 +151,7 @@ async function seedDeck(server: string): Promise<Deck> {
   const deck = await deckRepository.importDeck(instanceUrl, V1);
   await reviewStateRepository.applyReviewChanges(deck, { save: [], remove: [] });
   for (const state of [review("sweden", 6), review("latvia", 3)]) await reviewStateRepository.saveReviewState(deck, state);
-  const response = await fetch(`${deck.cardsDocumentUrl}.acl`, {
+  const response = await fetch(await aclOf(deck.cardsDocumentUrl), {
     method: "PUT",
     headers: { "content-type": "text/turtle" },
     body: `@prefix acl: <http://www.w3.org/ns/auth/acl#> . @prefix foaf: <http://xmlns.com/foaf/0.1/> .
@@ -176,6 +176,7 @@ describe.each(SERVERS)("a library deck upgrade on $name", ({ url: server }) => {
   it("moves the deck into new documents, keeping its URL, review states and sharing, and never writes its old ones", async () => {
     const deck = await seedDeck(server);
     const { useCases, deckRepository, reviewStateRepository, attempts } = app();
+    const oldAcl = await aclOf(deck.cardsDocumentUrl);
     const plan = (await useCases.planLibraryUpgrade(deck))!;
     expect(plan).toMatchObject({ toVersion: "2", add: [{ id: "norway" }], change: [{ id: "sweden" }], remove: [{ id: "latvia" }] });
 
@@ -195,10 +196,10 @@ describe.each(SERVERS)("a library deck upgrade on $name", ({ url: server }) => {
     expect(cards.every((card) => card.url.startsWith(`${upgraded.cardsDocumentUrl}#`))).toBe(true);
     expect(await reviewStateRepository.listReviewStates(upgraded)).toEqual([review("sweden", 6)]);
 
-    const acl = await fetch(`${upgraded.cardsDocumentUrl}.acl`).then((response) => response.text());
+    const acl = await fetch(await aclOf(upgraded.cardsDocumentUrl)).then((response) => response.text());
     expect(acl).toContain(FRIEND);
     expect(await status(deck.cardsDocumentUrl)).toBe(404);
-    expect(await status(`${deck.cardsDocumentUrl}.acl`)).toBe(404);
+    expect(await status(oldAcl)).toBe(404);
     expect(await status(deck.reviewsDocumentUrl)).toBe(404);
     const toOld = attempts.filter(
       (request) => isWrite(request) && [deck.cardsDocumentUrl, deck.reviewsDocumentUrl].includes(request.url),

@@ -61,8 +61,7 @@ pod:clean`. `npm run pod`'s server lets anyone read and write: keep no
 real data in it, and stop it when done.
 
 The servers differ in what they enforce, and the tests ask each rather
-than assume ([serverTraits.ts](../e2e/pod/src/serverTraits.ts), and the
-precondition probe of the format update's tests):
+than assume ([serverTraits.ts](../e2e/pod/src/serverTraits.ts)):
 
 - **node-solid-server** gives no ETag on a read and ignores `If-Match`, so
   there an edit cannot be made conditional and the test that proves an
@@ -77,7 +76,19 @@ precondition probe of the format update's tests):
   second, so there the test that proves an edit is refused and the
   digest's tests are skipped. 7 stamps milliseconds.
 
-Every skip says why. Everything else runs on every server.
+Every skip says why. Everything else runs on every server. A test may
+skip only where the server does something the Solid Protocol allows and
+the app copes with, as above; what the app needs and has no way around (a
+PATCH it can send, an ACL it can write, every insert of several at once
+kept) is never a reason to skip, and a probe that cannot tell throws.
+What the tests need only for themselves they ask of the server too: an
+ACL document is where its `Link rel="acl"` says, and a change "another
+app" makes is an N3 Patch, a SPARQL Update or the whole document, as its
+`Accept-Patch` allows. What each blocking server does is pinned
+([serverTraits.integration.test.ts](../e2e/pod/src/serverTraits.integration.test.ts)):
+a release that changes it fails there, not as tests quietly starting or
+stopping to skip, and the pin moves by hand once the change is
+understood.
 
 The Community Solid Server's in-memory store (the one these tests use)
 cuts a document short after a PATCH that adds characters outside ASCII
