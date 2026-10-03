@@ -1,15 +1,22 @@
-import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
+import { createWriteStream, existsSync, readFileSync, rmSync } from "node:fs";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { checkContract } from "./contract.ts";
+
+export type Tier = "blocking" | "advisory";
 
 /** A Solid server the tests run against. */
 export interface SolidServer {
+  /** Its id in SERVERS, or "external" for SOLID_SERVER_URL. */
+  id: string;
+  tier: Tier;
   /** What it is, in test names: "Community Solid Server 7.2.0". */
   name: string;
-  /** Its root, ending in a slash. */
+  /** Its pod root, ending in a slash. */
   url: string;
 }
 
@@ -19,122 +26,225 @@ export interface StartedServer {
 }
 
 /**
- * The servers the end-to-end tests can start, by the id SOLID_SERVERS
- * names them with. Each is its own npm project in servers/<id>/, with its
- * own lockfile, outside the workspace (`npm run servers` installs them):
- * two majors of the Community Solid Server in one node_modules find each
- * other's Components.js modules and fail to start.
+ * How a server the tests start is run, besides its servers/<id>/compose.yml:
+ * the port its container listens on (published on 127.0.0.1 at the port
+ * the harness picks, E2E_PORT), where its pod root and a page that answers
+ * once it is up are, below http://127.0.0.1:<port>/, and its name.
+ * Blocking servers gate CI; advisory ones only report (docs/testing.md).
  */
-export const SERVER_IDS = ["css-7", "css-6", "nss-6", "nss-5"] as const;
+interface Entry {
+  label: string;
+  tier: Tier;
+  internalPort: number;
+  podPath: string;
+  readyPath: string;
+  startTimeoutMs: number;
+  /** The version in its name, from what pins it. */
+  version: () => string;
+}
 
-export type ServerId = (typeof SERVER_IDS)[number];
+/** The servers the end-to-end tests can start, by the id SOLID_SERVERS names them with. */
+export const SERVERS = {
+  "css-7": { label: "Community Solid Server", tier: "blocking", internalPort: 3000, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => imageTag("css-7") },
+  "css-6": { label: "Community Solid Server", tier: "blocking", internalPort: 3000, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => imageTag("css-6") },
+  "nss-6": { label: "node-solid-server", tier: "blocking", internalPort: 8443, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => lockedVersion("nss/6", "solid-server") },
+  "nss-5": { label: "node-solid-server", tier: "blocking", internalPort: 8443, podPath: "", readyPath: "", startTimeoutMs: 60_000, version: () => lockedVersion("nss/5", "solid-server") },
+} satisfies Record<string, Entry>;
 
-export const SERVERS: Record<ServerId, () => Promise<StartedServer>> = {
-  "css-7": () => communitySolidServer("css-7"),
-  "css-6": () => communitySolidServer("css-6"),
-  "nss-6": () => nodeSolidServer("nss-6"),
-  "nss-5": () => nodeSolidServer("nss-5"),
-};
+export type ServerId = keyof typeof SERVERS;
 
-/** The servers a comma-separated list names; every one when it is empty. */
+export const SERVER_IDS = Object.keys(SERVERS) as ServerId[];
+
+/** The servers a comma-separated list names: every one for "all", the blocking ones when it is empty. */
 export function serversNamed(list: string | undefined): ServerId[] {
-  const all: readonly ServerId[] = SERVER_IDS;
-  if (list === undefined || list.trim() === "") return [...all];
+  if (list === undefined || list.trim() === "") return SERVER_IDS.filter((id) => SERVERS[id].tier === "blocking");
+  if (list.trim() === "all") return [...SERVER_IDS];
   const named = list.split(",").map((id) => id.trim());
-  const unknown = named.filter((id) => !all.includes(id as ServerId));
-  if (unknown.length > 0) throw new Error(`SOLID_SERVERS names no server ${unknown.join(", ")}; it knows ${all.join(", ")}.`);
+  const unknown = named.filter((id) => !(id in SERVERS));
+  if (unknown.length > 0) throw new Error(`SOLID_SERVERS names no server ${unknown.join(", ")}; it knows ${SERVER_IDS.join(", ")} (or all).`);
   return named as ServerId[];
 }
 
-/** Lets anyone read and write everything: the tests are about the app, not access control. */
-const OPEN_ACL = `@prefix acl: <http://www.w3.org/ns/auth/acl#> .
-@prefix foaf: <http://xmlns.com/foaf/0.1/> .
-<#public> a acl:Authorization ; acl:agentClass foaf:Agent ; acl:accessTo <./> ; acl:default <./> ;
-    acl:mode acl:Read, acl:Write, acl:Append, acl:Control .
-`;
+const HERE = import.meta.dirname;
+const LOGS = join(HERE, "logs");
+/** Which checkout the containers belong to, so two worktrees' runs keep apart. */
+const CHECKOUT = createHash("sha1").update(join(HERE, "../..")).digest("hex").slice(0, 6);
+/** Values for what compose files ask (E2E_PORT, E2E_SECRET) when only pulling or building. */
+const PLACEHOLDERS = { E2E_PORT: "1", E2E_SECRET: "placeholder" };
 
-/** A Community Solid Server, in memory (its default configuration). */
-async function communitySolidServer(id: ServerId): Promise<StartedServer> {
-  const port = await freePort();
-  const url = `http://localhost:${port}/`;
-  const dir = serverPackageDir(id, "@solid/community-server");
-  const name = `Community Solid Server ${packageVersion(dir)}`;
-  const bin = join(dir, "bin/server.js");
-  const process_ = await start(name, url, [bin, "--port", String(port), "--loggingLevel", "warn"]);
-  return { server: { name, url }, stop: async () => void process_.kill() };
+export const composeFile = (id: string) => join(HERE, "servers", id, "compose.yml");
+const project = (id: string) => `solid-memo-e2e-${id}-${CHECKOUT}`;
+const compose = (id: ServerId, args: string[], env: Record<string, string>) =>
+  docker(["compose", "-p", project(id), "-f", composeFile(id), ...args], env);
+
+/** The tag its image is pinned to in its compose.yml: "7.2.0". */
+function imageTag(id: string): string {
+  const tag = /^\s*image:\s*[^\s:]+:([^@\s]+)@sha256:/m.exec(readFileSync(composeFile(id), "utf8"))?.[1];
+  if (tag === undefined) throw new Error(`${composeFile(id)} pins no image by tag and digest.`);
+  return tag;
 }
 
-/** A node-solid-server, in a temporary folder whose root ACL lets anyone read and write. */
-async function nodeSolidServer(id: ServerId): Promise<StartedServer> {
-  const port = await freePort();
-  const url = `http://localhost:${port}/`;
-  const pkg = serverPackageDir(id, "solid-server");
-  const name = `node-solid-server ${packageVersion(pkg)}`;
-  const dir = await mkdtemp(join(tmpdir(), "solid-memo-nss-"));
-  const root = join(dir, "data");
-  await mkdir(root);
-  // With a root index and ACL in place, the server keeps them rather than its templates.
-  await writeFile(join(root, "index.html"), "<!doctype html><title>Solid</title>\n");
-  await writeFile(join(root, ".acl"), OPEN_ACL);
-  // The server copies its templates into the config folder unless they are
-  // there; solid-server 6.0.0 does not ship the root ACL it copies, and
-  // fails. Ours is there already, so it copies nothing for the root.
-  const templates = join(dir, "config", "templates", "server");
-  await mkdir(templates, { recursive: true });
-  await writeFile(join(templates, ".acl"), OPEN_ACL);
-  const bin = join(pkg, "bin/solid");
-  const process_ = await start(name, url, [
-    bin, "start", "--root", root, "--port", String(port), "--server-uri", url.slice(0, -1),
-    "--no-live", "--suppress-data-browser", "--config-path", join(dir, "config"), "--db-path", join(dir, "db"),
-  ]);
-  return {
-    server: { name, url },
-    stop: async () => {
-      process_.kill();
-      await rm(dir, { recursive: true, force: true });
-    },
-  };
+/** A package's version in the lockfile an image is built from (servers/<dir>/package-lock.json). */
+function lockedVersion(dir: string, pkg: string): string {
+  const lock = JSON.parse(readFileSync(join(HERE, "servers", dir, "package-lock.json"), "utf8")) as { packages: Record<string, { version: string }> };
+  return lock.packages[`node_modules/${pkg}`]!.version;
+}
+
+/** Pulls the server's image unless it is here, or builds it (from the cache when nothing changed). */
+export async function prepare(id: ServerId): Promise<void> {
+  await compose(id, ["pull", "--ignore-buildable", "--policy", "missing", "--quiet"], PLACEHOLDERS);
+  await compose(id, ["build", "--quiet"], PLACEHOLDERS);
 }
 
 /**
- * Where a server's package is installed: servers/<id>/node_modules. Found
- * by its folder, not through its "exports", which may not offer
- * package.json (solid-server 6 does not) or may name a file it does not
- * ship (its "require" entry).
+ * The server, up on a free port of 127.0.0.1 and meeting the contract
+ * (contract.ts), what it prints going to logs/<id>.log; it is stopped
+ * (its containers and their data removed) if it does not get that far.
  */
-export function serverPackageDir(id: ServerId, pkg: string): string {
-  const dir = join(import.meta.dirname, "servers", id, "node_modules", pkg);
-  if (!existsSync(join(dir, "package.json"))) {
-    throw new Error(`The ${id} server is not installed: npm run servers -w @solid-memo/e2e-pod -- ${id}`);
+export async function startServer(id: ServerId): Promise<StartedServer> {
+  const entry: Entry = SERVERS[id];
+  await clearLeftovers(id);
+  await prepare(id);
+  const env = { E2E_PORT: "", E2E_SECRET: randomUUID() };
+  const log = join(LOGS, `${id}.log`);
+  let logs: ChildProcess | undefined;
+  let stopping: Promise<void> | undefined;
+  const stop = () =>
+    (stopping ??= (async () => {
+      running.delete(stopNow);
+      await compose(id, ["down", "-v", "--remove-orphans", "-t", "0"], env);
+      logs?.kill();
+      await rm(lockFile(id), { force: true });
+    })());
+  const stopNow = () => {
+    if (stopping !== undefined) return;
+    stopping = Promise.resolve();
+    running.delete(stopNow);
+    const args = ["compose", "-p", project(id), "-f", composeFile(id), "down", "-v", "--remove-orphans", "-t", "0"];
+    spawnSync("docker", args, { env: { ...process.env, ...env }, stdio: "ignore" });
+    logs?.kill();
+    rmSync(lockFile(id), { force: true });
+  };
+  running.add(stopNow);
+  // The port is free when picked, not necessarily when Docker binds it: one more try.
+  for (let attempt = 1; ; attempt++) {
+    env.E2E_PORT = String(await freePort());
+    try {
+      await compose(id, ["up", "-d", "--no-build", "--pull", "never"], env);
+      break;
+    } catch (error) {
+      await compose(id, ["down", "-v", "--remove-orphans", "-t", "0"], env);
+      if (attempt === 2 || !/already allocated|address already in use/.test(String(error))) {
+        running.delete(stopNow);
+        throw error;
+      }
+    }
   }
-  return dir;
+  await mkdir(LOGS, { recursive: true });
+  await writeFile(lockFile(id), JSON.stringify({ pid: process.pid }));
+  logs = follow(id, env, log);
+  const base = `http://127.0.0.1:${env.E2E_PORT}/`;
+  const server: SolidServer = { id, tier: entry.tier, name: `${entry.label} ${entry.version()}`, url: base + entry.podPath };
+  try {
+    await untilUp(server.name, base + entry.readyPath, entry.startTimeoutMs, log);
+    await checkContract(server.url);
+  } catch (error) {
+    await stop();
+    throw new Error(`${server.name} (${id}): ${(error as Error).message}\nIts log: ${log}`, { cause: error });
+  }
+  return { server, stop };
 }
 
-function packageVersion(dir: string): string {
-  return (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { version: string }).version;
+/** How to take down, at once, each server this process has brought up and not stopped. */
+const running = new Set<() => void>();
+
+/**
+ * Takes this process's servers down when it ends without its teardown:
+ * on Ctrl-C (Vitest exits a millisecond after it, and without a terminal
+ * nothing handles it), a kill, or an exit. Set up before starting any.
+ */
+export function stopOnExit(): void {
+  const stopAllNow = () => running.forEach((stopNow) => stopNow());
+  process.once("exit", stopAllNow);
+  for (const [signal, code] of [["SIGINT", 130], ["SIGTERM", 143]] as const) {
+    process.once(signal, () => {
+      stopAllNow();
+      process.exit(code);
+    });
+  }
 }
 
-/** The server, started and answering at its URL; what it printed, if it stops before. */
-async function start(name: string, url: string, args: string[]): Promise<ChildProcess> {
-  const server = spawn(process.execPath, args, { stdio: ["ignore", "pipe", "pipe"] });
-  let log = "";
-  const keep = (chunk: Buffer) => void (log += chunk.toString());
-  server.stdout!.on("data", keep);
-  server.stderr!.on("data", keep);
-  const exited = new Promise<never>((_, reject) =>
-    server.once("exit", (code) => reject(new Error(`${name} exited (${code}):\n${log}`))),
-  );
-  await Promise.race([exited, untilUp(name, url)]);
-  server.removeAllListeners("exit");
-  // Once it is up, what it prints is not needed (and must not fill the pipe).
-  server.stdout!.off("data", keep).resume();
-  server.stderr!.off("data", keep).resume();
-  return server;
+/**
+ * Takes down what an earlier run of this checkout left of the server (a
+ * run killed before its teardown), unless that run is still going: its
+ * lock names a live process and its project is still there.
+ */
+async function clearLeftovers(id: ServerId): Promise<void> {
+  if (existsSync(lockFile(id))) {
+    const { pid } = JSON.parse(await readFile(lockFile(id), "utf8")) as { pid: number };
+    if (pid !== process.pid && alive(pid) && (await projects()).includes(project(id))) {
+      throw new Error(`Another run (process ${pid}) is using ${id}; if there is none, run npm run pod:clean.`);
+    }
+  }
+  await takeDown(project(id));
+}
+
+/** Every server this checkout's runs left behind, taken down: `npm run pod:clean`. */
+export async function clean(): Promise<string[]> {
+  const ours = (await projects()).filter((name) => name.startsWith("solid-memo-e2e-") && name.endsWith(`-${CHECKOUT}`));
+  await Promise.all(ours.map(takeDown));
+  await rm(LOGS, { recursive: true, force: true });
+  return ours;
+}
+
+/** A compose project, down by its name alone: compose needs no file for that, nor its variables. */
+const takeDown = (name: string) => docker(["compose", "-p", name, "down", "-v", "--remove-orphans", "-t", "0"], {}, tmpdir());
+
+async function projects(): Promise<string[]> {
+  const listed = JSON.parse(await docker(["compose", "ls", "--all", "--format", "json"], {})) as { Name: string }[];
+  return listed.map(({ Name }) => Name);
+}
+
+const lockFile = (id: ServerId) => join(LOGS, `${id}.lock`);
+
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** What the server prints, with times, into the file, until killed or the server is gone. */
+function follow(id: ServerId, env: Record<string, string>, file: string): ChildProcess {
+  const child = spawn("docker", ["compose", "-p", project(id), "-f", composeFile(id), "logs", "-f", "--no-color", "--timestamps"], {
+    env: { ...process.env, ...env },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const out = createWriteStream(file);
+  child.stdout!.pipe(out);
+  child.stderr!.pipe(out);
+  return child;
+}
+
+/** Runs docker, resolving with what it printed; rejecting with it if it fails. */
+function docker(args: string[], env: Record<string, string>, cwd = HERE): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn("docker", args, { cwd, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
+    let out = "";
+    child.stdout.on("data", (chunk: Buffer) => void (out += chunk.toString()));
+    child.stderr.on("data", (chunk: Buffer) => void (out += chunk.toString()));
+    child.on("error", (error) =>
+      reject(new Error(`docker could not be run (${error.message}); the end-to-end tests start their servers in it (docs/testing.md).`)),
+    );
+    child.on("close", (code) => (code === 0 ? resolve(out) : reject(new Error(`docker ${args.join(" ")} failed (${code}):\n${out}`))));
+  });
 }
 
 function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
-    const probe = createServer().listen(0, () => {
+    const probe = createServer().listen(0, "127.0.0.1", () => {
       const { port } = probe.address() as { port: number };
       probe.close(() => resolve(port));
     });
@@ -142,12 +252,41 @@ function freePort(): Promise<number> {
   });
 }
 
-async function untilUp(name: string, url: string, timeoutMs = 60_000): Promise<void> {
+async function untilUp(name: string, url: string, timeoutMs: number, log: string): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const up = await fetch(url).then((r) => r.ok, () => false);
     if (up) return;
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  throw new Error(`${name} did not answer at ${url} within ${timeoutMs / 1000}s.`);
+  const printed = await readFile(log, "utf8").catch(() => "");
+  throw new Error(`${name} did not answer at ${url} within ${timeoutMs / 1000}s; it printed last:\n${printed.split("\n").slice(-20).join("\n")}`);
+}
+
+/**
+ * `node servers.ts prepare [id...]` pulls or builds the servers' images
+ * (every one when none is named), `contract [id...]` starts each, checks
+ * the contract and stops it, `clean` takes down what interrupted runs left.
+ */
+if (import.meta.main) {
+  const [command, ...ids] = process.argv.slice(2);
+  const named = serversNamed(ids.length > 0 ? ids.join(",") : "all");
+  if (command === "prepare") {
+    for (const id of named) {
+      console.log(`Preparing ${id}`);
+      await prepare(id);
+    }
+  } else if (command === "contract") {
+    stopOnExit();
+    for (const id of named) {
+      const { server, stop } = await startServer(id);
+      await stop();
+      console.log(`${server.name} (${id}) meets the contract.`);
+    }
+  } else if (command === "clean") {
+    const taken = await clean();
+    console.log(taken.length > 0 ? `Took down ${taken.join(", ")}.` : "Nothing to take down.");
+  } else {
+    throw new Error(`Usage: node servers.ts prepare|contract|clean [id...]`);
+  }
 }

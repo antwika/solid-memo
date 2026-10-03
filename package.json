@@ -19,6 +19,7 @@
     "check:boundaries": "node scripts/checkBoundaries.ts",
     "test:pod": "npm run test:pod -w @solid-memo/e2e-pod",
     "pod": "npm run pod -w @solid-memo/e2e-pod",
+    "pod:clean": "npm run pod:clean -w @solid-memo/e2e-pod",
     "generate": "npm run generate -w @solid-memo/vocab",
     "generate:check": "turbo run generate:check",
     "deck:release": "npm run release -w @solid-memo/deck-library --",

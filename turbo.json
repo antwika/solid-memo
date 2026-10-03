@@ -55,7 +55,9 @@
     "test:pod": {
       "cache": false,
       "env": [
-        "SOLID_SERVER_URL"
+        "SOLID_SERVER_URL",
+        "SOLID_SERVER_NAME",
+        "SOLID_SERVERS"
       ],
       "dependsOn": [
         "transit"

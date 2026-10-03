@@ -1,0 +1,17 @@
+# node-solid-server 6, built from ../nss (its Dockerfile says how), in
+# a root that lets anyone read and write. The harness (../../servers.ts)
+# sets E2E_PORT, the port on 127.0.0.1 it is reached at, which the server
+# must be told (--server-uri, without a trailing slash).
+services:
+  server:
+    build: { context: ../nss, args: { MAJOR: "6" } }
+    image: localhost/solid-memo-e2e-nss-6:local
+    pull_policy: never
+    command: [start, --root, /srv/solid/data, --port, "8443", --server-uri, "http://127.0.0.1:${E2E_PORT:?}",
+      --no-live, --suppress-data-browser, --config-path, /srv/solid/config, --db-path, /srv/solid/db]
+    ports: ["127.0.0.1:${E2E_PORT:?}:8443"]
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    pids_limit: 512

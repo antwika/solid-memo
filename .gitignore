@@ -3,3 +3,4 @@ dist/
 coverage/
 __pycache__/
 .turbo/
+e2e/pod/logs/

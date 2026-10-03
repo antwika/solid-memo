@@ -1,0 +1,13 @@
+# Community Solid Server 6, in memory, as css-7/compose.yml runs 7;
+# Renovate keeps it on 6 (renovate.json5).
+services:
+  server:
+    image: solidproject/community-server:6.1.0@sha256:a1913f6114cb1e9722482a337056800e42015f504eadf6213bc9c0e0110a553b
+    command: ["-c", "config/default.json", "-b", "http://127.0.0.1:${E2E_PORT:?}/", "-l", "warn"]
+    ports: ["127.0.0.1:${E2E_PORT:?}:3000"]
+    user: node
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    pids_limit: 512

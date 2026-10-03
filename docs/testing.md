@@ -11,34 +11,54 @@ package's own tests cover its own code — `npm test` fails below that.
 npm test          # every package's tests, with coverage thresholds (turbo)
 npm run check     # the same, plus typecheck, drift, formatting, boundaries
 npx vitest        # watch mode, inside one package's folder
-npm run test:pod  # the end-to-end tests, against the Solid servers they start
-npm run servers -w @solid-memo/e2e-pod   # install those servers (once; `-- css-6` for one)
-npm run pod       # a Community Solid Server on :3999, in memory, to poke at by hand
+npm run test:pod  # the end-to-end tests, against the Solid servers they start in Docker
+npm run servers -w @solid-memo/e2e-pod   # pull or build those servers' images ahead (`-- css-6` for one)
+npm run pod       # a Community Solid Server at http://127.0.0.1:3999/, in memory, to poke at by hand
+npm run pod:clean # take down the servers an interrupted run left
 ```
 
 `npm run test:pod` runs `e2e/pod/` once against each Solid server
 [servers.ts](../e2e/pod/servers.ts) knows, which its global setup
-([globalSetup.ts](../e2e/pod/globalSetup.ts)) starts on free ports and
-stops after; the test names say which server and version:
+([globalSetup.ts](../e2e/pod/globalSetup.ts)) starts in Docker, each on a
+free port of 127.0.0.1 and told that URL, and takes down after (or as
+the run ends, on Ctrl-C); the test names say which server and version:
 
-| Id | Server | How it runs |
+| Id | Server | Image |
 |---|---|---|
-| `css-7` | Community Solid Server 7.x | in memory |
-| `css-6` | Community Solid Server 6.x | in memory |
-| `nss-6` | node-solid-server 6.x | in a temporary folder whose root ACL lets anyone read and write |
+| `css-7` | Community Solid Server 7.x, in memory | its own, `solidproject/community-server`, pinned by digest |
+| `css-6` | Community Solid Server 6.x, in memory | the same |
+| `nss-6` | node-solid-server 6.x | built here from its lockfile ([servers/nss/](../e2e/pod/servers/nss/Dockerfile)), in a root whose ACL lets anyone read and write |
 | `nss-5` | node-solid-server 5.x | the same |
 
-Each server is its own npm project in `e2e/pod/servers/<id>/`, with its
-own lockfile, outside the workspace: two majors of the Community Solid
-Server in one `node_modules` find each other's Components.js modules and
-fail to start, and the app's own install does not need any of them.
-`npm run servers` installs them (`npm ci` in each); the setup says which
-one is missing if you have not. `SOLID_SERVERS=css-7,nss-5` runs the
-suite against some only; `SOLID_SERVER_URL` against a server of your own
-instead, which must let anyone read and write (as `npm run pod` does).
-CI runs one job per server, side by side, none stopping the others
-([migrations.md](migrations.md#proof-on-a-real-server)); Renovate keeps
-the older majors on their major (`renovate.json5`).
+Each server is a compose file, `e2e/pod/servers/<id>/compose.yml`. It may
+ask only for `E2E_PORT` (the port on 127.0.0.1 the harness picked, which
+the server must be told) and `E2E_SECRET` (a password made up for the
+run), publishes on 127.0.0.1 only, and gets nothing of the host; `npm
+test` checks that of every one ([servers.test.ts](../e2e/pod/servers.test.ts)).
+Images built here are tagged `localhost/solid-memo-e2e-<id>:local` and
+pushed nowhere; the others are pulled once. Before the tests, every
+server must meet a contract ([contract.ts](../e2e/pod/contract.ts)): a
+document anyone writes in its pod root reads back, is listed there at the
+URL it was written to, and deletes. A server that is not open, or does
+not know the URL it is reached at, fails there, saying so, not in every
+test. What a server prints goes to `e2e/pod/logs/<id>.log`, which CI
+keeps when a job fails.
+
+`SOLID_SERVERS=css-7,nss-5` runs the suite against some only (`all`
+against every one; unset, the blocking ones, which today are all four);
+`SOLID_SERVER_URL` against a server of your own instead, which must let
+anyone read and write, as `npm run pod`'s does (`SOLID_SERVER_NAME` names
+it in the tests; `NODE_EXTRA_CA_CERTS` trusts its certificate, if a CA of
+your own signed it). CI runs one job per server, side by side, none
+stopping the others ([migrations.md](migrations.md#proof-on-a-real-server));
+Renovate keeps each server on its major (`renovate.json5`).
+
+They need Docker: Docker Engine 28.3.3 or later on Linux (before it, a
+port published on 127.0.0.1 could be reached from the local network,
+CVE-2025-54388), or Docker Desktop. A run killed before its teardown
+leaves its servers; the next run takes them down, as does `npm run
+pod:clean`. `npm run pod`'s server lets anyone read and write: keep no
+real data in it, and stop it when done.
 
 The servers differ in what they enforce, and the tests ask each rather
 than assume ([serverTraits.ts](../e2e/pod/src/serverTraits.ts), and the
@@ -65,16 +85,13 @@ cuts a document short after a PATCH that adds characters outside ASCII
 file store does not; keep test data that is patched ASCII, or measure on
 `-c @css:config/file.json -f <dir>`.
 
-solid-server 6.0.0 is packaged with faults the setup works around: its
-`exports` neither offers `package.json` nor names an entry it ships for
-`require` (so servers are found by their folder), it lacks the root ACL
-template it copies on first start (so the setup puts one in the config
-folder first), and it lists its own commit-hook tool `@fastify/pre-commit`
-as a dependency, whose install script would put a git hook into this
-repository. 5.8.8 does too. `npm run servers` installs without install
-scripts, and each project denies that one (`allowScripts`, which npm 12
-honours), and node-solid-server 5's `core-js`'s, which only prints a
-message.
+solid-server 6.0.0 is packaged with faults its image works around: it
+lacks the root ACL template it copies on first start (so the image has
+one in its config folder), and it lists its own commit-hook tool
+`@fastify/pre-commit` as a dependency, whose install script would put a
+git hook in place; 5.8.8 does too. The image installs without install
+scripts. node-solid-server prints every request it handles (`solid:*`),
+so its log runs to tens of megabytes.
 
 The published library and vocabulary are also cross-checked by pySHACL
 in CI, after the build (`python3 scripts/shacl_crosscheck.py`; see
