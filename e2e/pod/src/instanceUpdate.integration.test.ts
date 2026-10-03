@@ -25,7 +25,7 @@ import { createSolidRepairRepository } from "@solid-memo/solid/solidRepairReposi
 import { createSolidReviewStateRepository } from "@solid-memo/solid/solidReviewStateRepository";
 import { createSolidWebIdDocumentRepository } from "@solid-memo/solid/solidWebIdDocumentRepository";
 import { createWriteFence } from "@solid-memo/solid/writeFence";
-import { ETAG_OUTLIVES_EDITS, etagMarksEveryEdit } from "./serverTraits";
+import { aclOf, changeElsewhere, ETAG_OUTLIVES_EDITS, etagMarksEveryEdit, preconditionsOf, type Preconditions } from "./serverTraits";
 
 const SERVERS = inject("solidServers");
 const SITE = "https://solid-memo.test/";
@@ -113,8 +113,8 @@ async function seedPod(server: string): Promise<Pod> {
     ${inherit ? `acl:default <${target}> ;` : ""} acl:mode acl:Read, acl:Write, acl:Control .
 <#friend> a acl:Authorization ; acl:agent <${FRIEND}> ; acl:accessTo <${target}> ;
     ${inherit ? `acl:default <${target}> ;` : ""} acl:mode acl:Read .`;
-  await put(`${source}.acl`, `${PREFIXES}${everyone(source, true)}`);
-  await put(`${source}decks/deck-1.ttl.acl`, `${PREFIXES}${everyone(`${source}decks/deck-1.ttl`, false)}`);
+  await put(await aclOf(source), `${PREFIXES}${everyone(source, true)}`);
+  await put(await aclOf(`${source}decks/deck-1.ttl`), `${PREFIXES}${everyone(`${source}decks/deck-1.ttl`, false)}`);
   return { base, webId, typeIndex, source, instance: { url: source, name: "Main" } };
 }
 
@@ -213,30 +213,6 @@ async function triples(url: string): Promise<string> {
   return new Writer({ format: "N-Triples" }).quadsToString(new Parser({ baseIRI: url }).parse(turtle));
 }
 
-/** What a server does with the preconditions Solid Memo sends. */
-interface Preconditions {
-  /** It gives a strong ETag, and refuses (412) a PATCH whose If-Match names another version. */
-  edits: boolean;
-  /** It refuses (412) a PUT with If-None-Match: * where a document is. */
-  creations: boolean;
-}
-
-async function preconditionsOf(server: string): Promise<Preconditions> {
-  const url = new URL(`probe-${crypto.randomUUID()}.ttl`, server).href;
-  const put = () =>
-    fetch(url, { method: "PUT", headers: { "content-type": "text/turtle", "if-none-match": "*" }, body: `<#a> <#b> "c" .` });
-  await put();
-  const creations = (await put()).status === 412;
-  const etag = (await fetch(url)).headers.get("etag");
-  if (etag === null || etag.startsWith("W/")) return { edits: false, creations };
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: { "content-type": "application/sparql-update", "if-match": '"another-version"' },
-    body: `INSERT DATA { <#d> <#e> "f" . };`,
-  });
-  return { edits: response.status === 412, creations };
-}
-
 async function registeredContainers(pod: Pod): Promise<string> {
   return triples(pod.typeIndex);
 }
@@ -306,13 +282,13 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
     expect(await triples(`${target}meta.ttl`)).toContain(`<http://purl.org/dc/terms/replaces> <${pod.source}>`);
     const picture: ArrayBuffer = await (await fetch(`${target}attachments/picture.png`)).arrayBuffer();
     expect(new Uint8Array(picture)).toEqual(PICTURE);
-    for (const acl of [`${target}.acl`, `${target}decks/deck-1.ttl.acl`]) {
+    for (const acl of [await aclOf(target), await aclOf(`${target}decks/deck-1.ttl`)]) {
       const text = await triples(acl);
       expect(text).toContain(FRIEND);
       expect(text).toContain(target);
       expect(text).not.toContain(pod.source);
     }
-    expect(await fetch(`${target}reviews/deck-1.ttl.acl`).then((r) => r.status)).toBe(404);
+    expect(await fetch(await aclOf(`${target}reviews/deck-1.ttl`)).then((r) => r.status)).toBe(404);
 
     // The backup is the original; restoring it switches back and removes the copy.
     await expect(useCases.readBackup({ url: target, name: "Main" })).resolves.toMatchObject({ url: pod.source });
@@ -343,7 +319,9 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
 
   it.each([
     ["copying a document", (target: string) => (r: Recorded) => r.method === "PUT" && r.url === `${target}decks/deck-1.ttl`],
-    ["copying access control", (target: string) => (r: Recorded) => r.method === "PUT" && r.url === `${target}decks/deck-1.ttl.acl`],
+    // Its ACL, whatever the server names it: the one other resource written beside the document.
+    ["copying access control", (target: string) => (r: Recorded) =>
+      r.method === "PUT" && r.url.startsWith(`${target}decks/deck-1.ttl`) && r.url !== `${target}decks/deck-1.ttl`],
     ["updating the copy", (target: string) => (r: Recorded) => r.method === "PATCH" && r.url.startsWith(`${target}reviews/`)],
     ["switching the type index", () => (r: Recorded) => isWrite(r) && r.url.includes("/settings/")],
   ])("leaves no trace when %s fails", async (_what, failOn) => {
@@ -379,12 +357,7 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
         // this tab's fence knows nothing of, to a document the update has copied already.
         if (changed || !(isWrite(request) && /main-[0-9a-f-]{36}\/reviews\/deck-1\.ttl$/.test(request.url))) return;
         changed = true;
-        const response = await fetch(`${pod.source}decks/deck-1.ttl`, {
-          method: "PATCH",
-          headers: { "content-type": "text/n3" },
-          body: `@prefix solid: <http://www.w3.org/ns/solid/terms#>. _:p a solid:InsertDeletePatch; solid:inserts { <#se> <https://solid-memo.com/vocab/v1#note> "studied in another tab" . }.`,
-        });
-        expect(response.ok).toBe(true);
+        await changeElsewhere(`${pod.source}decks/deck-1.ttl`, `<#se> <https://solid-memo.com/vocab/v1#note> "studied in another tab" .`);
       },
     });
     const outcome = await useCases.updateInstance(session, pod.instance);
@@ -453,12 +426,7 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
         if (interfered || request.method !== "PATCH" || request.url !== `${pod.source}preferences.ttl`) return;
         interfered = true;
         // Another tab saves the preferences first.
-        const response = await fetch(`${pod.source}preferences.ttl`, {
-          method: "PATCH",
-          headers: { "content-type": "text/n3" },
-          body: `@prefix solid: <http://www.w3.org/ns/solid/terms#>. _:p a solid:InsertDeletePatch; solid:inserts { <#it> <https://solid-memo.com/vocab/v1#note> "saved in another tab" . }.`,
-        });
-        expect(response.ok).toBe(true);
+        await changeElsewhere(`${pod.source}preferences.ttl`, `<#it> <https://solid-memo.com/vocab/v1#note> "saved in another tab" .`);
       },
     });
     const preferences = await useCases.getPreferences(pod.source);

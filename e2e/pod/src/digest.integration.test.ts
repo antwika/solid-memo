@@ -25,7 +25,7 @@ import { createSolidRepairRepository } from "@solid-memo/solid/solidRepairReposi
 import { createSolidReviewStateRepository } from "@solid-memo/solid/solidReviewStateRepository";
 import { createSolidWebIdDocumentRepository } from "@solid-memo/solid/solidWebIdDocumentRepository";
 import { createWriteFence } from "@solid-memo/solid/writeFence";
-import { ETAG_OUTLIVES_EDITS, etagMarksEveryEdit } from "./serverTraits";
+import { ETAG_OUTLIVES_EDITS, etagMarksEveryEdit, versioned } from "./serverTraits";
 
 const SERVERS = inject("solidServers");
 const SITE = "https://solid-memo.test/";
@@ -98,11 +98,6 @@ async function seed(server: string): Promise<{ instanceUrl: string; deck: Deck }
 }
 
 const isDocument = (deck: Deck) => (r: Recorded) => r.url === deck.cardsDocumentUrl || r.url === deck.reviewsDocumentUrl;
-
-/** Whether the server gives a read's ETag: only then can a version be kept. */
-async function versioned(url: string): Promise<boolean> {
-  return (await fetch(url)).headers.get("ETag") !== null;
-}
 
 async function digestOf(instanceUrl: string): Promise<string> {
   const response = await fetch(`${instanceUrl}digest.ttl`);
