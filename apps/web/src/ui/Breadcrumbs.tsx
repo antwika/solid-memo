@@ -87,6 +87,9 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames, t: I18n["t"])
   if (route.screen === "preferences") {
     return [decks, { label: t("breadcrumbs.preferences"), route }];
   }
+  if (route.screen === "statistics") {
+    return [decks, { label: t("breadcrumbs.statistics"), route }];
+  }
   if (route.screen === "validation") {
     return [decks, { label: t("breadcrumbs.validation"), route }];
   }

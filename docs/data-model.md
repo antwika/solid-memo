@@ -93,6 +93,9 @@ flowchart LR
 │                        sm:previous* snapshot = state before the day's
 │                        first review (restored by "reset the day");
 │                        sm:formatVersion 2
+├── history/<YYYY-MM>.ttl  the answer log (below): one sm:Answer per grade
+│                        given in study that month, appended, never
+│                        edited; sm:formatVersion 1
 └── digest.ttl      derived data (below): a sm:DocumentReceipt per document
                          (#receipt-<path>) and a sm:DeckSchedule per deck
                          (#schedule-<path>), each stamped with the versions
@@ -223,6 +226,42 @@ A deck's description, topics and keywords are edited in its Browser
 ("Describe deck"); the description is required, as DCAT-AP asks of
 every dataset.
 
+## The answer log
+
+Every grade given in study is kept, so statistics can be computed
+([statistics.ts](../packages/domain/src/statistics.ts)): activity by
+study day, streaks, and how well reviews were remembered. A review state
+says only where a card stands now; the log is the history, and source
+data, since nothing could rebuild it.
+
+- **One document per study month** for the whole instance,
+  `history/<YYYY-MM>.ttl` (`historyUrlOf`, by the month of the study day,
+  so a day is never split): reading a year of statistics is twelve GETs
+  whatever the number of decks.
+- **One subject per answer**, `#answer-<time>-<random>`
+  ([answer.ts](../packages/domain/src/answer.ts)): the deck's catalog
+  entry and the card it was given to (either may since be removed; a
+  removed deck's answers stay, as a removed deck), the direction, the SM-2
+  grade (whichever answer scale gave it), when it was given and the study
+  day it counts towards, fixed then so a later day-boundary change does
+  not move it, and the prompt's interval before (absent on its first
+  answer, which introduced it) and after.
+- **Added without reading** (`appendToDocument`): one insert-only PATCH,
+  without a precondition, since an answer names a subject no other writer
+  does. Every server tested creates the document and its container when
+  missing and keeps every one of several concurrent inserts
+  (e2e/pod/src/history.integration.test.ts).
+- **After the review, not in its way**: `recordReview` saves the review
+  state, then queues the answer; it is added in the background, and one
+  that fails waits, with those after it, for the next answer, the end of
+  the session or the statistics page. An answer still queued when the
+  tab closes is lost; the review it belongs to is not.
+- **Resetting the day removes that deck's answers of the day**
+  (`removeDay`: read, remove, save with If-Match, again on 412).
+- Checked in the full check only ([validation.md](validation.md)): the
+  current month changes every session, so checking it on every visit
+  would download it every time.
+
 ## The digest
 
 `digest.ttl` lets a visit skip what has not changed since the last one.
@@ -292,6 +331,9 @@ sequenceDiagram
   delta, or for a large edit one PUT of the whole document as read and
   edited (below), so unknown triples survive either way. Only brand-new
   documents are saved from `createSolidDataset()`.
+- The [answer log](#the-answer-log) is the one exception: answers are
+  added unread, with an insert-only PATCH, since adding a new subject
+  cannot undo anyone else's write.
 - **Every write states what it expects to find**, as an HTTP precondition,
   so a write never silently undoes someone else's (another tab, device or
   app):

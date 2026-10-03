@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 import type { UseCases } from "@solid-memo/application/useCases";
 import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
+import { statisticsOf } from "@solid-memo/domain/statistics";
 
 /** A complete UseCases fake; override the methods a test cares about. */
 export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
@@ -58,6 +59,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     }),
     listLibraryCards: vi.fn(async () => []),
     planLibraryUpgrade: vi.fn(async () => null),
+    getStatistics: vi.fn(async () => statisticsOf([], "2026-09-21")),
     addReleaseLanguages: vi.fn(async () => null),
     applyLibraryUpgrade: vi.fn(async (deck, plan) => ({
       ...deck,

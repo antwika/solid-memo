@@ -11,11 +11,13 @@ const instance: Instance = {
 function renderBar() {
   const onSwitch = vi.fn();
   const onOpenPreferences = vi.fn();
+  const onOpenStatistics = vi.fn();
   render(
     <InstanceBar
       instance={instance}
       onSwitch={onSwitch}
       onOpenPreferences={onOpenPreferences}
+      onOpenStatistics={onOpenStatistics}
     />,
   );
   return { onSwitch, onOpenPreferences };

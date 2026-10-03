@@ -32,6 +32,27 @@ export function digestUrlOf(instanceUrl: string): string {
 }
 
 /**
+ * The instance's answer log (domain/answer.ts): one document per study
+ * month in this container, `history/<YYYY-MM>.ttl`. Source data the
+ * statistics are computed from, checked in the full check only.
+ */
+export function historyContainerOf(instanceUrl: string): string {
+  return `${ensureTrailingSlash(instanceUrl)}history/`;
+}
+
+/** The answer log's document for a study month, "YYYY-MM". */
+export function historyUrlOf(instanceUrl: string, month: string): string {
+  return `${historyContainerOf(instanceUrl)}${month}.ttl`;
+}
+
+/** The study month a document of the answer log is for; null for any other resource. */
+export function monthOfHistoryUrl(instanceUrl: string, url: string): string | null {
+  const container = historyContainerOf(instanceUrl);
+  if (!url.startsWith(container)) return null;
+  return /^(\d{4}-\d{2})\.ttl$/.exec(url.slice(container.length))?.[1] ?? null;
+}
+
+/**
  * The digest subject about a document or deck, `#<kind>-<where>`: where
  * it is under the instance, else its whole URL, with every character
  * but letters, digits, ".", "_" and "-" made a "-".

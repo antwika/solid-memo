@@ -6,7 +6,10 @@ import {
   digestSubjectOf,
   digestUrlOf,
   ensureTrailingSlash,
+  historyContainerOf,
+  historyUrlOf,
   instanceDocumentUrls,
+  monthOfHistoryUrl,
   metaUrlOf,
   preferencesUrlOf,
 } from "./instanceLayout";
@@ -63,5 +66,13 @@ describe("the digest", () => {
     expect(digestSubjectOf(instance, "receipt", "https://other.example/d.ttl")).toBe(
       "https://pod.example/solid-memo/main/digest.ttl#receipt-https---other.example-d.ttl",
     );
+  });
+
+  it("keeps the answer log in a document per study month, and knows which month a document is for", () => {
+    expect(historyContainerOf(INSTANCE)).toBe(`${INSTANCE}/history/`);
+    expect(historyUrlOf(INSTANCE, "2026-10")).toBe(`${INSTANCE}/history/2026-10.ttl`);
+    expect(monthOfHistoryUrl(INSTANCE, `${INSTANCE}/history/2026-10.ttl`)).toBe("2026-10");
+    expect(monthOfHistoryUrl(INSTANCE, `${INSTANCE}/history/notes.ttl`)).toBeNull();
+    expect(monthOfHistoryUrl(INSTANCE, `${INSTANCE}/catalog.ttl`)).toBeNull();
   });
 });

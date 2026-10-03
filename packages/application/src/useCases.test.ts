@@ -1,6 +1,7 @@
 import { AppError } from "@solid-memo/domain/appError";
 import { describe, expect, it, vi } from "vitest";
 import type {
+  AnswerLog,
   DigestRepository,
   DeckLibrary,
   DeckRepository,
@@ -21,6 +22,7 @@ import type { Instance } from "@solid-memo/domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "@solid-memo/domain/library";
 import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
 import type { ReviewState } from "@solid-memo/domain/review";
+import type { Answer } from "@solid-memo/domain/answer";
 import type { Catalog } from "@solid-memo/domain/catalog";
 import type { Session } from "@solid-memo/domain/session";
 import type { Storage } from "@solid-memo/domain/storage";
@@ -1695,5 +1697,109 @@ describe("the instance digest", () => {
     expect(deps.deckRepository.readCardsSince).toHaveBeenCalledWith(deck, "c1");
     expect(deps.reviewStateRepository.readReviewStatesSince).toHaveBeenCalledWith(deck, "r1");
     expect(digestRepository.updateDigest).not.toHaveBeenCalled();
+  });
+});
+
+describe("the answer log", () => {
+  /** An answer log kept in memory, by study month. */
+  function memoryLog() {
+    const byMonth = new Map<string, Answer[]>();
+    const log = {
+      append: vi.fn(async (_instanceUrl: string, answer: Answer) => {
+        const month = answer.studyDay.slice(0, 7);
+        byMonth.set(month, [...(byMonth.get(month) ?? []), answer]);
+      }),
+      months: vi.fn(async () => [...byMonth.keys()].sort()),
+      readMonth: vi.fn(async (_instanceUrl: string, month: string) => byMonth.get(month) ?? []),
+      removeDay: vi.fn(async (_instanceUrl: string, deckUrl: string, studyDay: string) => {
+        for (const [month, answers] of byMonth) {
+          byMonth.set(month, answers.filter((a) => a.deckUrl !== deckUrl || a.studyDay !== studyDay));
+        }
+      }),
+    } satisfies AnswerLog;
+    return { log, byMonth };
+  }
+  const noon = new Date(2026, 8, 21, 12, 0);
+  const setup = () => {
+    const deps = makeDeps();
+    const { log, byMonth } = memoryLog();
+    let id = 0;
+    const useCases = createUseCases({ ...deps, answerLog: log, newId: () => `id${++id}-0000-0000` });
+    return { deps, log, byMonth, useCases };
+  };
+
+  it("keeps every answer with what the statistics need, the prior interval from the second on", async () => {
+    const { deps, byMonth, useCases } = setup();
+    await useCases.recordReview(instance.url, deck, { card, direction: "front-to-back" }, 4, noon);
+    vi.mocked(deps.reviewStateRepository.getReviewState).mockResolvedValue({
+      cardId: card.id, direction: "back-to-front", easeFactor: 2.5, intervalDays: 6, repetitions: 2,
+      due: "2026-09-21", firstReviewedAt: "2026-09-01T10:00:00.000Z", lastReviewedAt: "2026-09-15T10:00:00.000Z", formatVersion: 2,
+    });
+    await useCases.recordReview(instance.url, deck, { card, direction: "back-to-front" }, 1, noon);
+    await useCases.getStatistics(instance.url, noon);
+    expect(byMonth.get("2026-09")).toEqual([
+      {
+        id: `answer-${noon.toISOString().replace(/[-:.]/g, "")}-id1-0000`,
+        deckUrl: deck.url, cardUrl: card.url, direction: "front-to-back", grade: 4,
+        answeredAt: noon.toISOString(), studyDay: "2026-09-21", nextIntervalDays: 1,
+      },
+      {
+        id: `answer-${noon.toISOString().replace(/[-:.]/g, "")}-id2-0000`,
+        deckUrl: deck.url, cardUrl: card.url, direction: "back-to-front", grade: 1,
+        answeredAt: noon.toISOString(), studyDay: "2026-09-21", priorIntervalDays: 6, nextIntervalDays: 1,
+      },
+    ]);
+  });
+
+  it("keeps an answer it could not add for later, in order, and does not fail the review", async () => {
+    const { log, byMonth, useCases } = setup();
+    log.append.mockRejectedValueOnce(new Error("offline")).mockRejectedValueOnce(new Error("still offline"));
+    await expect(useCases.recordReview(instance.url, deck, { card, direction: "front-to-back" }, 4, noon)).resolves.toBeDefined();
+    await useCases.refreshStudyDigest(instance.url, deck);
+    expect(byMonth.size).toBe(0);
+    await useCases.recordReview(instance.url, deck, { card, direction: "back-to-front" }, 5, noon);
+    await useCases.refreshStudyDigest(instance.url, deck);
+    expect(byMonth.get("2026-09")!.map((answer) => [answer.direction, answer.grade])).toEqual([
+      ["front-to-back", 4],
+      ["back-to-front", 5],
+    ]);
+  });
+
+  it("forgets a reset day's answers of the deck, those still on their way too", async () => {
+    const { deps, log, byMonth, useCases } = setup();
+    await useCases.recordReview(instance.url, deck, { card, direction: "front-to-back" }, 4, noon);
+    vi.mocked(deps.reviewStateRepository.listReviewStates).mockResolvedValue([
+      { cardId: card.id, direction: "front-to-back", easeFactor: 2.6, intervalDays: 1, repetitions: 1, due: "2026-09-22",
+        firstReviewedAt: noon.toISOString(), lastReviewedAt: noon.toISOString(), formatVersion: 2 },
+    ]);
+    await expect(useCases.resetStudyDay(instance.url, deck, noon)).resolves.toBe(1);
+    expect(log.removeDay).toHaveBeenCalledWith(instance.url, deck.url, "2026-09-21");
+    expect(log.append.mock.invocationCallOrder[0]).toBeLessThan(log.removeDay.mock.invocationCallOrder[0]!);
+    expect(byMonth.get("2026-09")).toEqual([]);
+  });
+
+  it("computes the statistics of the months asked for, of every deck or of one", async () => {
+    const { byMonth, useCases } = setup();
+    const answer = (studyDay: string, deckUrl = deck.url): Answer => ({
+      id: `answer-${studyDay}`, deckUrl, cardUrl: card.url, direction: "front-to-back", grade: 4,
+      answeredAt: `${studyDay}T10:00:00.000Z`, studyDay, nextIntervalDays: 1,
+    });
+    byMonth.set("2025-09", [answer("2025-09-30")]);
+    byMonth.set("2025-10", [answer("2025-10-01")]);
+    byMonth.set("2026-09", [answer("2026-09-20"), answer("2026-09-21", "https://pod.example/other#deck")]);
+    const all = await useCases.getStatistics(instance.url, noon);
+    expect(all.days.map((day) => day.studyDay)).toEqual(["2025-10-01", "2026-09-20", "2026-09-21"]);
+    expect(all.streaks).toEqual({ current: 2, longest: 2 });
+    const one = await useCases.getStatistics(instance.url, noon, { months: 1, deckUrl: deck.url });
+    expect(one.days.map((day) => day.studyDay)).toEqual(["2026-09-20"]);
+  });
+
+  it("is checked in the full check, one document a month, and is empty without a log", async () => {
+    const { deps, byMonth, useCases } = setup();
+    byMonth.set("2026-09", []);
+    await useCases.validateInstance(instance.url);
+    expect(deps.shapeValidator.validateDocument).toHaveBeenCalledWith(`${instance.url}history/2026-09.ttl`);
+    const plain = createUseCases(makeDeps());
+    await expect(plain.getStatistics(instance.url, noon)).resolves.toMatchObject({ totals: { answers: 0, studyDays: 0, cards: 0 } });
   });
 });

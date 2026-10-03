@@ -550,6 +550,13 @@ describe("Workspace", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens the statistics from the instance bar", async () => {
+    renderWorkspace(makeUseCases({ listInstances: vi.fn(async () => [instanceA]) }));
+    fireEvent.click(await screen.findByRole("button", { name: "Statistics" }));
+    expect(await screen.findByRole("heading", { name: "Statistics" })).toBeInTheDocument();
+    expect(screen.getByText("No answers yet: the statistics begin with your next study session.")).toBeInTheDocument();
+  });
+
   it("creates a deck in the deck creator and returns to the deck list", async () => {
     const deck: Deck = {
       id: "deck-1",

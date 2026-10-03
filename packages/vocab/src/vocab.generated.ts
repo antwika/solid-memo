@@ -1,6 +1,6 @@
 /* Generated from vocab/v1.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
-/** Solid Memo's own vocabulary, version 1.9 (see docs/vocab.md). */
+/** Solid Memo's own vocabulary, version 1.10 (see docs/vocab.md). */
 export const SM_NS = "https://solid-memo.com/vocab/v1#";
 
 export const SM = {
@@ -18,6 +18,8 @@ export const SM = {
   DocumentReceipt: `${SM_NS}DocumentReceipt`,
   /** How many of a deck's prompts fall due on which study day and how many are still new, computed from given versions of its cards and reviews documents, so the deck list can count today's study without them. A subject of the instance's digest document; derived data, rebuilt whenever it does not hold. (Added in 1.9.) */
   DeckSchedule: `${SM_NS}DeckSchedule`,
+  /** One grade given to one prompt (a card, studied one way) during study: an entry of the instance's answer log, one document per study month, which the study statistics are computed from. Appended, never edited; resetting a study day removes that day's answers. (Added in 1.10.) */
+  Answer: `${SM_NS}Answer`,
   /** Which version of its class's shape the subject conforms to. Absent means 1, the format that predates the field. Every subject Solid Memo writes carries it. (Since 1.0.) */
   formatVersion: `${SM_NS}formatVersion`,
   /** The document holding the deck's cards, one sm:Card per hash fragment. (Since 1.0.) */
@@ -110,6 +112,22 @@ export const SM = {
   reviewedOnDayCount: `${SM_NS}reviewedOnDayCount`,
   /** How many prompts were first reviewed on the study day the schedule was computed on. (Added in 1.9.) */
   introducedOnDayCount: `${SM_NS}introducedOnDayCount`,
+  /** The deck the answer was given in: its catalog entry, which may since have been removed. (Added in 1.10.) */
+  answeredDeck: `${SM_NS}answeredDeck`,
+  /** The card the answer was given to, which may since have been removed. (Added in 1.10.) */
+  answeredCard: `${SM_NS}answeredCard`,
+  /** The way the card was asked: a concept of solid-memo:StudyDirections. (Added in 1.10.) */
+  answeredDirection: `${SM_NS}answeredDirection`,
+  /** The SM-2 quality of the answer, 0 to 5, whichever answer scale gave it; below 3 means the card was forgotten. (Added in 1.10.) */
+  grade: `${SM_NS}grade`,
+  /** When the answer was given. (Added in 1.10.) */
+  answeredAt: `${SM_NS}answeredAt`,
+  /** The study day the answer counts towards, as a plain "YYYY-MM-DD" string, fixed when it was given, so a later change of the day boundary does not move it. (Added in 1.10.) */
+  answeredOn: `${SM_NS}answeredOn`,
+  /** The prompt's interval before the answer; absent on a prompt's first answer, which introduced it. (Added in 1.10.) */
+  priorIntervalDays: `${SM_NS}priorIntervalDays`,
+  /** The prompt's interval after the answer: the days until it is due again. (Added in 1.10.) */
+  nextIntervalDays: `${SM_NS}nextIntervalDays`,
   /** The ways a deck can be studied. (Added in 1.6.) */
   StudyDirections: `${SM_NS}StudyDirections`,
   /** Each card is shown by its front and answered with its back. (Added in 1.6.) */

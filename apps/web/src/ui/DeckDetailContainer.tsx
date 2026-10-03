@@ -3,6 +3,7 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import { activeCards, type Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import { DeckDetailScreen } from "./DeckDetailScreen";
+import { DeckStatisticsContainer } from "./DeckStatisticsContainer";
 import { LibraryUpgradeContainer } from "./LibraryUpgradeContainer";
 import { Loading } from "./Loading";
 import { deckHref } from "./router";
@@ -48,6 +49,7 @@ export function DeckDetailContainer({
       await queryClient.invalidateQueries({
         queryKey: ["studyQueue", deck.url],
       });
+      await queryClient.invalidateQueries({ queryKey: ["statistics", instance.url] });
     },
   });
 
@@ -64,6 +66,7 @@ export function DeckDetailContainer({
   }
 
   return (
+    <>
     <DeckDetailScreen
       deck={deck}
       cardCount={activeCards(cardsQuery.data).length}
@@ -85,5 +88,7 @@ export function DeckDetailContainer({
         />
       }
     />
+    <DeckStatisticsContainer useCases={useCases} instance={instance} deck={deck} />
+    </>
   );
 }

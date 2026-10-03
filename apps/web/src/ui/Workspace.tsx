@@ -30,6 +30,7 @@ import { Loading } from "./Loading";
 import { MigrationContainer } from "./MigrationContainer";
 import { StudyContainer } from "./StudyContainer";
 import { PreferencesContainer } from "./PreferencesContainer";
+import { StatisticsContainer } from "./StatisticsContainer";
 import { StoragePicker } from "./StoragePicker";
 import {
   deckHref,
@@ -620,6 +621,10 @@ export function Workspace({
           />
           </>
         );
+      case "statistics":
+        return (
+          <StatisticsContainer useCases={useCases} instance={activeInstance!} decks={decksQuery.data ?? []} />
+        );
       case "validation":
         if (developerMode) {
           return (
@@ -664,6 +669,7 @@ export function Workspace({
             onOpenPreferences={() =>
               navigate({ screen: "preferences", instanceUrl: instanceUrl! })
             }
+            onOpenStatistics={() => navigate({ screen: "statistics", instanceUrl: instanceUrl! })}
           />
           <MigrationContainer
             useCases={useCases}
