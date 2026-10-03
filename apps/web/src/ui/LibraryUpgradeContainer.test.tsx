@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/preact";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { LibraryUpgradeContainer } from "./LibraryUpgradeContainer";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
@@ -53,6 +53,24 @@ function renderContainer(useCases: UseCases, deck: Deck = imported) {
   return { container, invalidate, remove };
 }
 
+/** The deck page: the deck comes from the deck list, as Workspace gives it. */
+function renderPage(useCases: UseCases) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+  const remove = vi.spyOn(queryClient, "removeQueries");
+  function DeckPage() {
+    const decks = useQuery({ queryKey: ["decks"], queryFn: () => useCases.listDecks(instance.url) });
+    const deck = decks.data?.[0];
+    return deck === undefined ? null : <LibraryUpgradeContainer useCases={useCases} instance={instance} deck={deck} />;
+  }
+  render(
+    <QueryClientProvider client={queryClient}>
+      <DeckPage />
+    </QueryClientProvider>,
+  );
+  return { invalidate, remove };
+}
+
 describe("LibraryUpgradeContainer", () => {
   it("checks nothing for a home-made deck", async () => {
     const useCases = makeUseCasesFake();
@@ -99,23 +117,24 @@ describe("LibraryUpgradeContainer", () => {
   });
 
   it("offers the upgrade, shows its steps while it runs, then refreshes what depends on the deck at once, and reports", async () => {
-    let current: LibraryUpgradePlan | null = plan;
+    let stored: Deck = imported;
     let report: ((progress: DeckUpgradeProgress) => void) | undefined;
     let finish: (() => void) | undefined;
     const useCases = makeUseCasesFake({
-      planLibraryUpgrade: vi.fn(async () => current),
+      listDecks: vi.fn(async () => [stored]),
+      planLibraryUpgrade: vi.fn(async (deck: Deck) => (deck.sourceUrl === imported.sourceUrl ? plan : null)),
       applyLibraryUpgrade: vi.fn(
         (deck: Deck, applied: LibraryUpgradePlan, onProgress?: (progress: DeckUpgradeProgress) => void) =>
           new Promise<DeckUpgradeOutcome>((resolve) => {
             report = onProgress;
             finish = () => {
-              current = null;
-              resolve({ ok: true, deck: { ...deck, sourceUrl: applied.releaseUrl }, tidied: true });
+              stored = { ...deck, sourceUrl: applied.releaseUrl };
+              resolve({ ok: true, deck: stored, tidied: true });
             };
           }),
       ),
     });
-    const { invalidate, remove } = renderContainer(useCases);
+    const { invalidate, remove } = renderPage(useCases);
 
     fireEvent.click(await screen.findByRole("button", { name: "Update to release 2" }));
 
@@ -149,6 +168,28 @@ describe("LibraryUpgradeContainer", () => {
     expect(screen.queryByRole("region")).toBeNull();
   });
 
+  it("offers nothing more once the deck is upgraded, though the offer is looked at again with the deck as it was", async () => {
+    // The pod as the use cases see it: the deck moves to new documents and the next release.
+    let stored: Deck = imported;
+    const useCases = makeUseCasesFake({
+      listDecks: vi.fn(async () => [stored]),
+      // As the real use case: a plan for a deck still on the old release, whatever deck object it is given.
+      planLibraryUpgrade: vi.fn(async (deck: Deck) => (deck.sourceUrl === imported.sourceUrl ? plan : null)),
+      applyLibraryUpgrade: vi.fn(async (deck: Deck, applied: LibraryUpgradePlan): Promise<DeckUpgradeOutcome> => {
+        stored = { ...deck, sourceUrl: applied.releaseUrl, cardsDocumentUrl: `${instance.url}decks/deck-1-u1.ttl` };
+        return { ok: true, deck: stored, tidied: true };
+      }),
+    });
+    renderPage(useCases);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Update to release 2" }));
+
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Updated to release 2 from the library."));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByRole("button", { name: "Update to release 2" })).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Updated to release 2 from the library.");
+  });
+
   it("says where a failed upgrade stopped and that the deck is as it was, and lets the user try again or close", async () => {
     const failed: DeckUpgradeOutcome = {
       ok: false,
@@ -169,7 +210,8 @@ describe("LibraryUpgradeContainer", () => {
     );
     expect(region).toHaveTextContent("Your deck was not changed. The new documents were removed.");
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["libraryUpgrade", imported.url] });
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["decks"] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["cards", imported.cardsDocumentUrl] });
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     await waitFor(() => expect(useCases.applyLibraryUpgrade).toHaveBeenCalledTimes(2));
