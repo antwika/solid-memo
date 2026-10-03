@@ -13,6 +13,12 @@ import { createSolidInstanceRepository } from "@solid-memo/solid/solidInstanceRe
 import { createSolidPreferencesRepository } from "@solid-memo/solid/solidPreferencesRepository";
 import { createLocalStorageLanguagePreference } from "@solid-memo/browser/localStorageLanguagePreference";
 import { createLocalStorageUpdateJournal } from "@solid-memo/browser/localStorageUpdateJournal";
+import { createIndexedDbResourceStore } from "@solid-memo/browser/indexedDbResourceStore";
+import { GUEST_ORIGIN } from "@solid-memo/domain/guest";
+import { createLocalGuestPod } from "@solid-memo/solid/localGuestPod";
+import { createLocalPod } from "@solid-memo/solid/localPod";
+import { createMemoryResourceStore } from "@solid-memo/solid/memoryResourceStore";
+import { routedFetch } from "@solid-memo/solid/routedFetch";
 import { createSolidInstanceCopier } from "@solid-memo/solid/solidInstanceCopier";
 import { createSolidRepairRepository } from "@solid-memo/solid/solidRepairRepository";
 import { createSolidReviewStateRepository } from "@solid-memo/solid/solidReviewStateRepository";
@@ -21,8 +27,23 @@ import { createSolidWebIdDocumentRepository } from "@solid-memo/solid/solidWebId
 import { App } from "./ui/App";
 import "./style.css";
 
-/** Every pod request goes through the fence, so an instance being updated cannot be written (docs/migrations.md). */
-const writeFence = createWriteFence(authFetch);
+/**
+ * A guest's pod, kept in this browser (docs/guest-mode.md); in memory, for
+ * this page only, where the browser keeps no IndexedDB.
+ */
+const guestStore = globalThis.indexedDB === undefined ? createMemoryResourceStore() : createIndexedDbResourceStore();
+const guestFetch = createLocalPod({
+  root: GUEST_ORIGIN,
+  store: guestStore,
+  newEtag: () => `"${crypto.randomUUID()}"`,
+});
+
+/**
+ * Every pod request goes through the fence, so an instance being updated
+ * cannot be written (docs/migrations.md); then to the guest's pod or, as
+ * the logged-in user, to any other.
+ */
+const writeFence = createWriteFence(routedFetch({ origin: GUEST_ORIGIN, local: guestFetch, remote: authFetch }));
 const podFetch = writeFence.fetch;
 
 const shapeValidator = createShaclShapeValidator({
@@ -72,6 +93,7 @@ const useCases = createUseCases({
   digestRepository: createSolidDigestRepository({ fetch: podFetch, checkWrite }),
   answerLog: createSolidAnswerLog({ fetch: podFetch, checkWrite }),
   ruleset: __SHAPES_RULESET__,
+  guestPod: createLocalGuestPod({ fetch: guestFetch, store: guestStore }),
 });
 
 const queryClient = new QueryClient();

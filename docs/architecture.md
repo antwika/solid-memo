@@ -15,9 +15,9 @@ where the layers meet.
 | `@solid-memo/application` | `packages/application/` | Use cases (what the app does) and ports (what the app needs). |
 | `@solid-memo/domain` | `packages/domain/` | Pure types and pure functions: the app's vocabulary, SRS, migrations. |
 | `@solid-memo/vocab` | `packages/vocab/` | The data contract: the RDF vocabulary (`vocab/`), SHACL shapes (`shapes/`), vendored profiles (`vendor/`), fixtures, and the TypeScript generated from them (`src/*.generated.ts`), with the generator (`tooling/`). |
-| `@solid-memo/solid` | `packages/solid/` | Adapters for Solid pods (Inrupt): repositories, the type index, the instance copier, the write fence, the pod-reading shape validator. |
+| `@solid-memo/solid` | `packages/solid/` | Adapters for Solid pods (Inrupt): repositories, the type index, the instance copier, the write fence, the pod-reading shape validator, and the guest's pod kept in the browser ([guest-mode.md](guest-mode.md)). |
 | `@solid-memo/shacl` | `packages/shacl/` | The SHACL engine (rdf-validate-shacl, loaded lazily), profiles and shape loading (`src/`); build-time validation of Turtle files (`node/`). |
-| `@solid-memo/browser` | `packages/browser/` | Adapters for browser storage (the update journal). |
+| `@solid-memo/browser` | `packages/browser/` | Adapters for browser storage: the update journal, the language, the guest's pod's store (IndexedDB). |
 | `@solid-memo/deck-library` | `packages/deck-library/` | The public deck library: sources (`decks/`), frozen releases (`releases/`), the lockfile, the release tool and the Vite plugin that publishes the library. |
 | `@solid-memo/turtle` | `packages/turtle/` | Node-only Turtle tooling (n3): parsing and the house-style formatter. |
 | `@solid-memo/e2e-pod` | `e2e/pod/` | End-to-end tests of the app's use cases and Solid adapters against a real Community Solid Server. |

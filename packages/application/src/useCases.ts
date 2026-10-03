@@ -63,6 +63,7 @@ import {
   type MigrationPlan,
 } from "@solid-memo/domain/migration";
 import {
+  digestUrlOf,
   documentsInUse,
   ensureTrailingSlash,
   historyUrlOf,
@@ -102,6 +103,18 @@ import type { EstablishedSession, Session } from "@solid-memo/domain/session";
 import { applySm2, INITIAL_SM2_STATE } from "@solid-memo/domain/sm2";
 import type { Storage } from "@solid-memo/domain/storage";
 import { isSecureUrl, validateWebId } from "@solid-memo/domain/webId";
+import {
+  GUEST_INSTANCE_URL,
+  GUEST_ORIGIN,
+  GUEST_SESSION,
+  GUEST_TRANSFER_STEPS,
+  GUEST_WEBID,
+  isGuestUrl,
+  type GuestStudy,
+  type GuestTransferOutcome,
+  type GuestTransferProgress,
+  type GuestTransferStep,
+} from "@solid-memo/domain/guest";
 import type { WebIdDocument } from "@solid-memo/domain/webIdDocument";
 import type {
   DeckLibrary,
@@ -117,6 +130,8 @@ import type {
   DigestRepository,
   RepairRepository,
   InstanceCopier,
+  ContainerMove,
+  GuestPod,
   LanguagePreference,
   UpdateJournal,
   WriteFence,
@@ -125,7 +140,31 @@ import type {
 import { AppError } from "@solid-memo/domain/appError";
 
 export interface UseCases {
+  /** The session of a login or an earlier one; else a guest's, when a guest studied on this device; else null. */
   restoreSession(): Promise<EstablishedSession | null>;
+  /**
+   * Study as a guest, without logging in (docs/guest-mode.md): in a pod on
+   * this device, with an instance named `instanceName` made in it when it
+   * has none. The guest's session.
+   */
+  startGuest(instanceName: string): Promise<Session>;
+  /** Delete everything the guest studied on this device. */
+  discardGuest(): Promise<void>;
+  /** What a guest studied on this device; null when no guest did. */
+  findGuestStudy(): Promise<GuestStudy | null>;
+  /**
+   * Keep a guest's study in the pod the user logged in to (domain/guest.ts):
+   * the guest's instance is copied into `containerUrl`, made the user's,
+   * checked, and registered in their type index; then deleted from the
+   * device. A failure before the registration deletes the copy and leaves
+   * the guest's study as it was.
+   */
+  transferGuestStudy(
+    session: Session,
+    guestInstance: Instance,
+    target: { containerUrl: string; registrationTarget: RegistrationTarget },
+    onProgress?: (progress: GuestTransferProgress) => void,
+  ): Promise<GuestTransferOutcome>;
   /** Rejects, without any network request, unless the WebID is an https URL. */
   loginWithWebId(webId: string): Promise<void>;
   /** Log in at a chosen identity provider; rejects unless it is an https URL. */
@@ -356,6 +395,8 @@ export interface Dependencies {
   answerLog?: AnswerLog;
   /** Names the shapes documents are checked by; a receipt of other rules does not count. */
   ruleset?: string;
+  /** The pod a guest studies in on this device; by default there is none. */
+  guestPod?: GuestPod;
 }
 
 /** A read made without a known version, which always comes with the contents. */
@@ -372,6 +413,13 @@ const NO_DIGESTS: DigestRepository = { readDigest: async () => null, updateDiges
 const nothing = async () => undefined;
 const none = async (): Promise<never[]> => [];
 const NO_ANSWER_LOG: AnswerLog = { append: nothing, months: none, readMonth: none, removeDay: nothing };
+const NO_GUEST_POD: GuestPod = {
+  exists: async () => false,
+  start: async () => {
+    throw new Error("There is no guest pod on this device.");
+  },
+  discard: nothing,
+};
 
 /**
  * The progress of an update through its `total` steps, reported as it
@@ -436,6 +484,7 @@ export function createUseCases({
   digestRepository = NO_DIGESTS,
   answerLog = NO_ANSWER_LOG,
   ruleset = "",
+  guestPod = NO_GUEST_POD,
 }: Dependencies): UseCases {
   /** Normalized card content, or a throw naming what is missing. */
   function validContent(content: CardContent): CardContent {
@@ -713,6 +762,82 @@ export function createUseCases({
     return logging;
   }
 
+  /**
+   * Copy each resource (below `move.from`) to its place below `move.to`,
+   * one by one, the copy's own access control too when `withAccess`; the
+   * version each was copied at, by resource.
+   */
+  async function copyResources(
+    resources: readonly string[],
+    move: ContainerMove,
+    withAccess: boolean,
+    onCopied: () => void,
+  ): Promise<Map<string, string>> {
+    const versions = new Map<string, string>();
+    for (const resource of resources) {
+      const copy = rebaseIri(resource, move.from, move.to);
+      versions.set(resource, await instanceCopier.copyResource(resource, copy, move));
+      if (withAccess) await instanceCopier.copyAccessControl(resource, copy, move);
+      onCopied();
+    }
+    return versions;
+  }
+
+  /**
+   * Throw unless the container still lists the same resources (`listed`
+   * lists them as they were listed), each at the version it was copied at.
+   */
+  async function ensureUnchanged(
+    listed: () => Promise<string[]>,
+    resources: readonly string[],
+    versions: ReadonlyMap<string, string>,
+    onChecked: () => void,
+  ): Promise<void> {
+    if ((await listed()).join("\n") !== resources.join("\n")) {
+      throw new AppError("instanceChangedDuringCopy");
+    }
+    onChecked();
+    for (const resource of resources) {
+      if (!(await instanceCopier.isUnchanged(resource, versions.get(resource)!))) {
+        throw new AppError("resourceChangedDuringCopy", { url: resource });
+      }
+      onChecked();
+    }
+  }
+
+  /** Delete a copy that failed half-way, when one was made; whether nothing is left of it. */
+  async function removeCopy(source: string, target: string, created: boolean): Promise<boolean> {
+    let cleanedUp = !created;
+    if (created) {
+      cleanedUp = await instanceCopier.deleteRecursively(target).then(
+        () => true,
+        () => false,
+      );
+    }
+    if (cleanedUp) updateJournal.end(source);
+    return cleanedUp;
+  }
+
+  /** The guest's instance, and the whole guest pod once it has no instance left. */
+  async function removeGuestInstance(instance: Instance): Promise<void> {
+    await instanceRepository.deleteInstance({ webId: GUEST_WEBID, instance });
+    if ((await instanceRepository.listInstances(GUEST_WEBID)).length === 0) await guestPod.discard();
+  }
+
+  async function createInstance(
+    session: Session,
+    { containerUrl, name, registrationTarget }: { containerUrl: string; name: string; registrationTarget: RegistrationTarget },
+  ): Promise<Instance> {
+    const instance = await instanceRepository.createInstance({
+      webId: session.webId,
+      containerUrl: containerUrl.trim(),
+      name: name.trim(),
+      registrationTarget,
+    });
+    await deckRepository.saveCatalog(instance.url, await catalogOf(session, instance.name));
+    return instance;
+  }
+
   async function catalogOf(session: Session, title: string): Promise<Catalog> {
     const name = await webIdDocumentRepository
       .fetchWebIdDocument(session.webId)
@@ -725,8 +850,112 @@ export function createUseCases({
     };
   }
   return {
-    restoreSession() {
-      return sessionGateway.restore();
+    async restoreSession() {
+      const established = await sessionGateway.restore();
+      if (established !== null) return established;
+      return (await guestPod.exists()) ? { session: GUEST_SESSION, origin: "restored" } : null;
+    },
+    async startGuest(instanceName) {
+      await guestPod.start();
+      if ((await instanceRepository.listInstances(GUEST_WEBID)).length === 0) {
+        await createInstance(GUEST_SESSION, {
+          containerUrl: GUEST_INSTANCE_URL,
+          name: instanceName,
+          registrationTarget: "private",
+        });
+      }
+      return GUEST_SESSION;
+    },
+    discardGuest() {
+      return guestPod.discard();
+    },
+    async findGuestStudy() {
+      if (!(await guestPod.exists())) return null;
+      const instances = await instanceRepository.listInstances(GUEST_WEBID);
+      return {
+        instances: await Promise.all(
+          instances.map(async (instance) => ({
+            instance,
+            deckCount: (await deckRepository.listDecks(instance.url)).length,
+          })),
+        ),
+      };
+    },
+    async transferGuestStudy(session, guestInstance, { containerUrl, registrationTarget }, onProgress = () => undefined) {
+      const source = ensureTrailingSlash(guestInstance.url);
+      const target = ensureTrailingSlash(containerUrl.trim());
+      if (session.guest === true || !isGuestUrl(source) || isGuestUrl(target)) {
+        throw new Error("A guest's study moves from the guest's pod into the pod of a user who logged in.");
+      }
+      const move = { from: source, to: target, renames: { [GUEST_WEBID]: session.webId } };
+      const progress = stepReporter<GuestTransferStep>("stage", GUEST_TRANSFER_STEPS.length, onProgress);
+      // The digest is what this device learned of the guest's pod's versions: the user's pod starts its own.
+      const digest = digestUrlOf(source);
+      const listed = async () => (await instanceCopier.listResources(source)).filter((url) => url !== digest);
+      // Answers still on their way to the guest's log go there first, to move with it.
+      await logAnswers();
+      let created = false;
+      let instance: Instance;
+      const release = writeFence.hold(source);
+      try {
+        // Listing the guest's instance, making sure the target is free, creating it.
+        progress.start(3);
+        const resources = await listed();
+        progress.stepped();
+        await instanceCopier.ensureAbsent(target);
+        progress.stepped();
+        updateJournal.begin(source, target);
+        await instanceCopier.createContainer(target);
+        created = true;
+        progress.finished("copy", resources.length);
+        const versions = await copyResources(resources, move, false, () => progress.stepped());
+        // The catalogue's publisher, named as the user's profile names them; then nothing may name the guest's pod.
+        const documents = resources.filter((url) => !url.endsWith("/")).map((url) => rebaseIri(url, source, target));
+        progress.finished("adopt", documents.length + 1);
+        const catalog = await deckRepository.readCatalog(target);
+        if (catalog !== null) {
+          await deckRepository.saveCatalog(target, { ...catalog, publisher: (await catalogOf(session, catalog.title)).publisher });
+        }
+        progress.stepped();
+        for (const url of documents) {
+          if (await instanceCopier.mentions(url, GUEST_ORIGIN)) throw new AppError("guestUrlsLeft", { url });
+          progress.stepped();
+        }
+        progress.finished("validate");
+        const report = await validateInstance(target, (count, of) => progress.partly(count, of));
+        if (!report.conforms) {
+          throw new AppError("movedCopyInvalid", { count: report.violationCount });
+        }
+        // Listing the guest's instance again, then each of its resources.
+        progress.finished("verify", resources.length + 1);
+        await ensureUnchanged(listed, resources, versions, () => progress.stepped());
+        progress.finished("register");
+        instance = await instanceRepository.attachInstance({ webId: session.webId, instanceUrl: target, registrationTarget });
+      } catch (error) {
+        const cleanedUp = await removeCopy(source, target, created);
+        return {
+          ok: false,
+          step: progress.step(),
+          error,
+          cleanedUp,
+          ...(cleanedUp ? {} : { leftoverUrl: target }),
+        };
+      } finally {
+        release();
+      }
+      // The study is the user's now: what follows only tidies.
+      progress.finished("tidy");
+      updateJournal.end(source);
+      const tidied = await (async () => {
+        // The catalogue's registration lets other apps find it; the instance works without.
+        await instanceRepository.registerCatalog({ webId: session.webId, instanceUrl: target, title: instance.name });
+        await removeGuestInstance(guestInstance);
+      })().then(
+        () => true,
+        () => false,
+      );
+      progress.finished();
+      return { ok: true, instance, tidied };
     },
     language(preferred) {
       return pickLocale(languagePreference.chosen(), preferred);
@@ -756,9 +985,10 @@ export function createUseCases({
     async discoverAccount(session) {
       const [storages, oidcIssuer, name] = await Promise.all([
         storageGateway.discoverStorages(session.webId),
-        sessionGateway
-          .discoverOidcIssuer(session.webId)
-          .catch(() => undefined),
+        // A guest logs in nowhere; their WebID is not on the network to be asked.
+        session.guest === true
+          ? undefined
+          : sessionGateway.discoverOidcIssuer(session.webId).catch(() => undefined),
         webIdDocumentRepository
           .fetchWebIdDocument(session.webId)
           .then((document) => profileNameOf(document, session.webId))
@@ -789,16 +1019,7 @@ export function createUseCases({
     getRegistrationOptions(session) {
       return instanceRepository.getRegistrationOptions(session.webId);
     },
-    async createInstance(session, { containerUrl, name, registrationTarget }) {
-      const instance = await instanceRepository.createInstance({
-        webId: session.webId,
-        containerUrl: containerUrl.trim(),
-        name: name.trim(),
-        registrationTarget,
-      });
-      await deckRepository.saveCatalog(instance.url, await catalogOf(session, instance.name));
-      return instance;
-    },
+    createInstance,
     attachInstanceByUrl(session, instanceUrl, registrationTarget) {
       return instanceRepository.attachInstance({
         webId: session.webId,
@@ -1036,13 +1257,7 @@ export function createUseCases({
         progress.finished("access");
         await instanceCopier.copyAccessControl(source, target, move);
         progress.finished("copy", resources.length);
-        const versions = new Map<string, string>();
-        for (const resource of resources) {
-          const copy = rebaseIri(resource, source, target);
-          versions.set(resource, await instanceCopier.copyResource(resource, copy, move));
-          await instanceCopier.copyAccessControl(resource, copy, move);
-          progress.stepped();
-        }
+        const versions = await copyResources(resources, move, true, () => progress.stepped());
         progress.finished("upgrade");
         await upgradeInPlace(session, target, { replaces: source, replacedAt: now().toISOString() }, partly);
         progress.finished("validate");
@@ -1052,31 +1267,14 @@ export function createUseCases({
         }
         // Listing the original again, then each of its documents.
         progress.finished("verify", resources.length + 1);
-        const listedAgain = await instanceCopier.listResources(source);
-        if (listedAgain.join("\n") !== resources.join("\n")) {
-          throw new AppError("instanceChangedDuringCopy");
-        }
-        progress.stepped();
-        for (const resource of resources) {
-          if (!(await instanceCopier.isUnchanged(resource, versions.get(resource)!))) {
-            throw new AppError("resourceChangedDuringCopy", { url: resource });
-          }
-          progress.stepped();
-        }
+        await ensureUnchanged(() => instanceCopier.listResources(source), resources, versions, () => progress.stepped());
         progress.finished("switch");
         await instanceRepository.switchInstance({ webId: session.webId, from: source, to: target, title: instance.name });
         progress.finished();
         updateJournal.end(source);
         return { ok: true, instanceUrl: target, backupUrl: source };
       } catch (error) {
-        let cleanedUp = !created;
-        if (created) {
-          cleanedUp = await instanceCopier.deleteRecursively(target).then(
-            () => true,
-            () => false,
-          );
-        }
-        if (cleanedUp) updateJournal.end(source);
+        const cleanedUp = await removeCopy(source, target, created);
         return {
           ok: false,
           step: progress.step(),

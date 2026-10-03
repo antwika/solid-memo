@@ -1,7 +1,4 @@
-import { getSolidDataset, toRdfJsDataset } from "@inrupt/solid-client";
-import type { Quad, Term } from "@rdfjs/types";
-
-const XSD_STRING = "http://www.w3.org/2001/XMLSchema#string";
+import { triplesOf } from "../ntriples";
 
 /**
  * A pod for tests: Turtle documents kept as sets of N-Triples lines, so
@@ -112,25 +109,7 @@ export function fakePod() {
   };
 }
 
-async function triplesOf(url: string, turtle: string): Promise<Set<string>> {
-  const fetch = (async () => {
-    const response = new Response(turtle, { headers: { "Content-Type": "text/turtle" } });
-    Object.defineProperty(response, "url", { value: url });
-    return response;
-  }) as unknown as typeof globalThis.fetch;
-  const quads = [...toRdfJsDataset(await getSolidDataset(url, { fetch }))] as Quad[];
-  return new Set(quads.map((q) => `${term(q.subject)} ${term(q.predicate)} ${term(q.object)} .`));
-}
-
 /** A PATCH line with its relative IRIs (`<#x>`) made absolute. */
 function resolved(url: string, line: string): string {
   return line.replace(/<(#[^>]*)>/g, (_, fragment: string) => `<${url}${fragment}>`);
-}
-
-/** A term as Solid Memo's PATCH bodies write it. */
-function term(t: Term): string {
-  if (t.termType !== "Literal") return t.termType === "BlankNode" ? `_:${t.value}` : `<${t.value}>`;
-  const text = `"${t.value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r")}"`;
-  if (t.language !== "") return `${text}@${t.language}`;
-  return t.datatype.value === XSD_STRING ? text : `${text}^^<${t.datatype.value}>`;
 }

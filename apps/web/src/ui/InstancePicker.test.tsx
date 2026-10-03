@@ -54,6 +54,12 @@ describe("InstancePicker", () => {
     }
   });
 
+  it("says a guest's instance is kept in this browser, and links nowhere", () => {
+    renderPicker({ instances: [{ url: "https://guest.solid-memo.invalid/solid-memo/", name: "My study" }] });
+    expect(screen.getByText("Kept in this browser")).toBeInTheDocument();
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
   it("starts the new-instance flow", () => {
     const { props } = renderPicker();
     fireEvent.click(screen.getByRole("button", { name: "New instance…" }));

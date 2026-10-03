@@ -7,6 +7,14 @@ import { statisticsOf } from "@solid-memo/domain/statistics";
 export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
   const fake: UseCases = {
     restoreSession: vi.fn(async () => null),
+    startGuest: vi.fn(async () => ({ webId: "https://guest.solid-memo.invalid/profile/card#me", guest: true as const })),
+    discardGuest: vi.fn(async () => undefined),
+    findGuestStudy: vi.fn(async () => null),
+    transferGuestStudy: vi.fn(async () => ({
+      ok: true as const,
+      instance: { url: "https://pod.example/solid-memo/main/", name: "My study" },
+      tidied: true,
+    })),
     loginWithWebId: vi.fn(async () => undefined),
     loginWithProvider: vi.fn(async () => undefined),
     logout: vi.fn(async () => undefined),

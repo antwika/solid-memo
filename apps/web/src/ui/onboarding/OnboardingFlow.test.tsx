@@ -32,6 +32,26 @@ describe("OnboardingFlow", () => {
     ).toBeInTheDocument();
   });
 
+  it("offers trying the app as a guest first, ahead of setting up a Pod, when it may", () => {
+    const props = renderFlow({ onTryAsGuest: vi.fn() });
+    const headings = screen.getAllByRole("heading").map((heading) => heading.textContent);
+    expect(headings).toEqual(["Try it right away", "Set up your Solid Pod"]);
+    expect(screen.getByText(/No account needed: study as a guest/)).toBeInTheDocument();
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[0]).toHaveTextContent("Try it without logging in");
+    expect(buttons[0]).toHaveClass("primary");
+    // Creating a Pod stays offered, no longer as the main action.
+    expect(screen.getByRole("link", { name: /Create a Pod with/ })).not.toHaveClass("primary");
+    fireEvent.click(screen.getByRole("button", { name: "Try it without logging in" }));
+    expect(props.onTryAsGuest).toHaveBeenCalledOnce();
+  });
+
+  it("offers no guest's study unless it may", () => {
+    renderFlow();
+    expect(screen.queryByRole("button", { name: "Try it without logging in" })).toBeNull();
+    expect(screen.getByRole("link", { name: /Create a Pod with/ })).toHaveClass("primary");
+  });
+
   it("links to iGrant.io sign-up in a new tab, without leaking the opener", () => {
     renderFlow();
     expect(screen.getByText("iGrant.io Data Pod")).toBeInTheDocument();

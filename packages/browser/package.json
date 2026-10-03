@@ -15,6 +15,7 @@
     "@solid-memo/domain": "*"
   },
   "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.14.5"
   }
 }

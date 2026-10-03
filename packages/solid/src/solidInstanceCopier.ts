@@ -62,8 +62,9 @@ function createOnly(fetch: Fetch): Fetch {
   };
 }
 
-/** An IRI moved: under a container (a URL ending in "/"), or of one document and its fragments. */
+/** An IRI moved: renamed, under a container (a URL ending in "/"), or of one document and its fragments. */
 function moveIri(iri: string, move: ContainerMove): string {
+  if (move.renames !== undefined && Object.hasOwn(move.renames, iri)) return move.renames[iri]!;
   return move.from.endsWith("/") ? rebaseIri(iri, move.from, move.to) : movedIri(iri, move.from, move.to);
 }
 
@@ -175,6 +176,12 @@ export function createSolidInstanceCopier({
       return etag !== undefined
         ? response.headers.get("ETag") === etag
         : response.headers.get("Last-Modified") === lastModified;
+    },
+
+    async mentions(url, text) {
+      const response = await fetch(url);
+      if (!response.ok) throw new AppError("cannotCheck", { url, status: response.status });
+      return (await response.text()).includes(text);
     },
 
     deleteRecursively: (url) => deleteContainerRecursively(url, fetch),

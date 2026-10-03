@@ -47,7 +47,9 @@ sequenceDiagram
 
 ## Session restore
 
-`restore()` runs on every page load (App's boot effect). It completes a
+`restore()` runs on every page load (App's boot effect), through the
+`restoreSession` use case, which falls back to a guest's session when a
+guest studied in this browser ([guest-mode.md](guest-mode.md)). It completes a
 pending OIDC redirect if one is in flight, otherwise silently restores a
 previous session (`restorePreviousSession: true`). It returns a domain
 `EstablishedSession` (`{ session, origin }`) or `null`. `origin` is
@@ -60,7 +62,12 @@ onboarding step only for the former.
 Repositories receive `fetch` by injection. The composition root injects
 [authFetch](../packages/solid/src/authFetch.ts), a lazy wrapper that
 delegates to the current default session's fetch at call time — never a
-reference captured before login.
+reference captured before login — behind a router that sends the
+guest's URLs to the pod kept in the browser instead
+([guest-mode.md](guest-mode.md)). Every pod read goes through it, the
+WebID document's too: the storage gateway hands @inrupt/solid-client the
+profile it read, since left to itself the library reads it with the
+browser's own fetch.
 
 ## Logout
 

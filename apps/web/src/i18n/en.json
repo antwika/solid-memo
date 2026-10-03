@@ -31,7 +31,16 @@
     "sessionExpired": "Your session has expired. Please log in again.",
     "logoAlt": "Solid Memo — back to start",
     "loggedInAs": "Logged in as {name}",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "guestLine": "You are trying Solid Memo as a guest: your study is kept in this browser only.",
+    "keepStudy": "Keep my study: log in",
+    "discardGuest": "Discard",
+    "discardRegion": "Discard your study as a guest",
+    "discardConfirm": "Delete everything you studied as a guest? This cannot be undone.",
+    "discardYes": "Delete it",
+    "cancel": "Cancel",
+    "loginToKeep": "Log in to keep your study: once you are in, Solid Memo offers to move it into your Pod.",
+    "backToStudy": "Back to my study"
   },
   "backup": {
     "heading": "Previous version",
@@ -214,7 +223,8 @@
   "instanceBar": {
     "statistics": "Statistics",
     "preferences": "Preferences",
-    "switch": "Switch instance"
+    "switch": "Switch instance",
+    "inBrowser": "Kept in this browser"
   },
   "instanceCreator": {
     "heading": "New Solid Memo instance",
@@ -470,6 +480,9 @@
     "buttonCatalogue": "the catalogue"
   },
   "onboardingFlow": {
+    "tryHeading": "Try it right away",
+    "tryAsGuest": "Try it without logging in",
+    "tryAsGuestHint": "No account needed: study as a guest. What you learn is kept in this browser, and you can move it into your own Pod whenever you log in.",
     "connectHeading": "Connect your Pod",
     "providerHeading": "Or pick your provider",
     "providerHint": "No WebID at hand? Choose where your Pod lives and log in there — your WebID comes back with the login.",
@@ -479,6 +492,52 @@
     "createPod": "Create a Pod ↗",
     "createPodHint": "Creating a Pod happens on the provider's site, in a new tab. When you are done, come back here and connect it.",
     "havePod": "I already have a Pod"
+  },
+  "guest": {
+    "instanceName": "My study"
+  },
+  "guestOffer": {
+    "region": "Your study as a guest",
+    "heading": "You studied as a guest in this browser.",
+    "body": {
+      "one": "{name} has {count} deck. Move it into your Pod to keep it, or discard it.",
+      "other": "{name} has {count} decks. Move it into your Pod to keep it, or discard it."
+    },
+    "move": "Move it into my Pod",
+    "discard": "Discard it",
+    "notNow": "Not now",
+    "discardConfirm": "Delete everything you studied as a guest? This cannot be undone.",
+    "discardYes": "Delete it",
+    "cancel": "Cancel",
+    "formHeading": "Move your study into your Pod",
+    "explain": "Solid Memo copies your study into your Pod and checks the copy. Only when every check passes is it registered as yours and removed from this browser. If anything goes wrong, the copy is removed and your study stays here.",
+    "storage": "Pod storage",
+    "noStorage": "Your profile names no Pod storage. Enter where to keep your study.",
+    "location": "Location in your Pod",
+    "start": "Move it",
+    "back": "Back",
+    "progressRegion": "Moving your study",
+    "running": "{step}…",
+    "runningCount": "{step}… ({done} of {total})",
+    "progressLabel": "Progress of the move",
+    "keepOpen": "Keep this page open until the move is done.",
+    "step": {
+      "stage": "Preparing a folder in your Pod",
+      "copy": "Copying your study",
+      "adopt": "Making it yours",
+      "validate": "Checking the copy",
+      "verify": "Checking nothing changed meanwhile",
+      "register": "Registering it in your Pod",
+      "tidy": "Removing it from this browser"
+    },
+    "failedRegion": "Moving failed",
+    "failedWhile": "Moving your study failed while {step}:",
+    "stillHere": "Your study is still in this browser.",
+    "copyRemoved": "The partial copy was removed from your Pod.",
+    "copyLeft": "The partial copy could not be removed from your Pod; it is at {url}.",
+    "close": "Close",
+    "moved": "Your study is in your Pod now.",
+    "movedNotTidied": "Your study is in your Pod now. It could not be removed from this browser: discard it there when you no longer need it."
   },
   "pager": {
     "label": "Card pages",
@@ -726,6 +785,11 @@
       "one": "The updated copy does not conform to Solid Memo's shapes ({count} violation); your data is left as it was.",
       "other": "The updated copy does not conform to Solid Memo's shapes ({count} violations); your data is left as it was."
     },
+    "movedCopyInvalid": {
+      "one": "The copy in your pod does not conform to Solid Memo's shapes ({count} violation); your study is left as it was.",
+      "other": "The copy in your pod does not conform to Solid Memo's shapes ({count} violations); your study is left as it was."
+    },
+    "guestUrlsLeft": "<{url}> still names the guest's pod after the move; your study is left as it was.",
     "instanceChangedDuringCopy": "The instance changed while it was being copied (in another tab or app?); try again.",
     "resourceChangedDuringCopy": "<{url}> changed while it was being copied (in another tab or app?); try again.",
     "instanceBeingUpdated": "Solid Memo is updating the instance at {container} and writes nothing to it until the update is over (refused: {method} {url}).",

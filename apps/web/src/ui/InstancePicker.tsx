@@ -1,3 +1,4 @@
+import { isGuestUrl } from "@solid-memo/domain/guest";
 import { useState } from "preact/hooks";
 import type {
   Instance,
@@ -56,7 +57,11 @@ export function InstancePicker({
               <button onClick={() => onSelect(instance)} disabled={busy}>
                 {instance.name}
               </button>{" "}
-              <ExternalLink url={instance.url} class="hint" />{" "}
+              {isGuestUrl(instance.url) ? (
+                <span class="hint">{t("instanceBar.inBrowser")}</span>
+              ) : (
+                <ExternalLink url={instance.url} class="hint" />
+              )}{" "}
               <button
                 class="danger"
                 onClick={() => handleDelete(instance)}

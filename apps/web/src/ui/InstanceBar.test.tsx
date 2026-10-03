@@ -8,13 +8,13 @@ const instance: Instance = {
   name: "Japanese study",
 };
 
-function renderBar() {
+function renderBar(shown: Instance = instance) {
   const onSwitch = vi.fn();
   const onOpenPreferences = vi.fn();
   const onOpenStatistics = vi.fn();
   render(
     <InstanceBar
-      instance={instance}
+      instance={shown}
       onSwitch={onSwitch}
       onOpenPreferences={onOpenPreferences}
       onOpenStatistics={onOpenStatistics}
@@ -24,6 +24,12 @@ function renderBar() {
 }
 
 describe("InstanceBar", () => {
+  it("says a guest's instance is kept in this browser, and links nowhere", () => {
+    renderBar({ url: "https://guest.solid-memo.invalid/solid-memo/", name: "My study" });
+    expect(screen.getByText("Kept in this browser")).toBeInTheDocument();
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
   it("shows the instance name and url", () => {
     renderBar();
     expect(screen.getByText("Japanese study")).toBeInTheDocument();
