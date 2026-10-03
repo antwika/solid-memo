@@ -310,12 +310,18 @@ export async function appendToDocument(url: string, thing: Thing, fetch: typeof 
 /** Where @inrupt/solid-client names a Thing that has no URL yet: `<#name>` in the document. */
 const LOCAL_NODE = "https://inrupt.com/.well-known/sdk-local-node/";
 const XSD_STRING = "http://www.w3.org/2001/XMLSchema#string";
+const XSD_DECIMAL = "http://www.w3.org/2001/XMLSchema#decimal";
 
 /**
  * The SPARQL Update of a dataset's changes, one triple a line in
  * N-Triples form, every triple closed by " .": what every Solid server
  * parses, node-solid-server's too. Null when a change has a blank node,
  * which DELETE DATA cannot name; then @inrupt/solid-client's body is sent.
+ *
+ * A whole-number decimal is deleted as the integer it spells ("1", not
+ * "1.0"): node-solid-server keeps a decimal as "1" but serves it as 1.0,
+ * and finds nothing to delete for "1.0" (409). Every server tested
+ * deletes "1" as stored, and the app writes it so itself.
  */
 export function patchBody(dataset: SolidDataset): string | null {
   const changes = (dataset as Partial<WithChangeLog>).internal_changeLog;
@@ -325,9 +331,20 @@ export function patchBody(dataset: SolidDataset): string | null {
     if (triples.includes(null)) return null;
     return triples.length === 0 ? "" : `${operation} {\n${triples.join("\n")}\n};\n`;
   };
-  const deletions = block("DELETE DATA", changes.deletions);
+  const deletions = block("DELETE DATA", changes.deletions.map(asStored));
   const additions = block("INSERT DATA", changes.additions);
   return deletions === null || additions === null ? null : deletions + additions;
+}
+
+/** The quad with a whole-number decimal spelt as node-solid-server stores it, "1" for 1.0. */
+function asStored(quad: Quad): Quad {
+  const { object } = quad;
+  if (object.termType !== "Literal" || object.datatype.value !== XSD_DECIMAL) return quad;
+  const whole = /^([+-]?\d+)\.0*$/.exec(object.value);
+  if (whole === null) return quad;
+  // Quads and terms may keep their parts in getters, which a spread would lose.
+  const stored = { termType: "Literal", value: whole[1]!, language: "", datatype: object.datatype } as Literal;
+  return { subject: quad.subject, predicate: quad.predicate, object: stored, graph: quad.graph } as Quad;
 }
 
 function tripleLine(quad: Quad): string | null {
