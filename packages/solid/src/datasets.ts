@@ -1,9 +1,13 @@
 import {
+  createSolidDataset,
   deleteSolidDataset,
   getSolidDataset,
   saveSolidDatasetAt,
+  setThing,
   solidDatasetAsTurtle,
+  toRdfJsDataset,
   type SolidDataset,
+  type Thing,
   type WithChangeLog,
   type WithServerResourceInfo,
 } from "@inrupt/solid-client";
@@ -278,6 +282,24 @@ function ownPatches(fetch: typeof globalThis.fetch, dataset: SolidDataset): type
     headers.set("Content-Type", "text/turtle");
     return fetch(input, { ...init, method: "PUT", headers, body: await solidDatasetAsTurtle(dataset) });
   };
+}
+
+/**
+ * Add a subject's triples to a document without reading it first: one
+ * insert-only PATCH, with no precondition, since inserting a subject no
+ * other writer names cannot clash with any other edit. Every server the
+ * app is tested on creates the document (and its container) when it is
+ * missing, and keeps every one of several concurrent inserts.
+ */
+export async function appendToDocument(url: string, thing: Thing, fetch: typeof globalThis.fetch): Promise<void> {
+  const triples = [...toRdfJsDataset(setThing(createSolidDataset(), thing))].map(tripleLine);
+  forgetRead(url, fetch);
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/sparql-update" },
+    body: `INSERT DATA {\n${triples.join("\n")}\n};\n`,
+  });
+  if (!response.ok) throw new Error(`Could not add to <${url}>: ${response.status}.`);
 }
 
 /** Where @inrupt/solid-client names a Thing that has no URL yet: `<#name>` in the document. */

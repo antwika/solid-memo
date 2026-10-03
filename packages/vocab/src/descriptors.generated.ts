@@ -3,6 +3,7 @@
 import type { ShapeDescriptor } from "./shapeDescriptor.ts";
 import type {
   AgentV1,
+  AnswerV1,
   CardV1,
   CardV2,
   CardV3,
@@ -42,6 +43,27 @@ export const AGENT_V1: ShapeDescriptor<AgentV1> = {
   fields: [
     { name: "name", predicate: "http://xmlns.com/foaf/0.1/name", kind: "string", cardinality: "one" },
     { name: "mbox", predicate: "http://xmlns.com/foaf/0.1/mbox", kind: "iri", cardinality: "optional" },
+  ],
+};
+
+export const ANSWER_V1: ShapeDescriptor<AnswerV1> = {
+  shape: "answer",
+  version: 1,
+  targetClass: "https://solid-memo.com/vocab/v1#Answer",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/answer/v1.ttl#shape",
+  shapeDocument: "answer/v1.ttl",
+  context: "any",
+  fields: [
+    { name: "deck", predicate: "https://solid-memo.com/vocab/v1#answeredDeck", kind: "iri", cardinality: "one" },
+    { name: "card", predicate: "https://solid-memo.com/vocab/v1#answeredCard", kind: "iri", cardinality: "one" },
+    { name: "direction", predicate: "https://solid-memo.com/vocab/v1#answeredDirection", kind: "iriEnum", cardinality: "one", values: ["https://solid-memo.com/vocab/v1#frontToBack","https://solid-memo.com/vocab/v1#backToFront"] },
+    { name: "grade", predicate: "https://solid-memo.com/vocab/v1#grade", kind: "integer", cardinality: "one" },
+    { name: "answeredAt", predicate: "https://solid-memo.com/vocab/v1#answeredAt", kind: "dateTime", cardinality: "one" },
+    { name: "studyDay", predicate: "https://solid-memo.com/vocab/v1#answeredOn", kind: "string", cardinality: "one" },
+    { name: "priorIntervalDays", predicate: "https://solid-memo.com/vocab/v1#priorIntervalDays", kind: "integer", cardinality: "optional" },
+    { name: "nextIntervalDays", predicate: "https://solid-memo.com/vocab/v1#nextIntervalDays", kind: "integer", cardinality: "one" },
   ],
 };
 
@@ -588,6 +610,7 @@ export const REVIEW_STATE_V2: ShapeDescriptor<ReviewStateV2> = {
 /** Every descriptor by kind and version. */
 export const SHAPES = {
   agent: { 1: AGENT_V1 },
+  answer: { 1: ANSWER_V1 },
   card: { 1: CARD_V1, 2: CARD_V2, 3: CARD_V3, 4: CARD_V4 },
   catalog: { 1: CATALOG_V1 },
   deck: { 1: DECK_V1, 2: DECK_V2, 3: DECK_V3, 4: DECK_V4 },
@@ -604,6 +627,7 @@ export const SHAPES = {
 /** Every descriptor, for selection by class, version and context. */
 export const ALL_SHAPES: readonly ShapeDescriptor[] = [
   AGENT_V1,
+  ANSWER_V1,
   CARD_V1,
   CARD_V2,
   CARD_V3,

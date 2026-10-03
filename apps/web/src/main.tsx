@@ -8,6 +8,7 @@ import { createShaclShapeValidator } from "@solid-memo/solid/shaclShapeValidator
 import { createSolidDeckLibrary } from "@solid-memo/solid/solidDeckLibrary";
 import { createSolidDeckRepository } from "@solid-memo/solid/solidDeckRepository";
 import { createSolidDigestRepository } from "@solid-memo/solid/solidDigestRepository";
+import { createSolidAnswerLog } from "@solid-memo/solid/solidAnswerLog";
 import { createSolidInstanceRepository } from "@solid-memo/solid/solidInstanceRepository";
 import { createSolidPreferencesRepository } from "@solid-memo/solid/solidPreferencesRepository";
 import { createLocalStorageLanguagePreference } from "@solid-memo/browser/localStorageLanguagePreference";
@@ -69,6 +70,7 @@ const useCases = createUseCases({
   languagePreference: createLocalStorageLanguagePreference(),
   writeFence,
   digestRepository: createSolidDigestRepository({ fetch: podFetch, checkWrite }),
+  answerLog: createSolidAnswerLog({ fetch: podFetch, checkWrite }),
   ruleset: __SHAPES_RULESET__,
 });
 

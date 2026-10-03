@@ -70,6 +70,9 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
   distribution: {
     1: { accessUrl: "https://pod.example/d.ttl", mediaType: "https://www.iana.org/assignments/media-types/text/turtle" },
   },
+  answer: {
+    1: { deck: "https://pod.example/c.ttl#deck-1", card: "https://pod.example/d.ttl#se", direction: `${SM_NS}backToFront`, grade: 4, answeredAt: "2026-10-03T08:15:30.123Z", studyDay: "2026-10-03", priorIntervalDays: 6, nextIntervalDays: 15 },
+  },
   card: {
     1: { front: "Sweden", back: "Stockholm" },
     2: { frontImage: "https://flagcdn.com/se.svg", back: "Sweden" },

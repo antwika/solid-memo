@@ -11,6 +11,7 @@ import type {
 import type { LibraryDeck, LibraryDeckContent } from "@solid-memo/domain/library";
 import type { StoredPreferences, StudyPreferences } from "@solid-memo/domain/preferences";
 import type { ReviewKey, ReviewState } from "@solid-memo/domain/review";
+import type { Answer } from "@solid-memo/domain/answer";
 import type { EstablishedSession } from "@solid-memo/domain/session";
 import type { Storage } from "@solid-memo/domain/storage";
 import type { DocumentReport } from "@solid-memo/domain/validation";
@@ -224,6 +225,21 @@ export interface DigestRepository {
   readDigest(instanceUrl: string): Promise<InstanceDigest | null>;
   /** Change the stored digest: read, change, write only if unchanged meanwhile (else again). */
   updateDigest(instanceUrl: string, change: (stored: InstanceDigest | null) => InstanceDigest): Promise<void>;
+}
+
+/**
+ * Driven port: each instance's answer log (domain/answer.ts), one
+ * document per study month, which the study statistics are computed from.
+ */
+export interface AnswerLog {
+  /** Add an answer to its month's document, without reading it. */
+  append(instanceUrl: string, answer: Answer): Promise<void>;
+  /** The study months the log has a document for, "YYYY-MM", oldest first. */
+  months(instanceUrl: string): Promise<string[]>;
+  /** A month's answers; an answer that does not fit its shape is left out. */
+  readMonth(instanceUrl: string, month: string): Promise<Answer[]>;
+  /** Remove a deck's answers of a study day: what resetting the day undoes. */
+  removeDay(instanceUrl: string, deckUrl: string, studyDay: string): Promise<void>;
 }
 
 export interface ShapeValidator {

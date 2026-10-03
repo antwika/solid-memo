@@ -196,4 +196,8 @@ Because the daily budgets are derived from the same timestamps
 (`lastReviewedAt` / `firstReviewedAt` falling in today), restoring them also
 frees today's review and new-card budget. All changes go out in one save of
 the reviews document (`applyReviewChanges`), so a reset is never half-applied.
+The day's answers of that deck then leave the
+[answer log](data-model.md#the-answer-log) as well, so the statistics
+match the cards: answers still on their way to the log are added first,
+then removed with the rest.
 "Today" honours the instance's `dayBoundaryHour`, like the queue.

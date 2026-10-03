@@ -16,9 +16,9 @@
     a owl:Ontology ;
     dcterms:title "Solid Memo vocabulary, v1" ;
     dcterms:description "Terms for spaced-repetition flashcards stored in a Solid pod: instances, decks, cards, SM-2 review state and study preferences." ;
-    owl:versionInfo "1.9" ;
+    owl:versionInfo "1.10" ;
     rdfs:seeAlso <https://solid-memo.com/vocab/v1.ttl> ;
-    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed." .
+    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed. 1.10: Answer, the answer log the study statistics are computed from." .
 
 #################### Classes ####################
 
@@ -70,6 +70,13 @@ solid-memo:DeckSchedule
     rdfs:comment "How many of a deck's prompts fall due on which study day and how many are still new, computed from given versions of its cards and reviews documents, so the deck list can count today's study without them. A subject of the instance's digest document; derived data, rebuilt whenever it does not hold." ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.9." .
+
+solid-memo:Answer
+    a owl:Class ;
+    rdfs:label "Answer" ;
+    rdfs:comment "One grade given to one prompt (a card, studied one way) during study: an entry of the instance's answer log, one document per study month, which the study statistics are computed from. Appended, never edited; resetting a study day removes that day's answers." ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.10." .
 
 #################### Shared ####################
 
@@ -497,6 +504,80 @@ solid-memo:introducedOnDayCount
     rdfs:range xsd:integer ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.9." .
+
+#################### Answer log ####################
+
+solid-memo:answeredDeck
+    a owl:ObjectProperty ;
+    rdfs:label "answered deck" ;
+    rdfs:comment "The deck the answer was given in: its catalog entry, which may since have been removed." ;
+    rdfs:domain solid-memo:Answer ;
+    rdfs:range solid-memo:Deck ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.10." .
+
+solid-memo:answeredCard
+    a owl:ObjectProperty ;
+    rdfs:label "answered card" ;
+    rdfs:comment "The card the answer was given to, which may since have been removed." ;
+    rdfs:domain solid-memo:Answer ;
+    rdfs:range solid-memo:Card ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.10." .
+
+solid-memo:answeredDirection
+    a owl:ObjectProperty ;
+    rdfs:label "answered direction" ;
+    rdfs:comment "The way the card was asked: a concept of solid-memo:StudyDirections." ;
+    rdfs:domain solid-memo:Answer ;
+    rdfs:range skos:Concept ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.10." .
+
+solid-memo:grade
+    a owl:DatatypeProperty ;
+    rdfs:label "grade" ;
+    rdfs:comment "The SM-2 quality of the answer, 0 to 5, whichever answer scale gave it; below 3 means the card was forgotten." ;
+    rdfs:domain solid-memo:Answer ;
+    rdfs:range xsd:integer ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.10." .
+
+solid-memo:answeredAt
+    a owl:DatatypeProperty ;
+    rdfs:label "answered at" ;
+    rdfs:comment "When the answer was given." ;
+    rdfs:domain solid-memo:Answer ;
+    rdfs:range xsd:dateTime ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.10." .
+
+solid-memo:answeredOn
+    a owl:DatatypeProperty ;
+    rdfs:label "answered on" ;
+    rdfs:comment "The study day the answer counts towards, as a plain \"YYYY-MM-DD\" string, fixed when it was given, so a later change of the day boundary does not move it." ;
+    rdfs:domain solid-memo:Answer ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.10." .
+
+solid-memo:priorIntervalDays
+    a owl:DatatypeProperty ;
+    rdfs:label "prior interval (days)" ;
+    rdfs:comment "The prompt's interval before the answer; absent on a prompt's first answer, which introduced it." ;
+    rdfs:domain solid-memo:Answer ;
+    rdfs:range xsd:integer ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.10." .
+
+solid-memo:nextIntervalDays
+    a owl:DatatypeProperty ;
+    rdfs:label "next interval (days)" ;
+    rdfs:comment "The prompt's interval after the answer: the days until it is due again." ;
+    rdfs:domain solid-memo:Answer ;
+    rdfs:range xsd:integer ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.10." .
 
 #################### Concept schemes ####################
 

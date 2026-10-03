@@ -44,7 +44,7 @@ import {
   upgradeReviewState,
   type MigrationPlan,
 } from "@solid-memo/domain/migration";
-import { ensureTrailingSlash, instanceDocumentUrls } from "@solid-memo/domain/instanceLayout";
+import { ensureTrailingSlash, historyUrlOf, instanceDocumentUrls } from "@solid-memo/domain/instanceLayout";
 import { summarize, type DocumentReport, type ValidationReport } from "@solid-memo/domain/validation";
 import {
   emptyDigest,
@@ -69,8 +69,11 @@ import {
   nextDueDate,
   resetStudyDay,
   snapshotBeforeReview,
+  studyDayOf,
   type StudyQueue,
 } from "@solid-memo/domain/scheduling";
+import { answerIdOf, type Answer } from "@solid-memo/domain/answer";
+import { statisticsOf, type Statistics } from "@solid-memo/domain/statistics";
 import type { EstablishedSession, Session } from "@solid-memo/domain/session";
 import { applySm2, INITIAL_SM2_STATE } from "@solid-memo/domain/sm2";
 import type { Storage } from "@solid-memo/domain/storage";
@@ -86,6 +89,7 @@ import type {
   StorageGateway,
   WebIdDocumentRepository,
   ShapeValidator,
+  AnswerLog,
   DigestRepository,
   RepairRepository,
   InstanceCopier,
@@ -273,6 +277,12 @@ export interface UseCases {
    * Resolves to the number of cards reset.
    */
   resetStudyDay(instanceUrl: string, deck: Deck, now: Date): Promise<number>;
+  /**
+   * The study statistics of the answers given in the last `months` study
+   * months (12 by default), up to now: of every deck, or of one. Answers
+   * still waiting to be added to the log are added first.
+   */
+  getStatistics(instanceUrl: string, now: Date, options?: { months?: number; deckUrl?: string }): Promise<Statistics>;
 }
 
 export interface Dependencies {
@@ -301,6 +311,8 @@ export interface Dependencies {
   writeFence?: WriteFence;
   /** Where each instance's digest is kept; by default none is. */
   digestRepository?: DigestRepository;
+  /** Where each instance's answer log is kept; by default none is. */
+  answerLog?: AnswerLog;
   /** Names the shapes documents are checked by; a receipt of other rules does not count. */
   ruleset?: string;
 }
@@ -309,6 +321,9 @@ const NO_LANGUAGE_PREFERENCE: LanguagePreference = { chosen: () => null, choose:
 const NO_JOURNAL: UpdateJournal = { begin: () => undefined, end: () => undefined, staging: () => null };
 const NO_FENCE: WriteFence = { hold: () => () => undefined };
 const NO_DIGESTS: DigestRepository = { readDigest: async () => null, updateDigest: async () => undefined };
+const nothing = async () => undefined;
+const none = async (): Promise<never[]> => [];
+const NO_ANSWER_LOG: AnswerLog = { append: nothing, months: none, readMonth: none, removeDay: nothing };
 
 export function createUseCases({
   sessionGateway,
@@ -329,6 +344,7 @@ export function createUseCases({
   newId = () => crypto.randomUUID(),
   writeFence = NO_FENCE,
   digestRepository = NO_DIGESTS,
+  answerLog = NO_ANSWER_LOG,
   ruleset = "",
 }: Dependencies): UseCases {
   /** Normalized card content, or a throw naming what is missing. */
@@ -503,12 +519,36 @@ export function createUseCases({
     return summarize(instanceUrl, documents);
   }
 
+  /** Every document of the instance, its answer log's too: not checked on every visit, being large and growing. */
   async function validateInstance(instanceUrl: string): Promise<ValidationReport> {
-    const decks = await deckRepository.listDecks(instanceUrl);
-    const documents = await Promise.all(
-      instanceDocumentUrls(instanceUrl, decks).map((url) => shapeValidator.validateDocument(url)),
-    );
+    const [decks, months] = await Promise.all([deckRepository.listDecks(instanceUrl), answerLog.months(instanceUrl)]);
+    const urls = [...instanceDocumentUrls(instanceUrl, decks), ...months.map((month) => historyUrlOf(instanceUrl, month))];
+    const documents = await Promise.all(urls.map((url) => shapeValidator.validateDocument(url)));
     return summarize(instanceUrl, documents);
+  }
+
+  /**
+   * Answers given but not yet in the log, oldest first. An answer is
+   * added after its review is saved, without holding up study; one that
+   * fails to be added waits here, and the ones after it with it, until
+   * the next answer, the end of the session or the statistics try again.
+   */
+  const unlogged: { instanceUrl: string; answer: Answer }[] = [];
+  let logging: Promise<void> = Promise.resolve();
+
+  function logAnswers(): Promise<void> {
+    logging = logging.then(async () => {
+      while (unlogged.length > 0) {
+        const [next] = unlogged;
+        try {
+          await answerLog.append(next!.instanceUrl, next!.answer);
+        } catch {
+          return;
+        }
+        unlogged.shift();
+      }
+    });
+    return logging;
   }
 
   async function catalogOf(session: Session, title: string): Promise<Catalog> {
@@ -867,6 +907,7 @@ export function createUseCases({
       return studyCountsAndSchedule(instanceUrl, deck, now);
     },
     async refreshStudyDigest(instanceUrl, deck) {
+      await logAnswers();
       const [prefs, cards, reviews] = await Promise.all([
         getPreferences(instanceUrl),
         deckRepository.readCardsSince(deck, undefined),
@@ -902,6 +943,21 @@ export function createUseCases({
         ...(previous === undefined ? {} : { previous }),
       };
       await reviewStateRepository.saveReviewState(deck, state);
+      unlogged.push({
+        instanceUrl,
+        answer: {
+          id: answerIdOf(state.lastReviewedAt, newId().slice(0, 8)),
+          deckUrl: deck.url,
+          cardUrl: prompt.card.url,
+          direction: prompt.direction,
+          grade: quality,
+          answeredAt: state.lastReviewedAt,
+          studyDay: studyDayOf(now, prefs.dayBoundaryHour),
+          ...(current === null ? {} : { priorIntervalDays: current.intervalDays }),
+          nextIntervalDays: next.intervalDays,
+        },
+      });
+      void logAnswers();
       return state;
     },
     async resetStudyDay(instanceUrl, deck, now) {
@@ -916,8 +972,24 @@ export function createUseCases({
           save: reset.restore,
           remove: reset.remove,
         });
+        // The day never happened: its answers leave the log too, those still on their way first.
+        await logAnswers();
+        await answerLog.removeDay(instanceUrl, deck.url, studyDayOf(now, prefs.dayBoundaryHour));
       }
       return count;
+    },
+    async getStatistics(instanceUrl, at, { months = 12, deckUrl } = {}) {
+      await logAnswers();
+      const [prefs, logged] = await Promise.all([getPreferences(instanceUrl), answerLog.months(instanceUrl)]);
+      const today = studyDayOf(at, prefs.dayBoundaryHour);
+      // The first of the months asked for: this one and the `months - 1` before it.
+      const [year, month] = today.split("-").map(Number);
+      const first = new Date(Date.UTC(year!, month! - months, 1)).toISOString().slice(0, 7);
+      const read = await Promise.all(
+        logged.filter((logMonth) => logMonth >= first).map((logMonth) => answerLog.readMonth(instanceUrl, logMonth)),
+      );
+      const answers = read.flat().filter((answer) => deckUrl === undefined || answer.deckUrl === deckUrl);
+      return statisticsOf(answers, today);
     },
   };
 }

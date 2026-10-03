@@ -58,7 +58,8 @@
     "validation": "Validation",
     "browser": "Browser",
     "cardCreator": "New card",
-    "study": "Study"
+    "study": "Study",
+    "statistics": "Statistics"
   },
   "browser": {
     "heading": "Browser: {deck}",
@@ -211,6 +212,7 @@
     "studyButton": "Study"
   },
   "instanceBar": {
+    "statistics": "Statistics",
     "preferences": "Preferences",
     "switch": "Switch instance"
   },
@@ -712,5 +714,48 @@
     "notADeck": "<{url}> is not a Solid Memo deck.",
     "libraryDeckTooNew": "<{url}> is in deck format {version}, newer than this app supports ({latest}).",
     "libraryCardTooNew": "<{card}> in <{url}> is in card format {version}, newer than this app supports ({latest})."
+  },
+  "statistics": {
+    "heading": "Statistics",
+    "loading": "Loading statistics…",
+    "empty": "No answers yet: the statistics begin with your next study session.",
+    "answers": "Answers",
+    "studyDays": "Study days",
+    "cards": "Cards studied",
+    "currentStreak": "Current streak",
+    "longestStreak": "Longest streak",
+    "dayCount": {
+      "one": "{count} day",
+      "other": "{count} days"
+    },
+    "remembered": "Remembered in reviews",
+    "young": "Young cards (reviewed at under 21 days)",
+    "mature": "Mature cards (21 days or more)",
+    "ofReviews": {
+      "one": "of {count} review",
+      "other": "of {count} reviews"
+    },
+    "noReviews": "No reviews yet",
+    "activity": "Activity, the last {weeks} weeks",
+    "activityLabel": "Answers by day over the last {weeks} weeks: the stronger the green, the more answers.",
+    "lastDays": "Answers, the last {count} days",
+    "lastDaysLabel": "Answers on each of the last {count} days.",
+    "less": "Less",
+    "more": "More",
+    "pointAtDay": "Point at a day to see what it held.",
+    "dayDetail": "{date}: {answers}, {introduced} new, {forgotten} forgotten.",
+    "dayNothing": "{date}: nothing studied.",
+    "answerCount": {
+      "one": "{count} answer",
+      "other": "{count} answers"
+    },
+    "showTable": "Show as a table",
+    "day": "Day",
+    "introduced": "New",
+    "forgotten": "Forgotten",
+    "byDeck": "By deck",
+    "deck": "Deck",
+    "lastStudied": "Last studied",
+    "removedDeck": "A removed deck"
   }
 }

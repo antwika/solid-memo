@@ -18,6 +18,9 @@ const DC = "http://purl.org/dc/terms/";
 
 /** What each invalid fixture must be rejected for. */
 const EXPECTED: Record<string, { path?: string; message: string }> = {
+  "answer/v1/invalid/grade-out-of-range.ttl": { path: `${SM}grade`, message: "An answer's grade is one whole number, 0 to 5." },
+  "answer/v1/invalid/both-ways.ttl": { path: `${SM}answeredDirection`, message: "An answer states the way the card was asked" },
+  "answer/v1/invalid/study-day-as-date.ttl": { path: `${SM}answeredOn`, message: "The study day an answer counts towards" },
   "card/v1/invalid/missing-back.ttl": { path: `${SM}back`, message: "A format-1 card has text on its back." },
   "card/v2/invalid/image-as-literal.ttl": { path: `${SM}frontImage`, message: "A picture is an IRI" },
   "card/v2/invalid/side-without-content.ttl": { message: "Each side of a card needs text or a picture." },

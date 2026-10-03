@@ -58,7 +58,8 @@
     "validation": "Kontroll",
     "browser": "Bläddra",
     "cardCreator": "Nytt kort",
-    "study": "Studera"
+    "study": "Studera",
+    "statistics": "Statistik"
   },
   "browser": {
     "heading": "Bläddra: {deck}",
@@ -208,6 +209,7 @@
     "studyButton": "Studera"
   },
   "instanceBar": {
+    "statistics": "Statistik",
     "preferences": "Inställningar",
     "switch": "Byt instans"
   },
@@ -709,5 +711,48 @@
     "notADeck": "<{url}> är ingen kortlek från Solid Memo.",
     "libraryDeckTooNew": "<{url}> är i kortleksformat {version}, nyare än den här appen stöder ({latest}).",
     "libraryCardTooNew": "<{card}> i <{url}> är i kortformat {version}, nyare än den här appen stöder ({latest})."
+  },
+  "statistics": {
+    "heading": "Statistik",
+    "loading": "Läser in statistik…",
+    "empty": "Inga svar än: statistiken börjar med ditt nästa studiepass.",
+    "answers": "Svar",
+    "studyDays": "Studiedagar",
+    "cards": "Studerade kort",
+    "currentStreak": "Nuvarande svit",
+    "longestStreak": "Längsta svit",
+    "dayCount": {
+      "one": "{count} dag",
+      "other": "{count} dagar"
+    },
+    "remembered": "Ihågkomna vid repetition",
+    "young": "Unga kort (repeterade vid under 21 dagar)",
+    "mature": "Mogna kort (21 dagar eller mer)",
+    "ofReviews": {
+      "one": "av {count} repetition",
+      "other": "av {count} repetitioner"
+    },
+    "noReviews": "Inga repetitioner än",
+    "activity": "Aktivitet, de senaste {weeks} veckorna",
+    "activityLabel": "Svar per dag under de senaste {weeks} veckorna: ju starkare grönt, desto fler svar.",
+    "lastDays": "Svar, de senaste {count} dagarna",
+    "lastDaysLabel": "Svar var och en av de senaste {count} dagarna.",
+    "less": "Färre",
+    "more": "Fler",
+    "pointAtDay": "Peka på en dag för att se vad den innehöll.",
+    "dayDetail": "{date}: {answers}, {introduced} nya, {forgotten} glömda.",
+    "dayNothing": "{date}: inget studerat.",
+    "answerCount": {
+      "one": "{count} svar",
+      "other": "{count} svar"
+    },
+    "showTable": "Visa som tabell",
+    "day": "Dag",
+    "introduced": "Nya",
+    "forgotten": "Glömda",
+    "byDeck": "Per kortlek",
+    "deck": "Kortlek",
+    "lastStudied": "Senast studerad",
+    "removedDeck": "En borttagen kortlek"
   }
 }

@@ -48,6 +48,8 @@ export type RouteRef =
   /** A study session over the deck's due and new prompts. */
   | { screen: "study"; instanceUrl: string; deckUrl: string }
   | { screen: "preferences"; instanceUrl: string }
+  /** The instance's study statistics. */
+  | { screen: "statistics"; instanceUrl: string }
   /** Developer tool: the instance's documents checked against the shapes. */
   | { screen: "validation"; instanceUrl: string };
 
@@ -131,6 +133,8 @@ export function routeToHash(ref: RouteRef): string {
       })}`;
     case "preferences":
       return `#/preferences${params({ instance: ref.instanceUrl })}`;
+    case "statistics":
+      return `#/statistics${params({ instance: ref.instanceUrl })}`;
     case "validation":
       return `#/validate${params({ instance: ref.instanceUrl })}`;
   }
@@ -265,6 +269,8 @@ export function parseHash(hash: string): RouteRef | null {
       return instanceUrl === null
         ? null
         : { screen: "preferences", instanceUrl };
+    case "/statistics":
+      return instanceUrl === null ? null : { screen: "statistics", instanceUrl };
     case "/validate":
       return instanceUrl === null ? null : { screen: "validation", instanceUrl };
     default:

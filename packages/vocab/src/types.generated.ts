@@ -9,11 +9,12 @@
 export type LangText = Readonly<Record<string, string>>;
 
 /** The record kinds the shapes describe (see docs/shapes.md). */
-export type ShapeName = "agent" | "card" | "catalog" | "deck" | "deckSchedule" | "distribution" | "documentReceipt" | "instance" | "libraryDeck" | "libraryDeckSeries" | "preferences" | "reviewState";
+export type ShapeName = "agent" | "answer" | "card" | "catalog" | "deck" | "deckSchedule" | "distribution" | "documentReceipt" | "instance" | "libraryDeck" | "libraryDeckSeries" | "preferences" | "reviewState";
 
 /** The shape version this app writes for each kind. */
 export const LATEST_VERSION = {
   agent: 1,
+  answer: 1,
   card: 4,
   catalog: 1,
   deck: 4,
@@ -31,6 +32,18 @@ export const LATEST_VERSION = {
 export interface AgentV1 {
   readonly name: string;
   readonly mbox?: string;
+}
+
+/** Answer format 1: the deck and card answered, the way it was asked, the SM-2 grade, when it was given and the study day it counts towards, and the prompt's interval before (absent on its first answer) and after. */
+export interface AnswerV1 {
+  readonly deck: string;
+  readonly card: string;
+  readonly direction: "https://solid-memo.com/vocab/v1#frontToBack" | "https://solid-memo.com/vocab/v1#backToFront";
+  readonly grade: number;
+  readonly answeredAt: string;
+  readonly studyDay: string;
+  readonly priorIntervalDays?: number;
+  readonly nextIntervalDays: number;
 }
 
 /** Card format 1: front and back text, both required. */
@@ -349,6 +362,7 @@ export interface ReviewStateV2 {
 }
 
 export type AgentRecord = { version: 1; data: AgentV1 };
+export type AnswerRecord = { version: 1; data: AnswerV1 };
 export type CardRecord = { version: 1; data: CardV1 } | { version: 2; data: CardV2 } | { version: 3; data: CardV3 } | { version: 4; data: CardV4 };
 export type CatalogRecord = { version: 1; data: CatalogV1 };
 export type DeckRecord = { version: 1; data: DeckV1 } | { version: 2; data: DeckV2 } | { version: 3; data: DeckV3 } | { version: 4; data: DeckV4 };
@@ -364,6 +378,7 @@ export type ReviewStateRecord = { version: 1; data: ReviewStateV1 } | { version:
 /** A record of any version, by kind. */
 export type VersionedRecord = {
   agent: AgentRecord;
+  answer: AnswerRecord;
   card: CardRecord;
   catalog: CatalogRecord;
   deck: DeckRecord;
@@ -380,6 +395,7 @@ export type VersionedRecord = {
 /** The latest record of each kind: what this app writes. */
 export type LatestRecord = {
   agent: AgentV1;
+  answer: AnswerV1;
   card: CardV4;
   catalog: CatalogV1;
   deck: DeckV4;
