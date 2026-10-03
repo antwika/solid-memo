@@ -1,0 +1,235 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
+
+/*
+ * The focus indicators in style.css, checked through the cascade itself,
+ * since a later or more specific rule can silently take a ring away. The
+ * font imports are left out: the test DOM has no packages to fetch.
+ */
+beforeAll(() => {
+  const style = document.createElement("style");
+  style.textContent = readFileSync(join(import.meta.dirname, "style.css"), "utf8").replace(/^@import .*$/gm, "");
+  document.head.append(style);
+});
+
+afterEach(() => {
+  document.body.innerHTML = "";
+});
+
+/** Puts `html` in the page and focuses the element `selector` names. */
+function focused(html: string, selector: string): CSSStyleDeclaration {
+  document.body.innerHTML = html;
+  const element = document.querySelector<HTMLElement>(selector)!;
+  element.focus();
+  return getComputedStyle(element);
+}
+
+/**
+ * The `property` value of the last rule in style.css that `element`
+ * matches, for a state the test DOM's cascade does not follow.
+ */
+function lastMatching(element: Element, property: string): string | undefined {
+  return [...document.styleSheets]
+    .flatMap((sheet) => [...sheet.cssRules])
+    .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
+    .filter((rule) => element.matches(rule.selectorText) && rule.style.getPropertyValue(property) !== "")
+    .map((rule) => rule.style.getPropertyValue(property))
+    .at(-1);
+}
+
+describe("focus styles", () => {
+  it.each(["radio", "checkbox"])("rings a focused %s in the primary colour", (type) => {
+    const style = focused(`<input type="${type}">`, "input");
+    expect(style.outlineStyle).toBe("solid");
+    expect(style.outlineColor).toBe("#2c6b3d");
+    expect(style.outlineOffset).toBe("2px");
+  });
+
+  it("shows a text field's focus with its border, and keeps an outline for forced colours", () => {
+    const style = focused(`<input type="text">`, "input");
+    expect(style.borderColor).toBe("#2c6b3d");
+    expect(style.outlineStyle).toBe("solid");
+    expect(style.outlineColor).toBe("transparent");
+  });
+
+  it("fades the other language's flag, not its button, and shows it in full when focused", () => {
+    document.body.innerHTML = `
+      <div class="language-selector">
+        <button aria-pressed="true"><img alt="en"></button>
+        <button aria-pressed="false"><img alt="sv"></button>
+      </div>`;
+    const [current, other] = document.querySelectorAll("button");
+    expect(getComputedStyle(other).opacity).not.toBe("0.45");
+    expect(getComputedStyle(current.querySelector("img")!).opacity).not.toBe("0.45");
+    expect(getComputedStyle(other.querySelector("img")!).opacity).toBe("0.45");
+    other.focus();
+    // The test DOM's cascade skips a focused ancestor, so read the rules the flag now matches.
+    expect(lastMatching(other.querySelector("img")!, "opacity")).toBe("1");
+  });
+
+  it("fades a busy button, but shows it in full with its ring when focused", () => {
+    document.body.innerHTML = `<button aria-disabled="true">x</button>`;
+    const button = document.querySelector("button")!;
+    expect(getComputedStyle(button).opacity).toBe("0.5");
+    button.focus();
+    expect(lastMatching(button, "opacity")).toBe("1");
+    expect(lastMatching(button, "outline-color")).toBe("var(--primary)");
+  });
+
+  it.each([
+    ["the brand", `<header class="masthead"><a class="brand" href="#/">x</a></header>`, "a"],
+    ["the wordmark", `<header class="masthead"><h1><a class="wordmark" href="#/">x</a></h1></header>`, "a"],
+    ["the WebID link", `<header class="masthead"><p class="session-line"><a href="https://x">x</a></p></header>`, "a"],
+    ["a button", `<header class="masthead"><button>x</button></header>`, "button"],
+  ])("rings %s in the masthead's text colour, which shows on its navy", (_, html, selector) => {
+    expect(focused(html, selector).outlineColor).toBe("#f7f6f1");
+  });
+
+  it("draws a card table link's ring inside its cell, clear of the table's clipping", () => {
+    const style = focused(`<table><tr><td class="clickable"><a href="#/">x</a></td></tr></table>`, "a");
+    expect(style.outlineOffset).toBe("-4px");
+  });
+});
+
+/*
+ * Reflow and text spacing (WCAG 1.4.10, 1.4.12): at 320px, or with the
+ * reader's own spacing, names and labels wrap rather than being cut off.
+ */
+describe("reflow", () => {
+  /** Puts `html` in the page and returns the computed style of `selector`. */
+  function styled(html: string, selector: string): CSSStyleDeclaration {
+    document.body.innerHTML = html;
+    return getComputedStyle(document.querySelector(selector)!);
+  }
+
+  it.each([
+    ["a button", `<button>x</button>`, "button"],
+    ["a link styled as a button", `<a class="button" href="#/">x</a>`, "a"],
+    ["the wordmark", `<div class="masthead"><h1><a class="brand" href="#/"><span class="wordmark">x</span></a></h1></div>`, "h1"],
+    ["the session line", `<div class="masthead"><p class="session-line">x</p></div>`, "p"],
+    ["a breadcrumb", `<nav class="breadcrumbs"><ol><li><a href="#/">x</a></li></ol></nav>`, "a"],
+    ["a deck's name", `<ul class="deck-list"><li><a class="deck-open" href="#/">x</a></li></ul>`, "a"],
+    ["a library deck's name", `<ul class="library-list"><li><a class="library-deck-name" href="#/">x</a></li></ul>`, "a"],
+    ["the instance's name", `<div class="instance-bar-identity"><strong>x</strong></div>`, "strong"],
+    ["the instance's address", `<div class="instance-bar-identity"><span class="hint">x</span></div>`, "span"],
+    ["a storage's address", `<ul class="storage-list"><li><span class="hint">x</span></li></ul>`, "span"],
+    ["an instance's address", `<ul class="instance-list"><li><span class="hint">x</span></li></ul>`, "span"],
+  ])("wraps %s instead of cutting it off", (_, html, selector) => {
+    const style = styled(html, selector);
+    expect(style.whiteSpace).not.toBe("nowrap");
+    expect(style.textOverflow).not.toBe("ellipsis");
+  });
+
+  it.each([
+    ["the session line", `<div class="masthead"><p class="session-line">x</p></div>`, "p"],
+    ["a deck's name", `<ul class="deck-list"><li><a class="deck-open" href="#/">x</a></li></ul>`, "a"],
+    ["a storage's address", `<ul class="storage-list"><li><span class="hint">x</span></li></ul>`, "span"],
+  ])("breaks %s anywhere, so a long WebID or name fits the width", (_, html, selector) => {
+    expect(styled(html, selector).overflowWrap).toBe("anywhere");
+  });
+
+  it("lets the masthead wrap, and never clips what is in it", () => {
+    const style = styled(`<div class="masthead"></div>`, "div");
+    expect(style.flexWrap).toBe("wrap");
+    expect(style.overflow).not.toBe("hidden");
+  });
+
+  it("keeps a card table's actions a cell of its row, not an `.actions` flex box", () => {
+    // Read from the file: the test DOM drops a `table-cell` display it does not know.
+    const css = readFileSync(join(import.meta.dirname, "style.css"), "utf8");
+    const start = css.indexOf(".card-table td.actions {");
+    expect(css.slice(start, css.indexOf("}", start))).toContain("display: table-cell;");
+  });
+
+  it("leaves the logo placed from the title, not from a tilted heading", () => {
+    expect(styled(`<div class="masthead"><h1>x</h1></div>`, "h1").transform).toBe("none");
+  });
+});
+
+/** The custom properties a theme block in style.css declares, by name. */
+function tokens(selector: string): Record<string, string> {
+  const css = readFileSync(join(import.meta.dirname, "style.css"), "utf8");
+  const start = css.indexOf(`${selector} {`);
+  const block = css.slice(start, css.indexOf("}", start));
+  return Object.fromEntries([...block.matchAll(/(--[\w-]+):\s*(#[0-9a-f]{6});/g)].map((m) => [m[1], m[2]]));
+}
+
+/** WCAG's contrast ratio of two #rrggbb colours. */
+function contrast(a: string, b: string): number {
+  const luminance = (hex: string) => {
+    const [r, g, bl] = [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (high + 0.05) / (low + 0.05);
+}
+
+describe("contrast", () => {
+  const light = tokens(":root");
+  const themes = { light, dark: { ...light, ...tokens(':root[data-theme="dark"]') } };
+  const surfaces = ["--bg", "--surface", "--surface-sunken", "--surface-hover"];
+
+  it.each(Object.entries(themes))("gives text fields an edge of at least 3:1 in the %s theme", (_, theme) => {
+    for (const surface of surfaces) {
+      expect(contrast(theme["--control-border"], theme[surface])).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it.each(Object.entries(themes))("keeps muted text at 4.5:1 or more in the %s theme", (_, theme) => {
+    for (const surface of surfaces) {
+      expect(contrast(theme["--text-muted"], theme[surface])).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("keeps muted text readable over the light background's blue disc", () => {
+    // --paper-blue, rgba(177, 207, 227, 0.5), laid over --bg.
+    expect(contrast(light["--text-muted"], "#d4e2ea")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(["input", "textarea"])("edges a resting %s with the control border", (tag) => {
+    document.body.innerHTML = `<${tag}></${tag}>`;
+    expect(getComputedStyle(document.querySelector(tag)!).borderColor).toBe(light["--control-border"]);
+  });
+
+  it("draws placeholders in muted text at full opacity", () => {
+    const rule = [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .find((r): r is CSSStyleRule => r instanceof CSSStyleRule && r.selectorText.includes("::placeholder"))!;
+    expect(rule.style.getPropertyValue("color")).toBe("var(--text-muted)");
+    expect(rule.style.getPropertyValue("opacity")).toBe("1");
+  });
+});
+
+/*
+ * Target size (WCAG 2.5.8): a small control inside a row that is a link
+ * all over gets a target of its own, above the link, so a near miss
+ * does not leave the screen.
+ */
+describe("target size", () => {
+  it("gives a library deck's checkbox a 44px target above the row's link", () => {
+    document.body.innerHTML = `
+      <ul class="library-list"><li>
+        <label class="library-pick"><input type="checkbox"></label>
+        <a class="library-deck-name" href="#/">x</a>
+      </li></ul>`;
+    const pick = getComputedStyle(document.querySelector(".library-pick")!);
+    expect(parseFloat(pick.minWidth)).toBeGreaterThanOrEqual(44);
+    expect(parseFloat(pick.minHeight)).toBeGreaterThanOrEqual(44);
+    expect(pick.position).toBe("relative");
+    expect(Number(pick.zIndex)).toBeGreaterThan(0);
+
+    // The link's stretched area, laid over the row (the link itself is
+    // not positioned) with no stacking of its own, so the target is above it.
+    const link = document.querySelector(".library-deck-name")!;
+    expect(lastMatching(link, "position")).toBeUndefined();
+    const stretch = [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .find((r): r is CSSStyleRule => r instanceof CSSStyleRule && r.selectorText === ".library-list .library-deck-name::after")!;
+    expect(stretch.style.getPropertyValue("position")).toBe("absolute");
+    expect(stretch.style.getPropertyValue("z-index")).toBe("");
+  });
+});

@@ -75,12 +75,14 @@ export interface CardV3 {
   readonly deprecated?: boolean;
 }
 
-/** Card format 4: each side has text, a picture or both (a picture is always an IRI); a side's text is untagged, its language unknown, or language-tagged, one text per language; each side may have a note under it, shown once the answer is revealed, and the back a label above it that says how the answer relates to the front, all three language-tagged text with an English value; a retired card, which is kept but no longer studied, states owl:deprecated true. */
+/** Card format 4: each side has text, a picture or both (a picture is always an IRI); a side's text is untagged, its language unknown, or language-tagged, one text per language; a side's picture may have a description, its text alternative, language-tagged text, one per language (added without a version bump: an older reader ignores it); each side may have a note under it, shown once the answer is revealed, and the back a label above it that says how the answer relates to the front, all three language-tagged text with an English value; a retired card, which is kept but no longer studied, states owl:deprecated true. */
 export interface CardV4 {
   readonly front?: LangText;
   readonly back?: LangText;
   readonly frontImage?: string;
   readonly backImage?: string;
+  readonly frontImageDescription?: LangText;
+  readonly backImageDescription?: LangText;
   readonly frontNote?: LangText;
   readonly backLabel?: LangText;
   readonly backNote?: LangText;

@@ -72,9 +72,11 @@ describe("DeckStudyAction", () => {
 
   it("shows a skeleton for the counts and a loader for the action while the queue is first fetched", () => {
     const { container } = renderAction(undefined, true);
-    const status = screen.getByRole("status", { name: "Checking what is due" });
-    expect(status).toHaveClass("study-loading");
-    expect(status.querySelector(".loading-dots")).toHaveAttribute("aria-hidden", "true");
+    const loader = screen.getByText("Checking what is due").parentElement!;
+    expect(loader).toHaveClass("study-loading");
+    expect(loader.querySelector(".loading-dots")).toHaveAttribute("aria-hidden", "true");
+    // A row's loader is no live region: a list of them would only clutter it.
+    expect(screen.queryByRole("status")).toBeNull();
     const skeleton = container.querySelector(".study-skeleton");
     expect(skeleton).toHaveAttribute("aria-hidden", "true");
     expect(skeleton).toBeEmptyDOMElement();

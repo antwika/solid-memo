@@ -15,11 +15,11 @@ export function DeckCreatorContainer({
   /** Called after a successful creation. */
   onDone: () => void;
 }) {
-  const { errorText } = useI18n();
+  const { locale, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const createDeckMutation = useMutation({
-    mutationFn: (name: string) => useCases.createDeck(instance.url, name),
+    mutationFn: (name: string) => useCases.createDeck(instance.url, name, locale),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["decks", instance.url],

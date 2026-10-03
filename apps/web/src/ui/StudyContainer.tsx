@@ -10,6 +10,7 @@ import {
   repeatsInSession,
   requeueCard,
 } from "@solid-memo/domain/scheduling";
+import { ErrorMessage } from "./ErrorMessage";
 import { Loading } from "./Loading";
 import { StudyScreen } from "./StudyScreen";
 import { deckHref } from "./router";
@@ -37,7 +38,7 @@ export function StudyContainer({
   /** Uniform [0, 1) source deciding where a failed card comes back. */
   random?: () => number;
 }) {
-  const { t, readerText, errorText } = useI18n();
+  const { t, readerText, readerLang, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const queueQuery = useQuery({
@@ -58,11 +59,17 @@ export function StudyContainer({
   const [session, setSession] = useState<{
     prompts: Prompt[];
     position: number;
+    /** The last answer put its card back to come round again. */
+    putBack: boolean;
   } | null>(null);
   useEffect(() => {
     if (session !== null || queueQuery.data === undefined) return;
     const { due, newPrompts } = queueQuery.data;
-    setSession({ prompts: interleave(due, newPrompts), position: 0 });
+    setSession({
+      prompts: interleave(due, newPrompts),
+      position: 0,
+      putBack: false,
+    });
   }, [session, queueQuery.data]);
 
   // A session that recorded answers ends by keeping the deck's schedule in the digest:
@@ -105,13 +112,14 @@ export function StudyContainer({
       setSession((current) => {
         const next = current!.position + 1;
         if (!repeatsInSession(quality)) {
-          return { prompts: current!.prompts, position: next };
+          return { prompts: current!.prompts, position: next, putBack: false };
         }
         const done = current!.prompts.slice(0, next);
         const remaining = current!.prompts.slice(next);
         return {
           prompts: [...done, ...requeueCard(remaining, prompt, random)],
           position: next,
+          putBack: true,
         };
       });
     },
@@ -133,21 +141,23 @@ export function StudyContainer({
   }
 
   if (queueQuery.error) {
-    return <p class="error">{errorText(queueQuery.error)}</p>;
+    return <ErrorMessage error={errorText(queueQuery.error)} />;
   }
   if (session === null) {
     return <Loading label={t("study.preparing")} />;
   }
 
-  const { prompts, position } = session;
+  const { prompts, position, putBack } = session;
   const prompt = position < prompts.length ? prompts[position] : null;
   return (
     <StudyScreen
       deckName={readerText(deck.title)}
+      deckLang={readerLang(deck.title)}
       deckHref={deckHref(instance.url, deck.url)}
       prompt={prompt}
       position={position + 1}
       total={prompts.length}
+      putBack={putBack}
       answerScale={answerScale}
       busy={answerMutation.isPending}
       error={errorText(answerMutation.error)}

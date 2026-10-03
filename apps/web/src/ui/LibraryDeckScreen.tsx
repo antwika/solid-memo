@@ -1,10 +1,12 @@
 import { licenseLabel } from "@solid-memo/domain/license";
 import { topicLabels, type LibraryDeck, type LibrarySource } from "@solid-memo/domain/library";
 import { AuthorNames } from "./AuthorName";
+import { ErrorMessage } from "./ErrorMessage";
 import { ExternalLink } from "./ExternalLink";
-import { useI18n } from "./i18n";
+import { useI18n, type ErrorText } from "./i18n";
 import { LibraryIcon } from "./icons";
 import { linkify } from "./linkify";
+import { ReaderText, ReaderTexts } from "./ReaderText";
 
 /**
  * One library deck in full — its blurb, what it is about, who made it
@@ -16,44 +18,43 @@ import { linkify } from "./linkify";
  */
 export function LibraryDeckScreen({
   deck,
-  deckHref,
+  browseHref,
   previewHref,
   imported,
   busy,
   error,
-  onBrowse,
   onImport,
 }: {
   deck: LibraryDeck;
-  /** URL of this page; the heading links here like every screen's. */
-  deckHref: string;
+  /** URL of the deck's card list. */
+  browseHref: string;
   /** URL of the deck's preview, which tries its cards before import. */
   previewHref: string;
   /** The instance already holds a copy; a second one is still allowed. */
   imported: boolean;
   /** The import is in progress. */
   busy: boolean;
-  error: string | null;
-  /** Open the deck's card list. */
-  onBrowse: () => void;
+  error: ErrorText | null;
   onImport: () => void;
 }) {
-  const { t, readerText, formatDate, directionLabel } = useI18n();
+  const { t, readerText, readerLang, formatDate, directionLabel } = useI18n();
   const topics = topicLabels(deck.themes);
   const current = deck.releases.find((release) => release.url === deck.url);
   return (
     <section>
       <header>
         <h2>
-          <a href={deckHref}>
-            <LibraryIcon />
-            {readerText(deck.title)}
-          </a>
+          <LibraryIcon />
+          <ReaderText text={deck.title} />
         </h2>
-        <button onClick={onBrowse}>{t("libraryDeck.browseCards")}</button>
+        <a class="button" href={browseHref}>
+          {t("libraryDeck.browseCards")}
+        </a>
       </header>
       {deck.description !== undefined && (
-        <p class="deck-description">{linkify(readerText(deck.description))}</p>
+        <p class="deck-description" lang={readerLang(deck.description)}>
+          {linkify(readerText(deck.description))}
+        </p>
       )}
       <dl class="facts">
         <dt>{t("libraryDeck.size")}</dt>
@@ -67,7 +68,9 @@ export function LibraryDeckScreen({
         {topics.length > 0 && (
           <>
             <dt>{t("libraryDeck.topics", { count: topics.length })}</dt>
-            <dd>{topics.map(readerText).join(", ")}</dd>
+            <dd>
+              <ReaderTexts texts={topics} />
+            </dd>
           </>
         )}
         {deck.keywords.length > 0 && (
@@ -147,7 +150,7 @@ export function LibraryDeckScreen({
           <span class="hint library-imported">{t("libraryDeck.alreadyImported")}</span>
         )}
       </div>
-      {error && <p class="error">{error}</p>}
+      <ErrorMessage error={error} />
     </section>
   );
 }

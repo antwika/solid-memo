@@ -200,6 +200,26 @@ describe("card records", () => {
     expect(cardFromRecord(`${CARDS}#a`, 3, record)).toMatchObject(content);
   });
 
+  it("round-trip the description of each side's picture", () => {
+    const content = {
+      front: {},
+      frontImageUrl: "https://flagcdn.com/se.svg",
+      frontImageDescription: { en: "A blue flag with a yellow cross", sv: "En blå flagga med ett gult kors" },
+      back: { "": "Sweden" },
+      backImageUrl: "https://example.org/stockholm.jpg",
+      backImageDescription: { sv: "Stockholms stadshus" },
+    };
+    const record = cardToRecord(content, "");
+    expect(record).toEqual({
+      frontImage: content.frontImageUrl,
+      frontImageDescription: content.frontImageDescription,
+      back: content.back,
+      backImage: content.backImageUrl,
+      backImageDescription: content.backImageDescription,
+    });
+    expect(cardFromRecord(`${CARDS}#se`, 4, record)).toMatchObject(content);
+  });
+
   it("round-trip a retired card, and leave the retirement out of a card in use", () => {
     const record = cardToRecord({ front: { "": "Yugoslavia" }, back: { "": "Belgrade" }, retired: true }, "");
     expect(record).toEqual({ front: { "": "Yugoslavia" }, back: { "": "Belgrade" }, deprecated: true });

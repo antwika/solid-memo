@@ -46,14 +46,32 @@ describe("Pager", () => {
     expect(onPageChange).toHaveBeenLastCalledWith(1);
   });
 
-  it("disables Previous on the first page and Next on the last", () => {
+  it("marks Previous disabled on the first page and Next on the last, and ignores them there", () => {
+    const onPageChange = vi.fn();
     const { rerender } = render(
-      <Pager page={1} pageCount={2} onPageChange={vi.fn()} />,
+      <Pager page={1} pageCount={2} onPageChange={onPageChange} />,
     );
-    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
+    const previous = screen.getByRole("button", { name: "Previous" });
+    const next = screen.getByRole("button", { name: "Next" });
+    expect(previous).toHaveAttribute("aria-disabled", "true");
+    expect(next).toHaveAttribute("aria-disabled", "false");
+    fireEvent.click(previous);
+    expect(onPageChange).not.toHaveBeenCalled();
+    rerender(<Pager page={2} pageCount={2} onPageChange={onPageChange} />);
+    expect(previous).toHaveAttribute("aria-disabled", "false");
+    expect(next).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(next);
+    expect(onPageChange).not.toHaveBeenCalled();
+  });
+
+  it("keeps the focus on Next onto the last page, and says the page it is on", () => {
+    const { rerender } = render(<Pager page={1} pageCount={2} onPageChange={vi.fn()} />);
+    const next = screen.getByRole("button", { name: "Next" });
+    next.focus();
+    const status = screen.getByRole("status");
     rerender(<Pager page={2} pageCount={2} onPageChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Previous" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+    expect(next).toHaveFocus();
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("Page 2 of 2");
   });
 });

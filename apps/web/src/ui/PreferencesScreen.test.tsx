@@ -27,6 +27,16 @@ describe("PreferencesScreen", () => {
     );
   });
 
+  it("ties each hint to its group or field", () => {
+    renderScreen();
+    expect(screen.getByRole("group", { name: "Language" })).toHaveAccessibleDescription(/^Takes effect right away, and is kept on this device/);
+    expect(screen.getByRole("group", { name: "Appearance" })).toHaveAccessibleDescription(/^Takes effect right away\. Once these preferences are saved/);
+    expect(screen.getByLabelText("Developer mode")).toHaveAccessibleDescription(/^Shows developer tools/);
+    expect(screen.getByLabelText("Day starts at (hour)")).toHaveAccessibleDescription(
+      "An hour from 0 to 23 on the 24-hour clock: a new study day, with new cards and reviews, starts then.",
+    );
+  });
+
   it("switches the language right away, without saving", () => {
     const onChoose = vi.fn();
     const onSave = vi.fn();
@@ -103,6 +113,8 @@ describe("PreferencesScreen", () => {
   it("switches the answer scale and saves it", () => {
     const { props, container } = renderScreen();
     expect(screen.getByLabelText(/0 to 5 scale/)).toBeChecked();
+    // SM-2 is spelled out where it is offered.
+    expect(screen.getByText(/^The full grades of SuperMemo-2 \(SM-2\), the method that schedules your reviews/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText(/Again · Hard · Good · Easy/));
     fireEvent.submit(container.querySelector("form")!);

@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/preact";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/preact";
 import { LibraryScreen } from "./LibraryScreen";
 import { I18nProvider } from "./i18n";
 import type { LibraryDeck } from "@solid-memo/domain/library";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
+import { statusTexts } from "../test/liveRegions";
 
 const capitals: LibraryDeck = {
   url: "https://solid-memo.com/decks/capitals.ttl",
@@ -26,13 +27,16 @@ const rivers: LibraryDeck = {
   sources: [],
 };
 
+/** A fresh memory key per render, so no test sees another's ticks. */
+let renders = 0;
+
 function renderScreen(
   overrides: Partial<Parameters<typeof LibraryScreen>[0]> = {},
   locale: "en" | "sv" = "en",
 ) {
   const props = {
     decks: [capitals, rivers],
-    libraryHref: "#/library?instance=a",
+    memoryKey: `library-test-${++renders}`,
     deckHref: (deck: LibraryDeck) => `#/library-deck?deck=${deck.url}`,
     previewHref: (deck: LibraryDeck) => `#/library-preview?deck=${deck.url}`,
     isImported: () => false,
@@ -54,15 +58,12 @@ function importButton() {
 }
 
 describe("LibraryScreen", () => {
-  it("lists every deck with its card count under a linked heading", () => {
+  it("lists every deck with its card count under a heading that is no link to this page", () => {
     renderScreen();
     expect(
       screen.getByRole("heading", { name: "Deck library" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Deck library" })).toHaveAttribute(
-      "href",
-      "#/library?instance=a",
-    );
+    expect(screen.queryByRole("link", { name: "Deck library" })).toBeNull();
     expect(screen.getByText("2 decks")).toBeInTheDocument();
     expect(
       screen.getByRole("checkbox", { name: "Capitals of the world" }),
@@ -171,10 +172,102 @@ describe("LibraryScreen", () => {
   });
 
   it("locks the form while importing", () => {
-    renderScreen({ busy: true });
+    const { props } = renderScreen({ busy: true });
     expect(importButton()).toHaveTextContent("Importing…");
-    expect(importButton()).toBeDisabled();
+    // Only aria-disabled, so it keeps the focus; what it does is said too.
+    expect(importButton()).toHaveAttribute("aria-disabled", "true");
+    expect(importButton()).toBeEnabled();
+    expect(statusTexts()).toEqual(["Importing…"]);
+    fireEvent.submit(importButton().closest("form")!);
     expect(screen.getByRole("checkbox", { name: "Rivers" })).toBeDisabled();
+    expect(props.onImport).not.toHaveBeenCalled();
+  });
+
+  it("keeps the filters out of the import form, so Enter in the search never imports", () => {
+    const { props } = renderScreen();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Rivers" }));
+    const search = screen.getByRole("searchbox", { name: "Search" });
+    expect(search.closest("form")).toBeNull();
+    expect(screen.getByRole("search")).toContainElement(search);
+    expect(importButton().closest("form")).not.toContainElement(search);
+    expect(props.onImport).not.toHaveBeenCalled();
+  });
+
+  it("imports only the ticked decks the filters still show, and keeps the hidden ones ticked", () => {
+    const { props } = renderScreen();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Rivers" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Capitals of the world" }));
+    fireEvent.input(screen.getByLabelText("Search"), { target: { value: "rivers" } });
+    expect(importButton()).toHaveTextContent("Import 1 deck");
+    fireEvent.submit(importButton().closest("form")!);
+    expect(props.onImport).toHaveBeenCalledWith([rivers]);
+
+    fireEvent.input(screen.getByLabelText("Search"), { target: { value: "" } });
+    expect(screen.getByRole("checkbox", { name: "Capitals of the world" })).toBeChecked();
+    expect(importButton()).toHaveTextContent("Import 2 decks");
+  });
+
+  it("gives each deck's checkbox a label of its own, above the row's link", () => {
+    renderScreen();
+    const box = screen.getByRole("checkbox", { name: "Rivers" });
+    expect(box.parentElement).toHaveClass("library-pick");
+    expect(box.parentElement!.tagName).toBe("LABEL");
+  });
+
+  describe("the result count", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("says nothing until the user filters", () => {
+      vi.useFakeTimers();
+      renderScreen();
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(statusTexts()).toEqual([]);
+    });
+
+    it("says how many are shown, or that none match, once the typing settles", () => {
+      vi.useFakeTimers();
+      renderScreen();
+      fireEvent.input(screen.getByLabelText("Search"), { target: { value: "riv" } });
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+      fireEvent.input(screen.getByLabelText("Search"), { target: { value: "rivers" } });
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+      // The first keystroke's count was dropped; the second's is not due yet.
+      expect(statusTexts()).toEqual([]);
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(statusTexts()).toEqual(["1 of 2 decks"]);
+
+      fireEvent.input(screen.getByLabelText("Search"), { target: { value: "volcano" } });
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(statusTexts()).toEqual(["No deck matches."]);
+    });
+
+    it("says the count after a topic is ticked, and the whole library once it is cleared", () => {
+      vi.useFakeTimers();
+      const geography = { ...capitals, themes: ["https://solid-memo.com/vocab/topics#geography"] };
+      renderScreen({ decks: [geography, rivers] });
+      fireEvent.click(screen.getByRole("checkbox", { name: "Geography" }));
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(statusTexts()).toEqual(["1 of 2 decks"]);
+      fireEvent.click(screen.getByRole("checkbox", { name: "Geography" }));
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(statusTexts()).toEqual(["2 decks"]);
+    });
   });
 
   it("shows an import error", () => {

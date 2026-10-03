@@ -1,7 +1,8 @@
+import type { ComponentChildren } from "preact";
 import { useEffect } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
-import { cardLabel, type Deck } from "@solid-memo/domain/deck";
+import { cardLabel, cardLabelText, type Deck } from "@solid-memo/domain/deck";
 import { DEFAULT_INVALID_DATA_POLICY } from "@solid-memo/domain/invalidDataPolicy";
 import { setAsideDecks } from "@solid-memo/domain/validation";
 import type { Instance, RegistrationTarget } from "@solid-memo/domain/instance";
@@ -16,6 +17,7 @@ import { DeckDetailContainer } from "./DeckDetailContainer";
 import { DeckPreferencesContainer } from "./DeckPreferencesContainer";
 import { DeckListContainer } from "./DeckListContainer";
 import { studyCountsQuery } from "./DeckStudyAction";
+import { ErrorMessage } from "./ErrorMessage";
 import { InstanceBar } from "./InstanceBar";
 import { InstanceCreator } from "./InstanceCreator";
 import { InstancePicker } from "./InstancePicker";
@@ -37,23 +39,38 @@ import {
   libraryDeckHref,
   routeToHash,
   useHashRoute,
+  type RouteRef,
   validationHref,
 } from "./router";
 import { ValidationContainer } from "./ValidationContainer";
 import { WebIdDocumentContainer } from "./WebIdDocumentContainer";
 import { useI18n } from "./i18n";
 import { useInstanceTheme } from "./theme";
+import { useDocumentTitle } from "./documentTitle";
+import { useScreenFocus } from "./screenFocus";
+import { MAIN_ID } from "./SkipLink";
 
+/**
+ * The signed-in app: the site header, closed by the open instance's bar,
+ * then the main content, from the notices and breadcrumbs to the screen.
+ */
 export function Workspace({
   useCases,
   session,
+  banner,
+  children,
 }: {
   useCases: UseCases;
   session: Session;
+  /** What the site header shows above the instance bar (the masthead). */
+  banner?: ComponentChildren;
+  /** What the main content starts with, above the instance's notices. */
+  children?: ComponentChildren;
 }) {
-  const { t, tx, readerText, errorText } = useI18n();
+  const { t, tx, readerText, readerLang, errorText } = useI18n();
   const queryClient = useQueryClient();
-  const { route, navigate, replace } = useHashRoute();
+  const { route, change, navigate, replace } = useHashRoute();
+  const screenRef = useScreenFocus(route, change);
   const webId = session.webId;
 
   const instancesQuery = useQuery({
@@ -296,56 +313,85 @@ export function Workspace({
     },
   });
 
-  if (instancesQuery.error) {
-    return <p class="error">{errorText(instancesQuery.error)}</p>;
-  }
-  if (route === null || instances === undefined) {
-    return <Loading label={t("workspace.loadingInstances")} />;
-  }
-  if (instanceUrl !== null && activeInstance === null) {
-    return <Loading label={t("workspace.loadingInstances")} />;
-  }
-  if (needsDeck) {
-    if (decksQuery.error) {
-      return <p class="error">{errorText(decksQuery.error)}</p>;
-    }
-    if (decksQuery.data === undefined) {
-      return <Loading label={t("workspace.loadingDeck")} />;
-    }
-    if (activeDeck === null) {
-      return <Loading label={t("workspace.loadingDeck")} />;
-    }
-  }
-  if (needsCard) {
-    if (cardsQuery.error) {
-      return <p class="error">{errorText(cardsQuery.error)}</p>;
-    }
-    if (activeCard === null) {
-      return <Loading label={t("workspace.loadingCard")} />;
-    }
-  }
-  if (needsLibraryDeck) {
-    if (libraryQuery.error) {
-      return <p class="error">{errorText(libraryQuery.error)}</p>;
-    }
-    if (activeLibraryDeck === null) {
-      return <Loading label={t("workspace.loadingLibrary")} />;
-    }
-  }
-  if (needsLibraryCard) {
-    if (libraryCardsQuery.error) {
-      return <p class="error">{errorText(libraryCardsQuery.error)}</p>;
-    }
-    if (activeLibraryCard === null) {
-      return <Loading label={t("workspace.loadingCard")} />;
-    }
-  }
+  const crumbs =
+    route === null
+      ? []
+      : breadcrumbsFor(route, {
+          deck: activeDeck === null ? "" : readerText(activeDeck.title),
+          card: activeCard === null ? "" : cardLabel(activeCard, readerText),
+          libraryDeck: activeLibraryDeck === null ? "" : readerText(activeLibraryDeck.title),
+          libraryCard: activeLibraryCard === null ? "" : cardLabel(activeLibraryCard, readerText),
+          deckLang: activeDeck === null ? undefined : readerLang(activeDeck.title),
+          cardLang: activeCard === null ? undefined : readerLang(cardLabelText(activeCard)),
+          libraryDeckLang: activeLibraryDeck === null ? undefined : readerLang(activeLibraryDeck.title),
+          libraryCardLang: activeLibraryCard === null ? undefined : readerLang(cardLabelText(activeLibraryCard)),
+        }, t);
+  // The page and what it is in, as the trail ends: "Study – Kanji N5 – Solid Memo".
+  useDocumentTitle(
+    crumbs
+      .map((crumb) => crumb.label)
+      .filter((label) => label !== "")
+      .slice(-2)
+      .reverse(),
+  );
 
-  const screen = (() => {
+  // While the instances, or the route's deck or card, load (or fail), the
+  // site header and main landmark stay: the skip link, Log out and the
+  // theme and language choices must not come and go with the data.
+  const waiting = (() => {
+    if (instancesQuery.error) {
+      return <ErrorMessage error={errorText(instancesQuery.error)} />;
+    }
+    if (route === null || instances === undefined) {
+      return <Loading label={t("workspace.loadingInstances")} />;
+    }
+    if (instanceUrl !== null && activeInstance === null) {
+      return <Loading label={t("workspace.loadingInstances")} />;
+    }
+    if (needsDeck) {
+      if (decksQuery.error) {
+        return <ErrorMessage error={errorText(decksQuery.error)} />;
+      }
+      if (decksQuery.data === undefined) {
+        return <Loading label={t("workspace.loadingDeck")} />;
+      }
+      if (activeDeck === null) {
+        return <Loading label={t("workspace.loadingDeck")} />;
+      }
+    }
+    if (needsCard) {
+      if (cardsQuery.error) {
+        return <ErrorMessage error={errorText(cardsQuery.error)} />;
+      }
+      if (activeCard === null) {
+        return <Loading label={t("workspace.loadingCard")} />;
+      }
+    }
+    if (needsLibraryDeck) {
+      if (libraryQuery.error) {
+        return <ErrorMessage error={errorText(libraryQuery.error)} />;
+      }
+      if (activeLibraryDeck === null) {
+        return <Loading label={t("workspace.loadingLibrary")} />;
+      }
+    }
+    if (needsLibraryCard) {
+      if (libraryCardsQuery.error) {
+        return <ErrorMessage error={errorText(libraryCardsQuery.error)} />;
+      }
+      if (activeLibraryCard === null) {
+        return <Loading label={t("workspace.loadingCard")} />;
+      }
+    }
+    return null;
+  })();
+
+  // Only called once nothing is waiting, so the route and instances are there.
+  const screenFor = (route: RouteRef, instances: Instance[]) => {
     switch (route.screen) {
       case "storagePicker":
         if (storagesQuery.error) {
-          return <p class="error">{errorText(storagesQuery.error)}</p>;
+          return <ErrorMessage error={errorText(storagesQuery.error)} />;
         }
         if (storagesQuery.data === undefined) {
           return <Loading label={t("workspace.discoveringStorages")} />;
@@ -381,7 +427,7 @@ export function Workspace({
             onSelect={(instance: Instance) =>
               navigate({ screen: "home", instanceUrl: instance.url })
             }
-            onNewInstance={() => navigate({ screen: "storagePicker" })}
+            newInstanceHref={routeToHash({ screen: "storagePicker" })}
             onAttach={(url, target) =>
               attachInstanceMutation.mutate({ url, target })
             }
@@ -396,7 +442,7 @@ export function Workspace({
             busy={createInstanceMutation.isPending}
             error={errorText(createInstanceMutation.error)}
             onCreate={(args) => createInstanceMutation.mutate(args)}
-            onBack={() => navigate({ screen: "instancePicker" })}
+            backHref={routeToHash({ screen: "instancePicker" })}
           />
         );
       case "home":
@@ -411,9 +457,6 @@ export function Workspace({
                 instanceUrl: instanceUrl!,
                 deckUrl: deck.url,
               })
-            }
-            onCreateDeck={() =>
-              navigate({ screen: "deckCreator", instanceUrl: instanceUrl! })
             }
           />
         );
@@ -443,13 +486,6 @@ export function Workspace({
             useCases={useCases}
             instance={activeInstance!}
             deck={activeLibraryDeck!}
-            onBrowse={() =>
-              navigate({
-                screen: "libraryBrowser",
-                instanceUrl: instanceUrl!,
-                libraryDeckUrl: libraryDeckUrl!,
-              })
-            }
             onDone={() =>
               navigate({ screen: "home", instanceUrl: instanceUrl! })
             }
@@ -478,6 +514,7 @@ export function Workspace({
           <LibraryCardScreen
             card={activeLibraryCard!}
             deckName={readerText(activeLibraryDeck!.title)}
+            deckLang={readerLang(activeLibraryDeck!.title)}
             deckHref={libraryDeckHref(instanceUrl!, libraryDeckUrl!)}
           />
         );
@@ -501,20 +538,6 @@ export function Workspace({
             onStudy={() =>
               navigate({
                 screen: "study",
-                instanceUrl: instanceUrl!,
-                deckUrl: deckUrl!,
-              })
-            }
-            onPreferences={() =>
-              navigate({
-                screen: "deckPreferences",
-                instanceUrl: instanceUrl!,
-                deckUrl: deckUrl!,
-              })
-            }
-            onBrowse={() =>
-              navigate({
-                screen: "browser",
                 instanceUrl: instanceUrl!,
                 deckUrl: deckUrl!,
               })
@@ -546,13 +569,11 @@ export function Workspace({
             deck={activeDeck!}
             deckHref={deckHref(instanceUrl!, deckUrl!)}
             page={route.page ?? 1}
-            onAddCard={() =>
-              navigate({
-                screen: "cardCreator",
-                instanceUrl: instanceUrl!,
-                deckUrl: deckUrl!,
-              })
-            }
+            addCardHref={routeToHash({
+              screen: "cardCreator",
+              instanceUrl: instanceUrl!,
+              deckUrl: deckUrl!,
+            })}
             cardHref={(card) =>
               routeToHash({
                 screen: "card",
@@ -570,13 +591,11 @@ export function Workspace({
             useCases={useCases}
             deck={activeDeck!}
             deckHref={deckHref(instanceUrl!, deckUrl!)}
-            onBack={() =>
-              navigate({
-                screen: "browser",
-                instanceUrl: instanceUrl!,
-                deckUrl: deckUrl!,
-              })
-            }
+            backHref={routeToHash({
+              screen: "browser",
+              instanceUrl: instanceUrl!,
+              deckUrl: deckUrl!,
+            })}
           />
         );
       case "card": {
@@ -648,71 +667,66 @@ export function Workspace({
           </p>
         );
     }
-  })();
+  };
 
   const blocked =
     activeInstance !== null && !alwaysReachable && policy === "block-instance" &&
     (checkQuery.isPending || invalidReport !== null);
   const deckSetAside = activeDeck !== null && isSetAside(activeDeck);
-  const shown = blocked ? (
+  const shown = waiting ?? (blocked ? (
     invalidReport === null ? <Loading label={t("workspace.checkingData")} /> : null
   ) : deckSetAside ? (
     <p class="hint">{t("workspace.deckSetAside")}</p>
   ) : (
-    screen
-  );
+    screenFor(route!, instances!)
+  ));
 
   return (
     <>
-      {activeInstance !== null && (
-        <>
-          <InstanceBar
-            instance={activeInstance}
-            onSwitch={() => navigate({ screen: "instancePicker" })}
-            onOpenPreferences={() =>
-              navigate({ screen: "preferences", instanceUrl: instanceUrl! })
-            }
-            onOpenStatistics={() => navigate({ screen: "statistics", instanceUrl: instanceUrl! })}
-          />
-          <MigrationContainer
-            useCases={useCases}
-            session={session}
-            instance={activeInstance}
-            onUpdated={(updated) => replace({ screen: "home", instanceUrl: updated.url })}
-          />
-          {checkQuery.error && (
-            <p class="warning">
-              {t("workspace.checkFailed", { error: errorText(checkQuery.error)! })}
-            </p>
-          )}
-          {invalidReport !== null && (
-            <DataCheckNotice
+      <header class="site-header">
+        {banner}
+        {activeInstance !== null && <InstanceBar instance={activeInstance} />}
+      </header>
+      <main id={MAIN_ID} tabIndex={-1} class="workspace">
+        {children}
+        {waiting === null && activeInstance !== null && (
+          <>
+            <MigrationContainer
               useCases={useCases}
+              session={session}
               instance={activeInstance}
-              report={invalidReport}
-              policy={policy}
-              setAside={(decksOfCheck.data ?? []).filter(isSetAside).map((deck) => readerText(deck.title))}
+              onUpdated={(updated) => replace({ screen: "home", instanceUrl: updated.url })}
             />
-          )}
-        </>
-      )}
-      <Breadcrumbs
-        crumbs={breadcrumbsFor(route, {
-          deck: activeDeck === null ? "" : readerText(activeDeck.title),
-          card: activeCard === null ? "" : cardLabel(activeCard, readerText),
-          libraryDeck: activeLibraryDeck === null ? "" : readerText(activeLibraryDeck.title),
-          libraryCard: activeLibraryCard === null ? "" : cardLabel(activeLibraryCard, readerText),
-        }, t)}
-      />
-      {shown}
-      {developerMode && activeInstance !== null && (
-        <nav class="developer-tools" aria-label={t("workspace.developerTools")}>
-          <a href={validationHref(activeInstance.url)}>{t("workspace.validateInstance")}</a>
-        </nav>
-      )}
-      {developerMode && (
-        <WebIdDocumentContainer useCases={useCases} session={session} />
-      )}
+            {checkQuery.error && (
+              // A div: the error may bring its technical details, a block.
+              <div class="warning">
+                {tx("workspace.checkFailed", { error: errorText(checkQuery.error) })}
+              </div>
+            )}
+            {invalidReport !== null && (
+              <DataCheckNotice
+                useCases={useCases}
+                instance={activeInstance}
+                report={invalidReport}
+                policy={policy}
+                setAside={(decksOfCheck.data ?? []).filter(isSetAside).map((deck) => deck.title)}
+              />
+            )}
+          </>
+        )}
+        {waiting === null && <Breadcrumbs crumbs={crumbs} />}
+        <div ref={screenRef} class="screen">
+          {shown}
+        </div>
+        {developerMode && activeInstance !== null && (
+          <nav class="developer-tools" aria-label={t("workspace.developerTools")}>
+            <a href={validationHref(activeInstance.url)}>{t("workspace.validateInstance")}</a>
+          </nav>
+        )}
+        {developerMode && (
+          <WebIdDocumentContainer useCases={useCases} session={session} />
+        )}
+      </main>
     </>
   );
 }

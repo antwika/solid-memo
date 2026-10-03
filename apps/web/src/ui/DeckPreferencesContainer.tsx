@@ -4,6 +4,7 @@ import type { Deck } from "@solid-memo/domain/deck";
 import type { DeckPace } from "@solid-memo/domain/deckPace";
 import type { Instance } from "@solid-memo/domain/instance";
 import { DeckPreferencesScreen } from "./DeckPreferencesScreen";
+import { ErrorMessage } from "./ErrorMessage";
 import { Loading } from "./Loading";
 import { deckHref, routeToHash } from "./router";
 import { useI18n } from "./i18n";
@@ -29,7 +30,7 @@ export function DeckPreferencesContainer({
   /** Called after a successful save. */
   onDone: () => void;
 }) {
-  const { t, errorText } = useI18n();
+  const { t, locale, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const preferencesQuery = useQuery({
@@ -47,7 +48,7 @@ export function DeckPreferencesContainer({
   });
 
   const renameMutation = useMutation({
-    mutationFn: (name: string) => useCases.renameDeck(deck, name),
+    mutationFn: (name: string) => useCases.renameDeck(deck, name, locale),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["decks"] }),
   });
 
@@ -60,7 +61,7 @@ export function DeckPreferencesContainer({
   });
 
   if (preferencesQuery.error) {
-    return <p class="error">{errorText(preferencesQuery.error)}</p>;
+    return <ErrorMessage error={errorText(preferencesQuery.error)} />;
   }
   if (preferencesQuery.data === undefined) {
     return <Loading label={t("deckPreferences.loading")} />;

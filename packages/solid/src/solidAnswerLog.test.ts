@@ -120,9 +120,10 @@ describe("createSolidAnswerLog", () => {
   it("says when the pod refuses an answer", async () => {
     const fake = pod();
     fake.failNext(500);
-    await expect(createSolidAnswerLog({ fetch: fake.fetch }).append(INSTANCE, answer("2026-09-21"))).rejects.toThrow(
-      `Could not add to <${SEPTEMBER}>: 500.`,
-    );
+    await expect(createSolidAnswerLog({ fetch: fake.fetch }).append(INSTANCE, answer("2026-09-21"))).rejects.toMatchObject({
+      code: "addFailed",
+      detail: `url: ${SEPTEMBER}\nstatus: 500`,
+    });
   });
 
   it("lists the months it has a document for, oldest first, and none without a log", async () => {

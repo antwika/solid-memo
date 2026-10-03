@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DeckDetailContainer } from "./DeckDetailContainer";
+import { routeToHash } from "./router";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Card, Deck, Prompt } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
@@ -40,8 +41,6 @@ function renderContainer(useCases: UseCases) {
     defaultOptions: { queries: { retry: false } },
   });
   const onStudy = vi.fn();
-  const onPreferences = vi.fn();
-  const onBrowse = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
       <DeckDetailContainer
@@ -49,12 +48,10 @@ function renderContainer(useCases: UseCases) {
         instance={instance}
         deck={deck}
         onStudy={onStudy}
-        onPreferences={onPreferences}
-        onBrowse={onBrowse}
       />
     </QueryClientProvider>,
   );
-  return { onStudy, onPreferences, onBrowse };
+  return { onStudy };
 }
 
 describe("DeckDetailContainer", () => {
@@ -178,8 +175,8 @@ describe("DeckDetailContainer", () => {
     expect(await screen.findByText("cards unreachable")).toBeInTheDocument();
   });
 
-  it("forwards the navigation callbacks", async () => {
-    const { onStudy, onPreferences, onBrowse } =
+  it("starts the study, and links to the deck's Browser and preferences", async () => {
+    const { onStudy } =
       renderContainer(
         makeUseCasesFake({
           listCards: vi.fn(async () => [card]),
@@ -188,9 +185,13 @@ describe("DeckDetailContainer", () => {
       );
     fireEvent.click(await screen.findByRole("button", { name: "Study" }));
     expect(onStudy).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("button", { name: "Browser" }));
-    expect(onBrowse).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("button", { name: "Deck preferences" }));
-    expect(onPreferences).toHaveBeenCalledOnce();
+    expect(screen.getByRole("link", { name: "Browser" })).toHaveAttribute(
+      "href",
+      routeToHash({ screen: "browser", instanceUrl: instance.url, deckUrl: deck.url }),
+    );
+    expect(screen.getByRole("link", { name: "Deck preferences" })).toHaveAttribute(
+      "href",
+      routeToHash({ screen: "deckPreferences", instanceUrl: instance.url, deckUrl: deck.url }),
+    );
   });
 });

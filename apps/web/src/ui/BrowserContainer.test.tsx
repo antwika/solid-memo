@@ -31,21 +31,20 @@ function renderContainer(useCases: UseCases) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const onAddCard = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
       <BrowserContainer
         useCases={useCases}
         deck={deck}
         deckHref="#/deck?deck=d"
-        onAddCard={onAddCard}
+        addCardHref="#/new-card?deck=d"
         page={1}
         cardHref={(c) => `#/card?card=${c.id}`}
         onPageChange={vi.fn()}
       />
     </QueryClientProvider>,
   );
-  return { onAddCard, queryClient };
+  return { queryClient };
 }
 
 describe("BrowserContainer", () => {
@@ -66,12 +65,9 @@ describe("BrowserContainer", () => {
     expect(await screen.findByText("cards unreachable")).toBeInTheDocument();
   });
 
-  it("forwards card-creator navigation", async () => {
-    const { onAddCard } = renderContainer(
-      makeUseCasesFake({ listCards: vi.fn(async () => []) }),
-    );
-    fireEvent.click(await screen.findByRole("button", { name: "Add card" }));
-    expect(onAddCard).toHaveBeenCalledOnce();
+  it("links to the card creator", async () => {
+    renderContainer(makeUseCasesFake({ listCards: vi.fn(async () => []) }));
+    expect(await screen.findByRole("link", { name: "Add card" })).toHaveAttribute("href", "#/new-card?deck=d");
   });
 
   it("links cards to their own page", async () => {
@@ -93,7 +89,7 @@ describe("BrowserContainer", () => {
     const queueKey = ["studyQueue", deck.url];
     queryClient.setQueryData(queueKey, { due: [card], newCards: [], studiedToday: 0 });
 
-    fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Remove card / }));
 
     await waitFor(() => {
       expect(useCases.removeCard).toHaveBeenCalledWith(deck, card);
@@ -114,7 +110,7 @@ describe("BrowserContainer", () => {
     });
     renderContainer(useCases);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Remove card / }));
     expect(await screen.findByText("remove refused")).toBeInTheDocument();
   });
 
@@ -157,7 +153,7 @@ describe("BrowserContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save description" }));
 
     await waitFor(() => {
-      expect(useCases.describeDeck).toHaveBeenCalledWith(deck, { description: "Kanji.", topics: [], keywords: [] });
+      expect(useCases.describeDeck).toHaveBeenCalledWith(deck, { description: "Kanji.", topics: [], keywords: [] }, "en");
     });
     await waitFor(() => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });

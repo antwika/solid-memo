@@ -1,4 +1,5 @@
 import type { ResourceStore, StoredResource } from "@solid-memo/application/ports";
+import { AppError } from "@solid-memo/domain/appError";
 
 const DATABASE = "solid-memo-guest-pod";
 const RESOURCES = "resources";
@@ -39,7 +40,7 @@ export function createIndexedDbResourceStore({
       const request = operation(transaction.objectStore(RESOURCES));
       transaction.oncomplete = () => resolve(request.result as T);
       // A failed request aborts its transaction.
-      transaction.onabort = () => reject(transaction.error ?? new Error("The guest pod's storage gave up a change."));
+      transaction.onabort = () => reject(transaction.error ?? new AppError("guestStorageAborted"));
     });
   }
 

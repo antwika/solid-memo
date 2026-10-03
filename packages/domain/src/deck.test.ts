@@ -2,6 +2,7 @@ import { AppError } from "./appError";
 import { describe, expect, it } from "vitest";
 import {
   cardLabel,
+  cardLabelText,
   isDeckDirection,
   promptSides,
   promptsOf,
@@ -40,6 +41,24 @@ describe("validateCardContent", () => {
       ok: true,
       content: { front: { "": "a" }, back: { "": "b" } },
     });
+  });
+
+  it("keeps a picture's description in any language, trimmed, and drops one with no text or no picture", () => {
+    expect(
+      validateCardContent({
+        front: {},
+        back: { "": "Sweden" },
+        frontImageUrl: FLAG,
+        frontImageDescription: { sv: " En flagga med ett gult kors " },
+        backImageDescription: { en: "Nothing to describe" },
+      }),
+    ).toEqual({ ok: true, content: { front: {}, back: { "": "Sweden" }, frontImageUrl: FLAG, frontImageDescription: { sv: "En flagga med ett gult kors" } } });
+    expect(
+      validateCardContent({ front: { "": "a" }, back: { "": "b" }, backImageUrl: FLAG, backImageDescription: { en: " " } }),
+    ).toEqual({ ok: true, content: { front: { "": "a" }, back: { "": "b" }, backImageUrl: FLAG } });
+    expect(
+      validateCardContent({ front: { "": "a" }, back: {}, backImageUrl: FLAG, backImageDescription: { en: "A flag" } }),
+    ).toEqual({ ok: true, content: { front: { "": "a" }, back: {}, backImageUrl: FLAG, backImageDescription: { en: "A flag" } } });
   });
 
   it("keeps a note under the front, trimmed, and drops an empty one", () => {
@@ -177,6 +196,11 @@ describe("deck directions", () => {
       question: { side: "back", text: { "": "Stockholm" }, imageUrl: FLAG, note: { en: "The capital since 1634." } },
       answer: { side: "front", text: { "": "Sweden" }, note: { en: "A kingdom." } },
     });
+    const described = { ...sweden, frontImageUrl: FLAG, frontImageDescription: { en: "A blue flag" }, backImageDescription: { en: "The same flag" } };
+    expect(promptSides({ card: described, direction: "front-to-back" })).toEqual({
+      question: { side: "front", text: { "": "Sweden" }, imageUrl: FLAG, imageDescription: { en: "A blue flag" } },
+      answer: { side: "back", text: { "": "Stockholm" }, imageUrl: FLAG, imageDescription: { en: "The same flag" } },
+    });
     const labelled = { ...sweden, backLabel: { en: "Capital" } };
     expect(promptSides({ card: labelled, direction: "front-to-back" }).answer).toMatchObject({ side: "back", label: { en: "Capital" } });
     expect(promptSides({ card: labelled, direction: "back-to-front" }).question).toMatchObject({ side: "back", label: { en: "Capital" } });
@@ -185,6 +209,14 @@ describe("deck directions", () => {
       question: { side: "front", text: { "": "Sweden" }, imageUrl: FLAG },
       answer: { side: "back", text: { "": "Stockholm" } },
     });
+  });
+});
+
+describe("cardLabelText", () => {
+  it("is the front's text, else the back's", () => {
+    const sides = { front: { sv: "vatten" }, back: { en: "water" } };
+    expect(cardLabelText(sides)).toEqual({ sv: "vatten" });
+    expect(cardLabelText({ ...sides, front: {} })).toEqual({ en: "water" });
   });
 });
 

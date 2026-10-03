@@ -10,7 +10,7 @@ describe("Footer", () => {
     expect(screen.getByRole("contentinfo")).toHaveTextContent(
       "Created by antwika",
     );
-    const link = screen.getByRole("link", { name: "antwika" });
+    const link = screen.getByRole("link", { name: "antwika (opens in a new tab)" });
     expect(link).toHaveAttribute("href", "https://github.com/antwika");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
@@ -21,7 +21,7 @@ describe("Footer", () => {
     expect(screen.getByRole("contentinfo")).toHaveTextContent(
       "Version 8faa7e1",
     );
-    const link = screen.getByRole("link", { name: "8faa7e1" });
+    const link = screen.getByRole("link", { name: "8faa7e1 (opens in a new tab)" });
     expect(link).toHaveAttribute(
       "href",
       `https://github.com/antwika/solid-memo/commit/${sha}`,

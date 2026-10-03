@@ -60,7 +60,7 @@ function renderContainer({
 }
 
 function question() {
-  return document.querySelector(".card-question")!.textContent;
+  return document.querySelector(".card-question p")!.textContent;
 }
 
 describe("LibraryPreviewContainer", () => {
@@ -99,9 +99,12 @@ describe("LibraryPreviewContainer", () => {
     expect(screen.getByText("Oslo")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Again|Good/ })).toBeNull();
 
+    expect(document.activeElement).toHaveTextContent("Answer: Oslo");
+
     fireEvent.click(screen.getByRole("button", { name: "Next card" }));
     expect(question()).toBe("Finland");
     expect(screen.queryByText("Helsinki")).toBeNull();
+    expect(document.activeElement).toHaveTextContent("Question: Finland");
 
     fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
     fireEvent.click(screen.getByRole("button", { name: "Next card" }));
@@ -160,6 +163,6 @@ describe("LibraryPreviewContainer", () => {
         }),
       }),
     });
-    expect(await screen.findByText("library offline")).toHaveClass("error");
+    expect((await screen.findByText("library offline")).closest(".error")).toBeInTheDocument();
   });
 });

@@ -313,7 +313,7 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
       },
     });
     expect(await useCases.updateInstance(session, pod.instance)).toMatchObject({ ok: true });
-    expect(String(refused)).toContain("writes nothing to it until the update is over");
+    expect(refused).toMatchObject({ code: "instanceBeingUpdated" });
     expect(await fetch(`${pod.source}meta.ttl`).then((r) => r.status)).toBe(200);
   }, 60_000);
 
@@ -363,7 +363,8 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
     const outcome = await useCases.updateInstance(session, pod.instance);
     expect(changed).toBe(true);
     expect(outcome).toMatchObject({ ok: false, step: "verify", cleanedUp: true });
-    expect((outcome as { error: Error }).error.message).toContain("decks/deck-1.ttl> changed while it was being copied");
+    expect((outcome as { error: Error }).error).toMatchObject({ code: "resourceChangedDuringCopy" });
+    expect((outcome as { error: Error }).error.message).toContain(`${pod.source}decks/deck-1.ttl`);
     expect(await registeredContainers(pod)).toBe(indexBefore);
     expect(await triples(`${pod.source}decks/deck-1.ttl`)).toContain("studied in another tab");
   }, 60_000);
@@ -384,9 +385,8 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
     });
     const outcome = await useCases.updateInstance(session, pod.instance);
     expect(outcome).toMatchObject({ ok: false, step: "copy", cleanedUp: true });
-    expect((outcome as { error: Error }).error.message).toBe(
-      `${squatted} was created elsewhere (in another tab or app?) while Solid Memo was about to create it, so nothing was saved. Reload and try again.`,
-    );
+    expect((outcome as { error: Error }).error).toMatchObject({ code: "createdElsewhere" });
+    expect((outcome as { error: Error }).error.message).toContain(squatted);
     expect(await snapshot(pod.source)).toEqual(before);
     expect(await registeredContainers(pod)).toBe(indexBefore);
   });
@@ -431,7 +431,7 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
     });
     const preferences = await useCases.getPreferences(pod.source);
     await expect(useCases.savePreferences(pod.source, { ...preferences, newCardsPerDay: 7 })).rejects.toThrow(
-      `${pod.source}preferences.ttl was changed elsewhere (in another tab or app?) since Solid Memo read it, so nothing was saved.`,
+      `since Solid Memo read it, so nothing was saved. Reload the page and try again.\nurl: ${pod.source}preferences.ttl`,
     );
     const stored = await triples(`${pod.source}preferences.ttl`);
     expect(stored).toContain("saved in another tab");

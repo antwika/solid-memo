@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/preact";
-import { CardFace, CardThumbnail } from "./CardFace";
+import { CardFace, CardRowBack, CardRowFront, CardThumbnail } from "./CardFace";
 import { I18nProvider } from "./i18n";
 
 const FLAG = "https://flagcdn.com/af.svg";
@@ -12,6 +12,40 @@ describe("CardFace", () => {
       "水",
     );
     expect(container.querySelector("img")).toBeNull();
+  });
+
+  it("marks text in another language than the page's with its language, and untagged text with none", () => {
+    render(
+      <CardFace side="front" text={{ sv: "sjuksköterska" }} label={{ en: "Meaning" }} note={{ de: "Beruf" }} />,
+    );
+    expect(screen.getByText("sjuksköterska")).toHaveAttribute("lang", "sv");
+    expect(screen.getByText("Meaning")).not.toHaveAttribute("lang");
+    expect(screen.getByText("Beruf")).toHaveAttribute("lang", "de");
+    render(<CardFace side="back" text={{ "": "water" }} />);
+    expect(screen.getByText("water")).not.toHaveAttribute("lang");
+  });
+
+  it("names the face for screen readers: front and back, or question and answer in study", () => {
+    const { container, rerender } = render(<CardFace side="front" text={{ "": "水" }} />);
+    const name = () => container.querySelector(".card-face > .visually-hidden");
+    expect(name()).toHaveTextContent("Front:");
+    rerender(<CardFace side="back" text={{ "": "water" }} />);
+    expect(name()).toHaveTextContent("Back:");
+    rerender(<CardFace side="back" role="question" text={{ "": "water" }} />);
+    expect(name()).toHaveTextContent("Question:");
+    rerender(<CardFace side="front" role="answer" text={{ "": "水" }} />);
+    expect(name()).toHaveTextContent("Answer:");
+  });
+
+  it("names the face in Swedish", () => {
+    const { container } = render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <CardFace side="back" text={{ "": "water" }} />
+        <CardFace side="front" role="question" text={{ "": "水" }} />
+      </I18nProvider>,
+    );
+    const names = [...container.querySelectorAll(".card-face > .visually-hidden")];
+    expect(names.map((n) => n.textContent)).toEqual(["Baksida: ", "Fråga: "]);
   });
 
   it("shows a label above the text", () => {
@@ -67,14 +101,31 @@ describe("CardFace", () => {
     expect(image).toHaveClass("card-image");
   });
 
-  it("shows a picture above its text, the text being the description", () => {
+  it("shows a picture above its text, still announcing the picture", () => {
     const { container } = render(
       <CardFace side="front" text={{ "": "Afghanistan" }} imageUrl={FLAG} />,
     );
-    const [image, text] = container.querySelector(".card-face")!.children;
+    const [name, image, text] = container.querySelector(".card-face")!.children;
+    expect(name).toHaveClass("visually-hidden");
     expect(image.tagName).toBe("IMG");
-    expect(image).toHaveAttribute("alt", "");
+    expect(image).toHaveAttribute("alt", "Picture on the front of the card");
     expect(text).toHaveTextContent("Afghanistan");
+  });
+
+  it("describes a picture by the card's own description, in the reader's language, marked when another", () => {
+    const { container, rerender } = render(
+      <CardFace side="front" text={{ "": "Which country?" }} imageUrl={FLAG} imageDescription={{ en: "A black, red and green flag", sv: "En svart, röd och grön flagga" }} />,
+    );
+    const image = () => container.querySelector("img")!;
+    expect(image()).toHaveAttribute("alt", "A black, red and green flag");
+    expect(image()).not.toHaveAttribute("lang");
+    rerender(<CardFace side="back" text={{}} imageUrl={FLAG} imageDescription={{ sv: "En svart, röd och grön flagga" }} />);
+    expect(image()).toHaveAttribute("alt", "En svart, röd och grön flagga");
+    expect(image()).toHaveAttribute("lang", "sv");
+    const empty = render(<CardFace side="back" text={{}} imageUrl={FLAG} imageDescription={{}} />);
+    const fallback = empty.container.querySelector("img")!;
+    expect(fallback).toHaveAttribute("alt", "Picture on the back of the card");
+    expect(fallback).not.toHaveAttribute("lang");
   });
 
   it("names, rather than loads, a picture that is not a web URL", () => {
@@ -99,5 +150,97 @@ describe("CardThumbnail", () => {
     expect(container.querySelector("img")).toBeNull();
     rerender(<CardThumbnail />);
     expect(container.querySelector("img")).toBeNull();
+  });
+});
+
+describe("CardThumbnail alt", () => {
+  it("takes a name when the picture is all there is", () => {
+    render(<CardThumbnail imageUrl={FLAG} alt="Picture for: Afghanistan" />);
+    expect(
+      screen.getByRole("img", { name: "Picture for: Afghanistan" }),
+    ).toHaveClass("card-thumbnail");
+  });
+});
+
+describe("CardRowFront", () => {
+  const link = (front: Record<string, string>, back: Record<string, string>) =>
+    render(
+      <a href="#card">
+        <CardRowFront front={front} back={back} imageUrl={FLAG} />
+      </a>,
+    );
+
+  it("keeps the picture decorative beside the front's text", () => {
+    const { container } = link({ "": "Kabul" }, { "": "Afghanistan" });
+    expect(screen.getByRole("link", { name: "Kabul" })).toBeInTheDocument();
+    expect(container.querySelector("img")).toHaveAttribute("alt", "");
+  });
+
+  it("names a picture-only front after the back, so its link has a name", () => {
+    link({}, { "": "Afghanistan" });
+    expect(
+      screen.getByRole("link", { name: "Picture for: Afghanistan" }),
+    ).toBeInTheDocument();
+  });
+
+  it("names a picture-only front by its description, when the card gives one, marked with its language", () => {
+    const { container } = render(
+      <a href="#card">
+        <CardRowFront front={{}} back={{ "": "Afghanistan" }} imageUrl={FLAG} imageDescription={{ sv: "En svart, röd och grön flagga" }} />
+      </a>,
+    );
+    expect(screen.getByRole("link", { name: "En svart, röd och grön flagga" })).toBeInTheDocument();
+    expect(container.querySelector("img")).toHaveAttribute("lang", "sv");
+  });
+
+  it("keeps a described picture decorative beside the front's text", () => {
+    const { container } = render(
+      <a href="#card">
+        <CardRowFront front={{ "": "Kabul" }} back={{}} imageUrl={FLAG} imageDescription={{ en: "A flag" }} />
+      </a>,
+    );
+    expect(screen.getByRole("link", { name: "Kabul" })).toBeInTheDocument();
+    expect(container.querySelector("img")).not.toHaveAttribute("lang");
+  });
+
+  it("falls back to the side's label when neither side has text", () => {
+    link({}, {});
+    expect(
+      screen.getByRole("link", { name: "Picture on the front of the card" }),
+    ).toBeInTheDocument();
+  });
+
+  it("names it in Swedish", () => {
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <a href="#card">
+          <CardRowFront front={{}} back={{ en: "Afghanistan", sv: "Afghanistan (sv)" }} imageUrl={FLAG} />
+        </a>
+      </I18nProvider>,
+    );
+    expect(
+      screen.getByRole("link", { name: "Bild till: Afghanistan (sv)" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("CardRowBack", () => {
+  it("keeps the picture decorative beside the back's text", () => {
+    const { container } = render(
+      <CardRowBack back={{ "": "Afghanistan" }} imageUrl={FLAG} imageDescription={{ en: "A map" }} />,
+    );
+    expect(container).toHaveTextContent("Afghanistan");
+    expect(container.querySelector("img")).toHaveAttribute("alt", "");
+    expect(container.querySelector("img")).not.toHaveAttribute("lang");
+  });
+
+  it("names a picture-only back by its description, marked with its language", () => {
+    render(<CardRowBack back={{}} imageUrl={FLAG} imageDescription={{ sv: "En karta" }} />);
+    expect(screen.getByRole("img", { name: "En karta" })).toHaveAttribute("lang", "sv");
+  });
+
+  it("names a picture-only back by its side when the card gives no description", () => {
+    render(<CardRowBack back={{}} imageUrl={FLAG} />);
+    expect(screen.getByRole("img", { name: "Picture on the back of the card" })).not.toHaveAttribute("lang");
   });
 });

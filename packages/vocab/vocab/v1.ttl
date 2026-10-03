@@ -16,9 +16,9 @@
     a owl:Ontology ;
     dcterms:title "Solid Memo vocabulary, v1" ;
     dcterms:description "Terms for spaced-repetition flashcards stored in a Solid pod: instances, decks, cards, SM-2 review state and study preferences." ;
-    owl:versionInfo "1.11" ;
+    owl:versionInfo "1.12" ;
     rdfs:seeAlso <https://solid-memo.com/vocab/v1.ttl> ;
-    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed. 1.10: Answer, the answer log the study statistics are computed from. 1.11: the Themes concept scheme and theme (preferences format 4)." .
+    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed. 1.10: Answer, the answer log the study statistics are computed from. 1.11: the Themes concept scheme and theme (preferences format 4). 1.12: frontImageDescription, backImageDescription (card format 4, without a version bump)." .
 
 #################### Classes ####################
 
@@ -192,6 +192,24 @@ solid-memo:backImage
     rdfs:range rdfs:Resource ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.3 for card format 2." .
+
+solid-memo:frontImageDescription
+    a owl:DatatypeProperty ;
+    rdfs:label "front image description" ;
+    rdfs:comment "What the front's picture shows, in words: its text alternative for whoever cannot see it. Language-tagged text, one per language. While the front is the question it should not give the answer away." ;
+    rdfs:domain solid-memo:Card ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.12, in card format 4 without a version bump: an older reader ignores it." .
+
+solid-memo:backImageDescription
+    a owl:DatatypeProperty ;
+    rdfs:label "back image description" ;
+    rdfs:comment "What the back's picture shows, in words: its text alternative for whoever cannot see it. Language-tagged text, one per language. While the back is the question it should not give the answer away." ;
+    rdfs:domain solid-memo:Card ;
+    rdfs:range xsd:string ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.12, in card format 4 without a version bump: an older reader ignores it." .
 
 solid-memo:frontNote
     a owl:DatatypeProperty ;

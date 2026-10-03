@@ -69,6 +69,12 @@ string, so other applications can look up what it means:
   `dcterms:isReplacedBy`), not removed: `sm:direction` gave way to
   `sm:studyDirection` in 1.6. The generated constant carries
   `@deprecated`.
+- **An optional term may join a shape's current format without a format
+  bump** when a reader that ignores it loses nothing: the deck's own
+  study caps (`sm:deckNewCardsPerDay`, `sm:deckMaxReviewsPerDay`, 1.7)
+  and the description of a card's pictures (`sm:frontImageDescription`,
+  `sm:backImageDescription`, 1.12) are such terms. The vocabulary still
+  moves to the next 1.x.
 - **A breaking change is a new namespace** (`vocab/v2#`, with
   `owl:priorVersion` pointing back), never an edit of v1: the v1 IRIs
   are baked into every pod that ever wrote them.

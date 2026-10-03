@@ -270,7 +270,7 @@ describe("toLibraryDeckContent", () => {
       ),
     );
     expect(() => toLibraryDeckContent(DOC, dataset)).toThrow(
-      `<${DOC}> is in deck format 5, newer than this app supports (4).`,
+      `This deck is in a newer format than this version of Solid Memo can read. Reload the page to get the latest version.\nurl: ${DOC}\nversion: 5\nlatest: 4`,
     );
   });
 
@@ -325,19 +325,19 @@ describe("toLibraryDeckContent", () => {
       ),
     );
     expect(() => toLibraryDeckContent(DOC, dataset)).toThrow(
-      `<${CANONICAL}#se> in <${DOC}> is in card format 5, newer than this app supports (4).`,
+      `A card in this deck is in a newer format than this version of Solid Memo can read. Reload the page to get the latest version.\ncard: ${CANONICAL}#se\nurl: ${DOC}\nversion: 5\nlatest: 4`,
     );
   });
 
   it("rejects a document without a deck, or with a deck that does not fit its shape", () => {
     expect(() => toLibraryDeckContent(DOC, deckDocument())).toThrow(
-      `<${DOC}> is not a Solid Memo deck.`,
+      `That is not a Solid Memo deck, so it cannot be added. Choose another deck.\nurl: ${DOC}`,
     );
     expect(() =>
       toLibraryDeckContent(
         DOC,
         deckDocument(thing(CANONICAL, (t) => t.addIri(RDF.type, SM.Deck))),
       ),
-    ).toThrow(`<${DOC}> is not a Solid Memo deck.`);
+    ).toThrow(`That is not a Solid Memo deck, so it cannot be added. Choose another deck.\nurl: ${DOC}`);
   });
 });

@@ -122,7 +122,7 @@ describe("checked writes", () => {
     });
     expect(checkWrite).toHaveBeenLastCalledWith(expect.anything(), [`${CATALOG}#catalog`, "https://alice.example/profile/card#me"]);
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
-    await repository.createDeck(INSTANCE, "New");
+    await repository.createDeck(INSTANCE, { en: "New" });
     expect(checkWrite).toHaveBeenLastCalledWith(expect.anything(), [`${CATALOG}#deck-fixed`, `${CATALOG}#deck-fixed-cards`]);
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
       setThing(mockSolidDatasetFrom(deck.cardsDocumentUrl), buildThing(createThing({ url: card.url })).addIri(RDF.type, SM.Card).build()),
@@ -140,7 +140,7 @@ describe("checked writes", () => {
     const checkWrite = vi.fn(async () => {
       throw new Error("does not conform");
     });
-    await expect(makeRepository(checkWrite).createDeck(INSTANCE, "New")).rejects.toThrow("does not conform");
+    await expect(makeRepository(checkWrite).createDeck(INSTANCE, { en: "New" })).rejects.toThrow("does not conform");
     expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });
 });
@@ -244,7 +244,7 @@ describe("createDeck", () => {
   it("adds a deck subject to a fresh catalog and returns the deck", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
 
-    const created = await makeRepository().createDeck(INSTANCE, "Kanji N5");
+    const created = await makeRepository().createDeck(INSTANCE, { en: "Kanji N5" });
 
     expect(created).toEqual({
       id: "deck-fixed",
@@ -274,7 +274,7 @@ describe("createDeck", () => {
   it("appends to an existing catalog", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(catalogWithDeck());
 
-    await makeRepository().createDeck(INSTANCE, "Second deck");
+    await makeRepository().createDeck(INSTANCE, { en: "Second deck" });
 
     const [, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(getThing(saved as SolidDataset, deck.url)).not.toBeNull();
@@ -397,7 +397,7 @@ describe("renameDeck", () => {
   it("replaces the title in place and returns the renamed deck", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(catalogWithDeck());
 
-    const renamed = await makeRepository().renameDeck(deck, "Kanji N4");
+    const renamed = await makeRepository().renameDeck(deck, { en: "Kanji N4" });
 
     expect(renamed).toEqual({ ...deck, title: { en: "Kanji N4" }, formatVersion: 4 });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
@@ -409,21 +409,20 @@ describe("renameDeck", () => {
     expect(getUrl(thing, SM.cardsDocument)).toBe(deck.cardsDocumentUrl);
   });
 
-  it("changes only the English title, keeping its translations", async () => {
-    const withSwedish = { ...deck, title: { ...deck.title, sv: "Kanji N5 (svenska)" } };
+  it("writes the title in every language it has", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(catalogWithDeck());
 
-    await makeRepository().renameDeck(withSwedish, "Kanji N4");
+    await makeRepository().renameDeck(deck, { en: "Kanji N4", sv: "Kanji N4 (svenska)" });
 
     const [, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     const thing = getThing(saved as SolidDataset, deck.url)!;
     expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe("Kanji N4");
-    expect(getStringWithLocale(thing, DCTERMS.title, "sv")).toBe("Kanji N5 (svenska)");
+    expect(getStringWithLocale(thing, DCTERMS.title, "sv")).toBe("Kanji N4 (svenska)");
   });
 
   it("rejects when the catalog no longer exists", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
-    await expect(makeRepository().renameDeck(deck, "x")).rejects.toThrow(
+    await expect(makeRepository().renameDeck(deck, { en: "x" })).rejects.toThrow(
       "no longer exists",
     );
     expect(saveSolidDatasetAt).not.toHaveBeenCalled();
@@ -433,7 +432,7 @@ describe("renameDeck", () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
       mockSolidDatasetFrom(CATALOG),
     );
-    await expect(makeRepository().renameDeck(deck, "x")).rejects.toThrow(
+    await expect(makeRepository().renameDeck(deck, { en: "x" })).rejects.toThrow(
       "no longer exists",
     );
     expect(saveSolidDatasetAt).not.toHaveBeenCalled();
@@ -637,6 +636,30 @@ describe("addCard", () => {
     expect(getStringNoLocale(thing, SM.back)).toBe("Afghanistan");
   });
 
+  it("writes each picture's description as language-tagged text, and reads it back", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
+    const content = {
+      front: {},
+      back: { "": "Sweden" },
+      frontImageUrl: FLAG,
+      frontImageDescription: { en: "A blue flag with a yellow cross", sv: "En blå flagga med ett gult kors" },
+      backImageUrl: FLAG,
+      backImageDescription: { sv: "Samma flagga" },
+    };
+
+    const created = await makeRepository().addCard(deck, content);
+
+    expect(created).toMatchObject(content);
+    const [, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
+    const thing = getThing(saved as SolidDataset, created.url)!;
+    expect(getStringWithLocale(thing, SM.frontImageDescription, "en")).toBe("A blue flag with a yellow cross");
+    expect(getStringWithLocale(thing, SM.frontImageDescription, "sv")).toBe("En blå flagga med ett gult kors");
+    expect(getStringWithLocale(thing, SM.backImageDescription, "sv")).toBe("Samma flagga");
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(setThing(mockSolidDatasetFrom(deck.cardsDocumentUrl), thing));
+    const [read] = await makeRepository().listCards(deck);
+    expect(read).toMatchObject(content);
+  });
+
   it("writes a picture-only back the same way", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
 
@@ -711,7 +734,7 @@ describe("updateCard", () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);
     await expect(
       makeRepository().updateCard(deck, card, { front: { "": "x" }, back: { "": "y" } }),
-    ).rejects.toThrow("no longer exists");
+    ).rejects.toThrow("can no longer be found");
     expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });
 
@@ -917,7 +940,7 @@ describe("library upgrade writes", () => {
     const current = (await makeRepository().readDeck(deck.url))!;
     const next = { ...current, cardsDocumentUrl: STAGED };
     await expect(makeRepository().switchDeck({ ...current, title: { en: "Other" } }, next)).rejects.toThrow(
-      `<${deck.url}> changed while the deck was being updated`,
+      `The deck changed while it was being updated, perhaps in another tab or app. Try again.\nurl: ${deck.url}`,
     );
     await expect(makeRepository().switchDeck({ ...current, url: `${CATALOG}#deck-2` }, next)).rejects.toThrow("changed while");
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(null);

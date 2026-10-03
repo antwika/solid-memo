@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/preact";
+import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/preact";
 import { DeckListScreen } from "./DeckListScreen";
 import { I18nProvider } from "./i18n";
 import type { Deck } from "@solid-memo/domain/deck";
@@ -28,11 +28,10 @@ function renderScreen(
 ) {
   const props = {
     decks: [deck, secondDeck],
-    decksHref: "#/decks?instance=a",
     libraryHref: "#/library?instance=a",
     deckHref: (d: Deck) => `#/deck?deck=${d.id}`,
     renderStudyAction: (d: Deck) => <span>action for {d.title.en}</span>,
-    onCreateDeck: vi.fn(),
+    createDeckHref: "#/new-deck?instance=a",
     ...overrides,
   };
   const view = render(<DeckListScreen {...props} />);
@@ -43,10 +42,8 @@ describe("DeckListScreen", () => {
   it("lists every deck under a Decks heading with a count", () => {
     renderScreen();
     expect(screen.getByRole("heading", { name: "Decks" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Decks" })).toHaveAttribute(
-      "href",
-      "#/decks?instance=a",
-    );
+    // The heading names this page: it is no link to it.
+    expect(screen.queryByRole("link", { name: "Decks" })).toBeNull();
     expect(screen.getByText("2 decks")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Kanji N5" }),
@@ -87,7 +84,7 @@ describe("DeckListScreen", () => {
     const { container } = renderScreen();
     expect(container.querySelector("h2 svg.icon")).toHaveAttribute("aria-hidden", "true");
     expect(container.querySelectorAll(".deck-open svg.icon")).toHaveLength(2);
-    expect(screen.getByRole("link", { name: "Decks" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Decks" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Kanji N5" })).toBeInTheDocument();
   });
 
@@ -105,12 +102,11 @@ describe("DeckListScreen", () => {
     );
   });
 
-  it("navigates to the deck creator via a primary button", () => {
-    const { props } = renderScreen();
-    const button = screen.getByRole("button", { name: "Create deck" });
-    expect(button).toHaveClass("primary");
-    fireEvent.click(button);
-    expect(props.onCreateDeck).toHaveBeenCalledOnce();
+  it("links to the deck creator, styled as the primary button", () => {
+    renderScreen();
+    const link = screen.getByRole("link", { name: "Create deck" });
+    expect(link).toHaveClass("button", "primary");
+    expect(link).toHaveAttribute("href", "#/new-deck?instance=a");
   });
 });
 
@@ -120,16 +116,15 @@ describe("DeckListScreen in Swedish", () => {
       <I18nProvider locale="sv" onChoose={() => undefined}>
         <DeckListScreen
           decks={[deck]}
-          decksHref="#/decks?instance=a"
           libraryHref="#/library?instance=a"
           deckHref={(d) => `#/deck?deck=${d.id}`}
           renderStudyAction={() => null}
-          onCreateDeck={vi.fn()}
+          createDeckHref="#/new-deck?instance=a"
         />
       </I18nProvider>,
     );
     expect(screen.getByRole("heading", { name: "Kortlekar" })).toBeInTheDocument();
     expect(screen.getByText("1 kortlek")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Skapa kortlek" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Skapa kortlek" })).toBeInTheDocument();
   });
 });

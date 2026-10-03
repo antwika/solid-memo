@@ -21,10 +21,11 @@ export function useRetiredCards<T extends { retired?: true }>(
             type="checkbox"
             checked={showRetired}
             onChange={(e) => setShowRetired(e.currentTarget.checked)}
+            aria-describedby="retired-cards-hint"
           />
           {t("retiredCards.showToggle")}
         </label>{" "}
-        <span class="hint">
+        <span id="retired-cards-hint" class="hint">
           {t("retiredCards.toggleHint", { count: retiredCount })}
         </span>
       </p>

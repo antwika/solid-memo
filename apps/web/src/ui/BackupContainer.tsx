@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { Session } from "@solid-memo/domain/session";
+import { ErrorMessage } from "./ErrorMessage";
 import { ExternalLink } from "./ExternalLink";
 import { useI18n } from "./i18n";
 
@@ -46,16 +47,14 @@ export function BackupContainer({
   const backup = backupQuery.data;
   if (backup === undefined || backup === null) return null;
   const busy = restoreMutation.isPending || deleteMutation.isPending;
+  const folder = <ExternalLink url={backup.url}>{t("backup.folder")}</ExternalLink>;
   return (
     <section class="backup" aria-label={t("backup.heading")}>
       <h3>{t("backup.heading")}</h3>
       <p>
         {backup.replacedAt === undefined
-          ? tx("backup.kept", { link: <ExternalLink url={backup.url} /> })
-          : tx("backup.keptOn", {
-            date: formatDate(backup.replacedAt),
-            link: <ExternalLink url={backup.url} />,
-          })}
+          ? tx("backup.kept", { link: folder })
+          : tx("backup.keptOn", { date: formatDate(backup.replacedAt), link: folder })}
       </p>
       <div class="edit-actions">
         <button
@@ -84,9 +83,7 @@ export function BackupContainer({
           {deleteMutation.isPending ? t("backup.deleting") : t("backup.delete")}
         </button>
       </div>
-      {(restoreMutation.error || deleteMutation.error) && (
-        <p class="error">{errorText(restoreMutation.error ?? deleteMutation.error)}</p>
-      )}
+      <ErrorMessage error={errorText(restoreMutation.error ?? deleteMutation.error)} />
     </section>
   );
 }

@@ -74,9 +74,9 @@ describe("linkedUrl", () => {
 describe("ensureAbsent", () => {
   it("passes when nothing is there, and refuses a URL in use or unreadable", async () => {
     await expect(copier().ensureAbsent(TO)).resolves.toBeUndefined();
-    await expect(copier(fetchOf({ [TO]: {} })).ensureAbsent(TO)).rejects.toThrow(`<${TO}> already exists.`);
+    await expect(copier(fetchOf({ [TO]: {} })).ensureAbsent(TO)).rejects.toThrow(`Something is already kept at that place in your Pod. Choose another place.\nurl: ${TO}`);
     await expect(copier(fetchOf({ [TO]: { status: 403 } })).ensureAbsent(TO)).rejects.toThrow(
-      `Could not check <${TO}>: 403.`,
+      `Solid Memo could not check your Pod. Check your connection and try again.\nurl: ${TO}\nstatus: 403`,
     );
   });
 });
@@ -204,7 +204,7 @@ describe("copyAccessControl", () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(mockSolidDatasetFrom(acl) as never);
     const fetch = fetchOf({ [FROM]: { headers: { Link: '<.acl>; rel="acl"' } }, [TO]: {} });
     await expect(copier(fetch).copyAccessControl(FROM, TO, MOVE)).rejects.toThrow(
-      `The pod does not say where the access control of <${TO}> goes.`,
+      `Your Pod does not say how to set who may open the copy, so Solid Memo cannot keep your sharing as it was. Nothing was changed.\nurl: ${TO}`,
     );
   });
 });
@@ -297,7 +297,7 @@ describe("the version a copy was made from", () => {
 
     vi.mocked(overwriteFile).mockRejectedValueOnce(Object.assign(new Error("412"), { statusCode: 412 }));
     await expect(copier(target.fetch).copyResource(`${FROM}a.png`, `${TO}a.png`, MOVE)).rejects.toThrow(
-      `${TO}a.png was created elsewhere`,
+      `url: ${TO}a.png`,
     );
     vi.mocked(overwriteFile).mockRejectedValueOnce(new Error("offline"));
     await expect(copier(target.fetch).copyResource(`${FROM}a.png`, `${TO}a.png`, MOVE)).rejects.toThrow("offline");
@@ -312,7 +312,7 @@ describe("mentions", () => {
   });
 
   it("fails when the resource cannot be read", async () => {
-    await expect(copier().mentions(`${TO}a.ttl`, "x")).rejects.toThrow(`Could not check <${TO}a.ttl>: 404.`);
+    await expect(copier().mentions(`${TO}a.ttl`, "x")).rejects.toThrow(`url: ${TO}a.ttl\nstatus: 404`);
   });
 });
 

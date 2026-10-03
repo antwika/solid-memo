@@ -304,7 +304,7 @@ export async function appendToDocument(url: string, thing: Thing, fetch: typeof 
     headers: { "Content-Type": "application/sparql-update" },
     body: `INSERT DATA {\n${triples.join("\n")}\n};\n`,
   });
-  if (!response.ok) throw new Error(`Could not add to <${url}>: ${response.status}.`);
+  if (!response.ok) throw new AppError("addFailed", { url, status: response.status });
 }
 
 /** Where @inrupt/solid-client names a Thing that has no URL yet: `<#name>` in the document. */

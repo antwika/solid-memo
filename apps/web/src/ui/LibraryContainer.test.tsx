@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LibraryContainer } from "./LibraryContainer";
 import type { UseCases } from "@solid-memo/application/useCases";
@@ -8,6 +8,7 @@ import type { Instance } from "@solid-memo/domain/instance";
 import type { LibraryDeck } from "@solid-memo/domain/library";
 import { makeUseCasesFake } from "../test/useCasesFake";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
+import { forget } from "./remembered";
 
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
@@ -65,6 +66,11 @@ function renderContainer(useCases: UseCases) {
 }
 
 describe("LibraryContainer", () => {
+  // The library remembers its ticks and filters per instance; each test starts afresh.
+  afterEach(() => {
+    for (const part of ["selected", "topics", "query"]) forget(`library:${instance.url}:${part}`);
+  });
+
   it("shows a loading state, then the library", async () => {
     renderContainer(
       makeUseCasesFake({
@@ -75,10 +81,7 @@ describe("LibraryContainer", () => {
     expect(
       await screen.findByRole("checkbox", { name: "Capitals" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Deck library" })).toHaveAttribute(
-      "href",
-      `#/library?instance=${encodeURIComponent(instance.url)}`,
-    );
+    expect(screen.getByRole("heading", { name: "Deck library" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Capitals" })).toHaveAttribute(
       "href",
       `#/library-deck?instance=${encodeURIComponent(instance.url)}&deck=${encodeURIComponent(capitals.seriesUrl)}`,
@@ -97,7 +100,7 @@ describe("LibraryContainer", () => {
         }),
       }),
     );
-    expect(await screen.findByText("library offline")).toHaveClass("error");
+    expect((await screen.findByText("library offline")).closest(".error")).toBeInTheDocument();
   });
 
   it("marks library decks the instance already imported", async () => {
@@ -137,6 +140,30 @@ describe("LibraryContainer", () => {
     await waitFor(() =>
       expect(useCases.listDecks).toHaveBeenCalledTimes(2),
     );
+
+    // The imported decks are no longer ticked on the next visit.
+    cleanup();
+    renderContainer(useCases);
+    expect(await screen.findByRole("checkbox", { name: "Capitals" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Rivers" })).not.toBeChecked();
+  });
+
+  it("keeps the ticks and the search when the library is left and come back to", async () => {
+    const useCases = makeUseCasesFake({
+      listLibraryDecks: vi.fn(async () => [capitals, rivers]),
+    });
+    renderContainer(useCases);
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Capitals" }));
+    fireEvent.input(screen.getByRole("searchbox", { name: "Search" }), {
+      target: { value: "cap" },
+    });
+
+    // As when a deck's page is opened and Back is pressed.
+    cleanup();
+    renderContainer(useCases);
+    expect(await screen.findByRole("checkbox", { name: "Capitals" })).toBeChecked();
+    expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("cap");
+    expect(screen.queryByRole("checkbox", { name: "Rivers" })).toBeNull();
   });
 
   it("shows the error and keeps the decks imported before it", async () => {
@@ -161,7 +188,7 @@ describe("LibraryContainer", () => {
       screen.getByRole("button", { name: "Import 2 decks" }).closest("form")!,
     );
 
-    expect(await screen.findByText("pod refused")).toHaveClass("error");
+    expect((await screen.findByText("pod refused")).closest(".error")).toBeInTheDocument();
     expect(onDone).not.toHaveBeenCalled();
     expect(await screen.findByText("Already imported")).toBeInTheDocument();
   });

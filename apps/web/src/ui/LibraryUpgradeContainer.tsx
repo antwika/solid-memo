@@ -1,3 +1,4 @@
+import type { JSX } from "preact";
 import { useState } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
@@ -31,7 +32,7 @@ export function LibraryUpgradeContainer({
   instance: Instance;
   deck: Deck;
 }) {
-  const { t, readerText, errorText } = useI18n();
+  const { t, readerText, readerLang, errorText } = useI18n();
   const queryClient = useQueryClient();
 
   const planQuery = useQuery({
@@ -92,34 +93,41 @@ export function LibraryUpgradeContainer({
     },
   });
 
-  if (upgradeMutation.isPending) {
-    return <DeckUpgradeProgress step={progress.step} done={progress.done} part={progress.part} />;
-  }
+  if (deck.sourceUrl === undefined) return null;
   const outcome = upgradeMutation.data;
   const plan = planQuery.data;
-  if (outcome?.ok === false) {
-    return (
+  let shown: JSX.Element | null = null;
+  if (upgradeMutation.isPending) {
+    shown = <DeckUpgradeProgress step={progress.step} done={progress.done} part={progress.part} />;
+  } else if (outcome?.ok === false) {
+    shown = (
       <DeckUpgradeFailure
         outcome={outcome}
         onRetry={() => (plan === undefined || plan === null ? upgradeMutation.reset() : upgradeMutation.mutate(plan))}
         onDismiss={() => upgradeMutation.reset()}
       />
     );
+  } else if (plan !== undefined && plan !== null) {
+    shown = (
+      <LibraryUpgradeNotice
+        deckName={readerText(deck.title)}
+        deckLang={readerLang(deck.title)}
+        plan={plan}
+        busy={false}
+        error={errorText(upgradeMutation.error)}
+        onUpgrade={() => upgradeMutation.mutate(plan)}
+      />
+    );
   }
-  if (plan === undefined || plan === null) {
-    return upgradeMutation.isSuccess ? (
-      <p class="hint" role="status">
-        {t("libraryUpgrade.updated", { version: upgradeMutation.variables.toVersion })}
-      </p>
-    ) : null;
-  }
+  const updated = upgradeMutation.isSuccess && shown === null;
   return (
-    <LibraryUpgradeNotice
-      deckName={readerText(deck.title)}
-      plan={plan}
-      busy={false}
-      error={errorText(upgradeMutation.error)}
-      onUpgrade={() => upgradeMutation.mutate(plan)}
-    />
+    <>
+      {shown}
+      {/* Mounted throughout, so the update's end is heard: a live region
+          inserted along with its text often goes unheard. */}
+      <p class="hint" role="status">
+        {updated ? t("libraryUpgrade.updated", { version: upgradeMutation.variables.toVersion }) : ""}
+      </p>
+    </>
   );
 }

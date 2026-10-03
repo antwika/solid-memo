@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
+import { ErrorMessage } from "./ErrorMessage";
 import { useI18n } from "./i18n";
 import { Loading } from "./Loading";
 import { StatisticsScreen } from "./StatisticsScreen";
@@ -21,7 +22,7 @@ export function StatisticsContainer({
     queryKey: ["statistics", instance.url],
     queryFn: () => useCases.getStatistics(instance.url, new Date()),
   });
-  if (statisticsQuery.error) return <p class="error">{errorText(statisticsQuery.error)}</p>;
+  if (statisticsQuery.error) return <ErrorMessage error={errorText(statisticsQuery.error)} />;
   if (statisticsQuery.data === undefined) return <Loading label={t("statistics.loading")} />;
   return <StatisticsScreen statistics={statisticsQuery.data} decks={decks} />;
 }

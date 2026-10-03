@@ -51,7 +51,7 @@ import {
   type DeckUpgradeStep,
   type StepPart,
 } from "@solid-memo/domain/deckUpgrade";
-import { shown } from "@solid-memo/domain/langText";
+import { typedIn, withTyped } from "@solid-memo/domain/langText";
 import {
   isDeckOutdated,
   isOutdated,
@@ -237,15 +237,20 @@ export interface UseCases {
   /** Permanently delete an instance and all its decks and cards. */
   deleteInstance(session: Session, instance: Instance): Promise<void>;
   listDecks(instanceUrl: string): Promise<Deck[]>;
-  createDeck(instanceUrl: string, name: string): Promise<Deck>;
-  renameDeck(deck: Deck, name: string): Promise<Deck>;
+  /** A new deck by the name typed on a page in `locale`, in that language (typedIn). */
+  createDeck(instanceUrl: string, name: string, locale: Locale): Promise<Deck>;
+  /** Rename the deck in the language of the page the name was typed on (withTyped), keeping its other languages. */
+  renameDeck(deck: Deck, name: string, locale: Locale): Promise<Deck>;
   /**
    * Change how the deck is studied. Review state is kept: a card's
    * front→back state waits, unused, while the deck is studied back→front.
    */
   setDeckDirection(deck: Deck, direction: DeckDirection): Promise<Deck>;
-  /** Replace what a deck says about itself: its description, topics and keywords. */
-  describeDeck(deck: Deck, about: DeckAbout): Promise<Deck>;
+  /**
+   * Replace what a deck says about itself: its description (typed on a
+   * page in `locale`), topics and keywords.
+   */
+  describeDeck(deck: Deck, about: DeckAbout, locale: Locale): Promise<Deck>;
   /**
    * Set the deck's own daily limits; a limit left out follows the
    * instance's preferences again.
@@ -436,7 +441,7 @@ const NO_ANSWER_LOG: AnswerLog = { append: nothing, months: none, readMonth: non
 const NO_GUEST_POD: GuestPod = {
   exists: async () => false,
   start: async () => {
-    throw new Error("There is no guest pod on this device.");
+    throw new AppError("noGuestPod");
   },
   discard: nothing,
 };
@@ -1087,17 +1092,17 @@ export function createUseCases({
     listDecks(instanceUrl) {
       return deckRepository.listDecks(instanceUrl);
     },
-    createDeck(instanceUrl, name) {
-      return deckRepository.createDeck(instanceUrl, name.trim());
+    createDeck(instanceUrl, name, locale) {
+      return deckRepository.createDeck(instanceUrl, typedIn(name.trim(), locale));
     },
-    renameDeck(deck, name) {
-      return deckRepository.renameDeck(deck, name.trim());
+    renameDeck(deck, name, locale) {
+      return deckRepository.renameDeck(deck, withTyped(deck.title, name.trim(), locale));
     },
     setDeckDirection(deck, direction) {
       return deckRepository.saveDeck({ ...deck, direction });
     },
-    async describeDeck(deck, about) {
-      return deckRepository.saveDeck(withAbout(deck, about));
+    async describeDeck(deck, about, locale) {
+      return deckRepository.saveDeck(withAbout(deck, about, locale));
     },
     async setDeckPace(deck, pace) {
       return deckRepository.saveDeck(withPace(deck, pace));
@@ -1137,7 +1142,7 @@ export function createUseCases({
         // The deck, its cards, the releases (to plan again), and its review states when cards go.
         progress.start(3);
         const deck = await deckRepository.readDeck(offered.url);
-        if (deck === null) throw new AppError("deckGone", { deck: shown(offered.title) });
+        if (deck === null) throw new AppError("deckGone", { deck: offered.title });
         if (deck.cardsDocumentUrl !== offered.cardsDocumentUrl) throw new AppError("deckChangedSinceOffer");
         progress.stepped();
         const cards = await readNow(deckRepository.readCardsSince(deck, undefined));

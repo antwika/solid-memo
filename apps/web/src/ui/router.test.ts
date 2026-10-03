@@ -234,6 +234,7 @@ describe("useHashRoute", () => {
     window.history.replaceState(null, "", "#/instances");
     const { result } = renderHook(() => useHashRoute());
     expect(result.current.route).toEqual({ screen: "instancePicker" });
+    expect(result.current.change).toBe("initial");
   });
 
   it("is null for a URL without a route", () => {
@@ -246,6 +247,7 @@ describe("useHashRoute", () => {
     act(() => result.current.navigate({ screen: "storagePicker" }));
     expect(window.location.hash).toBe("#/storages");
     expect(result.current.route).toEqual({ screen: "storagePicker" });
+    expect(result.current.change).toBe("push");
   });
 
   it("replace updates the URL and the route", () => {
@@ -253,6 +255,7 @@ describe("useHashRoute", () => {
     act(() => result.current.replace({ screen: "instancePicker" }));
     expect(window.location.hash).toBe("#/instances");
     expect(result.current.route).toEqual({ screen: "instancePicker" });
+    expect(result.current.change).toBe("replace");
   });
 
   it("follows external hash changes (Back/Forward, hand-edited URL)", () => {
@@ -262,6 +265,25 @@ describe("useHashRoute", () => {
       window.dispatchEvent(new Event("hashchange"));
     });
     expect(result.current.route).toEqual({ screen: "storagePicker" });
+    expect(result.current.change).toBe("pop");
+  });
+
+  it("takes a hashchange to the route already shown for no move", () => {
+    const { result } = renderHook(() => useHashRoute());
+    act(() => result.current.replace({ screen: "storagePicker" }));
+    act(() => {
+      window.dispatchEvent(new Event("hashchange"));
+    });
+    expect(result.current.change).toBe("replace");
+    act(() => {
+      window.history.replaceState(null, "", window.location.pathname);
+      window.dispatchEvent(new Event("hashchange"));
+    });
+    expect(result.current).toMatchObject({ route: null, change: "pop" });
+    act(() => {
+      window.dispatchEvent(new Event("hashchange"));
+    });
+    expect(result.current).toMatchObject({ route: null, change: "pop" });
   });
 
   it("stops listening after unmount", () => {

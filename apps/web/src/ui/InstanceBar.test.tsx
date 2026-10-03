@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/preact";
+import { describe, expect, it } from "vitest";
+import { render, screen, within } from "@testing-library/preact";
 import { InstanceBar } from "./InstanceBar";
 import type { Instance } from "@solid-memo/domain/instance";
+import { routeToHash } from "./router";
 
 const instance: Instance = {
   url: "https://pod.example/solid-memo/main/",
@@ -9,46 +10,51 @@ const instance: Instance = {
 };
 
 function renderBar(shown: Instance = instance) {
-  const onSwitch = vi.fn();
-  const onOpenPreferences = vi.fn();
-  const onOpenStatistics = vi.fn();
-  render(
-    <InstanceBar
-      instance={shown}
-      onSwitch={onSwitch}
-      onOpenPreferences={onOpenPreferences}
-      onOpenStatistics={onOpenStatistics}
-    />,
-  );
-  return { onSwitch, onOpenPreferences };
+  render(<InstanceBar instance={shown} />);
 }
 
 describe("InstanceBar", () => {
-  it("says a guest's instance is kept in this browser, and links nowhere", () => {
+  it("says a guest's instance is kept in this browser, and links nowhere outside the app", () => {
     renderBar({ url: "https://guest.solid-memo.invalid/solid-memo/", name: "My study" });
     expect(screen.getByText("Kept in this browser")).toBeInTheDocument();
-    expect(screen.queryByRole("link")).toBeNull();
+    for (const link of screen.getAllByRole("link")) {
+      expect(link.getAttribute("href")).toMatch(/^#\//);
+    }
   });
 
-  it("shows the instance name and url", () => {
+  it("is a navigation landmark named for the instance", () => {
+    renderBar();
+    expect(screen.getByRole("navigation", { name: "Instance" })).toBeInTheDocument();
+  });
+
+  it("shows the instance name", () => {
     renderBar();
     expect(screen.getByText("Japanese study")).toBeInTheDocument();
-    expect(screen.getByText(instance.url)).toBeInTheDocument();
   });
 
-  it("makes the instance URL a clickable link", () => {
+  it("links the instance's folder in the Pod by what it is, not by its address", () => {
     renderBar();
-    expect(screen.getByRole("link", { name: instance.url })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Open in your Pod (opens in a new tab)" })).toHaveAttribute(
       "href",
       instance.url,
     );
   });
 
-  it("switches instance and opens preferences", () => {
-    const { onSwitch, onOpenPreferences } = renderBar();
-    fireEvent.click(screen.getByRole("button", { name: "Switch instance" }));
-    expect(onSwitch).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("button", { name: "Preferences" }));
-    expect(onOpenPreferences).toHaveBeenCalledOnce();
+  it("links to the instance's statistics and preferences, and to the instance picker", () => {
+    renderBar();
+    const bar = within(screen.getByRole("navigation"));
+    expect(bar.getByRole("link", { name: "Statistics" })).toHaveAttribute(
+      "href",
+      routeToHash({ screen: "statistics", instanceUrl: instance.url }),
+    );
+    expect(bar.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+      "href",
+      routeToHash({ screen: "preferences", instanceUrl: instance.url }),
+    );
+    expect(bar.getByRole("link", { name: "Switch instance" })).toHaveAttribute(
+      "href",
+      routeToHash({ screen: "instancePicker" }),
+    );
+    expect(bar.queryByRole("button")).toBeNull();
   });
 });

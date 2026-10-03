@@ -24,13 +24,20 @@ export function summaryOf(report: ValidationReport, t: I18n["t"]): string {
   });
 }
 
-export function ValidationScreen({ report }: { report: ValidationReport }) {
+/** The summary line's look: a hint when all conforms, else a warning. */
+export function summaryClass(report: ValidationReport): string {
+  return report.conforms ? "hint" : "warning";
+}
+
+/**
+ * The report, document by document, under its summary line — which a
+ * screen that announces the summary itself leaves out (`summary={false}`).
+ */
+export function ValidationScreen({ report, summary = true }: { report: ValidationReport; summary?: boolean }) {
   const { t } = useI18n();
   return (
     <div class="validation">
-      <p class={report.conforms ? "hint" : "warning"} role="status">
-        {summaryOf(report, t)}
-      </p>
+      {summary && <p class={summaryClass(report)}>{summaryOf(report, t)}</p>}
       {report.documents.map((document) => (
         <DocumentView key={document.url} document={document} />
       ))}
@@ -99,9 +106,19 @@ function SubjectView({ subject }: { subject: SubjectReport }) {
   }
 }
 
+/**
+ * A shape check's message, as violationText says it: marked with its
+ * language when that is not the page's (English, where no translation is).
+ */
+export function ViolationMessage({ violation }: { violation: Violation }) {
+  const { violationText, violationLang } = useI18n();
+  const lang = violationLang(violation);
+  return lang === undefined ? <>{violationText(violation)}</> : <span lang={lang}>{violationText(violation)}</span>;
+}
+
 /** One row per result; a DCAT-AP result says so before its message. */
 function ViolationTable({ violations }: { violations: Violation[] }) {
-  const { t, violationText, severityLabel } = useI18n();
+  const { t, severityLabel } = useI18n();
   return (
     <table>
       <thead>
@@ -125,7 +142,7 @@ function ViolationTable({ violations }: { violations: Violation[] }) {
             </td>
             <td>
               {violation.profile === "dcat-ap" && "DCAT-AP: "}
-              {violationText(violation)}
+              <ViolationMessage violation={violation} />
             </td>
             <td>{violation.value ?? ""}</td>
           </tr>

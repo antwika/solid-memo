@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
@@ -12,6 +13,7 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import type { SolidAccount } from "@solid-memo/domain/account";
 import type { EstablishedSession, Session } from "@solid-memo/domain/session";
 import { makeUseCasesFake } from "../test/useCasesFake";
+import { MAIN_ID } from "./SkipLink";
 
 const session: Session = { webId: "https://alice.example/profile/card#me" };
 const restored: EstablishedSession = { session, origin: "restored" };
@@ -182,9 +184,46 @@ describe("App", () => {
     expect(useCases.chooseLanguage).toHaveBeenCalledWith("sv");
     expect(await screen.findByText(/Skapad av/)).toBeInTheDocument();
     expect(document.documentElement.lang).toBe("sv");
+    await waitFor(() => expect(document.title).toBe("Logga in – Solid Memo"));
     fireEvent.click(screen.getByRole("button", { name: "English" }));
     expect(await screen.findByText(/Created by/)).toBeInTheDocument();
     expect(document.documentElement.lang).toBe("en");
+  });
+
+  describe("page structure", () => {
+    it("starts with a link past the header that focuses the main content, leaving the route alone", async () => {
+      window.location.hash = "#/";
+      const { container } = renderApp(makeUseCases());
+      await screen.findByRole("heading", { name: "Set up your Solid Pod" });
+      const skip = screen.getByRole("link", { name: "Skip to content" });
+      // The first thing in the page, so the first Tab stop.
+      expect(container.firstElementChild).toBe(skip);
+      fireEvent.click(skip);
+      expect(screen.getByRole("main")).toHaveFocus();
+      expect(window.location.hash).toBe("#/");
+    });
+
+    it("puts the open instance's bar in the banner, as a navigation landmark", async () => {
+      window.location.hash = "";
+      const instance = { url: "https://pod.example/solid-memo/main/", name: "Main" };
+      renderApp(
+        makeUseCases({
+          restoreSession: vi.fn(async () => restored),
+          listInstances: vi.fn(async () => [instance]),
+        }),
+      );
+      const bar = await screen.findByRole("navigation", { name: "Instance" });
+      expect(bar.closest("header")).toBe(screen.getByRole("banner"));
+      expect(within(bar).getByRole("link", { name: "Switch instance" })).toHaveAttribute(
+        "href",
+        "#/instances",
+      );
+      // The main content opens on the screen, not on the site's header.
+      expect(
+        await within(screen.getByRole("main")).findByRole("heading", { name: "Decks" }),
+      ).toBeInTheDocument();
+      expect(within(screen.getByRole("main")).queryByRole("navigation", { name: "Instance" })).toBeNull();
+    });
   });
 
   it("shows a restoring indicator while the session check is pending", () => {
@@ -194,22 +233,30 @@ describe("App", () => {
       }),
     );
     expect(screen.getByText("Restoring session…")).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveTextContent("Restoring session…");
+    expect(within(screen.getByRole("banner")).getByRole("button", { name: "Switch to dark mode" })).toBeInTheDocument();
+    expect(document.title).toBe("Solid Memo");
     expect(screen.getByRole("contentinfo")).toHaveTextContent(
       "Created by antwika",
     );
   });
 
   it("starts the Pod onboarding when no session is restored", async () => {
-    renderApp(makeUseCases());
+    const { container } = renderApp(makeUseCases());
     expect(
       await screen.findByRole("heading", { name: "Set up your Solid Pod" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /iGrant\.io Data Pod/ }),
     ).toHaveAttribute("href", "https://igrant.io/datapod.html");
-    expect(
-      screen.getByRole("img", { name: "Solid Memo illustration" }),
-    ).toBeInTheDocument();
+    // The picture is decorative; the product name is the page's heading.
+    expect(container.querySelector("img.hero")).toHaveAttribute("alt", "");
+    expect(screen.getByRole("heading", { level: 1, name: "Solid Memo" })).toBeInTheDocument();
+    // The theme and language choices make the banner; the onboarding is the main content.
+    const banner = screen.getByRole("banner");
+    expect(within(banner).getByRole("button", { name: "English" })).toBeInTheDocument();
+    expect(within(screen.getByRole("main")).getByRole("heading", { name: "Set up your Solid Pod" })).toBeInTheDocument();
+    await waitFor(() => expect(document.title).toBe("Log in – Solid Memo"));
   });
 
   it("shows a session-restore error (Error instance)", async () => {
@@ -322,22 +369,59 @@ describe("App", () => {
     const { container } = renderApp(useCases);
 
     expect(
-      await screen.findByRole("link", { name: session.webId }),
+      await screen.findByRole("link", { name: `${session.webId} (opens in a new tab)` }),
     ).toBeInTheDocument();
-    expect(container.querySelector("header img.logo")).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Solid Memo — back to start" }),
-    ).toHaveAttribute("href", "#/");
-    expect(screen.getByRole("link", { name: "Solid Memo" })).toHaveAttribute(
-      "href",
-      "#/",
-    );
+    // One link home, the logo part of it: no second stop beside the name.
+    const home = within(
+      screen.getByRole("heading", { level: 1, name: "Solid Memo" }),
+    ).getByRole("link", { name: "Solid Memo" });
+    expect(home).toHaveAttribute("href", "#/");
+    expect(home.querySelector("img.logo")).toHaveAttribute("alt", "");
+    expect(screen.getAllByRole("link").filter((link) => link.getAttribute("href") === "#/")).toHaveLength(1);
+    // The masthead and instance bar make the banner, above the main content.
+    const banner = screen.getByRole("banner");
+    expect(within(banner).getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(container.querySelector("main .masthead")).toBeNull();
     expect(useCases.discoverAccount).not.toHaveBeenCalled();
     expect(screen.getByRole("contentinfo")).toHaveTextContent(
       "Created by antwika",
     );
     expect(screen.queryByText("WebID document")).toBeNull();
     expect(useCases.viewWebIdDocument).not.toHaveBeenCalled();
+  });
+
+  it("keeps the banner and main content while the instances load", async () => {
+    const useCases = makeUseCases({
+      restoreSession: vi.fn(async () => restored),
+      listInstances: vi.fn(() => new Promise<never>(() => undefined)),
+    });
+    renderApp(useCases);
+
+    const logOut = await screen.findByRole("button", { name: "Log out" });
+    const banner = screen.getByRole("banner");
+    expect(banner).toContainElement(logOut);
+    expect(within(banner).getByRole("button", { name: "English" })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("main")).getByText("Loading your Solid Memo instances", { exact: false }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAttribute("id", MAIN_ID);
+  });
+
+  it("keeps the banner, with Log out, when the instances fail to load", async () => {
+    const useCases = makeUseCases({
+      restoreSession: vi.fn(async () => restored),
+      listInstances: vi.fn(async () => {
+        throw new Error("pod unreachable");
+      }),
+    });
+    renderApp(useCases);
+
+    await waitFor(() =>
+      expect(within(screen.getByRole("main")).getByRole("alert")).toHaveTextContent("pod unreachable"),
+    );
+    expect(
+      within(screen.getByRole("banner")).getByRole("button", { name: "Log out" }),
+    ).toBeInTheDocument();
   });
 
   describe("after a completed login", () => {
@@ -354,6 +438,7 @@ describe("App", () => {
       expect(
         await screen.findByRole("heading", { name: "Discovering your Pod…" }),
       ).toBeInTheDocument();
+      await waitFor(() => expect(document.title).toBe("Connecting your Pod – Solid Memo"));
       await waitFor(() => {
         expect(useCases.discoverAccount).toHaveBeenCalledWith(session);
       });
@@ -379,13 +464,15 @@ describe("App", () => {
       expect(screen.getByText(/Logged in as/)).toHaveTextContent(
         "Logged in as Alice",
       );
-      expect(screen.getByRole("link", { name: "Alice" })).toHaveAttribute(
+      expect(screen.getByRole("link", { name: "Alice (opens in a new tab)" })).toHaveAttribute(
         "href",
         session.webId,
       );
       await waitFor(() => {
         expect(useCases.listInstances).toHaveBeenCalled();
       });
+      // The workspace titles its screens from here on.
+      await waitFor(() => expect(document.title).not.toBe("Connecting your Pod – Solid Memo"));
     });
 
     it("shows a discovery error and retries on request", async () => {
@@ -442,12 +529,14 @@ describe("App", () => {
     });
     renderApp(useCases);
 
-    await screen.findByRole("link", { name: session.webId });
+    await screen.findByRole("link", { name: `${session.webId} (opens in a new tab)` });
     act(() => expire!());
 
-    expect(
-      await screen.findByText("Your session has expired. Please log in again."),
-    ).toBeInTheDocument();
+    const alert = await screen.findByText("Your session has expired. Please log in again.");
+    // Announced, focused and first after the tagline, before the login form.
+    expect(alert).toHaveAttribute("role", "alert");
+    expect(alert).toHaveFocus();
+    expect(alert.previousElementSibling).toHaveClass("tagline");
     expect(
       screen.getByRole("button", { name: "Log in with Solid" }),
     ).toBeInTheDocument();
@@ -513,11 +602,27 @@ describe("App", () => {
         restoreSession: vi.fn(async () => ({ session: guest, origin: "restored" as const })),
       });
       renderApp(useCases);
-      fireEvent.click(await screen.findByRole("button", { name: "Discard" }));
+      const discard = await screen.findByRole("button", { name: "Discard" });
+      discard.focus();
+      fireEvent.click(discard);
+      // The question takes the focus, read out as its description; Cancel gives it back.
       const region = screen.getByRole("region", { name: "Discard your study as a guest" });
       expect(region).toHaveTextContent("This cannot be undone.");
+      expect(region).toHaveFocus();
+      expect(region).toHaveAccessibleDescription(/This cannot be undone\./);
+      screen.getByRole("button", { name: "Cancel" }).focus();
       fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
       expect(screen.queryByRole("region", { name: "Discard your study as a guest" })).toBeNull();
+      expect(discard).toHaveFocus();
+      // Escape cancels too.
+      fireEvent.click(discard);
+      fireEvent.keyDown(screen.getByRole("region", { name: "Discard your study as a guest" }), { key: "Escape" });
+      expect(screen.queryByRole("region", { name: "Discard your study as a guest" })).toBeNull();
+      expect(discard).toHaveFocus();
+      fireEvent.click(discard);
+      fireEvent.keyDown(screen.getByRole("region", { name: "Discard your study as a guest" }), { key: "Enter" });
+      expect(screen.getByRole("region", { name: "Discard your study as a guest" })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
       expect(useCases.discardGuest).not.toHaveBeenCalled();
       fireEvent.click(screen.getByRole("button", { name: "Discard" }));
       fireEvent.click(screen.getByRole("button", { name: "Delete it" }));
@@ -533,8 +638,22 @@ describe("App", () => {
       renderApp(useCases);
       fireEvent.click(await screen.findByRole("button", { name: "Discard" }));
       fireEvent.click(screen.getByRole("button", { name: "Delete it" }));
-      expect(await screen.findByText("storage refused")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Delete it" })).toBeEnabled();
+      expect((await screen.findByText("storage refused")).closest("[role=alert]")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Delete it" })).toHaveAttribute("aria-disabled", "false");
+      // Trying again clears the error first, so the same failure is said again.
+      vi.mocked(useCases.discardGuest).mockReturnValueOnce(new Promise(() => {}));
+      const deleteIt = screen.getByRole("button", { name: "Delete it" });
+      deleteIt.focus();
+      fireEvent.click(deleteIt);
+      await waitFor(() => expect(screen.queryByText("storage refused")).toBeNull());
+      // While it deletes, the buttons keep the focus and do nothing.
+      await waitFor(() => expect(deleteIt).toHaveAttribute("aria-disabled", "true"));
+      expect(deleteIt).toHaveFocus();
+      fireEvent.click(deleteIt);
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      fireEvent.keyDown(screen.getByRole("region", { name: "Discard your study as a guest" }), { key: "Escape" });
+      expect(useCases.discardGuest).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole("region", { name: "Discard your study as a guest" })).toBeInTheDocument();
     });
 
     it("offers a user who logged in the study a guest left in this browser", async () => {

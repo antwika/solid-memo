@@ -14,7 +14,7 @@ function renderCreator(
     busy: false,
     error: null,
     onCreate: vi.fn(),
-    onBack: vi.fn(),
+    backHref: "#/instances",
     ...overrides,
   };
   const view = render(<InstanceCreator {...props} />);
@@ -47,10 +47,19 @@ describe("InstanceCreator", () => {
     });
   });
 
-  it("goes back", () => {
-    const { props } = renderCreator();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(props.onBack).toHaveBeenCalledOnce();
+  it("explains what an instance is and where it is kept", () => {
+    renderCreator();
+    expect(
+      screen.getByText(/An instance is one collection of your decks/),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Location")).toHaveAccessibleDescription(
+      "The folder in your Pod where this instance keeps its decks and study.",
+    );
+  });
+
+  it("links back to the instance picker", () => {
+    renderCreator();
+    expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute("href", "#/instances");
   });
 
   it("disables the form while busy and shows errors", () => {

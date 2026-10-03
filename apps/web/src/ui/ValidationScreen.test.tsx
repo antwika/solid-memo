@@ -67,7 +67,7 @@ describe("summaryOf", () => {
 describe("ValidationScreen", () => {
   it("lists every document with its subjects and their results", () => {
     render(<ValidationScreen report={report} />);
-    expect(screen.getByRole("status")).toHaveTextContent("2 violations in 1 document.");
+    expect(screen.getByText("2 violations in 1 document.")).toHaveClass("warning");
     expect(screen.getByText("Not created yet.")).toBeInTheDocument();
     expect(screen.getByText("No subjects.")).toBeInTheDocument();
     const items = screen.getAllByRole("listitem").map((item) => item.textContent);
@@ -77,7 +77,7 @@ describe("ValidationScreen", () => {
     expect(items[3]).toContain("not a Solid Memo subject.");
     const rows = screen.getAllByRole("row").slice(1).map((row) => row.textContent);
     expect(rows).toEqual([
-      "violationhttp://purl.org/dc/terms/titleLess than 1 values",
+      "violationhttp://purl.org/dc/terms/title (opens in a new tab)Less than 1 values",
       "violation(the subject)Value does not match patternodd",
     ]);
   });
@@ -105,7 +105,7 @@ describe("ValidationScreen", () => {
         }}
       />,
     );
-    expect(screen.getByRole("status")).toHaveTextContent("1 violation in 1 document.");
+    expect(screen.getByText("1 violation in 1 document.")).toHaveClass("warning");
     expect(screen.getByRole("listitem")).toHaveTextContent("not a Solid Memo subject; DCAT-AP says:");
     expect(screen.getAllByRole("row")[1]).toHaveTextContent("DCAT-AP: Class constraint failed.");
   });
@@ -116,8 +116,13 @@ describe("ValidationScreen", () => {
         report={{ instanceUrl: INSTANCE, violationCount: 0, conforms: true, documents: [report.documents[1]] }}
       />,
     );
-    expect(screen.getByRole("status")).toHaveTextContent("The 1 document conforms.");
-    expect(screen.getByRole("status")).toHaveClass("hint");
+    expect(screen.getByText("The 1 document conforms.")).toHaveClass("hint");
+  });
+
+  it("leaves out the summary for a screen that announces it itself", () => {
+    render(<ValidationScreen report={report} summary={false} />);
+    expect(screen.queryByText("2 violations in 1 document.")).toBeNull();
+    expect(screen.getByText("Not created yet.")).toBeInTheDocument();
   });
 
   it("speaks Swedish", () => {
@@ -126,7 +131,7 @@ describe("ValidationScreen", () => {
         <ValidationScreen report={report} />
       </I18nProvider>,
     );
-    expect(screen.getByRole("status")).toHaveTextContent("2 överträdelser i 1 dokument.");
+    expect(screen.getByText("2 överträdelser i 1 dokument.")).toHaveClass("warning");
     expect(screen.getByText("Inte skapat än.")).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")[2]).toHaveTextContent("formatet deck 3 är nyare än vad appen känner till");
     expect(screen.getAllByRole("columnheader")[0]).toHaveTextContent("Allvarlighetsgrad");

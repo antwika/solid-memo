@@ -36,6 +36,11 @@ describe("StoragePicker", () => {
     ).toBeInTheDocument();
   });
 
+  it("says what a storage is, under its heading", () => {
+    renderPicker();
+    expect(screen.getByText(/^A storage is a place in your Pod/)).toHaveClass("hint");
+  });
+
   it("selects a storage on click", () => {
     const { props } = renderPicker();
     fireEvent.click(

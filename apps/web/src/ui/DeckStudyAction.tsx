@@ -33,8 +33,10 @@ export function DeckStudyAction({
     return loading ? (
       <>
         <span class="hint study-skeleton" aria-hidden="true" />
-        <span class="study-loading" role="status" aria-label={t("deckStudyAction.checking")}>
+        {/* Read when browsing the row; not a status, as one a row would only clutter the list. */}
+        <span class="study-loading">
           <LoadingDots />
+          <span class="visually-hidden">{t("deckStudyAction.checking")}</span>
         </span>
       </>
     ) : null;

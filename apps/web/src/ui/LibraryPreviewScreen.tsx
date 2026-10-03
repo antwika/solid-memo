@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import {
   promptSides,
   type CardContent,
@@ -20,6 +20,7 @@ export interface PreviewPrompt {
  */
 export function LibraryPreviewScreen({
   deckName,
+  deckLang,
   deckHref,
   prompt,
   turn,
@@ -27,6 +28,8 @@ export function LibraryPreviewScreen({
   onExit,
 }: {
   deckName: string;
+  /** The language the deck's name is in, when not the page's (readerLang). */
+  deckLang?: string;
   /** URL of the deck's page; its name links there. */
   deckHref: string;
   /** null when the deck has no cards. */
@@ -41,7 +44,7 @@ export function LibraryPreviewScreen({
     <section>
       <header>
         <h2>
-          {tx("libraryPreview.heading", { deck: <a href={deckHref}>{deckName}</a> })}
+          {tx("libraryPreview.heading", { deck: <a href={deckHref} lang={deckLang}>{deckName}</a> })}
         </h2>
         <button onClick={onExit}>{t("libraryPreview.back")}</button>
       </header>
@@ -57,7 +60,11 @@ export function LibraryPreviewScreen({
   );
 }
 
-/** The card shown: the side asked up, the other under a Reveal button. */
+/**
+ * The card shown: the side asked up, the other under a Reveal button.
+ * As in study, the focus goes to the question when a card comes up and
+ * to the answer once revealed, Next card a Tab after it.
+ */
 function PreviewCard({
   prompt,
   onNext,
@@ -68,13 +75,26 @@ function PreviewCard({
   const { t } = useI18n();
   const [revealed, setRevealed] = useState(false);
   const { question, answer } = promptSides(prompt);
+  const questionRef = useRef<HTMLDivElement>(null);
+  const answerRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    questionRef.current!.focus();
+  }, []);
+  useLayoutEffect(() => {
+    if (revealed) answerRef.current!.focus();
+  }, [revealed]);
 
   return (
     <div class="practice-card">
-      <CardFace {...question} note={revealed ? question.note : undefined} role="question" />
+      <div ref={questionRef} class="study-face" tabIndex={-1}>
+        <CardFace {...question} note={revealed ? question.note : undefined} role="question" />
+      </div>
       {revealed ? (
         <>
-          <CardFace {...answer} role="answer" />
+          <div ref={answerRef} class="study-face" tabIndex={-1}>
+            <CardFace {...answer} role="answer" />
+          </div>
           <button class="primary" onClick={onNext}>
             {t("libraryPreview.nextCard")}
           </button>

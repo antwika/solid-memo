@@ -4,6 +4,8 @@ import { routeToHash, type RouteRef } from "./router";
 /** One step of the trail. The last crumb is the current page. */
 export interface Crumb {
   label: string;
+  /** The language a deck's or card's name is in, when not the page's (readerLang). */
+  lang?: string;
   route: RouteRef;
 }
 
@@ -17,6 +19,11 @@ export interface CrumbNames {
   libraryDeck: string;
   /** Front of the route's library card; read for a library card's page. */
   libraryCard?: string;
+  /** The language each name above is in, when not the page's. */
+  deckLang?: string;
+  cardLang?: string;
+  libraryDeckLang?: string;
+  libraryCardLang?: string;
 }
 
 /**
@@ -59,6 +66,7 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames, t: I18n["t"])
   ) {
     const libraryDeck: Crumb = {
       label: names.libraryDeck,
+      lang: names.libraryDeckLang,
       route: {
         screen: "libraryDeck",
         instanceUrl: route.instanceUrl,
@@ -75,7 +83,7 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames, t: I18n["t"])
           libraryDeckUrl: route.libraryDeckUrl,
         },
       };
-      return [decks, library, libraryDeck, cards, { label: names.libraryCard ?? "", route }];
+      return [decks, library, libraryDeck, cards, { label: names.libraryCard ?? "", lang: names.libraryCardLang, route }];
     }
     return [
       decks,
@@ -96,6 +104,7 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames, t: I18n["t"])
 
   const deck: Crumb = {
     label: names.deck,
+    lang: names.deckLang,
     route: {
       screen: "deckDetail",
       instanceUrl: route.instanceUrl,
@@ -120,7 +129,7 @@ export function breadcrumbsFor(route: RouteRef, names: CrumbNames, t: I18n["t"])
     case "cardCreator":
       return [decks, deck, browser, { label: t("breadcrumbs.cardCreator"), route }];
     case "card":
-      return [decks, deck, browser, { label: names.card, route }];
+      return [decks, deck, browser, { label: names.card, lang: names.cardLang, route }];
     case "study":
       return [decks, deck, { label: t("breadcrumbs.study"), route }];
   }
@@ -136,6 +145,7 @@ export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
             <a
               href={routeToHash(crumb.route)}
               aria-current={index === crumbs.length - 1 ? "page" : undefined}
+              lang={crumb.lang}
             >
               {crumb.label}
             </a>

@@ -22,21 +22,27 @@
       "frontToBack": "Framsida → baksida",
       "backToFront": "Baksida → framsida",
       "bidirectional": "Åt båda hållen"
-    }
+    },
+    "networkError": "Kunde inte nå din Pod. Kontrollera anslutningen och försök igen.",
+    "unexpectedError": "Något gick fel. Försök igen, eller läs in sidan på nytt. Detaljer (på engelska): {detail}",
+    "editingLanguage": "Du redigerar texten på {language}. Översättningarna ändras inte.",
+    "editingUntagged": "Du redigerar texten utan angivet språk. Översättningarna ändras inte.",
+    "technicalDetails": "Tekniska detaljer",
+    "opensInNewTab": "(öppnas i en ny flik)"
   },
   "footer": {
     "createdBy": "Skapad av {author}",
     "version": "Version {version}"
   },
   "addCardForm": {
-    "submitButton": "Lägg till kort"
+    "submitButton": "Lägg till kort",
+    "added": "Kortet har lagts till."
   },
   "app": {
     "restoringSession": "Återställer sessionen…",
-    "illustrationAlt": "Illustration för Solid Memo",
+    "skipToContent": "Hoppa till innehållet",
     "tagline": "Flashcards med intervallrepetition som bor i din egen Solid Pod.",
     "sessionExpired": "Din session har gått ut. Logga in igen.",
-    "logoAlt": "Solid Memo — tillbaka till start",
     "loggedInAs": "Inloggad som {name}",
     "logOut": "Logga ut",
     "guestLine": "Du provar Solid Memo som gäst: dina studier sparas bara i den här webbläsaren.",
@@ -47,12 +53,16 @@
     "discardYes": "Radera",
     "cancel": "Avbryt",
     "loginToKeep": "Logga in för att behålla dina studier: när du är inne erbjuder Solid Memo att flytta dem till din pod.",
-    "backToStudy": "Tillbaka till mina studier"
+    "backToStudy": "Tillbaka till mina studier",
+    "documentTitle": "Solid Memo",
+    "landingTitle": "Logga in",
+    "connectingTitle": "Ansluter din pod"
   },
   "backup": {
     "heading": "Föregående version",
-    "kept": "Den senaste formatuppdateringen sparade dina data som de var innan på {link}.",
-    "keptOn": "Den senaste formatuppdateringen sparade dina data som de var innan ({date}) på {link}.",
+    "kept": "Den senaste formatuppdateringen sparade dina data som de var innan, i {link}.",
+    "keptOn": "Den senaste formatuppdateringen sparade dina data som de var innan ({date}), i {link}.",
+    "folder": "en mapp med säkerhetskopian i din Pod",
     "restoreConfirm": "Gå tillbaka till den föregående versionen av {name}? Det du har studerat sedan uppdateringen försvinner med den uppdaterade versionen.",
     "restore": "Återställ föregående version",
     "restoring": "Återställer…",
@@ -79,19 +89,23 @@
   },
   "browser": {
     "heading": "Bläddra: {deck}",
+    "intro": "Bläddra visar alla kort i kortleken. Här lägger du till, redigerar och tar ur bruk kort, och väljer hur kortleken studeras.",
     "addCardButton": "Lägg till kort",
     "directionLegend": "Studieriktning",
     "bidirectionalHint": "Varje kort frågas åt båda hållen, och varje riktning schemaläggs för sig.",
     "directionHint": "Ändra när du vill; det du har lärt dig åt varje håll sparas.",
     "empty": "Inga kort i den här kortleken än.",
     "allRetired": "Alla kort i den här kortleken är ur bruk.",
-    "pageHint": "Kort {first}–{last} av {total}. Klicka på ett kort för att öppna det.",
-    "openHint": "Klicka på ett kort för att öppna det.",
+    "pageHint": "Kort {first}–{last} av {total}. Öppna ett kort för att redigera det.",
+    "openHint": "Öppna ett kort för att redigera det.",
     "frontColumn": "Framsida",
     "backColumn": "Baksida",
+    "actionsColumn": "Åtgärder",
     "removeButton": "Ta bort",
+    "removeCardLabel": "Ta bort kortet {card}",
     "removeConfirm": "Ta bort kortet ”{card}”? Det går inte att ångra.",
-    "loading": "Läser in kort…"
+    "loading": "Läser in kort…",
+    "removed": "Tog bort kortet ”{card}”."
   },
   "card": {
     "heading": "Kort",
@@ -103,17 +117,21 @@
   "cardContentFields": {
     "front": "Framsida",
     "frontPlaceholder": "Fråga eller uppmaning",
-    "frontImage": "Bild på framsidan (URL)",
-    "imagePlaceholder": "https://… (valfritt)",
-    "frontNote": "Anteckning på framsidan",
-    "frontNotePlaceholder": "Visas under framsidan när svaret har visats (valfritt)",
-    "backLabel": "Etikett",
-    "backLabelPlaceholder": "Visas ovanför baksidan, t.ex. vilken sorts svar det är (valfritt)",
+    "frontImage": "Bild på framsidan (URL, valfritt)",
+    "frontImageDescription": "Bildbeskrivning på framsidan (valfritt)",
+    "imagePlaceholder": "https://…",
+    "imageDescriptionHint": "Läses upp i stället för bilden för den som inte kan se den. Beskriv vad den visar utan att avslöja svaret.",
+    "frontNote": "Anteckning på framsidan (valfritt)",
+    "frontNoteHint": "Visas under framsidan när svaret har visats.",
+    "backLabel": "Etikett (valfritt)",
+    "backLabelHint": "Visas ovanför baksidan, t.ex. vilken sorts svar det är.",
     "back": "Baksida",
     "backPlaceholder": "Svar",
-    "backImage": "Bild på baksidan (URL)",
-    "backNote": "Anteckning på baksidan",
-    "backNotePlaceholder": "Visas under baksidan när svaret har visats (valfritt)"
+    "backImage": "Bild på baksidan (URL, valfritt)",
+    "backImageDescription": "Bildbeskrivning på baksidan (valfritt)",
+    "backNote": "Anteckning på baksidan (valfritt)",
+    "backNoteHint": "Visas under baksidan när svaret har visats.",
+    "sidesHint": "Varje sida behöver text, en bild eller båda."
   },
   "cardCreator": {
     "heading": "Nytt kort",
@@ -123,11 +141,16 @@
   "cardFace": {
     "frontPictureAlt": "Bild på kortets framsida",
     "backPictureAlt": "Bild på kortets baksida",
-    "notWebUrl": "Bilden visas inte: dess adress är ingen webbadress."
+    "pictureFor": "Bild till: {back}",
+    "notWebUrl": "Bilden visas inte: dess adress är ingen webbadress.",
+    "front": "Framsida",
+    "back": "Baksida",
+    "question": "Fråga",
+    "answer": "Svar"
   },
   "dataCheckNotice": {
     "region": "Datakontroll",
-    "heading": "Vissa data i {name} uppfyller inte Solid Memos former.",
+    "heading": "Vissa data i {name} har inte det format Solid Memo förväntar sig.",
     "blockInstance": "Solid Memo använder inte den här instansen förrän den är reparerad.",
     "restKeepsWorking": "Resten fungerar som vanligt.",
     "setAside": {
@@ -145,9 +168,9 @@
     "keywordsLine": "Nyckelord: {keywords}",
     "describeButton": "Beskriv kortleken",
     "description": "Beskrivning",
-    "topics": "Ämnen",
-    "keywords": "Nyckelord",
-    "keywordsPlaceholder": "Separerade med kommatecken",
+    "topics": "Ämnen (valfritt)",
+    "keywords": "Nyckelord (valfritt)",
+    "keywordsHint": "Separera nyckelorden med kommatecken.",
     "saveButton": "Spara beskrivning",
     "cancelLabel": "Avbryt beskrivningen",
     "cancelButton": "Avbryt"
@@ -256,18 +279,22 @@
     "statistics": "Statistik",
     "preferences": "Inställningar",
     "switch": "Byt instans",
-    "inBrowser": "Sparas i den här webbläsaren"
+    "inBrowser": "Sparas i den här webbläsaren",
+    "openInPod": "Öppna i din Pod",
+    "label": "Instans"
   },
   "instanceCreator": {
     "heading": "Ny instans av Solid Memo",
     "name": "Namn",
     "namePlaceholder": "Min instans",
     "location": "Plats",
+    "locationHint": "Mappen i din Pod där den här instansen sparar sina kortlekar och studier.",
     "create": "Skapa instans",
     "back": "Tillbaka"
   },
   "instancePicker": {
     "heading": "Välj en instans av Solid Memo",
+    "intro": "En instans är en samling av dina kortlekar och studier, sparad i en mapp i din Pod. De flesta behöver bara en.",
     "empty": "Inga instanser är registrerade än.",
     "deleteConfirm": "Ta bort instansen ”{name}” med alla dess kortlekar och kort? Det går inte att ångra.",
     "deleteLabel": "Ta bort instansen {name}",
@@ -275,7 +302,8 @@
     "newInstance": "Ny instans…",
     "attachSummary": "Lägg till en befintlig instans via URL",
     "attachUrl": "URL till instansens container",
-    "attach": "Lägg till"
+    "attach": "Lägg till",
+    "deleted": "Tog bort instansen ”{name}”."
   },
   "instanceUpdate": {
     "confirmRegion": "Starta uppdateringen",
@@ -285,7 +313,6 @@
     "notNow": "Inte nu",
     "progressRegion": "Uppdaterar",
     "running": "{step}…",
-    "runningCount": "{step}… ({done} av {total})",
     "progressLabel": "Uppdateringens förlopp",
     "keepOpen": "Håll sidan öppen tills uppdateringen är klar.",
     "step": {
@@ -340,7 +367,7 @@
       "one": "{count} kort.",
       "other": "{count} kort."
     },
-    "hint": "Klicka på ett kort för att öppna det. Importera kortleken för att studera eller redigera korten.",
+    "hint": "Öppna ett kort för att se hela det. Importera kortleken för att studera eller redigera korten.",
     "front": "Framsida",
     "back": "Baksida",
     "loading": "Läser in kort…"
@@ -393,12 +420,12 @@
   },
   "stepProgress": {
     "done": "klart",
-    "current": "pågår"
+    "current": "pågår",
+    "count": "{done} av {total}"
   },
   "deckUpgrade": {
     "progressRegion": "Uppdaterar kortleken",
     "running": "{step}…",
-    "runningCount": "{step}… ({done} av {total})",
     "progressLabel": "Uppdateringens förlopp",
     "keepOpen": "Håll sidan öppen tills uppdateringen är klar. Kortleken byts över först när allt har kontrollerats.",
     "step": {
@@ -550,7 +577,6 @@
     "back": "Tillbaka",
     "progressRegion": "Flyttar dina studier",
     "running": "{step}…",
-    "runningCount": "{step}… ({done} av {total})",
     "progressLabel": "Flyttens förlopp",
     "keepOpen": "Håll sidan öppen tills flytten är klar.",
     "step": {
@@ -605,11 +631,12 @@
     "newCardsPerDay": "Nya kort per dag",
     "maxReviewsPerDay": "Högst antal repetitioner per dag",
     "dayBoundaryHour": "Dagen börjar (timme)",
+    "dayBoundaryHint": "En timme från 0 till 23 enligt 24-timmarsklockan: då börjar en ny studiedag, med nya kort och repetitioner.",
     "answerScale": {
       "legend": "Svarsknappar",
       "sm2": {
         "label": "Skala 0 till 5",
-        "hint": "Alla SM-2-betyg, från 0 (helt borta) till 5 (lätt)."
+        "hint": "Alla betyg i SuperMemo-2 (SM-2), metoden som schemalägger dina repetitioner: från 0 (inget minne alls) till 5 (lätt)."
       },
       "minimal": {
         "label": "Igen · Svårt · Bra · Lätt",
@@ -640,6 +667,7 @@
   },
   "registrationTargetChooser": {
     "legend": "Registrera i",
+    "intro": "Ett typindex är en lista i din profil som talar om för appar var dina data finns. Bara du kan se ett privat typindex.",
     "noPrivateIndex": "Din profil har inget privat typindex än. Solid Memo kan skapa ett (rekommenderas), eller registrera i ditt publika typindex i stället — publika registreringar syns för alla som kan läsa din profil.",
     "private": "Privat typindex",
     "privateCreated": "Privat typindex (skapas)",
@@ -678,6 +706,7 @@
   },
   "storagePicker": {
     "heading": "Välj en lagringsplats",
+    "intro": "En lagringsplats är ett ställe i din Pod där Solid Memo kan ha sin mapp. Oftast finns det bara en: din Pod själv.",
     "empty": "Ingen lagringsplats hittades för ditt WebID. Ange rot-URL:en till din Pod nedan.",
     "source": {
       "profile": "från din profil",
@@ -693,7 +722,13 @@
     "nothingToday": "Inget att studera idag — kom tillbaka i morgon!",
     "finished": "Studiepasset är klart — alla kort är repeterade.",
     "position": "Kort {position} av {total}",
+    "putBack": "Du får se det förra kortet igen senare i studiepasset.",
     "reveal": "Visa svar",
+    "gradePrompt": "Hur väl mindes du det?",
+    "keys": {
+      "reveal": "Tryck på mellanslag för att visa svaret.",
+      "grade": "Tryck {first} till {last} för att svara."
+    },
     "preparing": "Förbereder ditt studiepass…",
     "quality": {
       "blackout": "0 — Helt borta",
@@ -805,47 +840,51 @@
     "webIdNotHttps": "Ett WebID måste börja med https://.",
     "webIdWithCredentials": "Ett WebID får inte innehålla användarnamn eller lösenord.",
     "providerNotHttps": "En identitetsleverantör måste ha en https://-adress.",
-    "webIdNoSubject": "Hittade inget subjekt <{webId}> i WebID-dokumentet.",
-    "webIdNoIssuer": "WebID-dokumentet anger ingen solid:oidcIssuer för <{webId}>.",
-    "webIdIssuerNotHttps": "Den solid:oidcIssuer som anges för <{webId}> är ingen giltig https://-adress.",
-    "profileNoSubject": "Hittade inget subjekt <{webId}> i profildokumentet.",
-    "privateTypeIndexNotLinked": "Kunde inte länka det privata typindexet <{index}> från något profildokument:\n{failures}",
-    "publicTypeIndexNotLinked": "Kunde inte länka det publika typindexet <{index}> från något profildokument:\n{failures}",
-    "storageInaccessible": "Kommer inte åt <{url}> (HTTP {status}).",
-    "notAnInstanceNoMeta": "<{url}> är ingen instans av Solid Memo (meta.ttl går inte att läsa).",
-    "notAnInstanceNoSubject": "<{url}> är ingen instans av Solid Memo (meta.ttl saknar subjektet #it).",
-    "notRegistered": "<{url}> är inte registrerad i något typindex; det finns inget att byta.",
-    "noMetaToUpdate": "<{url}> har inget metadokument att uppdatera.",
+    "webIdNoSubject": "Din WebID-profil beskriver inte dig. Kontrollera att du skrev ditt WebID exakt, med delen efter #, eller välj din leverantör i stället.",
+    "webIdNoIssuer": "Din WebID-profil anger inte var du loggar in. Välj din leverantör i stället för att ange ditt WebID.",
+    "webIdIssuerNotHttps": "Din WebID-profil anger en plats att logga in på som inte är en säker https://-adress. Välj din leverantör i stället för att ange ditt WebID.",
+    "profileNoSubject": "Din profil beskriver inte dig, så Solid Memo kan inte anteckna i den var dina data finns. Kontrollera profilen hos din Pod-leverantör och försök sedan igen.",
+    "privateTypeIndexNotLinked": "Solid Memo kunde inte länka sin privata lista över dina data från din profil. Kontrollera att Solid Memo får ändra din profil och försök sedan igen.",
+    "publicTypeIndexNotLinked": "Solid Memo kunde inte länka sin publika lista över dina data från din profil. Kontrollera att Solid Memo får ändra din profil och försök sedan igen.",
+    "storageInaccessible": "Solid Memo kommer inte åt den lagringen. Kontrollera adressen och att du är inloggad med kontot som äger den.",
+    "notAnInstanceNoMeta": "Den adressen är ingen instans av Solid Memo. Kontrollera att du klistrade in adressen till en instans mapp, som slutar med /.",
+    "notAnInstanceNoSubject": "Den mappen är ingen instans av Solid Memo: dess beskrivning går inte att läsa. Kontrollera att du klistrade in rätt adress.",
+    "notRegistered": "Den instansen finns inte längre i din lista över instanser, så det finns inget att byta. Läs in sidan igen och försök på nytt.",
+    "noMetaToUpdate": "Den här instansen har ingen beskrivning att uppdatera. Läs in sidan igen och försök på nytt.",
     "noBackup": "{instance} har ingen säkerhetskopia att återställa.",
     "updatedCopyInvalid": {
-      "one": "Den uppdaterade kopian uppfyller inte Solid Memos former ({count} avvikelse); dina data lämnas som de var.",
-      "other": "Den uppdaterade kopian uppfyller inte Solid Memos former ({count} avvikelser); dina data lämnas som de var."
+      "one": "Den uppdaterade kopian har inte det format Solid Memo förväntar sig ({count} problem), så dina data lämnas som de var. Försök igen senare.",
+      "other": "Den uppdaterade kopian har inte det format Solid Memo förväntar sig ({count} problem), så dina data lämnas som de var. Försök igen senare."
     },
     "movedCopyInvalid": {
-      "one": "Kopian i din pod uppfyller inte Solid Memos former ({count} avvikelse); dina studier lämnas som de var.",
-      "other": "Kopian i din pod uppfyller inte Solid Memos former ({count} avvikelser); dina studier lämnas som de var."
+      "one": "Kopian i din Pod har inte det format Solid Memo förväntar sig ({count} problem), så dina studier lämnas som de var. Försök igen senare.",
+      "other": "Kopian i din Pod har inte det format Solid Memo förväntar sig ({count} problem), så dina studier lämnas som de var. Försök igen senare."
     },
-    "guestUrlsLeft": "<{url}> nämner fortfarande gästens pod efter flytten; dina studier lämnas som de var.",
-    "instanceChangedDuringCopy": "Instansen ändrades medan den kopierades (i en annan flik eller app?); försök igen.",
-    "resourceChangedDuringCopy": "<{url}> ändrades medan den kopierades (i en annan flik eller app?); försök igen.",
-    "instanceBeingUpdated": "Solid Memo uppdaterar instansen på {container} och skriver inget till den förrän uppdateringen är klar (nekades: {method} {url}).",
-    "deckChangedSinceOffer": "Kortleken ändrades efter att uppdateringen erbjöds (i en annan flik eller app?); inget ändrades. Titta på erbjudandet igen.",
-    "upgradedCardsDiffer": "Podden innehåller inte de nya korten så som Solid Memo skrev dem till <{url}>.",
-    "upgradedReviewsDiffer": "Podden innehåller inte repetitionslägena så som Solid Memo skrev dem till <{url}>.",
-    "deckChangedDuringUpgrade": "<{url}> ändrades medan kortleken uppdaterades (i en annan flik eller app?).",
-    "deckBeingUpgraded": "Solid Memo uppdaterar kortleken i {document} och skriver inget till den förrän uppdateringen är klar (nekades: {method} {url}).",
-    "changedElsewhere": "{url} ändrades någon annanstans (i en annan flik eller app?) efter att Solid Memo läste den, så inget sparades. Läs in sidan igen och försök på nytt.",
-    "createdElsewhere": "{url} skapades någon annanstans (i en annan flik eller app?) just när Solid Memo skulle skapa den, så inget sparades. Läs in sidan igen och försök på nytt.",
-    "alreadyExists": "<{url}> finns redan.",
-    "cannotCheck": "Kunde inte kontrollera <{url}>: {status}.",
-    "accessControlUnknown": "Din Pod anger inte var åtkomstkontrollen för <{url}> ska ligga.",
-    "dataNotConforming": "Solid Memo sparade inte data som inte uppfyller dess former:\n  {problems}",
-    "deckGone": "Kortleken <{deck}> finns inte längre.",
-    "cardsDocumentGone": "Kortdokumentet för <{deck}> finns inte längre.",
-    "cardGone": "Kortet <{card}> finns inte längre.",
-    "notADeck": "<{url}> är ingen kortlek från Solid Memo.",
-    "libraryDeckTooNew": "<{url}> är i kortleksformat {version}, nyare än den här appen stöder ({latest}).",
-    "libraryCardTooNew": "<{card}> i <{url}> är i kortformat {version}, nyare än den här appen stöder ({latest})."
+    "guestUrlsLeft": "Kopian i din Pod pekar fortfarande på gästens studier, så dina studier lämnas som de var. Försök igen.",
+    "instanceChangedDuringCopy": "Instansen ändrades medan den kopierades, kanske i en annan flik eller app. Försök igen.",
+    "resourceChangedDuringCopy": "En del av instansen ändrades medan den kopierades, kanske i en annan flik eller app. Försök igen.",
+    "instanceBeingUpdated": "Solid Memo uppdaterar den här instansen och sparar inget i den förrän uppdateringen är klar. Vänta tills uppdateringen är klar och försök sedan igen.",
+    "deckChangedSinceOffer": "Kortleken ändrades efter att uppdateringen erbjöds, kanske i en annan flik eller app, så inget ändrades. Titta på erbjudandet igen.",
+    "upgradedCardsDiffer": "Din Pod innehåller inte de nya korten så som Solid Memo sparade dem. Försök uppdatera igen.",
+    "upgradedReviewsDiffer": "Din Pod innehåller inte dina framsteg så som Solid Memo sparade dem. Försök uppdatera igen.",
+    "deckChangedDuringUpgrade": "Kortleken ändrades medan den uppdaterades, kanske i en annan flik eller app. Försök igen.",
+    "deckBeingUpgraded": "Solid Memo uppdaterar den här kortleken och sparar inget i den förrän uppdateringen är klar. Vänta tills uppdateringen är klar och försök sedan igen.",
+    "changedElsewhere": "Det här ändrades någon annanstans, kanske i en annan flik eller app, efter att Solid Memo läste det, så inget sparades. Läs in sidan igen och försök på nytt.",
+    "createdElsewhere": "Det här skapades någon annanstans, kanske i en annan flik eller app, just när Solid Memo skulle skapa det, så inget sparades. Läs in sidan igen och försök på nytt.",
+    "alreadyExists": "Något finns redan på den platsen i din Pod. Välj en annan plats.",
+    "cannotCheck": "Solid Memo kunde inte kontrollera din Pod. Kontrollera anslutningen och försök igen.",
+    "accessControlUnknown": "Din Pod anger inte hur man bestämmer vem som får öppna kopian, så Solid Memo kan inte behålla din delning som den var. Inget ändrades.",
+    "dataNotConforming": "Solid Memo sparade inte det här: det har inte det format Solid Memo förväntar sig. Inget ändrades. Läs in sidan igen och försök på nytt.",
+    "deckGone": "Kortleken ”{deck}” finns inte längre. Kanske togs den bort i en annan flik eller app.",
+    "cardsDocumentGone": "Korten i ”{deck}” går inte längre att hitta. Läs in sidan igen och försök på nytt.",
+    "cardGone": "Kortet finns inte längre. Kanske togs det bort i en annan flik eller app. Läs in sidan igen.",
+    "notADeck": "Det är ingen kortlek från Solid Memo, så den kan inte läggas till. Välj en annan kortlek.",
+    "libraryDeckTooNew": "Kortleken har ett nyare format än den här versionen av Solid Memo kan läsa. Läs in sidan igen för att få den senaste versionen.",
+    "libraryCardTooNew": "Ett kort i kortleken har ett nyare format än den här versionen av Solid Memo kan läsa. Läs in sidan igen för att få den senaste versionen.",
+    "noGuestPod": "Det finns inga gäststudier på den här enheten.",
+    "guestPodStartFailed": "Gäststudierna på den här enheten gick inte att öppna. Läs in sidan igen och försök på nytt.",
+    "guestStorageAborted": "Webbläsaren vägrade spara en ändring i gäststudierna. Kontrollera att den har plats att spara data och försök sedan igen.",
+    "addFailed": "Solid Memo kunde inte spara i din Pod. Kontrollera anslutningen och försök igen."
   },
   "statistics": {
     "heading": "Statistik",
@@ -874,7 +913,7 @@
     "lastDaysLabel": "Svar var och en av de senaste {count} dagarna.",
     "less": "Färre",
     "more": "Fler",
-    "pointAtDay": "Peka på en dag för att se vad den innehöll.",
+    "pointAtDay": "Peka på en dag för att se vad den innehöll, eller öppna tabellen nedan.",
     "dayDetail": "{date}: {answers}, {introduced} nya, {forgotten} glömda.",
     "dayNothing": "{date}: inget studerat.",
     "answerCount": {

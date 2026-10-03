@@ -55,11 +55,15 @@ function useDayText() {
         });
 }
 
-/** The line under a chart: the day pointed at, or how to point at one. */
+/**
+ * The line under a chart: the day pointed at, or how to point at one.
+ * Not a live region: sweeping the pointer over the grid would read out
+ * every day crossed, and the table below says the same to everyone.
+ */
 function Inspector({ text }: { text: string | null }) {
   const { t } = useI18n();
   return (
-    <p class="chart-inspector hint" aria-live="polite">
+    <p class="chart-inspector hint">
       {text ?? t("statistics.pointAtDay")}
     </p>
   );

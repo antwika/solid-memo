@@ -108,7 +108,7 @@ describe("a guest's study", () => {
     expect(await useCases.restoreSession()).toEqual({ session: GUEST_SESSION, origin: "restored" });
     const [instance] = await useCases.listInstances(GUEST_SESSION);
     expect(instance!.url.startsWith(GUEST_ORIGIN)).toBe(true);
-    const deck = await useCases.createDeck(instance!.url, "Capitals");
+    const deck = await useCases.createDeck(instance!.url, "Capitals", "en");
     await useCases.addCard(deck, { front: { "": "Sweden" }, back: { "": "Stockholm" } });
     const now = new Date();
     const queue = await useCases.getStudyQueue(instance!.url, deck, now);
@@ -125,7 +125,7 @@ describe("a guest's study", () => {
     const { useCases, guestStore, aliceStore } = await app();
     await useCases.startGuest("My study");
     const [guestInstance] = await useCases.listInstances(GUEST_SESSION);
-    const deck = await useCases.createDeck(guestInstance!.url, "Capitals");
+    const deck = await useCases.createDeck(guestInstance!.url, "Capitals", "en");
     await useCases.addCard(deck, { front: { "": "Sweden" }, back: { "": "Stockholm" } });
     const now = new Date();
     const queue = await useCases.getStudyQueue(guestInstance!.url, deck, now);

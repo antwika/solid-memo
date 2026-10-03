@@ -1,6 +1,7 @@
 import type { AppError } from "@solid-memo/domain/appError";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { validateWebId } from "@solid-memo/domain/webId";
+import { ErrorMessage } from "../ErrorMessage";
 import { useI18n } from "../i18n";
 
 export function WebIdForm({
@@ -21,15 +22,18 @@ export function WebIdForm({
   const [invalid, setInvalid] = useState<AppError | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (autoFocus) input.current!.focus();
   }, []);
 
   function handleSubmit(event: Event) {
     event.preventDefault();
+    if (busy) return;
     const validation = validateWebId(webId);
     if (!validation.ok) {
       setInvalid(validation.error);
+      // Back to the field, which now says what is wrong (a click left it).
+      input.current!.focus();
       return;
     }
     onSubmit(validation.webId);
@@ -54,25 +58,25 @@ export function WebIdForm({
           setInvalid(null);
         }}
         aria-invalid={invalid !== null}
-        aria-describedby="webid-help"
+        aria-describedby={invalid === null ? "webid-help" : "webid-error webid-help"}
         disabled={busy}
       />
-      {invalid && (
-        <p class="error" role="alert">
-          {errorText(invalid)}
-        </p>
-      )}
+      <ErrorMessage id="webid-error" error={errorText(invalid)} />
       <p id="webid-help" class="hint">
         {t("webIdForm.help")}
       </p>
       <div class="onboarding-actions">
-        <button type="submit" disabled={busy}>
+        {/* Only aria-disabled while it redirects, so it keeps the focus and its text is heard. */}
+        <button type="submit" aria-disabled={busy}>
           {busy ? t("webIdForm.redirecting") : t("webIdForm.logIn")}
         </button>
         <button type="button" onClick={onBack} disabled={busy}>
           {t("webIdForm.back")}
         </button>
       </div>
+      <p class="visually-hidden" role="status">
+        {busy ? t("webIdForm.redirecting") : ""}
+      </p>
     </form>
   );
 }

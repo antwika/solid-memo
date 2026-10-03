@@ -160,7 +160,7 @@ describe("createSolidStorageGateway", () => {
 
       await expect(
         gateway.probeStorage("https://pod.example/"),
-      ).rejects.toThrow("HTTP 403");
+      ).rejects.toThrow("status: 403");
     });
   });
 });

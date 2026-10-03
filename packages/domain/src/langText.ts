@@ -6,8 +6,8 @@ export type { LangText };
  * Text in several languages, as deck format 4 states titles and
  * descriptions: a language tag (lower case) to the text in that language,
  * one of them English. The app shows the text in the reader's language
- * when there is one, and edits the English text, keeping the other
- * languages as they are.
+ * when there is one, and edits the text in the page's language (else the
+ * English), keeping the other languages as they are.
  */
 
 /** The tag of the English text: "en", or a regional English ("en-gb"). */
@@ -35,16 +35,24 @@ export function english(text: LangText): string | undefined {
 }
 
 /**
- * The text to show a reader who prefers `languages` (most preferred
- * first, as navigator.languages lists them): the first of those the text
- * is in, else the English, else the first language's (by tag).
+ * The tag of the text to show a reader who prefers `languages` (most
+ * preferred first, as navigator.languages lists them): the first of those
+ * the text is in, else the English, else the first language's (by tag);
+ * undefined when the text is in no language. The page marks text in
+ * another language than its own by this tag.
  */
-export function shown(text: LangText, languages: readonly string[] = []): string {
+export function shownTag(text: LangText, languages: readonly string[] = []): string | undefined {
   for (const language of languages) {
     const tag = matchingTag(text, language);
-    if (tag !== undefined) return text[tag];
+    if (tag !== undefined) return tag;
   }
-  return english(text) ?? text[Object.keys(text).sort()[0]] ?? "";
+  return englishTag(text) ?? Object.keys(text).sort()[0];
+}
+
+/** The text to show a reader who prefers `languages`: the one `shownTag` picks; empty when there is none. */
+export function shown(text: LangText, languages: readonly string[] = []): string {
+  const tag = shownTag(text, languages);
+  return tag === undefined ? "" : text[tag];
 }
 
 /**
@@ -52,7 +60,7 @@ export function shown(text: LangText, languages: readonly string[] = []): string
  * (the untagged text of a card side, "", comes first); undefined when the
  * text is in no language.
  */
-function editedTag(text: LangText): string | undefined {
+export function editedTag(text: LangText): string | undefined {
   return englishTag(text) ?? Object.keys(text).sort()[0];
 }
 
@@ -107,17 +115,74 @@ export function sameText(a: LangText | undefined, b: LangText | undefined): bool
   return tags.length === Object.keys(b).length && tags.every((tag) => a[tag] === b[tag]);
 }
 
-/** Untagged text as English: what the app writes for text a user typed. */
+/** Untagged text as English: how a format-3 deck's text reads in format 4. */
 export function inEnglish(value: string): LangText {
   return { en: value };
 }
 
 /**
- * The text with its English replaced by `value` (under the tag it had),
- * every other language kept: an edit in the app changes the English text
- * only, and the translations stay.
+ * Text typed on a page in `locale`, the user's own (a deck's name or
+ * description, a note, a label): what the app knows of its language is
+ * that the user typed it on that page. The formats ask for English text,
+ * so on another page the typed text stands in for it as well, until
+ * someone writes a translation.
  */
-export function withEnglish(text: LangText | undefined, value: string): LangText {
-  const tag = (text === undefined ? undefined : englishTag(text)) ?? "en";
+
+/**
+ * The tag of the text edited on a page in `locale`: that language's,
+ * else the English, else the first by tag; undefined when the text is in
+ * no language.
+ */
+export function typedTag(text: LangText, locale: string): string | undefined {
+  return matchingTag(text, locale) ?? editedTag(text);
+}
+
+/** The text edited on a page in `locale`, as `typedTag` picks it; empty when there is none. */
+export function typedText(text: LangText | undefined, locale: string): string {
+  const tag = text === undefined ? undefined : typedTag(text, locale);
+  return tag === undefined ? "" : text![tag];
+}
+
+/** New text typed on a page in `locale`: in that language, and as the English the formats ask for. */
+export function typedIn(value: string, locale: string): LangText {
+  return { en: value, [locale.toLowerCase()]: value };
+}
+
+/**
+ * The text with what `typedTag` picks replaced by `value`, typed on a page
+ * in `locale`, every other language kept; an English that only stood in
+ * for the replaced text (the same words) is replaced too, as is a missing
+ * one. Blank text is no text: clearing what the reader sees clears the
+ * translations too.
+ */
+export function withTyped(text: LangText | undefined, value: string, locale: string): LangText {
+  if (value.trim() === "") return {};
+  if (text === undefined) return typedIn(value, locale);
+  const tag = typedTag(text, locale) ?? locale.toLowerCase();
+  const en = englishTag(text);
+  const standIn = en === undefined || text[en] === text[tag];
+  return { ...text, [tag]: value, ...(standIn ? { [en ?? "en"]: value } : {}) };
+}
+
+/**
+ * Language-tagged text that needs no English (a picture's description)
+ * with what `typedTag` picks replaced by `value`, typed on a page in
+ * `locale`; new text is in that language. Blank text is no text, as for
+ * `withTyped`.
+ */
+export function withTypedTagged(text: LangText | undefined, value: string, locale: string): LangText {
+  if (value.trim() === "") return {};
+  const tag = (text === undefined ? undefined : typedTag(text, locale)) ?? locale.toLowerCase();
   return { ...text, [tag]: value };
+}
+
+/**
+ * Language-tagged text that needs no English (a picture's description) as
+ * entered: every language's text trimmed and an empty one left out;
+ * undefined when none is left, as when the edited text is cleared.
+ */
+export function tidiedTagged(text: LangText | undefined): LangText | undefined {
+  if (text === undefined) return undefined;
+  const kept = tidiedSideText(text);
+  return Object.keys(kept).length === 0 ? undefined : kept;
 }

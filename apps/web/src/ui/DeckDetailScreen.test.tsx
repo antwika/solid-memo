@@ -21,7 +21,8 @@ function renderScreen(
 ) {
   const props = {
     deck,
-    deckHref: "#/deck?deck=d",
+    preferencesHref: "#/deck-preferences?deck=d",
+    browseHref: "#/browser?deck=d",
     cardCount: 3,
     dueCount: 2,
     newCount: 1,
@@ -29,8 +30,6 @@ function renderScreen(
     busy: false,
     error: null,
     onStudy: vi.fn(),
-    onPreferences: vi.fn(),
-    onBrowse: vi.fn(),
     onResetDay: vi.fn(),
     ...overrides,
   };
@@ -48,7 +47,7 @@ describe("DeckDetailScreen", () => {
       },
     });
     expect(screen.getByText(/By Anton Wiklund/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "CC0 1.0" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "CC0 1.0 (opens in a new tab)" })).toBeInTheDocument();
   });
 
   it("shows a notice, when given one, under the provenance", () => {
@@ -69,12 +68,9 @@ describe("DeckDetailScreen", () => {
     );
   });
 
-  it("links the deck's name to the deck's page", () => {
+  it("names the deck without linking to the page it is on", () => {
     renderScreen();
-    expect(screen.getByRole("link", { name: "Kanji N5" })).toHaveAttribute(
-      "href",
-      "#/deck?deck=d",
-    );
+    expect(screen.queryByRole("link", { name: "Kanji N5" })).toBeNull();
   });
 
   it("shows the deck name and card count", () => {
@@ -192,7 +188,7 @@ describe("DeckDetailScreen", () => {
       renderScreen({ studiedToday: 3, busy: true, error: "reset refused" });
       expect(screen.getByRole("button", { name: "Resetting…" })).toBeDisabled();
       expect(screen.getByRole("button", { name: "Study" })).toBeDisabled();
-      expect(screen.getByText("reset refused")).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toHaveTextContent("reset refused");
     });
   });
 
@@ -202,24 +198,25 @@ describe("DeckDetailScreen", () => {
     expect(props.onStudy).toHaveBeenCalledOnce();
   });
 
-  it("opens the browser", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Browser" }));
-    expect(props.onBrowse).toHaveBeenCalledOnce();
+  it("links to the browser", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Browser" })).toHaveAttribute(
+      "href",
+      "#/browser?deck=d",
+    );
   });
 
-  it("opens the deck's preferences from a button above the Browser's", () => {
-    const { props } = renderScreen();
-    const preferences = screen.getByRole("button", { name: "Deck preferences" });
+  it("links to the deck's preferences above the Browser's link", () => {
+    renderScreen();
+    const preferences = screen.getByRole("link", { name: "Deck preferences" });
     expect(preferences).toHaveTextContent("Preferences");
-    expect(preferences.nextElementSibling).toBe(screen.getByRole("button", { name: "Browser" }));
-    fireEvent.click(preferences);
-    expect(props.onPreferences).toHaveBeenCalledOnce();
+    expect(preferences).toHaveAttribute("href", "#/deck-preferences?deck=d");
+    expect(preferences.nextElementSibling).toBe(screen.getByRole("link", { name: "Browser" }));
   });
 
   it("offers no editing: cards are added and edited in the Browser", () => {
     renderScreen();
-    expect(screen.queryByRole("button", { name: "Add card" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Add card" })).toBeNull();
     expect(
       screen.getByText(/Add, edit or remove cards in the Browser/),
     ).toBeInTheDocument();
@@ -235,7 +232,8 @@ describe("DeckDetailScreen", () => {
       <I18nProvider locale="sv" onChoose={() => undefined}>
         <DeckDetailScreen
           deck={deck}
-          deckHref="#/deck?deck=d"
+          preferencesHref="#/deck-preferences?deck=d"
+          browseHref="#/browser?deck=d"
           cardCount={3}
           dueCount={2}
           newCount={1}
@@ -243,13 +241,13 @@ describe("DeckDetailScreen", () => {
           busy={false}
           error={null}
           onStudy={vi.fn()}
-          onPreferences={vi.fn()}
-          onBrowse={vi.fn()}
           onResetDay={vi.fn()}
         />
       </I18nProvider>,
     );
     expect(screen.getByText("2 kort att repetera idag, och 1 nytt att introducera.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Studera" })).toBeInTheDocument();
+    // An English-only deck's name is marked English on a Swedish page.
+    expect(screen.getByText("Kanji N5")).toHaveAttribute("lang", "en");
   });
 });

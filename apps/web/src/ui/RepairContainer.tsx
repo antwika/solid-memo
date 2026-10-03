@@ -1,11 +1,13 @@
+import { Fragment } from "preact";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { RepairKind, Unrepairable } from "@solid-memo/domain/repair";
 import type { ValidationReport } from "@solid-memo/domain/validation";
+import { ErrorMessage } from "./ErrorMessage";
 import { ExternalLink } from "./ExternalLink";
 import { useI18n, type I18n } from "./i18n";
-import { summaryOf, ValidationScreen } from "./ValidationScreen";
+import { summaryOf, ValidationScreen, ViolationMessage } from "./ValidationScreen";
 
 /** What a repair does, for the user: "Give the deck the default description". */
 function repairLabels(t: I18n["t"]): Record<RepairKind, string> {
@@ -34,7 +36,7 @@ export function RepairContainer({
   instance: Instance;
   report: ValidationReport;
 }) {
-  const { t, tx, errorText, violationText } = useI18n();
+  const { t, tx, errorText } = useI18n();
   const queryClient = useQueryClient();
   const plan = useCases.planRepair(report);
 
@@ -85,7 +87,12 @@ export function RepairContainer({
                 {tx("repair.problem", {
                   subject: <ExternalLink url={problem.subjectUrl} />,
                   document: <ExternalLink url={problem.documentUrl} />,
-                  messages: problem.violations.map(violationText).join(" "),
+                  messages: problem.violations.map((violation, index) => (
+                    <Fragment key={index}>
+                      {index > 0 && " "}
+                      <ViolationMessage violation={violation} />
+                    </Fragment>
+                  )),
                 })}{" "}
                 <button class="danger" onClick={() => remove(problem)} disabled={busy}>
                   {t("repair.removeButton")}
@@ -95,7 +102,7 @@ export function RepairContainer({
           </ul>
         </>
       )}
-      {repairMutation.error && <p class="error">{errorText(repairMutation.error)}</p>}
+      <ErrorMessage error={errorText(repairMutation.error)} />
       <details>
         <summary>{t("repair.fullReport")}</summary>
         <ValidationScreen report={report} />

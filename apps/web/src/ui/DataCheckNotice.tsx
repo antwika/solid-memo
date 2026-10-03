@@ -1,8 +1,10 @@
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { InvalidDataPolicy } from "@solid-memo/domain/invalidDataPolicy";
+import type { LangText } from "@solid-memo/domain/langText";
 import type { ValidationReport } from "@solid-memo/domain/validation";
 import { useI18n } from "./i18n";
+import { ReaderTexts } from "./ReaderText";
 import { RepairContainer } from "./RepairContainer";
 import { routeToHash } from "./router";
 
@@ -23,8 +25,8 @@ export function DataCheckNotice({
   instance: Instance;
   report: ValidationReport;
   policy: InvalidDataPolicy;
-  /** Names of the decks set aside, under "set invalid data aside". */
-  setAside: string[];
+  /** Titles of the decks set aside, under "set invalid data aside". */
+  setAside: LangText[];
 }) {
   const { t, tx } = useI18n();
   const preferences = routeToHash({ screen: "preferences", instanceUrl: instance.url });
@@ -34,7 +36,7 @@ export function DataCheckNotice({
       : policy === "block-subject"
         ? setAside.length === 0
           ? t("dataCheckNotice.restKeepsWorking")
-          : t("dataCheckNotice.setAside", { names: setAside.join(", "), count: setAside.length })
+          : tx("dataCheckNotice.setAside", { names: <ReaderTexts texts={setAside} />, count: setAside.length })
         : t("dataCheckNotice.keepsWorking");
   return (
     <div class="warning data-check" role="region" aria-label={t("dataCheckNotice.region")}>

@@ -3,7 +3,7 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import { isCopyOf, type LibraryDeck } from "@solid-memo/domain/library";
 import { LibraryDeckScreen } from "./LibraryDeckScreen";
-import { libraryDeckHref, libraryPreviewHref } from "./router";
+import { libraryPreviewHref, routeToHash } from "./router";
 import { useI18n } from "./i18n";
 
 /**
@@ -15,14 +15,11 @@ export function LibraryDeckContainer({
   useCases,
   instance,
   deck,
-  onBrowse,
   onDone,
 }: {
   useCases: UseCases;
   instance: Instance;
   deck: LibraryDeck;
-  /** Open the deck's card list. */
-  onBrowse: () => void;
   /** Called after a successful import. */
   onDone: () => void;
 }) {
@@ -48,12 +45,15 @@ export function LibraryDeckContainer({
   return (
     <LibraryDeckScreen
       deck={deck}
-      deckHref={libraryDeckHref(instance.url, deck.seriesUrl)}
+      browseHref={routeToHash({
+        screen: "libraryBrowser",
+        instanceUrl: instance.url,
+        libraryDeckUrl: deck.seriesUrl,
+      })}
       previewHref={libraryPreviewHref(instance.url, deck.seriesUrl)}
       imported={imported}
       busy={importMutation.isPending}
       error={errorText(importMutation.error)}
-      onBrowse={onBrowse}
       onImport={() => importMutation.mutate()}
     />
   );

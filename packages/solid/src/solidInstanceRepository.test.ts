@@ -151,7 +151,7 @@ describe("switchInstance", () => {
     vi.mocked(locateTypeIndexes).mockResolvedValue({ privateIndexUrl: PRIVATE_INDEX, publicIndexUrl: null });
     vi.mocked(switchInstanceRegistrations).mockResolvedValue(false);
     await expect(makeRepository().switchInstance(args)).rejects.toThrow(
-      `<${CONTAINER}> is registered in no type index; there is nothing to switch.`,
+      `That instance is no longer on your list of instances, so there is nothing to switch. Reload the page and try again.\nurl: ${CONTAINER}`,
     );
   });
 });
@@ -348,7 +348,7 @@ describe("attachInstance", () => {
         instanceUrl: CONTAINER,
         registrationTarget: "private",
       }),
-    ).rejects.toThrow("no #it subject");
+    ).rejects.toThrow("its description cannot be read");
   });
 });
 
@@ -502,11 +502,11 @@ describe("readMeta and saveMeta", () => {
   it("refuses to save when the meta document or its subject is missing", async () => {
     vi.mocked(getSolidDataset).mockRejectedValue({ statusCode: 404 });
     await expect(makeRepository().saveMeta(CONTAINER, meta)).rejects.toThrow(
-      `<${CONTAINER}> has no meta document to update.`,
+      `This instance has no description to update. Reload the page and try again.\nurl: ${CONTAINER}`,
     );
     vi.mocked(getSolidDataset).mockResolvedValue(mockSolidDatasetFrom(META));
     await expect(makeRepository().saveMeta(CONTAINER, meta)).rejects.toThrow(
-      "has no meta document to update.",
+      "has no description to update.",
     );
     expect(saveSolidDatasetAt).not.toHaveBeenCalled();
   });

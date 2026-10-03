@@ -1,5 +1,5 @@
 import { AppError } from "./appError";
-import { shown, tidied, tidiedSideText, type LangText } from "./langText";
+import { shown, tidied, tidiedSideText, tidiedTagged, type LangText } from "./langText";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { isHttpUrl } from "./webId";
 
@@ -32,6 +32,10 @@ import { isHttpUrl } from "./webId";
  * no longer uses rather than removing it, so a copy keeps the card and
  * its review state. A format-2 reader would go on studying a retired
  * card, which is why the version moved.
+ *
+ * Card format 4 later gained a description of each side's picture
+ * (`sm:frontImageDescription` / `sm:backImageDescription`) without a
+ * version bump: an older reader ignores it and shows the picture as before.
  */
 export const DECK_FORMAT_VERSION: number = LATEST_VERSION.deck;
 export const CARD_FORMAT_VERSION: number = LATEST_VERSION.card;
@@ -86,6 +90,8 @@ export interface CardSide {
   /** The side's text in every language it is in; no language when the side is a picture only. */
   text: LangText;
   imageUrl?: string;
+  /** What the picture shows, in words: its text alternative, when stated. */
+  imageDescription?: LangText;
   /** The back's label, on the back whichever way it is studied: how the answer relates to the front. */
   label?: LangText;
   /** The side's note, under its text: shown once the answer is revealed, never while asking. */
@@ -108,12 +114,14 @@ export function promptSides(prompt: {
     side: "front",
     text: card.front,
     ...(card.frontImageUrl === undefined ? {} : { imageUrl: card.frontImageUrl }),
+    ...(card.frontImageDescription === undefined ? {} : { imageDescription: card.frontImageDescription }),
     ...(card.frontNote === undefined ? {} : { note: card.frontNote }),
   };
   const back: CardSide = {
     side: "back",
     text: card.back,
     ...(card.backImageUrl === undefined ? {} : { imageUrl: card.backImageUrl }),
+    ...(card.backImageDescription === undefined ? {} : { imageDescription: card.backImageDescription }),
     ...(card.backLabel === undefined ? {} : { label: card.backLabel }),
     ...(card.backNote === undefined ? {} : { note: card.backNote }),
   };
@@ -182,6 +190,12 @@ export interface CardContent {
   /** URL of a picture shown on the front, above any text. */
   frontImageUrl?: string;
   /**
+   * What the front's picture shows, in words: its text alternative for
+   * whoever cannot see it. In every language it is stated in, none
+   * required. While the front is asked it should not give the answer away.
+   */
+  frontImageDescription?: LangText;
+  /**
    * A short note under the front's text ("Out of use"), shown once the
    * answer is revealed, so it never gives it away. In every language it
    * is stated in, one of them English. Card format 3.
@@ -189,6 +203,8 @@ export interface CardContent {
   frontNote?: LangText;
   /** URL of a picture shown on the back, above any text. */
   backImageUrl?: string;
+  /** What the back's picture shows, in words, likewise. */
+  backImageDescription?: LangText;
   /**
    * A short label above the back's text that says how the answer relates
    * to the front ("Replaced by", "Capital"), shown with the back,
@@ -234,7 +250,8 @@ export type CardContentValidation =
 /**
  * Validate and normalize card content as entered: text is trimmed, an
  * empty image field is none, a label or note without English text is
- * none, and each side needs text or a picture.
+ * none, as is a picture description with no text or no picture to
+ * describe, and each side needs text or a picture.
  * A picture must be an http(s) URL — it is shown to whoever studies the
  * card, so nothing else may end up in an `<img>`.
  */
@@ -245,6 +262,8 @@ export function validateCardContent(
   const back = tidiedSideText(input.back);
   const frontImageUrl = normalizeImageUrl(input.frontImageUrl);
   const backImageUrl = normalizeImageUrl(input.backImageUrl);
+  const frontImageDescription = frontImageUrl === undefined ? undefined : tidiedTagged(input.frontImageDescription);
+  const backImageDescription = backImageUrl === undefined ? undefined : tidiedTagged(input.backImageDescription);
   const frontNote = tidied(input.frontNote);
   const backLabel = tidied(input.backLabel);
   const backNote = tidied(input.backNote);
@@ -267,6 +286,8 @@ export function validateCardContent(
       back,
       ...(frontImageUrl === undefined ? {} : { frontImageUrl }),
       ...(backImageUrl === undefined ? {} : { backImageUrl }),
+      ...(frontImageDescription === undefined ? {} : { frontImageDescription }),
+      ...(backImageDescription === undefined ? {} : { backImageDescription }),
       ...(frontNote === undefined ? {} : { frontNote }),
       ...(backLabel === undefined ? {} : { backLabel }),
       ...(backNote === undefined ? {} : { backNote }),
@@ -294,7 +315,14 @@ export function cardLabel(
   card: CardContent & { id: string },
   show: (text: LangText) => string = shown,
 ): string {
-  if (!isEmptyText(card.front)) return show(card.front);
-  if (!isEmptyText(card.back)) return show(card.back);
-  return card.id;
+  const text = cardLabelText(card);
+  return isEmptyText(text) ? card.id : show(text);
+}
+
+/**
+ * The text `cardLabel` names a card by: its front, else its back; no text
+ * when it has neither (it is named by its id, in no language).
+ */
+export function cardLabelText(card: CardContent): LangText {
+  return isEmptyText(card.front) ? card.back : card.front;
 }

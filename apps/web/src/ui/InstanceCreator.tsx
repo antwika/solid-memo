@@ -4,7 +4,8 @@ import type {
   RegistrationTarget,
 } from "@solid-memo/domain/instance";
 import type { Storage } from "@solid-memo/domain/storage";
-import { useI18n } from "./i18n";
+import { ErrorMessage } from "./ErrorMessage";
+import { useI18n, type ErrorText } from "./i18n";
 import { RegistrationTargetChooser } from "./RegistrationTargetChooser";
 
 export function InstanceCreator({
@@ -13,18 +14,19 @@ export function InstanceCreator({
   busy,
   error,
   onCreate,
-  onBack,
+  backHref,
 }: {
   storage: Storage;
   options: RegistrationOptions | null;
   busy: boolean;
-  error: string | null;
+  error: ErrorText | null;
   onCreate: (args: {
     containerUrl: string;
     name: string;
     registrationTarget: RegistrationTarget;
   }) => void;
-  onBack: () => void;
+  /** URL of the instance picker, where Back goes. */
+  backHref: string;
 }) {
   const { t } = useI18n();
   const [name, setName] = useState("");
@@ -45,6 +47,9 @@ export function InstanceCreator({
   return (
     <section>
       <h2>{t("instanceCreator.heading")}</h2>
+      {/* First-time users land here without passing the picker, so the
+          definition of an instance is repeated. */}
+      <p class="hint">{t("instancePicker.intro")}</p>
       <form onSubmit={handleSubmit}>
         <label for="instance-name">{t("instanceCreator.name")}</label>
         <input
@@ -60,11 +65,15 @@ export function InstanceCreator({
         <input
           id="instance-container"
           type="url"
+          aria-describedby="instance-container-hint"
           value={containerUrl}
           onInput={(e) => setContainerUrl(e.currentTarget.value)}
           required
           disabled={busy}
         />
+        <span id="instance-container-hint" class="hint">
+          {t("instanceCreator.locationHint")}
+        </span>
         <RegistrationTargetChooser
           options={options}
           value={target}
@@ -73,11 +82,11 @@ export function InstanceCreator({
         <button type="submit" disabled={busy}>
           {t("instanceCreator.create")}
         </button>
-        <button type="button" onClick={onBack} disabled={busy}>
+        <a class="button" href={backHref}>
           {t("instanceCreator.back")}
-        </button>
+        </a>
       </form>
-      {error && <p class="error">{error}</p>}
+      <ErrorMessage error={error} />
     </section>
   );
 }

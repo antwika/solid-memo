@@ -1,4 +1,5 @@
 import type { GuestPod, ResourceStore } from "@solid-memo/application/ports";
+import { AppError } from "@solid-memo/domain/appError";
 import { GUEST_ORIGIN, GUEST_WEBID } from "@solid-memo/domain/guest";
 
 const PROFILE_URL = GUEST_WEBID.split("#")[0]!;
@@ -32,7 +33,7 @@ export function createLocalGuestPod({
       });
       // 412: started already (in another tab, say).
       if (!response.ok && response.status !== 412) {
-        throw new Error(`Could not start the guest's pod: ${response.status}.`);
+        throw new AppError("guestPodStartFailed", { status: response.status });
       }
     },
     discard: () => store.clear(),

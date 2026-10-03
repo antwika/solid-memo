@@ -1,6 +1,7 @@
 import type { SolidAccount } from "@solid-memo/domain/account";
+import { ErrorMessage } from "../ErrorMessage";
 import { ExternalLink } from "../ExternalLink";
-import { useI18n } from "../i18n";
+import { useI18n, type ErrorText } from "../i18n";
 import { Loading } from "../Loading";
 
 /**
@@ -19,7 +20,7 @@ export function PodConnectionScreen({
 }: {
   account: SolidAccount | undefined;
   busy: boolean;
-  error: string | null;
+  error: ErrorText | null;
   onRetry: () => void;
   onContinue: () => void;
   onLogout: () => void;
@@ -38,9 +39,7 @@ export function PodConnectionScreen({
     return (
       <section class="onboarding">
         <h2>{t("podConnection.errorHeading")}</h2>
-        <p class="error" role="alert">
-          {error}
-        </p>
+        <ErrorMessage error={error} />
         <div class="onboarding-actions">
           <button class="primary" onClick={onRetry}>
             {t("podConnection.tryAgain")}

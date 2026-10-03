@@ -89,7 +89,7 @@ describe("DeckPreferencesContainer", () => {
       }),
     );
     fireEvent.click(await screen.findByRole("button", { name: "Save preferences" }));
-    expect(await screen.findByText("A daily limit is a whole number, 0 or more.")).toHaveClass("error");
+    expect((await screen.findByText("A daily limit is a whole number, 0 or more.")).closest(".error")).toBeInTheDocument();
     expect(onDone).not.toHaveBeenCalled();
   });
 
@@ -100,7 +100,7 @@ describe("DeckPreferencesContainer", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Rename deck" }));
     fireEvent.input(screen.getByLabelText("Deck name"), { target: { value: "Kanji N4" } });
     fireEvent.click(screen.getByRole("button", { name: "Save name" }));
-    await waitFor(() => expect(useCases.renameDeck).toHaveBeenCalledWith(deck, "Kanji N4"));
+    await waitFor(() => expect(useCases.renameDeck).toHaveBeenCalledWith(deck, "Kanji N4", "en"));
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] }));
     expect(onDone).not.toHaveBeenCalled();
   });
@@ -115,7 +115,7 @@ describe("DeckPreferencesContainer", () => {
     );
     fireEvent.click(await screen.findByRole("button", { name: "Rename deck" }));
     fireEvent.click(screen.getByRole("button", { name: "Save name" }));
-    expect(await screen.findByText("rename refused")).toHaveClass("error");
+    expect((await screen.findByText("rename refused")).closest(".error")).toBeInTheDocument();
   });
 
   it("removes the deck, refreshes the deck lists, then leaves", async () => {
@@ -140,7 +140,7 @@ describe("DeckPreferencesContainer", () => {
       }),
     );
     fireEvent.click(await screen.findByRole("button", { name: "Remove deck" }));
-    expect(await screen.findByText("deck remove refused")).toHaveClass("error");
+    expect((await screen.findByText("deck remove refused")).closest(".error")).toBeInTheDocument();
     expect(onDeckRemoved).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
@@ -153,6 +153,6 @@ describe("DeckPreferencesContainer", () => {
         }),
       }),
     );
-    expect(await screen.findByText("preferences unreachable")).toHaveClass("error");
+    expect((await screen.findByText("preferences unreachable")).closest(".error")).toBeInTheDocument();
   });
 });

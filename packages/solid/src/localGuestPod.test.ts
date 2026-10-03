@@ -36,7 +36,7 @@ describe("createLocalGuestPod", () => {
       fetch: async () => new Response(null, { status: 500 }),
       store: createMemoryResourceStore(),
     });
-    await expect(pod.start()).rejects.toThrow("Could not start the guest's pod: 500.");
+    await expect(pod.start()).rejects.toMatchObject({ code: "guestPodStartFailed", detail: "status: 500" });
   });
 
   it("discards everything", async () => {

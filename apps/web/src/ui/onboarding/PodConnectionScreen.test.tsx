@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
 import { PodConnectionScreen } from "./PodConnectionScreen";
 import type { SolidAccount } from "@solid-memo/domain/account";
+import { newTab } from "../../test/links";
 
 const account: SolidAccount = {
   webId: "https://alice.example/profile/card#me",
@@ -49,7 +50,7 @@ describe("PodConnectionScreen", () => {
     expect(screen.getByText(account.podUrl!)).toBeInTheDocument();
     expect(screen.getByText(account.oidcIssuer!)).toBeInTheDocument();
     for (const url of [account.webId, account.podUrl!, account.oidcIssuer!]) {
-      expect(screen.getByRole("link", { name: url })).toHaveAttribute(
+      expect(screen.getByRole("link", { name: newTab(url) })).toHaveAttribute(
         "href",
         url,
       );
@@ -61,7 +62,7 @@ describe("PodConnectionScreen", () => {
 
   it("shows the profile's name in place of the WebID, linked to it", () => {
     renderScreen({ account: { ...account, name: "Alice" } });
-    expect(screen.getByRole("link", { name: "Alice" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: newTab("Alice") })).toHaveAttribute(
       "href",
       account.webId,
     );
@@ -70,7 +71,7 @@ describe("PodConnectionScreen", () => {
 
   it("names the user in the no-Pod message when the profile has a name", () => {
     renderScreen({ account: { webId: account.webId, name: "Alice" } });
-    expect(screen.getByRole("link", { name: "Alice" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: newTab("Alice") })).toHaveAttribute(
       "href",
       account.webId,
     );
@@ -101,7 +102,7 @@ describe("PodConnectionScreen", () => {
     expect(
       screen.getByRole("heading", { name: "No Pod found" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: account.webId })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: newTab(account.webId) })).toHaveAttribute(
       "href",
       account.webId,
     );

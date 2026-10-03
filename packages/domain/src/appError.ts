@@ -2,16 +2,24 @@
  * Errors the user may see, each named by a code, so the app can show it in
  * the reader's language: the message catalogues hold every code under
  * `errors.<code>` (apps/web/src/i18n), the English one exactly as here, which
- * a test holds them to. An error's `message` is the English text with its
- * values filled in, for logs and tests. Errors only a programming mistake
- * can cause stay plain Errors.
+ * a test holds them to. A text says what went wrong in plain words and
+ * what to do about it; the values it leaves out — addresses, statuses, a
+ * check's findings — are the error's technical `detail`, for whoever looks
+ * into it. An error's `message` is the English text with its values filled
+ * in, then its detail, for logs and tests. Errors only a programming
+ * mistake can cause stay plain Errors.
  */
+
+import { shown, type LangText } from "./langText";
 
 /** An error's text, or one per plural category, chosen by its `count`. */
 export type ErrorTemplate = string | { one: string; other: string };
 
-/** Values for an error text's `{name}` placeholders. */
-export type ErrorVars = Readonly<Record<string, string | number>>;
+/**
+ * Values for an error text's `{name}` placeholders: a deck's title is its
+ * text in every language it has, for the reader to see it in theirs.
+ */
+export type ErrorVars = Readonly<Record<string, string | number | LangText>>;
 
 export const ERROR_TEMPLATES = {
   cardFrontImageNotWebUrl: "The front image must be an http(s) URL.",
@@ -25,75 +33,119 @@ export const ERROR_TEMPLATES = {
   webIdNotHttps: "A WebID must start with https://.",
   webIdWithCredentials: "A WebID must not contain a username or password.",
   providerNotHttps: "An identity provider must be an https:// URL.",
-  webIdNoSubject: "No subject <{webId}> found in the WebID document.",
-  webIdNoIssuer: "The WebID document does not declare a solid:oidcIssuer for <{webId}>.",
-  webIdIssuerNotHttps: "The solid:oidcIssuer declared for <{webId}> is not a valid https:// URL.",
-  profileNoSubject: "No subject <{webId}> found in the profile document.",
-  privateTypeIndexNotLinked: "Could not link the private type index <{index}> from any profile document:\n{failures}",
-  publicTypeIndexNotLinked: "Could not link the public type index <{index}> from any profile document:\n{failures}",
-  storageInaccessible: "Cannot access <{url}> (HTTP {status}).",
-  notAnInstanceNoMeta: "<{url}> is not a Solid Memo instance (no readable meta.ttl).",
-  notAnInstanceNoSubject: "<{url}> is not a Solid Memo instance (meta.ttl has no #it subject).",
-  notRegistered: "<{url}> is registered in no type index; there is nothing to switch.",
-  noMetaToUpdate: "<{url}> has no meta document to update.",
+  webIdNoSubject:
+    "Your WebID profile does not describe you. Check that you entered your WebID exactly, with the part after #, or pick your provider instead.",
+  webIdNoIssuer:
+    "Your WebID profile does not say where you log in. Pick your provider instead of entering your WebID.",
+  webIdIssuerNotHttps:
+    "Your WebID profile names a place to log in that is not a secure https:// address. Pick your provider instead of entering your WebID.",
+  profileNoSubject:
+    "Your profile does not describe you, so Solid Memo cannot note in it where your data is. Check your profile with your Pod provider, then try again.",
+  privateTypeIndexNotLinked:
+    "Solid Memo could not link its private list of your data from your profile. Check that Solid Memo may edit your profile, then try again.",
+  publicTypeIndexNotLinked:
+    "Solid Memo could not link its public list of your data from your profile. Check that Solid Memo may edit your profile, then try again.",
+  storageInaccessible:
+    "Solid Memo cannot open that storage. Check the address, and that you are logged in with the account that owns it.",
+  notAnInstanceNoMeta:
+    "That address is not a Solid Memo instance. Check that you pasted the address of an instance's folder, ending in /.",
+  notAnInstanceNoSubject:
+    "That folder is not a Solid Memo instance: its description cannot be read. Check that you pasted the right address.",
+  notRegistered:
+    "That instance is no longer on your list of instances, so there is nothing to switch. Reload the page and try again.",
+  noMetaToUpdate: "This instance has no description to update. Reload the page and try again.",
   noBackup: "{instance} has no backup to restore.",
   updatedCopyInvalid: {
-    one: "The updated copy does not conform to Solid Memo's shapes ({count} violation); your data is left as it was.",
-    other: "The updated copy does not conform to Solid Memo's shapes ({count} violations); your data is left as it was.",
+    one: "The updated copy is not in the format Solid Memo expects ({count} problem), so your data is left as it was. Try again later.",
+    other: "The updated copy is not in the format Solid Memo expects ({count} problems), so your data is left as it was. Try again later.",
   },
   movedCopyInvalid: {
-    one: "The copy in your pod does not conform to Solid Memo's shapes ({count} violation); your study is left as it was.",
-    other: "The copy in your pod does not conform to Solid Memo's shapes ({count} violations); your study is left as it was.",
+    one: "The copy in your Pod is not in the format Solid Memo expects ({count} problem), so your study is left as it was. Try again later.",
+    other: "The copy in your Pod is not in the format Solid Memo expects ({count} problems), so your study is left as it was. Try again later.",
   },
-  guestUrlsLeft: "<{url}> still names the guest's pod after the move; your study is left as it was.",
-  instanceChangedDuringCopy: "The instance changed while it was being copied (in another tab or app?); try again.",
-  resourceChangedDuringCopy: "<{url}> changed while it was being copied (in another tab or app?); try again.",
+  guestUrlsLeft:
+    "The copy in your Pod still points to the guest's study, so your study is left as it was. Try again.",
+  instanceChangedDuringCopy:
+    "The instance changed while it was being copied, perhaps in another tab or app. Try again.",
+  resourceChangedDuringCopy:
+    "Part of the instance changed while it was being copied, perhaps in another tab or app. Try again.",
   instanceBeingUpdated:
-    "Solid Memo is updating the instance at {container} and writes nothing to it until the update is over (refused: {method} {url}).",
+    "Solid Memo is updating this instance and saves nothing to it until the update is done. Wait for the update to finish, then try again.",
   deckChangedSinceOffer:
-    "The deck changed since the update was offered (in another tab or app?); nothing was changed. Look at the offer again.",
-  upgradedCardsDiffer:
-    "The pod does not hold the new cards as Solid Memo wrote them to <{url}>.",
-  upgradedReviewsDiffer:
-    "The pod does not hold the review states as Solid Memo wrote them to <{url}>.",
-  deckChangedDuringUpgrade:
-    "<{url}> changed while the deck was being updated (in another tab or app?).",
+    "The deck changed since the update was offered, perhaps in another tab or app, so nothing was changed. Look at the offer again.",
+  upgradedCardsDiffer: "Your Pod does not hold the new cards as Solid Memo saved them. Try the update again.",
+  upgradedReviewsDiffer: "Your Pod does not hold your progress as Solid Memo saved it. Try the update again.",
+  deckChangedDuringUpgrade: "The deck changed while it was being updated, perhaps in another tab or app. Try again.",
   deckBeingUpgraded:
-    "Solid Memo is updating the deck in {document} and writes nothing to it until the update is over (refused: {method} {url}).",
+    "Solid Memo is updating this deck and saves nothing to it until the update is done. Wait for the update to finish, then try again.",
   changedElsewhere:
-    "{url} was changed elsewhere (in another tab or app?) since Solid Memo read it, so nothing was saved. Reload and try again.",
+    "This was changed elsewhere, perhaps in another tab or app, since Solid Memo read it, so nothing was saved. Reload the page and try again.",
   createdElsewhere:
-    "{url} was created elsewhere (in another tab or app?) while Solid Memo was about to create it, so nothing was saved. Reload and try again.",
-  alreadyExists: "<{url}> already exists.",
-  cannotCheck: "Could not check <{url}>: {status}.",
-  accessControlUnknown: "The pod does not say where the access control of <{url}> goes.",
-  dataNotConforming: "Solid Memo did not save data that does not conform to its shapes:\n  {problems}",
-  deckGone: "The deck <{deck}> no longer exists.",
-  cardsDocumentGone: "The cards document of <{deck}> no longer exists.",
-  cardGone: "Card <{card}> no longer exists.",
-  notADeck: "<{url}> is not a Solid Memo deck.",
-  libraryDeckTooNew: "<{url}> is in deck format {version}, newer than this app supports ({latest}).",
-  libraryCardTooNew: "<{card}> in <{url}> is in card format {version}, newer than this app supports ({latest}).",
+    "This was created elsewhere, perhaps in another tab or app, just as Solid Memo was about to create it, so nothing was saved. Reload the page and try again.",
+  alreadyExists: "Something is already kept at that place in your Pod. Choose another place.",
+  cannotCheck: "Solid Memo could not check your Pod. Check your connection and try again.",
+  accessControlUnknown:
+    "Your Pod does not say how to set who may open the copy, so Solid Memo cannot keep your sharing as it was. Nothing was changed.",
+  dataNotConforming:
+    "Solid Memo did not save this: it is not in the format Solid Memo expects. Nothing was changed. Reload the page and try again.",
+  deckGone: "The deck “{deck}” no longer exists. Perhaps it was removed in another tab or app.",
+  cardsDocumentGone: "The cards of “{deck}” can no longer be found. Reload the page and try again.",
+  cardGone: "That card no longer exists. Perhaps it was removed in another tab or app. Reload the page.",
+  notADeck: "That is not a Solid Memo deck, so it cannot be added. Choose another deck.",
+  libraryDeckTooNew:
+    "This deck is in a newer format than this version of Solid Memo can read. Reload the page to get the latest version.",
+  libraryCardTooNew:
+    "A card in this deck is in a newer format than this version of Solid Memo can read. Reload the page to get the latest version.",
+  noGuestPod: "There is no guest study on this device.",
+  guestPodStartFailed: "The guest study on this device could not be opened. Reload the page and try again.",
+  guestStorageAborted:
+    "This browser refused to save a change to the guest study. Check that it has room to keep data, then try again.",
+  addFailed: "Solid Memo could not save to your Pod. Check your connection and try again.",
 } as const satisfies Record<string, ErrorTemplate>;
 
 export type ErrorCode = keyof typeof ERROR_TEMPLATES;
 
 const PLACEHOLDER = /\{(\w+)\}/g;
 
+/** A value as an English text shows it: text in several languages as its English, else its first. */
+function englishValue(value: ErrorVars[string]): string {
+  return typeof value === "object" ? shown(value) : String(value);
+}
+
 /** An error text with its values filled in, in English (plural by `count`, 1 being singular). */
 export function fillTemplate(template: ErrorTemplate, vars: ErrorVars): string {
   const text = typeof template === "string" ? template : vars.count === 1 ? template.one : template.other;
-  return text.replace(PLACEHOLDER, (whole, name: string) => (name in vars ? String(vars[name]) : whole));
+  return text.replace(PLACEHOLDER, (whole, name: string) => (name in vars ? englishValue(vars[name]!) : whole));
+}
+
+/** The placeholders an error text names, in any of its plural forms. */
+function placeholders(template: ErrorTemplate): Set<string> {
+  const texts = typeof template === "string" ? [template] : [template.one, template.other];
+  return new Set(texts.flatMap((text) => [...text.matchAll(PLACEHOLDER)].map((match) => match[1]!)));
+}
+
+/** The values an error text leaves out, one "name: value" a line; "" when it says them all. */
+export function technicalDetail(template: ErrorTemplate, vars: ErrorVars): string {
+  const named = placeholders(template);
+  return Object.entries(vars)
+    .filter(([name]) => !named.has(name))
+    .map(([name, value]) => `${name}: ${englishValue(value)}`)
+    .join("\n");
 }
 
 export class AppError extends Error {
   readonly code: ErrorCode;
   readonly vars: ErrorVars;
+  /** The values the text leaves out, for whoever looks into the error; "" when there are none. */
+  readonly detail: string;
 
   constructor(code: ErrorCode, vars: ErrorVars = {}) {
-    super(fillTemplate(ERROR_TEMPLATES[code], vars));
+    const text = fillTemplate(ERROR_TEMPLATES[code], vars);
+    const detail = technicalDetail(ERROR_TEMPLATES[code], vars);
+    super(detail === "" ? text : `${text}\n${detail}`);
     this.name = "AppError";
     this.code = code;
     this.vars = vars;
+    this.detail = detail;
   }
 }

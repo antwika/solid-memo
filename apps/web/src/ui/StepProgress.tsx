@@ -1,10 +1,16 @@
+import { useEffect, useState } from "preact/hooks";
 import type { StepPart } from "@solid-memo/domain/deckUpgrade";
 import { useI18n } from "./i18n";
+import { usePanelFocus } from "./panelFocus";
 
 /**
  * Progress through a fixed list of steps — an update that must not be
- * cut off: what it is doing now (announced), a progress bar, and every
- * step, done, under way or still to come.
+ * cut off: what it is doing now (announced), how far into it (not
+ * announced: a count that moves with every document would drown out
+ * everything else), a progress bar, and every step, done, under way or
+ * still to come. It takes the place of the
+ * button that started it, so it takes the focus, and hands it on to how
+ * the update ended.
  */
 export function StepProgress<Step extends string>({
   region,
@@ -27,17 +33,27 @@ export function StepProgress<Step extends string>({
   total: number;
   /** How far into the current step; the bar moves on within it. */
   part?: StepPart;
-  /** What it is doing now, in a sentence. */
+  /** What it is doing now, in a sentence; it changes only with the step. */
   status: string;
   progressLabel: string;
   hint: string;
 }) {
   const { t } = useI18n();
+  const ref = usePanelFocus<HTMLDivElement>();
+  // The region mounts with its first status; held back a frame, that
+  // status changes a live region already there, which screen readers
+  // hear, rather than arriving with it, which they often miss.
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const at = steps.findIndex((entry) => entry.step === current);
   const finished = total > 0 && done >= total;
   return (
-    <div class="warning migration" role="region" aria-label={region}>
-      <p role="status">{status}</p>
+    <div ref={ref} class="warning migration" role="region" aria-label={region} tabIndex={-1}>
+      <p role="status">{shown ? status : ""}</p>
+      {part !== undefined && <p class="hint">{t("stepProgress.count", { done: part.done, total: part.total })}</p>}
       <progress
         value={done + (part === undefined ? 0 : Math.min(part.done / Math.max(part.total, 1), 1))}
         max={Math.max(total, 1)}

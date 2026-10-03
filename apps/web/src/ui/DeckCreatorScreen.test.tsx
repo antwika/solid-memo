@@ -28,7 +28,14 @@ describe("DeckCreatorScreen", () => {
   it("disables the form while busy and shows errors", () => {
     renderScreen({ busy: true, error: "create failed" });
     expect(screen.getByLabelText("Name")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Create deck" })).toBeDisabled();
+    // Only aria-disabled, so the button pressed keeps the focus.
+    expect(screen.getByRole("button", { name: "Create deck" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("create failed")).toBeInTheDocument();
+  });
+
+  it("ignores a submit while it creates", () => {
+    const { props, container } = renderScreen({ busy: true });
+    fireEvent.submit(container.querySelector("form")!);
+    expect(props.onCreate).not.toHaveBeenCalled();
   });
 });

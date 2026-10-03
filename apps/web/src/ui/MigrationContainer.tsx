@@ -1,3 +1,4 @@
+import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
@@ -5,9 +6,11 @@ import type { Instance } from "@solid-memo/domain/instance";
 import type { UpdateOutcome, UpdateProgress } from "@solid-memo/domain/instanceUpdate";
 import { isPlanEmpty } from "@solid-memo/domain/migration";
 import type { Session } from "@solid-memo/domain/session";
+import { ErrorMessage } from "./ErrorMessage";
 import { useI18n } from "./i18n";
 import { InstanceUpdateConfirm, InstanceUpdateFailure, InstanceUpdateProgress } from "./InstanceUpdate";
 import { MigrationNotice } from "./MigrationNotice";
+import { usePanelFocus } from "./panelFocus";
 
 /**
  * Checks an instance for documents in an older format and, when there
@@ -16,7 +19,8 @@ import { MigrationNotice } from "./MigrationNotice";
  * instance or what went wrong. The check reads every document once per
  * session; a failed check shows nothing, since the app works on the old
  * format and the deck list reports pod trouble on its own. An update
- * left half-done by a closed tab is offered for cleanup.
+ * left half-done by a closed tab is offered for cleanup. Each step takes
+ * the focus from the one it replaces; Cancel gives it back to the notice.
  */
 export function MigrationContainer({
   useCases,
@@ -34,6 +38,8 @@ export function MigrationContainer({
   const { t, errorText } = useI18n();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
+  /** The user came back to the notice, from the confirmation or a failure: it takes the focus. */
+  const [returned, setReturned] = useState(false);
   const [progress, setProgress] = useState<UpdateProgress | null>(null);
   const [failure, setFailure] = useState<Extract<UpdateOutcome, { ok: false }> | null>(null);
 
@@ -81,19 +87,22 @@ export function MigrationContainer({
         outcome={failure}
         busy={cleanupMutation.isPending}
         onRemoveLeftover={() => cleanupMutation.mutate()}
-        onDismiss={() => setFailure(null)}
+        onDismiss={() => {
+          setFailure(null);
+          setReturned(true);
+        }}
       />
     );
   }
   if (interrupted !== null) {
     return (
-      <div class="warning migration" role="region" aria-label={t("migration.interruptedRegion")}>
-        <p>{t("migration.interrupted", { name: instance.name, url: interrupted })}</p>
-        <button onClick={() => cleanupMutation.mutate()} disabled={cleanupMutation.isPending}>
-          {cleanupMutation.isPending ? t("migration.removing") : t("migration.removeIt")}
-        </button>
-        {cleanupMutation.error && <p class="error">{errorText(cleanupMutation.error)}</p>}
-      </div>
+      <InterruptedUpdate
+        message={t("migration.interrupted", { name: instance.name, url: interrupted })}
+        busy={cleanupMutation.isPending}
+        onRemove={() => cleanupMutation.mutate()}
+      >
+        <ErrorMessage error={errorText(cleanupMutation.error)} />
+      </InterruptedUpdate>
     );
   }
   if (plan === undefined || isPlanEmpty(plan)) return null;
@@ -106,7 +115,10 @@ export function MigrationContainer({
           setProgress({ step: "stage", done: 0, total: 0 });
           updateMutation.mutate();
         }}
-        onCancel={() => setConfirming(false)}
+        onCancel={() => {
+          setConfirming(false);
+          setReturned(true);
+        }}
       />
     );
   }
@@ -115,7 +127,43 @@ export function MigrationContainer({
       plan={plan}
       busy={updateMutation.isPending}
       error={errorText(updateMutation.error)}
+      focus={returned}
       onMigrate={() => setConfirming(true)}
     />
+  );
+}
+
+/**
+ * An update a closed tab left half-done, and the button that removes what
+ * it left. Once removed, the panel goes and the focus moves to the
+ * screen; while it works, the button keeps the focus (aria-disabled).
+ */
+function InterruptedUpdate({
+  message,
+  busy,
+  onRemove,
+  children,
+}: {
+  message: string;
+  busy: boolean;
+  onRemove: () => void;
+  /** The cleanup's error, if any. */
+  children: ComponentChildren;
+}) {
+  const { t } = useI18n();
+  const ref = usePanelFocus<HTMLDivElement>(false);
+  return (
+    <div ref={ref} class="warning migration" role="region" aria-label={t("migration.interruptedRegion")} tabIndex={-1}>
+      <p>{message}</p>
+      <button
+        onClick={() => {
+          if (!busy) onRemove();
+        }}
+        aria-disabled={busy}
+      >
+        {busy ? t("migration.removing") : t("migration.removeIt")}
+      </button>
+      {children}
+    </div>
   );
 }

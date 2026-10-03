@@ -98,7 +98,7 @@ describe("LibraryUpgradeContainer", () => {
     await waitFor(() =>
       expect(quiet.planLibraryUpgrade).toHaveBeenCalledWith(imported),
     );
-    expect(container).toBeEmptyDOMElement();
+    expect(container.textContent).toBe("");
 
     const failing = makeUseCasesFake({
       planLibraryUpgrade: vi.fn(async () => {
@@ -107,7 +107,7 @@ describe("LibraryUpgradeContainer", () => {
     });
     const { container: other } = renderContainer(failing);
     await waitFor(() => expect(failing.planLibraryUpgrade).toHaveBeenCalled());
-    expect(other).toBeEmptyDOMElement();
+    expect(other.textContent).toBe("");
   });
 
   it("tidies away what an upgrade cut off half-way left, once", async () => {
@@ -136,12 +136,20 @@ describe("LibraryUpgradeContainer", () => {
     });
     const { invalidate, remove } = renderPage(useCases);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Update to release 2" }));
+    const offer = await screen.findByRole("button", { name: "Update to release 2" });
+    // Mounted, empty, before the update: screen readers hear it filled at the end.
+    const announced = screen.getByRole("status");
+    expect(announced.textContent).toBe("");
+    fireEvent.click(offer);
 
     const region = await screen.findByRole("region", { name: "Updating the deck" });
-    expect(region).toHaveTextContent("Reading the deck and its cards…");
+    // The steps take the offer's place and its focus.
+    expect(region).toHaveFocus();
+    // The first step is said a frame after the region is up, so screen readers hear it.
+    expect(within(region).getByRole("status").textContent).toBe("");
+    await waitFor(() => expect(within(region).getByRole("status")).toHaveTextContent("Reading the deck and its cards…"));
     act(() => report!({ step: "verify", done: 3, total: 6 }));
-    expect(screen.getByRole("status")).toHaveTextContent("Checking nothing changed meanwhile…");
+    expect(within(region).getByRole("status")).toHaveTextContent("Checking nothing changed meanwhile…");
     expect(screen.getByRole("progressbar", { name: "Update progress" })).toHaveAttribute("value", "3");
     expect(screen.getByRole("progressbar", { name: "Update progress" })).toHaveAttribute("max", "7");
     const steps = within(region).getAllByRole("listitem");
@@ -156,12 +164,13 @@ describe("LibraryUpgradeContainer", () => {
     ]);
     expect(steps[3]).toHaveAttribute("aria-current", "step");
     act(() => report!({ step: "verify", done: 3, total: 6, part: { done: 1, total: 2 } }));
-    expect(screen.getByRole("status")).toHaveTextContent("Checking nothing changed meanwhile… (1 of 2)");
+    expect(within(region).getByRole("status")).toHaveTextContent(/^Checking nothing changed meanwhile…$/);
+    expect(within(region).getByText("1 of 2")).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "Update progress" })).toHaveAttribute("value", "3.5");
     expect(screen.queryByRole("button", { name: "Update to release 2" })).toBeNull();
 
     act(() => finish!());
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Updated to release 2 from the library."));
+    await waitFor(() => expect(announced).toHaveTextContent("Updated to release 2 from the library."));
     expect(useCases.applyLibraryUpgrade).toHaveBeenCalledWith(imported, plan, expect.any(Function));
     expect(remove).toHaveBeenCalledWith({ queryKey: ["studyQueue", imported.url] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
@@ -208,8 +217,11 @@ describe("LibraryUpgradeContainer", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Update to release 2" }));
 
     const region = await screen.findByRole("region", { name: "Update failed" });
+    // It takes the progress's focus, read out with why as its description.
+    expect(region).toHaveFocus();
+    expect(region).toHaveAccessibleDescription(/The update failed while checking nothing changed meanwhile/);
     expect(region).toHaveTextContent(
-      `The update failed while checking nothing changed meanwhile: <${imported.cardsDocumentUrl}> changed while the deck was being updated`,
+      "The update failed while checking nothing changed meanwhile: The deck changed while it was being updated, perhaps in another tab or app. Try again.",
     );
     expect(region).toHaveTextContent("Your deck was not changed. The new documents were removed.");
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["libraryUpgrade", imported.url] });
@@ -237,7 +249,7 @@ describe("LibraryUpgradeContainer", () => {
       "The new documents could not be removed yet",
     );
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    await waitFor(() => expect(container).toBeEmptyDOMElement());
+    await waitFor(() => expect(container.textContent).toBe(""));
     expect(useCases.applyLibraryUpgrade).toHaveBeenCalledOnce();
   });
 
@@ -253,7 +265,7 @@ describe("LibraryUpgradeContainer", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: "Update to release 2" }),
     );
-    expect(await screen.findByText("write refused")).toHaveClass("error");
+    expect((await screen.findByText("write refused")).closest(".error")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Update to release 2" }),
     ).toBeEnabled();

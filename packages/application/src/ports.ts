@@ -1,5 +1,6 @@
 import type { Catalog } from "@solid-memo/domain/catalog";
 import type { Locale } from "@solid-memo/domain/locale";
+import type { LangText } from "@solid-memo/domain/langText";
 import type { ThemeChoice } from "@solid-memo/domain/theme";
 import type { Repair } from "@solid-memo/domain/repair";
 import type { Card, CardContent, Deck } from "@solid-memo/domain/deck";
@@ -127,9 +128,10 @@ export interface DeckRepository {
   readCatalog(instanceUrl: string): Promise<Catalog | null>;
   /** Write the instance's catalogue, listing every deck, creating the catalog document if need be. */
   saveCatalog(instanceUrl: string, catalog: Catalog): Promise<void>;
-  createDeck(instanceUrl: string, name: string): Promise<Deck>;
-  /** Replaces the deck's name; cards and review state are untouched. */
-  renameDeck(deck: Deck, name: string): Promise<Deck>;
+  /** A new, empty deck by that title. */
+  createDeck(instanceUrl: string, title: LangText): Promise<Deck>;
+  /** Replaces the deck's title; cards and review state are untouched. */
+  renameDeck(deck: Deck, title: LangText): Promise<Deck>;
   /**
    * Rewrite the deck's catalog entry — name, direction and format
    * version — in place, so triples this app does not know survive.

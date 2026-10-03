@@ -4,10 +4,11 @@ import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import { DeckListScreen } from "./DeckListScreen";
 import { DeckStudyActionContainer } from "./DeckStudyAction";
+import { ErrorMessage } from "./ErrorMessage";
 import { useI18n } from "./i18n";
 import { Loading } from "./Loading";
 import { TodaySummaryContainer } from "./TodaySummaryContainer";
-import { deckHref, decksHref, libraryHref } from "./router";
+import { deckHref, libraryHref, routeToHash } from "./router";
 
 /**
  * Owns the deck list query for one instance. A deck set aside for
@@ -18,13 +19,11 @@ export function DeckListContainer({
   instance,
   isSetAside = () => false,
   onStudyDeck,
-  onCreateDeck,
 }: {
   useCases: UseCases;
   instance: Instance;
   isSetAside?: (deck: Deck) => boolean;
   onStudyDeck: (deck: Deck) => void;
-  onCreateDeck: () => void;
 }) {
   const { t, errorText } = useI18n();
   const decksQuery = useQuery({
@@ -33,7 +32,7 @@ export function DeckListContainer({
   });
 
   if (decksQuery.error) {
-    return <p class="error">{errorText(decksQuery.error)}</p>;
+    return <ErrorMessage error={errorText(decksQuery.error)} />;
   }
   if (decksQuery.data === undefined) {
     return <Loading label={t("deckList.loading")} />;
@@ -44,7 +43,6 @@ export function DeckListContainer({
       <TodaySummaryContainer useCases={useCases} instance={instance} />
       <DeckListScreen
         decks={decksQuery.data}
-        decksHref={decksHref(instance.url)}
         libraryHref={libraryHref(instance.url)}
         deckHref={(deck) => deckHref(instance.url, deck.url)}
         renderStudyAction={(deck) =>
@@ -59,7 +57,7 @@ export function DeckListContainer({
             />
           )
         }
-        onCreateDeck={onCreateDeck}
+        createDeckHref={routeToHash({ screen: "deckCreator", instanceUrl: instance.url })}
       />
     </>
   );

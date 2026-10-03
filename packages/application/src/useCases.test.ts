@@ -532,9 +532,11 @@ describe("createUseCases", () => {
   it("describeDeck saves the deck's description, topics and keywords, refusing an empty description", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
-    await useCases.describeDeck(deck, { description: " Kanji. ", topics: [], keywords: ["kanji"] });
+    await useCases.describeDeck(deck, { description: " Kanji. ", topics: [], keywords: ["kanji"] }, "en");
     expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({ ...deck, description: { en: "Kanji." }, keywords: ["kanji"] });
-    await expect(useCases.describeDeck(deck, { description: "", topics: [], keywords: [] })).rejects.toThrow(
+    await useCases.describeDeck(deck, { description: "Kanji.", topics: [], keywords: [] }, "sv");
+    expect(deps.deckRepository.saveDeck).toHaveBeenLastCalledWith({ ...deck, description: { en: "Kanji.", sv: "Kanji." } });
+    await expect(useCases.describeDeck(deck, { description: "", topics: [], keywords: [] }, "en")).rejects.toThrow(
       "A deck needs a description.",
     );
   });
@@ -602,17 +604,14 @@ describe("createUseCases", () => {
     await expect(useCases.listDecks(instance.url)).resolves.toEqual([deck]);
     expect(deps.deckRepository.listDecks).toHaveBeenCalledWith(instance.url);
 
-    await useCases.createDeck(instance.url, " Kanji N5 ");
-    expect(deps.deckRepository.createDeck).toHaveBeenCalledWith(
-      instance.url,
-      "Kanji N5",
-    );
+    await useCases.createDeck(instance.url, " Kanji N5 ", "en");
+    expect(deps.deckRepository.createDeck).toHaveBeenCalledWith(instance.url, { en: "Kanji N5" });
+    // A name typed on a Swedish page is Swedish, standing in for the English too.
+    await useCases.createDeck(instance.url, "Huvudstäder", "sv");
+    expect(deps.deckRepository.createDeck).toHaveBeenLastCalledWith(instance.url, { en: "Huvudstäder", sv: "Huvudstäder" });
 
-    await useCases.renameDeck(deck, " Kanji N4 ");
-    expect(deps.deckRepository.renameDeck).toHaveBeenCalledWith(
-      deck,
-      "Kanji N4",
-    );
+    await useCases.renameDeck(deck, " Kanji N4 ", "en");
+    expect(deps.deckRepository.renameDeck).toHaveBeenCalledWith(deck, { ...deck.title, en: "Kanji N4" });
 
     await expect(
       useCases.setDeckDirection(deck, "bidirectional"),
@@ -909,7 +908,7 @@ describe("createUseCases", () => {
       }));
       const outcome = await createUseCases(deps).updateInstance(session, instance);
       expect(outcome).toMatchObject({ ok: false, step: "validate", cleanedUp: true });
-      expect((outcome as { error: Error }).error.message).toMatch(/^The updated copy does not conform to Solid Memo's shapes \(\d+ violations\)/);
+      expect((outcome as { error: Error }).error.message).toMatch(/^The updated copy is not in the format Solid Memo expects \(\d+ problems\)/);
       vi.mocked(deps.deckRepository.listDecks).mockResolvedValue([]);
       vi.mocked(deps.shapeValidator.validateDocument).mockImplementation(async (url) =>
         url.endsWith("meta.ttl")
@@ -2394,7 +2393,7 @@ describe("library deck upgrade", () => {
 
     it("cannot start a guest without a guest pod", async () => {
       const useCases = createUseCases(makeDeps());
-      await expect(useCases.startGuest("x")).rejects.toThrow("There is no guest pod on this device.");
+      await expect(useCases.startGuest("x")).rejects.toMatchObject({ code: "noGuestPod" });
       expect(await useCases.findGuestStudy()).toBeNull();
       await expect(useCases.discardGuest()).resolves.toBeUndefined();
     });

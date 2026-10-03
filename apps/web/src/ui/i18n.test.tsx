@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { AppError, ERROR_TEMPLATES } from "@solid-memo/domain/appError";
+import { typedIn } from "@solid-memo/domain/langText";
 import { createI18n, I18nProvider, useI18n, type MessageKey } from "./i18n";
 import en from "../i18n/en.json";
 import sv from "../i18n/sv.json";
@@ -94,6 +95,50 @@ describe("createI18n", () => {
     expect(createI18n("en").readerText(text)).toBe("Capitals");
   });
 
+  it("marks deck text in another language than the page's with that language", () => {
+    const sv = createI18n("sv");
+    expect(sv.readerLang({ en: "Capitals" })).toBe("en");
+    expect(sv.readerLang({ en: "Capitals", sv: "Huvudstäder" })).toBeUndefined();
+    expect(sv.readerLang({ "": "en bil" })).toBeUndefined();
+    expect(createI18n("en").readerLang({ "en-gb": "Colours" })).toBeUndefined();
+    expect(createI18n("en").readerLang({ ja: "水" })).toBe("ja");
+    expect(sv.partLang(undefined)).toBeUndefined();
+    expect(sv.partLang("de")).toBe("de");
+  });
+
+  it("says which language a field edits when the reader sees another", () => {
+    const sv = createI18n("sv");
+    expect(sv.editedPart(undefined)).toEqual({ lang: undefined, hint: null });
+    expect(sv.editedPart({ en: "Capitals", sv: "Huvudstäder" })).toEqual({
+      lang: "en",
+      hint: "Du redigerar texten på engelska. Översättningarna ändras inte.",
+    });
+    expect(sv.editedPart({ en: "Capitals" })).toEqual({ lang: "en", hint: null });
+    expect(createI18n("en").editedPart({ en: "Capitals", sv: "Huvudstäder" })).toEqual({ lang: undefined, hint: null });
+    expect(sv.editedPart({ "": "en bil", sv: "en bil" }).hint).toBe(
+      "Du redigerar texten utan angivet språk. Översättningarna ändras inte.",
+    );
+    expect(sv.editedPart({ "not a tag!": "x", sv: "y" }).hint).toBe(
+      "Du redigerar texten på not a tag!. Översättningarna ändras inte.",
+    );
+  });
+
+  it("edits the user's own text in the page's language, saying so when the reader sees another", () => {
+    const sv = createI18n("sv");
+    expect(sv.typedPart(undefined)).toEqual({ lang: undefined, hint: null });
+    expect(sv.typedText(undefined)).toBe("");
+    expect(sv.typedPart({ en: "Capitals", sv: "Huvudstäder" })).toEqual({ lang: undefined, hint: null });
+    expect(sv.typedText({ en: "Capitals", sv: "Huvudstäder" })).toBe("Huvudstäder");
+    expect(sv.typedPart({ en: "Capitals" })).toEqual({ lang: "en", hint: null });
+    expect(createI18n("en").typedText({ en: "Capitals", sv: "Huvudstäder" })).toBe("Capitals");
+  });
+
+  it("does not mark a deck named on a Swedish page as English", () => {
+    const named = typedIn("Huvudstäder", "sv");
+    expect(createI18n("sv").readerLang(named)).toBeUndefined();
+    expect(createI18n("sv").readerText(named)).toBe("Huvudstäder");
+  });
+
   it("writes out a day in the spoken language", () => {
     expect(createI18n("en").formatDate("2026-09-22T00:00:00.000Z")).toBe("September 22, 2026");
     expect(createI18n("sv").formatDate("2026-09-22T00:00:00.000Z")).toBe("22 september 2026");
@@ -119,21 +164,76 @@ function Spoken() {
 describe("errorText", () => {
   it("says an app error in the spoken language, its values filled in", () => {
     const gone = new AppError("deckGone", { deck: "Capitals" });
-    expect(createI18n("en").errorText(gone)).toBe("The deck <Capitals> no longer exists.");
-    expect(createI18n("sv").errorText(gone)).toBe("Kortleken <Capitals> finns inte längre.");
+    expect(createI18n("en").errorText(gone)).toBe(
+      "The deck “Capitals” no longer exists. Perhaps it was removed in another tab or app.",
+    );
+    expect(createI18n("sv").errorText(gone)).toBe(
+      "Kortleken ”Capitals” finns inte längre. Kanske togs den bort i en annan flik eller app.",
+    );
     const invalid = new AppError("updatedCopyInvalid", { count: 1 });
+    expect(createI18n("sv").errorText(invalid, { detail: false })).toContain("(1 problem)");
     expect(createI18n("sv").errorText(invalid)).toBe(
-      "Den uppdaterade kopian uppfyller inte Solid Memos former (1 avvikelse); dina data lämnas som de var.",
+      "Den uppdaterade kopian har inte det format Solid Memo förväntar sig (1 problem), så dina data lämnas som de var. Försök igen senare.",
     );
   });
 
-  it("shows any other error as its own message, and no error as none", () => {
-    const { errorText } = createI18n("sv");
-    expect(errorText(new Error("broken"))).toBe("broken");
-    expect(errorText("plain")).toBe("plain");
-    expect(errorText(42)).toBe("42");
+  it("names a deck in the reader's language, marked when that is not the page's", () => {
+    const gone = new AppError("deckGone", { deck: { en: "Capitals", sv: "Huvudstäder" } });
+    render(<p data-testid="sv">{createI18n("sv").errorText(gone)}</p>);
+    expect(screen.getByTestId("sv")).toHaveTextContent("Kortleken ”Huvudstäder” finns inte längre.");
+    expect(screen.getByTestId("sv").querySelector("[lang]")).toBeNull();
+
+    const english = new AppError("cardsDocumentGone", { deck: { en: "Capitals" }, url: "https://pod.example/d.ttl" });
+    render(<p data-testid="english">{createI18n("sv").errorText(english)}</p>);
+    expect(screen.getByText("Capitals")).toHaveAttribute("lang", "en");
+    expect(screen.getByTestId("english")).toHaveTextContent("”Capitals”");
+  });
+
+  it("shows any other error as its own message, with what to do, and no error as none", () => {
+    const { errorText } = createI18n("en");
+    render(<p data-testid="en">{errorText(new Error("broken"))}</p>);
+    expect(screen.getByTestId("en")).toHaveTextContent(
+      "Something went wrong. Try again, or reload the page. Details: broken",
+    );
+    expect(screen.getByText("broken")).not.toHaveAttribute("lang");
+    render(<p data-testid="others">{errorText("plain")}{errorText(42)}</p>);
+    expect(screen.getByTestId("others")).toHaveTextContent("Details: plain");
+    expect(screen.getByTestId("others")).toHaveTextContent("Details: 42");
     expect(errorText(null)).toBeNull();
     expect(errorText(undefined)).toBeNull();
+  });
+
+  it("says an untranslated error is in English, marked as English, on another language's page", () => {
+    render(<p data-testid="p">{createI18n("sv").errorText(new Error("broken"))}</p>);
+    expect(screen.getByTestId("p")).toHaveTextContent(
+      "Något gick fel. Försök igen, eller läs in sidan på nytt. Detaljer (på engelska): broken",
+    );
+    expect(screen.getByText("broken")).toHaveAttribute("lang", "en");
+  });
+
+  it("folds an app error's technical detail away under the plain sentence, marked as English", () => {
+    const refused = new AppError("storageInaccessible", { url: "https://pod.example/", status: 403 });
+    render(<div data-testid="sv">{createI18n("sv").errorText(refused)}</div>);
+    expect(screen.getByTestId("sv")).toHaveTextContent(
+      "Solid Memo kommer inte åt den lagringen. Kontrollera adressen och att du är inloggad med kontot som äger den.",
+    );
+    expect(screen.getByText("Tekniska detaljer").closest("details")).not.toHaveAttribute("open");
+    expect(screen.getByText(/status: 403/)).toHaveAttribute("lang", "en");
+
+    render(<div data-testid="en">{createI18n("en").errorText(refused)}</div>);
+    expect(screen.getByText(/url: https:\/\/pod.example\//, { selector: "[data-testid=en] code" })).not.toHaveAttribute("lang");
+    expect(createI18n("en").errorText(refused, { detail: false })).toBe(
+      "Solid Memo cannot open that storage. Check the address, and that you are logged in with the account that owns it.",
+    );
+  });
+
+  it("says a request that never got through is a network failure", () => {
+    const { errorText } = createI18n("sv");
+    expect(errorText(new TypeError("Failed to fetch"))).toBe(
+      "Kunde inte nå din Pod. Kontrollera anslutningen och försök igen.",
+    );
+    render(<p data-testid="type">{createI18n("en").errorText(new TypeError("x is undefined"))}</p>);
+    expect(screen.getByTestId("type")).toHaveTextContent("Details: x is undefined");
   });
 
   it("has every error's English exactly as the domain writes it", () => {
@@ -155,6 +255,15 @@ describe("violationText", () => {
     expect(createI18n("en").violationText(builtIn)).toBe("Less than 1 values");
     expect(createI18n("sv").violationText({ ...builtIn, constraint: "Sparql" })).toBe("Less than 1 values");
     expect(createI18n("sv").violationText({ ...shaped, message: { en: "Only English." } })).toBe("Only English.");
+  });
+
+  it("marks a message left in another language with that language", () => {
+    const sv = createI18n("sv");
+    expect(sv.violationLang(shaped)).toBeUndefined();
+    expect(sv.violationLang(builtIn)).toBeUndefined();
+    expect(sv.violationLang({ ...builtIn, constraint: "Sparql" })).toBe("en");
+    expect(createI18n("en").violationLang({ ...shaped, message: { sv: "Bara svenska." } })).toBe("sv");
+    expect(createI18n("en").violationLang(builtIn)).toBeUndefined();
   });
 
   it("names a severity", () => {

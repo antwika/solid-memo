@@ -58,7 +58,7 @@ describe("DeckCreatorContainer", () => {
     await waitFor(() => {
       expect(onDone).toHaveBeenCalledOnce();
     });
-    expect(useCases.createDeck).toHaveBeenCalledWith(instance.url, "Kana");
+    expect(useCases.createDeck).toHaveBeenCalledWith(instance.url, "Kana", "en");
   });
 
   it("shows a create error and stays on the creator", async () => {
@@ -76,8 +76,18 @@ describe("DeckCreatorContainer", () => {
       screen.getByRole("button", { name: "Create deck" }).closest("form")!,
     );
 
-    expect(await screen.findByText("save refused")).toBeInTheDocument();
+    // Said in the alert that was there, empty, all along, so screen readers hear it.
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toBe("");
+    await waitFor(() => expect(alert).toHaveTextContent("save refused"));
     expect(onDone).not.toHaveBeenCalled();
+
+    // Trying again clears the alert while the save runs, so the same error would be said again.
+    vi.mocked(useCases.createDeck).mockReturnValueOnce(new Promise(() => {}));
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Create deck" }).closest("form")!,
+    );
+    await waitFor(() => expect(alert.textContent).toBe(""));
   });
 
 });

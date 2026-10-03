@@ -132,7 +132,7 @@ describe("createSolidSessionGateway", () => {
 
       const gateway = createSolidSessionGateway("Test App");
       await expect(gateway.login(WEBID)).rejects.toThrow(
-        `No subject <${WEBID}> found`,
+        `Your WebID profile does not describe you.`,
       );
       expect(authnLogin).not.toHaveBeenCalled();
     });
@@ -144,7 +144,7 @@ describe("createSolidSessionGateway", () => {
 
       const gateway = createSolidSessionGateway("Test App");
       await expect(gateway.login(WEBID)).rejects.toThrow(
-        "does not declare a solid:oidcIssuer",
+        "Your WebID profile does not say where you log in.",
       );
       expect(authnLogin).not.toHaveBeenCalled();
     });
@@ -200,7 +200,7 @@ describe("createSolidSessionGateway", () => {
 
       const gateway = createSolidSessionGateway("Test App");
       await expect(gateway.login(WEBID)).rejects.toThrow(
-        "is not a valid https:// URL",
+        "not a secure https:// address",
       );
       expect(authnLogin).not.toHaveBeenCalled();
     });

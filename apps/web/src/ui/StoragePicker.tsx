@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import type { Storage } from "@solid-memo/domain/storage";
-import { useI18n, type I18n } from "./i18n";
+import { ErrorMessage } from "./ErrorMessage";
+import { useI18n, type I18n, type ErrorText } from "./i18n";
 
 function sourceLabel(source: Storage["source"], t: I18n["t"]): string {
   switch (source) {
@@ -22,7 +23,7 @@ export function StoragePicker({
 }: {
   storages: Storage[];
   busy: boolean;
-  error: string | null;
+  error: ErrorText | null;
   onSelect: (storage: Storage) => void;
   onAddManual: (url: string) => void;
 }) {
@@ -37,6 +38,7 @@ export function StoragePicker({
   return (
     <section>
       <h2>{t("storagePicker.heading")}</h2>
+      <p class="hint">{t("storagePicker.intro")}</p>
       {storages.length === 0 ? (
         <p>{t("storagePicker.empty")}</p>
       ) : (
@@ -66,7 +68,7 @@ export function StoragePicker({
           {t("storagePicker.use")}
         </button>
       </form>
-      {error && <p class="error">{error}</p>}
+      <ErrorMessage error={error} />
     </section>
   );
 }

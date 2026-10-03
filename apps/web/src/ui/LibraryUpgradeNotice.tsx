@@ -1,6 +1,7 @@
 import { activeCards } from "@solid-memo/domain/deck";
 import type { LibraryUpgradePlan } from "@solid-memo/domain/libraryUpgrade";
-import { useI18n, type I18n } from "./i18n";
+import { ErrorMessage } from "./ErrorMessage";
+import { useI18n, type I18n, type ErrorText } from "./i18n";
 
 /**
  * "adds 1 card, changes 2 cards, retires 1 card and removes 1 card", of
@@ -52,25 +53,28 @@ function historyKept(plan: LibraryUpgradePlan, t: I18n["t"]): string {
  */
 export function LibraryUpgradeNotice({
   deckName,
+  deckLang,
   plan,
   busy,
   error,
   onUpgrade,
 }: {
   deckName: string;
+  /** The language the deck's name is in, when not the page's (readerLang). */
+  deckLang?: string;
   plan: LibraryUpgradePlan;
   busy: boolean;
-  error: string | null;
+  error: ErrorText | null;
   onUpgrade: () => void;
 }) {
   const i18n = useI18n();
-  const { t } = i18n;
+  const { t, tx } = i18n;
   return (
     <div class="warning migration" role="region" aria-label={t("libraryUpgradeNotice.region")}>
       <p>
         <strong>{t("libraryUpgradeNotice.heading")}</strong>{" "}
-        {t("libraryUpgradeNotice.body", {
-          deck: deckName,
+        {tx("libraryUpgradeNotice.body", {
+          deck: <span lang={deckLang}>{deckName}</span>,
           from: plan.fromVersion,
           to: plan.toVersion,
           changes: describeChanges(plan, i18n),
@@ -90,7 +94,7 @@ export function LibraryUpgradeNotice({
       <button class="primary" onClick={onUpgrade} disabled={busy}>
         {busy ? t("libraryUpgradeNotice.updating") : t("libraryUpgradeNotice.update", { version: plan.toVersion })}
       </button>
-      {error && <p class="error">{error}</p>}
+      <ErrorMessage error={error} />
     </div>
   );
 }

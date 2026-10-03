@@ -6,19 +6,19 @@ import { useI18n } from "./i18n";
 
 /**
  * Owns the add-card mutation. Deliberately stays on the page after a
- * successful add (the form clears itself) so several cards can be entered
- * in a row; onBack leaves the page.
+ * successful add (the form clears itself once told) so several cards can be entered
+ * in a row; Back (backHref) leaves the page.
  */
 export function CardCreatorContainer({
   useCases,
   deck,
   deckHref,
-  onBack,
+  backHref,
 }: {
   useCases: UseCases;
   deck: Deck;
   deckHref: string;
-  onBack: () => void;
+  backHref: string;
 }) {
   const { errorText } = useI18n();
   const queryClient = useQueryClient();
@@ -39,8 +39,8 @@ export function CardCreatorContainer({
       deckHref={deckHref}
       busy={addCardMutation.isPending}
       error={errorText(addCardMutation.error)}
-      onAdd={(content) => addCardMutation.mutate(content)}
-      onBack={onBack}
+      onAdd={(content, onAdded) => addCardMutation.mutate(content, { onSuccess: onAdded })}
+      backHref={backHref}
     />
   );
 }

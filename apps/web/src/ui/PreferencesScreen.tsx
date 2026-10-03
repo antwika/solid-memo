@@ -7,7 +7,8 @@ import {
 import { LOCALES } from "@solid-memo/domain/locale";
 import type { StudyPreferences } from "@solid-memo/domain/preferences";
 import { THEME_CHOICES } from "@solid-memo/domain/theme";
-import { useI18n, type I18n } from "./i18n";
+import { ErrorMessage } from "./ErrorMessage";
+import { useI18n, type I18n, type ErrorText } from "./i18n";
 import { LANGUAGE_NAMES } from "./LanguageSelector";
 import { useTheme } from "./theme";
 
@@ -69,7 +70,7 @@ export function PreferencesScreen({
 }: {
   preferences: StudyPreferences;
   busy: boolean;
-  error: string | null;
+  error: ErrorText | null;
   onSave: (preferences: StudyPreferences) => void;
 }) {
   const { t, locale, chooseLocale } = useI18n();
@@ -113,7 +114,8 @@ export function PreferencesScreen({
         <h2>{t("preferences.heading")}</h2>
       </header>
       <form onSubmit={handleSubmit}>
-        <fieldset>
+        {/* Each group's hint is its description, heard as focus enters it. */}
+        <fieldset aria-describedby="pref-language-hint">
           <legend>{t("preferences.language.legend")}</legend>
           {LOCALES.map((option) => (
             <label key={option} class="radio-option" lang={option}>
@@ -127,9 +129,11 @@ export function PreferencesScreen({
               {LANGUAGE_NAMES[option]}
             </label>
           ))}
-          <p class="hint">{t("preferences.language.hint")}</p>
+          <p id="pref-language-hint" class="hint">
+            {t("preferences.language.hint")}
+          </p>
         </fieldset>
-        <fieldset>
+        <fieldset aria-describedby="pref-theme-hint">
           <legend>{t("preferences.theme.legend")}</legend>
           {THEME_CHOICES.map((option) => (
             <label key={option} class="radio-option">
@@ -143,7 +147,9 @@ export function PreferencesScreen({
               {t(`theme.${option}`)}
             </label>
           ))}
-          <p class="hint">{t("preferences.theme.hint")}</p>
+          <p id="pref-theme-hint" class="hint">
+            {t("preferences.theme.hint")}
+          </p>
         </fieldset>
         <label for="pref-new">{t("preferences.newCardsPerDay")}</label>
         <input
@@ -177,9 +183,13 @@ export function PreferencesScreen({
           max="23"
           value={dayBoundaryHour}
           onInput={(e) => setDayBoundaryHour(e.currentTarget.value)}
+          aria-describedby="pref-boundary-hint"
           required
           disabled={busy}
         />
+        <p id="pref-boundary-hint" class="hint">
+          {t("preferences.dayBoundaryHint")}
+        </p>
         <fieldset>
           <legend>{t("preferences.answerScale.legend")}</legend>
           {answerScaleOptions(t).map((option) => (
@@ -221,17 +231,20 @@ export function PreferencesScreen({
               type="checkbox"
               checked={developerMode}
               onChange={(e) => setDeveloperMode(e.currentTarget.checked)}
+              aria-describedby="pref-developer-hint"
               disabled={busy}
             />
             {t("preferences.developer.mode")}
           </label>
-          <p class="hint">{t("preferences.developer.hint")}</p>
+          <p id="pref-developer-hint" class="hint">
+            {t("preferences.developer.hint")}
+          </p>
         </fieldset>
         <button type="submit" disabled={busy}>
           {t("preferences.save")}
         </button>
       </form>
-      {error && <p class="error">{error}</p>}
+      <ErrorMessage error={error} />
     </section>
   );
 }

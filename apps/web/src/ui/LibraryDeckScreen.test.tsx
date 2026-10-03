@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/preact";
 import { LibraryDeckScreen } from "./LibraryDeckScreen";
 import { licenseLabel } from "@solid-memo/domain/license";
+import { NEW_TAB, newTab } from "../test/links";
 import type { LibraryDeck } from "@solid-memo/domain/library";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
 
@@ -37,12 +38,11 @@ function renderScreen(
 ) {
   const props = {
     deck: capitals,
-    deckHref: "#/library-deck?deck=capitals",
+    browseHref: "#/library-browse?deck=capitals",
     previewHref: "#/library-preview?deck=capitals",
     imported: false,
     busy: false,
     error: null,
-    onBrowse: vi.fn(),
     onImport: vi.fn(),
     ...overrides,
   };
@@ -87,23 +87,21 @@ describe("LibraryDeckScreen", () => {
     expect(fact("Topic")).toHaveTextContent("Geography");
   });
 
-  it("shows the deck in full under a linked heading", () => {
+  it("shows the deck in full under a heading that links nowhere: the page is this one", () => {
     renderScreen();
     expect(
       screen.getByRole("heading", { name: "Capitals of the world" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Capitals of the world" }),
-    ).toHaveAttribute("href", "#/library-deck?deck=capitals");
+    expect(screen.queryByRole("link", { name: "Capitals of the world" })).toBeNull();
     expect(fact("Size")).toHaveTextContent("243 cards");
 
     expect(screen.getByText(/Every country and its capital/)).toHaveClass(
       "deck-description",
     );
-    expect(screen.getAllByRole("link", { name: WIKIPEDIA })).toHaveLength(1);
+    expect(screen.getAllByRole("link", { name: newTab(WIKIPEDIA) })).toHaveLength(1);
 
     expect(fact("Author")).toHaveTextContent("Anton Wiklund");
-    expect(within(fact("Licence")).getByRole("link", { name: "CC0 1.0" }))
+    expect(within(fact("Licence")).getByRole("link", { name: newTab("CC0 1.0") }))
       .toHaveAttribute("href", CC0);
     expect(fact("Created")).toHaveTextContent("September 22, 2026");
     expect(fact("Updated")).toHaveTextContent("September 27, 2026");
@@ -130,15 +128,15 @@ describe("LibraryDeckScreen", () => {
     const sources = within(fact("Sources")).getAllByRole("listitem");
     expect(sources).toHaveLength(2);
     expect(
-      within(sources[0]).getByRole("link", { name: "List of national capitals" }),
+      within(sources[0]).getByRole("link", { name: newTab("List of national capitals") }),
     ).toHaveAttribute("href", WIKIPEDIA);
     expect(sources[0]).toHaveTextContent(
-      `List of national capitals — Wikipedia contributors · ${licenseLabel(BY_SA)}`,
+      `List of national capitals${NEW_TAB} — Wikipedia contributors · ${licenseLabel(BY_SA)}`,
     );
     expect(
-      within(sources[0]).getByRole("link", { name: licenseLabel(BY_SA) }),
+      within(sources[0]).getByRole("link", { name: newTab(licenseLabel(BY_SA)) }),
     ).toHaveAttribute("href", BY_SA);
-    expect(within(sources[1]).getByRole("link", { name: WIKIDATA })).toHaveAttribute(
+    expect(within(sources[1]).getByRole("link", { name: newTab(WIKIDATA) })).toHaveAttribute(
       "href",
       WIKIDATA,
     );
@@ -156,7 +154,7 @@ describe("LibraryDeckScreen", () => {
     });
     expect(fact("Authors")).toHaveTextContent("Anton Wiklund, A friend");
     expect(fact("Source")).toHaveTextContent(
-      `${WIKIDATA} — Wikidata contributors`,
+      `${WIKIDATA}${NEW_TAB} — Wikidata contributors`,
     );
   });
 
@@ -195,10 +193,12 @@ describe("LibraryDeckScreen", () => {
     expect(fact("Studied")).toHaveTextContent("Front → back");
   });
 
-  it("opens the card list on request", () => {
-    const { props } = renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Browse cards" }));
-    expect(props.onBrowse).toHaveBeenCalledOnce();
+  it("links to the card list", () => {
+    renderScreen();
+    expect(screen.getByRole("link", { name: "Browse cards" })).toHaveAttribute(
+      "href",
+      "#/library-browse?deck=capitals",
+    );
   });
 
   it("imports the deck on request", () => {

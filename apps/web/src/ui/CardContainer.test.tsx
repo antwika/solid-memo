@@ -60,7 +60,7 @@ describe("CardContainer", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("Saved.");
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Saved."));
     expect(useCases.updateCard).toHaveBeenCalledWith(deck, card, {
       front: { "": "水" },
       back: { "": "water (mizu)" },

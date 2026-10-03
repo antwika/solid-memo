@@ -4,8 +4,8 @@ import type { Deck } from "@solid-memo/domain/deck";
 import { parseKeywords, topicsOfDeck, type DeckAbout } from "@solid-memo/domain/deckAbout";
 import { topicLabels } from "@solid-memo/domain/library";
 import { linkify } from "./linkify";
-import { editedText } from "@solid-memo/domain/langText";
 import { useI18n } from "./i18n";
+import { ReaderText, ReaderTexts } from "./ReaderText";
 
 /**
  * What a deck says about itself — its description, its topics (from
@@ -22,7 +22,7 @@ export function DeckAboutSection({
   busy: boolean;
   onSave: (about: DeckAbout) => void;
 }) {
-  const { t, readerText } = useI18n();
+  const { t, tx, readerText, readerLang, typedPart, typedText } = useI18n();
   /** The drafts while editing; null otherwise. */
   const [draft, setDraft] = useState<{ description: string; topics: string[]; keywords: string } | null>(
     null,
@@ -32,7 +32,7 @@ export function DeckAboutSection({
 
   function edit() {
     setDraft({
-      description: editedText(deck.description),
+      description: typedText(deck.description),
       topics: topicsOfDeck(deck),
       keywords: keywords.join(", "),
     });
@@ -59,10 +59,14 @@ export function DeckAboutSection({
   if (draft === null) {
     return (
       <section class="deck-about" aria-label={t("deckAbout.label")}>
-        {deck.description !== undefined && <p class="deck-description">{linkify(readerText(deck.description))}</p>}
+        {deck.description !== undefined && (
+          <p class="deck-description" lang={readerLang(deck.description)}>
+            {linkify(readerText(deck.description))}
+          </p>
+        )}
         {(topics.length > 0 || keywords.length > 0) && (
           <p class="hint">
-            {topics.length > 0 && t("deckAbout.topicsLine", { topics: topics.map(readerText).join(", ") })}
+            {topics.length > 0 && tx("deckAbout.topicsLine", { topics: <ReaderTexts texts={topics} /> })}
             {topics.length > 0 && keywords.length > 0 && " · "}
             {keywords.length > 0 && t("deckAbout.keywordsLine", { keywords: keywords.join(", ") })}
           </p>
@@ -74,16 +78,24 @@ export function DeckAboutSection({
     );
   }
 
+  const edited = typedPart(deck.description);
   return (
     <form class="card-edit deck-about" aria-label={t("deckAbout.label")} onSubmit={handleSubmit}>
       <label for="deck-description">{t("deckAbout.description")}</label>
       <textarea
         id="deck-description"
+        lang={edited.lang}
+        aria-describedby={edited.hint === null ? undefined : "deck-description-language"}
         value={draft.description}
         onInput={(e) => setDraft({ ...draft, description: e.currentTarget.value })}
         required
         disabled={busy}
       />
+      {edited.hint !== null && (
+        <p id="deck-description-language" class="hint field-hint">
+          {edited.hint}
+        </p>
+      )}
       <fieldset class="library-topics">
         <legend>{t("deckAbout.topics")}</legend>
         {TOPICS.concepts.map((topic) => (
@@ -94,7 +106,7 @@ export function DeckAboutSection({
               onChange={(e) => toggleTopic(topic.iri, e.currentTarget.checked)}
               disabled={busy}
             />
-            {readerText(topic.label)}
+            <ReaderText text={topic.label} />
           </label>
         ))}
       </fieldset>
@@ -103,10 +115,13 @@ export function DeckAboutSection({
         id="deck-keywords"
         type="text"
         value={draft.keywords}
-        placeholder={t("deckAbout.keywordsPlaceholder")}
+        aria-describedby="deck-keywords-hint"
         onInput={(e) => setDraft({ ...draft, keywords: e.currentTarget.value })}
         disabled={busy}
       />
+      <p id="deck-keywords-hint" class="hint field-hint">
+        {t("deckAbout.keywordsHint")}
+      </p>
       <div class="edit-actions">
         <button type="submit" disabled={busy}>
           {t("deckAbout.saveButton")}

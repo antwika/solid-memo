@@ -50,7 +50,7 @@ describe("LibraryBrowserScreen", () => {
     expect(screen.getByText("Front 1")).toBeInTheDocument();
     expect(screen.getByText("Back 2")).toBeInTheDocument();
     expect(
-      screen.getByText("2 cards. Click a card to open it. Import the deck to study or edit them."),
+      screen.getByText("2 cards. Open a card to see it in full. Import the deck to study or edit them."),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("link")).toHaveLength(3);
     expect(screen.queryByRole("button")).toBeNull();
@@ -62,13 +62,15 @@ describe("LibraryBrowserScreen", () => {
       "href",
       "#/library-card?card=card-2",
     );
-    const back = screen.getByText("Back 2").closest("a")!;
-    expect(back).toHaveAttribute("href", "#/library-card?card=card-2");
-    expect(back).toHaveAttribute("aria-hidden", "true");
-    expect(back.closest("td")).toHaveClass("clickable");
+    const cell = screen.getByText("Back 2").closest("td")!;
+    expect(cell).toHaveClass("clickable");
+    expect(cell.closest('[aria-hidden="true"]')).toBeNull();
+    const overlay = cell.querySelector("a")!;
+    expect(overlay).toHaveAttribute("href", "#/library-card?card=card-2");
+    expect(overlay).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("shows a card's pictures", () => {
+  it("shows a card's pictures, naming a picture-only row by its back", () => {
     const { container } = renderScreen({
       cards: [{ ...card(1), front: {}, frontImageUrl: FLAG }],
     });
@@ -76,6 +78,9 @@ describe("LibraryBrowserScreen", () => {
       "src",
       FLAG,
     );
+    expect(
+      screen.getByRole("link", { name: "Picture for: Back 1" }),
+    ).toHaveAttribute("href", "#/library-card?card=card-1");
   });
 
   it("hides retired cards until asked, counting only the others", () => {

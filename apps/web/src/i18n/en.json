@@ -22,21 +22,27 @@
       "frontToBack": "Front → back",
       "backToFront": "Back → front",
       "bidirectional": "Both ways"
-    }
+    },
+    "networkError": "Could not reach your Pod. Check your connection and try again.",
+    "unexpectedError": "Something went wrong. Try again, or reload the page. Details: {detail}",
+    "editingLanguage": "You are editing the text in {language}. Its translations stay as they are.",
+    "editingUntagged": "You are editing the text in no stated language. Its translations stay as they are.",
+    "technicalDetails": "Technical details",
+    "opensInNewTab": "(opens in a new tab)"
   },
   "footer": {
     "createdBy": "Created by {author}",
     "version": "Version {version}"
   },
   "addCardForm": {
-    "submitButton": "Add card"
+    "submitButton": "Add card",
+    "added": "Card added."
   },
   "app": {
     "restoringSession": "Restoring session…",
-    "illustrationAlt": "Solid Memo illustration",
+    "skipToContent": "Skip to content",
     "tagline": "Spaced-repetition flashcards that live in your own Solid Pod.",
     "sessionExpired": "Your session has expired. Please log in again.",
-    "logoAlt": "Solid Memo — back to start",
     "loggedInAs": "Logged in as {name}",
     "logOut": "Log out",
     "guestLine": "You are trying Solid Memo as a guest: your study is kept in this browser only.",
@@ -47,12 +53,16 @@
     "discardYes": "Delete it",
     "cancel": "Cancel",
     "loginToKeep": "Log in to keep your study: once you are in, Solid Memo offers to move it into your Pod.",
-    "backToStudy": "Back to my study"
+    "backToStudy": "Back to my study",
+    "documentTitle": "Solid Memo",
+    "landingTitle": "Log in",
+    "connectingTitle": "Connecting your Pod"
   },
   "backup": {
     "heading": "Previous version",
-    "kept": "The last format update kept your data as it was before at {link}.",
-    "keptOn": "The last format update kept your data as it was before ({date}) at {link}.",
+    "kept": "The last format update kept your data as it was before, in {link}.",
+    "keptOn": "The last format update kept your data as it was before ({date}), in {link}.",
+    "folder": "a backup folder in your Pod",
     "restoreConfirm": "Go back to the previous version of {name}? What you studied since the update is lost with the updated version.",
     "restore": "Restore previous version",
     "restoring": "Restoring…",
@@ -79,19 +89,23 @@
   },
   "browser": {
     "heading": "Browser: {deck}",
+    "intro": "The Browser lists every card in this deck. Here you add, edit and retire cards, and choose how the deck is studied.",
     "addCardButton": "Add card",
     "directionLegend": "Study direction",
     "bidirectionalHint": "Every card is asked both ways, each way scheduled on its own.",
     "directionHint": "Change it any time; what you have learnt each way is kept.",
     "empty": "No cards in this deck yet.",
     "allRetired": "Every card in this deck is retired.",
-    "pageHint": "Cards {first}–{last} of {total}. Click a card to open it.",
-    "openHint": "Click a card to open it.",
+    "pageHint": "Cards {first}–{last} of {total}. Open a card to edit it.",
+    "openHint": "Open a card to edit it.",
     "frontColumn": "Front",
     "backColumn": "Back",
+    "actionsColumn": "Actions",
     "removeButton": "Remove",
+    "removeCardLabel": "Remove card {card}",
     "removeConfirm": "Remove the card \"{card}\"? This cannot be undone.",
-    "loading": "Loading cards…"
+    "loading": "Loading cards…",
+    "removed": "Removed the card \"{card}\"."
   },
   "card": {
     "heading": "Card",
@@ -103,17 +117,21 @@
   "cardContentFields": {
     "front": "Front",
     "frontPlaceholder": "Question or prompt",
-    "frontImage": "Front picture (URL)",
-    "imagePlaceholder": "https://… (optional)",
-    "frontNote": "Front note",
-    "frontNotePlaceholder": "Shown under the front once the answer is revealed (optional)",
-    "backLabel": "Label",
-    "backLabelPlaceholder": "Shown above the back, e.g. what kind of answer it is (optional)",
+    "frontImage": "Front picture (URL, optional)",
+    "frontImageDescription": "Front picture description (optional)",
+    "imagePlaceholder": "https://…",
+    "imageDescriptionHint": "Read out in place of the picture to anyone who cannot see it. Describe what it shows without giving the answer away.",
+    "frontNote": "Front note (optional)",
+    "frontNoteHint": "Shown under the front once the answer is revealed.",
+    "backLabel": "Label (optional)",
+    "backLabelHint": "Shown above the back, e.g. what kind of answer it is.",
     "back": "Back",
     "backPlaceholder": "Answer",
-    "backImage": "Back picture (URL)",
-    "backNote": "Back note",
-    "backNotePlaceholder": "Shown under the back once the answer is revealed (optional)"
+    "backImage": "Back picture (URL, optional)",
+    "backImageDescription": "Back picture description (optional)",
+    "backNote": "Back note (optional)",
+    "backNoteHint": "Shown under the back once the answer is revealed.",
+    "sidesHint": "Each side needs text, a picture, or both."
   },
   "cardCreator": {
     "heading": "New card",
@@ -123,11 +141,16 @@
   "cardFace": {
     "frontPictureAlt": "Picture on the front of the card",
     "backPictureAlt": "Picture on the back of the card",
-    "notWebUrl": "Picture not shown: its address is not a web URL."
+    "pictureFor": "Picture for: {back}",
+    "notWebUrl": "Picture not shown: its address is not a web URL.",
+    "front": "Front",
+    "back": "Back",
+    "question": "Question",
+    "answer": "Answer"
   },
   "dataCheckNotice": {
     "region": "Data check",
-    "heading": "Some data in {name} does not conform to Solid Memo's shapes.",
+    "heading": "Some data in {name} is not in the format Solid Memo expects.",
     "blockInstance": "Solid Memo will not use this instance until it is repaired.",
     "restKeepsWorking": "The rest keeps working.",
     "setAside": {
@@ -145,9 +168,9 @@
     "keywordsLine": "Keywords: {keywords}",
     "describeButton": "Describe deck",
     "description": "Description",
-    "topics": "Topics",
-    "keywords": "Keywords",
-    "keywordsPlaceholder": "Separated by commas",
+    "topics": "Topics (optional)",
+    "keywords": "Keywords (optional)",
+    "keywordsHint": "Separate keywords with commas.",
     "saveButton": "Save description",
     "cancelLabel": "Cancel describing",
     "cancelButton": "Cancel"
@@ -259,18 +282,22 @@
     "statistics": "Statistics",
     "preferences": "Preferences",
     "switch": "Switch instance",
-    "inBrowser": "Kept in this browser"
+    "inBrowser": "Kept in this browser",
+    "openInPod": "Open in your Pod",
+    "label": "Instance"
   },
   "instanceCreator": {
     "heading": "New Solid Memo instance",
     "name": "Name",
     "namePlaceholder": "My instance",
     "location": "Location",
+    "locationHint": "The folder in your Pod where this instance keeps its decks and study.",
     "create": "Create instance",
     "back": "Back"
   },
   "instancePicker": {
     "heading": "Choose a Solid Memo instance",
+    "intro": "An instance is one collection of your decks and study, kept in a folder in your Pod. Most people need only one.",
     "empty": "No instances are registered yet.",
     "deleteConfirm": "Delete the instance \"{name}\" and all its decks and cards? This cannot be undone.",
     "deleteLabel": "Delete instance {name}",
@@ -278,7 +305,8 @@
     "newInstance": "New instance…",
     "attachSummary": "Attach an existing instance by URL",
     "attachUrl": "Instance container URL",
-    "attach": "Attach"
+    "attach": "Attach",
+    "deleted": "Deleted the instance \"{name}\"."
   },
   "instanceUpdate": {
     "confirmRegion": "Start the update",
@@ -288,7 +316,6 @@
     "notNow": "Not now",
     "progressRegion": "Updating",
     "running": "{step}…",
-    "runningCount": "{step}… ({done} of {total})",
     "progressLabel": "Update progress",
     "keepOpen": "Keep this page open until the update is done.",
     "step": {
@@ -343,7 +370,7 @@
       "one": "{count} card.",
       "other": "{count} cards."
     },
-    "hint": "Click a card to open it. Import the deck to study or edit them.",
+    "hint": "Open a card to see it in full. Import the deck to study or edit them.",
     "front": "Front",
     "back": "Back",
     "loading": "Loading cards…"
@@ -396,12 +423,12 @@
   },
   "stepProgress": {
     "done": "done",
-    "current": "in progress"
+    "current": "in progress",
+    "count": "{done} of {total}"
   },
   "deckUpgrade": {
     "progressRegion": "Updating the deck",
     "running": "{step}…",
-    "runningCount": "{step}… ({done} of {total})",
     "progressLabel": "Update progress",
     "keepOpen": "Keep this page open until the update is done. Your deck is only switched over once everything checks out.",
     "step": {
@@ -553,7 +580,6 @@
     "back": "Back",
     "progressRegion": "Moving your study",
     "running": "{step}…",
-    "runningCount": "{step}… ({done} of {total})",
     "progressLabel": "Progress of the move",
     "keepOpen": "Keep this page open until the move is done.",
     "step": {
@@ -608,11 +634,12 @@
     "newCardsPerDay": "New cards per day",
     "maxReviewsPerDay": "Max reviews per day",
     "dayBoundaryHour": "Day starts at (hour)",
+    "dayBoundaryHint": "An hour from 0 to 23 on the 24-hour clock: a new study day, with new cards and reviews, starts then.",
     "answerScale": {
       "legend": "Answer buttons",
       "sm2": {
         "label": "0 to 5 scale",
-        "hint": "The full SM-2 grades, from 0 (blackout) to 5 (easy)."
+        "hint": "The full grades of SuperMemo-2 (SM-2), the method that schedules your reviews: from 0 (no memory at all) to 5 (easy)."
       },
       "minimal": {
         "label": "Again · Hard · Good · Easy",
@@ -643,6 +670,7 @@
   },
   "registrationTargetChooser": {
     "legend": "Register in",
+    "intro": "A type index is a list in your profile that tells apps where your data is. Only you can see a private one.",
     "noPrivateIndex": "Your profile has no private type index yet. Solid Memo can create one (recommended), or register in your public type index instead — public registrations are visible to anyone who can read your profile.",
     "private": "Private type index",
     "privateCreated": "Private type index (will be created)",
@@ -681,6 +709,7 @@
   },
   "storagePicker": {
     "heading": "Choose a storage",
+    "intro": "A storage is a place in your Pod where Solid Memo can keep its folder. Usually there is just one: your Pod itself.",
     "empty": "No storage was found for your WebID. Enter your pod's root URL below.",
     "source": {
       "profile": "from your profile",
@@ -696,7 +725,13 @@
     "nothingToday": "Nothing to study today — come back tomorrow!",
     "finished": "Session finished — all cards reviewed.",
     "position": "Card {position} of {total}",
+    "putBack": "You'll see the last card again later in this session.",
     "reveal": "Reveal",
+    "gradePrompt": "How well did you remember it?",
+    "keys": {
+      "reveal": "Press Space to reveal the answer.",
+      "grade": "Press {first} to {last} to answer."
+    },
     "preparing": "Preparing your study session…",
     "quality": {
       "blackout": "0 — Blackout",
@@ -808,47 +843,51 @@
     "webIdNotHttps": "A WebID must start with https://.",
     "webIdWithCredentials": "A WebID must not contain a username or password.",
     "providerNotHttps": "An identity provider must be an https:// URL.",
-    "webIdNoSubject": "No subject <{webId}> found in the WebID document.",
-    "webIdNoIssuer": "The WebID document does not declare a solid:oidcIssuer for <{webId}>.",
-    "webIdIssuerNotHttps": "The solid:oidcIssuer declared for <{webId}> is not a valid https:// URL.",
-    "profileNoSubject": "No subject <{webId}> found in the profile document.",
-    "privateTypeIndexNotLinked": "Could not link the private type index <{index}> from any profile document:\n{failures}",
-    "publicTypeIndexNotLinked": "Could not link the public type index <{index}> from any profile document:\n{failures}",
-    "storageInaccessible": "Cannot access <{url}> (HTTP {status}).",
-    "notAnInstanceNoMeta": "<{url}> is not a Solid Memo instance (no readable meta.ttl).",
-    "notAnInstanceNoSubject": "<{url}> is not a Solid Memo instance (meta.ttl has no #it subject).",
-    "notRegistered": "<{url}> is registered in no type index; there is nothing to switch.",
-    "noMetaToUpdate": "<{url}> has no meta document to update.",
+    "webIdNoSubject": "Your WebID profile does not describe you. Check that you entered your WebID exactly, with the part after #, or pick your provider instead.",
+    "webIdNoIssuer": "Your WebID profile does not say where you log in. Pick your provider instead of entering your WebID.",
+    "webIdIssuerNotHttps": "Your WebID profile names a place to log in that is not a secure https:// address. Pick your provider instead of entering your WebID.",
+    "profileNoSubject": "Your profile does not describe you, so Solid Memo cannot note in it where your data is. Check your profile with your Pod provider, then try again.",
+    "privateTypeIndexNotLinked": "Solid Memo could not link its private list of your data from your profile. Check that Solid Memo may edit your profile, then try again.",
+    "publicTypeIndexNotLinked": "Solid Memo could not link its public list of your data from your profile. Check that Solid Memo may edit your profile, then try again.",
+    "storageInaccessible": "Solid Memo cannot open that storage. Check the address, and that you are logged in with the account that owns it.",
+    "notAnInstanceNoMeta": "That address is not a Solid Memo instance. Check that you pasted the address of an instance's folder, ending in /.",
+    "notAnInstanceNoSubject": "That folder is not a Solid Memo instance: its description cannot be read. Check that you pasted the right address.",
+    "notRegistered": "That instance is no longer on your list of instances, so there is nothing to switch. Reload the page and try again.",
+    "noMetaToUpdate": "This instance has no description to update. Reload the page and try again.",
     "noBackup": "{instance} has no backup to restore.",
     "updatedCopyInvalid": {
-      "one": "The updated copy does not conform to Solid Memo's shapes ({count} violation); your data is left as it was.",
-      "other": "The updated copy does not conform to Solid Memo's shapes ({count} violations); your data is left as it was."
+      "one": "The updated copy is not in the format Solid Memo expects ({count} problem), so your data is left as it was. Try again later.",
+      "other": "The updated copy is not in the format Solid Memo expects ({count} problems), so your data is left as it was. Try again later."
     },
     "movedCopyInvalid": {
-      "one": "The copy in your pod does not conform to Solid Memo's shapes ({count} violation); your study is left as it was.",
-      "other": "The copy in your pod does not conform to Solid Memo's shapes ({count} violations); your study is left as it was."
+      "one": "The copy in your Pod is not in the format Solid Memo expects ({count} problem), so your study is left as it was. Try again later.",
+      "other": "The copy in your Pod is not in the format Solid Memo expects ({count} problems), so your study is left as it was. Try again later."
     },
-    "guestUrlsLeft": "<{url}> still names the guest's pod after the move; your study is left as it was.",
-    "instanceChangedDuringCopy": "The instance changed while it was being copied (in another tab or app?); try again.",
-    "resourceChangedDuringCopy": "<{url}> changed while it was being copied (in another tab or app?); try again.",
-    "instanceBeingUpdated": "Solid Memo is updating the instance at {container} and writes nothing to it until the update is over (refused: {method} {url}).",
-    "deckChangedSinceOffer": "The deck changed since the update was offered (in another tab or app?); nothing was changed. Look at the offer again.",
-    "upgradedCardsDiffer": "The pod does not hold the new cards as Solid Memo wrote them to <{url}>.",
-    "upgradedReviewsDiffer": "The pod does not hold the review states as Solid Memo wrote them to <{url}>.",
-    "deckChangedDuringUpgrade": "<{url}> changed while the deck was being updated (in another tab or app?).",
-    "deckBeingUpgraded": "Solid Memo is updating the deck in {document} and writes nothing to it until the update is over (refused: {method} {url}).",
-    "changedElsewhere": "{url} was changed elsewhere (in another tab or app?) since Solid Memo read it, so nothing was saved. Reload and try again.",
-    "createdElsewhere": "{url} was created elsewhere (in another tab or app?) while Solid Memo was about to create it, so nothing was saved. Reload and try again.",
-    "alreadyExists": "<{url}> already exists.",
-    "cannotCheck": "Could not check <{url}>: {status}.",
-    "accessControlUnknown": "The pod does not say where the access control of <{url}> goes.",
-    "dataNotConforming": "Solid Memo did not save data that does not conform to its shapes:\n  {problems}",
-    "deckGone": "The deck <{deck}> no longer exists.",
-    "cardsDocumentGone": "The cards document of <{deck}> no longer exists.",
-    "cardGone": "Card <{card}> no longer exists.",
-    "notADeck": "<{url}> is not a Solid Memo deck.",
-    "libraryDeckTooNew": "<{url}> is in deck format {version}, newer than this app supports ({latest}).",
-    "libraryCardTooNew": "<{card}> in <{url}> is in card format {version}, newer than this app supports ({latest})."
+    "guestUrlsLeft": "The copy in your Pod still points to the guest's study, so your study is left as it was. Try again.",
+    "instanceChangedDuringCopy": "The instance changed while it was being copied, perhaps in another tab or app. Try again.",
+    "resourceChangedDuringCopy": "Part of the instance changed while it was being copied, perhaps in another tab or app. Try again.",
+    "instanceBeingUpdated": "Solid Memo is updating this instance and saves nothing to it until the update is done. Wait for the update to finish, then try again.",
+    "deckChangedSinceOffer": "The deck changed since the update was offered, perhaps in another tab or app, so nothing was changed. Look at the offer again.",
+    "upgradedCardsDiffer": "Your Pod does not hold the new cards as Solid Memo saved them. Try the update again.",
+    "upgradedReviewsDiffer": "Your Pod does not hold your progress as Solid Memo saved it. Try the update again.",
+    "deckChangedDuringUpgrade": "The deck changed while it was being updated, perhaps in another tab or app. Try again.",
+    "deckBeingUpgraded": "Solid Memo is updating this deck and saves nothing to it until the update is done. Wait for the update to finish, then try again.",
+    "changedElsewhere": "This was changed elsewhere, perhaps in another tab or app, since Solid Memo read it, so nothing was saved. Reload the page and try again.",
+    "createdElsewhere": "This was created elsewhere, perhaps in another tab or app, just as Solid Memo was about to create it, so nothing was saved. Reload the page and try again.",
+    "alreadyExists": "Something is already kept at that place in your Pod. Choose another place.",
+    "cannotCheck": "Solid Memo could not check your Pod. Check your connection and try again.",
+    "accessControlUnknown": "Your Pod does not say how to set who may open the copy, so Solid Memo cannot keep your sharing as it was. Nothing was changed.",
+    "dataNotConforming": "Solid Memo did not save this: it is not in the format Solid Memo expects. Nothing was changed. Reload the page and try again.",
+    "deckGone": "The deck “{deck}” no longer exists. Perhaps it was removed in another tab or app.",
+    "cardsDocumentGone": "The cards of “{deck}” can no longer be found. Reload the page and try again.",
+    "cardGone": "That card no longer exists. Perhaps it was removed in another tab or app. Reload the page.",
+    "notADeck": "That is not a Solid Memo deck, so it cannot be added. Choose another deck.",
+    "libraryDeckTooNew": "This deck is in a newer format than this version of Solid Memo can read. Reload the page to get the latest version.",
+    "libraryCardTooNew": "A card in this deck is in a newer format than this version of Solid Memo can read. Reload the page to get the latest version.",
+    "noGuestPod": "There is no guest study on this device.",
+    "guestPodStartFailed": "The guest study on this device could not be opened. Reload the page and try again.",
+    "guestStorageAborted": "This browser refused to save a change to the guest study. Check that it has room to keep data, then try again.",
+    "addFailed": "Solid Memo could not save to your Pod. Check your connection and try again."
   },
   "statistics": {
     "heading": "Statistics",
@@ -877,7 +916,7 @@
     "lastDaysLabel": "Answers on each of the last {count} days.",
     "less": "Less",
     "more": "More",
-    "pointAtDay": "Point at a day to see what it held.",
+    "pointAtDay": "Point at a day to see what it held, or open the table below.",
     "dayDetail": "{date}: {answers}, {introduced} new, {forgotten} forgotten.",
     "dayNothing": "{date}: nothing studied.",
     "answerCount": {

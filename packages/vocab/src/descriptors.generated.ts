@@ -138,6 +138,8 @@ export const CARD_V4: ShapeDescriptor<CardV4> = {
     { name: "back", predicate: "https://solid-memo.com/vocab/v1#back", kind: "anyText", cardinality: "optional" },
     { name: "frontImage", predicate: "https://solid-memo.com/vocab/v1#frontImage", kind: "iri", cardinality: "optional" },
     { name: "backImage", predicate: "https://solid-memo.com/vocab/v1#backImage", kind: "iri", cardinality: "optional" },
+    { name: "frontImageDescription", predicate: "https://solid-memo.com/vocab/v1#frontImageDescription", kind: "text", cardinality: "optional" },
+    { name: "backImageDescription", predicate: "https://solid-memo.com/vocab/v1#backImageDescription", kind: "text", cardinality: "optional" },
     { name: "frontNote", predicate: "https://solid-memo.com/vocab/v1#frontNote", kind: "text", cardinality: "optional" },
     { name: "backLabel", predicate: "https://solid-memo.com/vocab/v1#backLabel", kind: "text", cardinality: "optional" },
     { name: "backNote", predicate: "https://solid-memo.com/vocab/v1#backNote", kind: "text", cardinality: "optional" },

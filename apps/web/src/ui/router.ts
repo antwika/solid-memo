@@ -147,7 +147,7 @@ export function validationHref(instanceUrl: string): string {
 
 /**
  * Hash URL of an instance's deck list: what every "Decks" in the UI —
- * heading, breadcrumb, "Back to decks" — links to.
+ * breadcrumb, "Back to decks" — links to.
  */
 export function decksHref(instanceUrl: string): string {
   return routeToHash({ screen: "home", instanceUrl });
@@ -291,6 +291,18 @@ function parsePage(value: string | null): number | null {
 }
 
 /**
+ * How the route last changed: "initial" on load, "push" by `navigate`,
+ * "replace" by `replace`, "pop" from the browser (Back/Forward, a link,
+ * a hand-edited hash). Push and pop are the user's own moves; the screen
+ * takes focus after those only (useScreenFocus).
+ */
+export type RouteChange = "initial" | "push" | "replace" | "pop";
+
+function sameRoute(a: RouteRef | null, b: RouteRef | null): boolean {
+  return a === null || b === null ? a === b : routeToHash(a) === routeToHash(b);
+}
+
+/**
  * The URL hash as route state. `navigate` pushes a history entry (so
  * Back walks the app's screens); `replace` swaps the current entry
  * (redirects and defaults, which should not be Back stops).
@@ -299,28 +311,38 @@ function parsePage(value: string | null): number | null {
  */
 export function useHashRoute(): {
   route: RouteRef | null;
+  change: RouteChange;
   navigate: (ref: RouteRef) => void;
   replace: (ref: RouteRef) => void;
 } {
-  const [route, setRoute] = useState<RouteRef | null>(() =>
-    parseHash(window.location.hash),
-  );
+  // One state, so a route and how it came about never disagree.
+  const [state, setState] = useState<{ route: RouteRef | null; change: RouteChange }>(() => ({
+    route: parseHash(window.location.hash),
+    change: "initial",
+  }));
 
   useEffect(() => {
-    const onHashChange = () => setRoute(parseHash(window.location.hash));
+    // A hashchange to the route already shown is the app's own push or
+    // replace echoed back (as some DOMs do), not a move of the user's.
+    const onHashChange = () => {
+      const route = parseHash(window.location.hash);
+      setState((current) =>
+        sameRoute(route, current.route) ? current : { route, change: "pop" },
+      );
+    };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
   function navigate(ref: RouteRef) {
     window.history.pushState(null, "", routeToHash(ref));
-    setRoute(ref);
+    setState({ route: ref, change: "push" });
   }
 
   function replace(ref: RouteRef) {
     window.history.replaceState(null, "", routeToHash(ref));
-    setRoute(ref);
+    setState({ route: ref, change: "replace" });
   }
 
-  return { route, navigate, replace };
+  return { route: state.route, change: state.change, navigate, replace };
 }
