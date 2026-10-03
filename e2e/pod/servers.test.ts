@@ -89,6 +89,21 @@ describe("the names in the tests", () => {
       "css-6": expect.stringMatching(/^Community Solid Server 6\.\d+\.\d+$/),
       "nss-6": expect.stringMatching(/^node-solid-server 6\.\d+\.\d+$/),
       "nss-5": expect.stringMatching(/^node-solid-server 5\.\d+\.\d+$/),
+      "css-8": expect.stringMatching(/^Community Solid Server 8\.\d+\.\d+(-[\w.]+)?$/),
     });
+  });
+});
+
+describe("the workflows' servers", () => {
+  const matrix = (workflow: string, job: string) => {
+    const text = readFileSync(join(import.meta.dirname, "../../.github/workflows", workflow), "utf8");
+    return (parse(text) as { jobs: Record<string, { strategy: { matrix: { server: string[] } } }> }).jobs[job]!.strategy.matrix.server;
+  };
+  const tier = (wanted: string) => SERVER_IDS.filter((id) => SERVERS[id].tier === wanted);
+
+  it("are the table's: CI tests the blocking ones, checks the advisory ones start; Interop tests those", () => {
+    expect(matrix("ci.yml", "pod")).toEqual(tier("blocking"));
+    expect(matrix("ci.yml", "contract")).toEqual(tier("advisory"));
+    expect(matrix("interop.yml", "pod")).toEqual(tier("advisory"));
   });
 });
