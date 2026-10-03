@@ -1,6 +1,11 @@
-/** An authenticated session with a Solid identity provider. */
+/**
+ * An authenticated session with a Solid identity provider, or a guest's
+ * (`guest: true`), who studies in a pod on their device before logging
+ * in (domain/guest.ts).
+ */
 export interface Session {
   webId: string;
+  guest?: true;
 }
 
 /**

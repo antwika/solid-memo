@@ -1,3 +1,4 @@
+import { isGuestUrl } from "@solid-memo/domain/guest";
 import type { Instance } from "@solid-memo/domain/instance";
 import { ExternalLink } from "./ExternalLink";
 import { useI18n } from "./i18n";
@@ -19,7 +20,11 @@ export function InstanceBar({
     <div class="instance-bar">
       <div class="instance-bar-identity">
         <strong>{instance.name}</strong>
-        <ExternalLink url={instance.url} class="hint" />
+        {isGuestUrl(instance.url) ? (
+          <span class="hint">{t("instanceBar.inBrowser")}</span>
+        ) : (
+          <ExternalLink url={instance.url} class="hint" />
+        )}
       </div>
       <button onClick={onOpenStatistics}>{t("instanceBar.statistics")}</button>
       <button onClick={onOpenPreferences}>{t("instanceBar.preferences")}</button>

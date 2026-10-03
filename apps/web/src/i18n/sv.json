@@ -31,7 +31,16 @@
     "sessionExpired": "Din session har gått ut. Logga in igen.",
     "logoAlt": "Solid Memo — tillbaka till start",
     "loggedInAs": "Inloggad som {name}",
-    "logOut": "Logga ut"
+    "logOut": "Logga ut",
+    "guestLine": "Du provar Solid Memo som gäst: dina studier sparas bara i den här webbläsaren.",
+    "keepStudy": "Behåll mina studier: logga in",
+    "discardGuest": "Släng",
+    "discardRegion": "Släng dina studier som gäst",
+    "discardConfirm": "Radera allt du studerat som gäst? Det går inte att ångra.",
+    "discardYes": "Radera",
+    "cancel": "Avbryt",
+    "loginToKeep": "Logga in för att behålla dina studier: när du är inne erbjuder Solid Memo att flytta dem till din pod.",
+    "backToStudy": "Tillbaka till mina studier"
   },
   "backup": {
     "heading": "Föregående version",
@@ -211,7 +220,8 @@
   "instanceBar": {
     "statistics": "Statistik",
     "preferences": "Inställningar",
-    "switch": "Byt instans"
+    "switch": "Byt instans",
+    "inBrowser": "Sparas i den här webbläsaren"
   },
   "instanceCreator": {
     "heading": "Ny instans av Solid Memo",
@@ -467,6 +477,9 @@
     "buttonCatalogue": "katalogen"
   },
   "onboardingFlow": {
+    "tryHeading": "Prova direkt",
+    "tryAsGuest": "Prova utan att logga in",
+    "tryAsGuestHint": "Inget konto behövs: studera som gäst. Det du lär dig sparas i den här webbläsaren, och du kan flytta det till din egen pod när du loggar in.",
     "connectHeading": "Anslut din Pod",
     "providerHeading": "Eller välj din leverantör",
     "providerHint": "Har du inte ditt WebID till hands? Välj var din Pod finns och logga in där — ditt WebID följer med inloggningen.",
@@ -476,6 +489,52 @@
     "createPod": "Skapa en Pod ↗",
     "createPodHint": "Du skapar din Pod på leverantörens webbplats, i en ny flik. När du är klar kommer du tillbaka hit och ansluter den.",
     "havePod": "Jag har redan en Pod"
+  },
+  "guest": {
+    "instanceName": "Mina studier"
+  },
+  "guestOffer": {
+    "region": "Dina studier som gäst",
+    "heading": "Du har studerat som gäst i den här webbläsaren.",
+    "body": {
+      "one": "{name} har {count} kortlek. Flytta den till din pod för att behålla den, eller släng den.",
+      "other": "{name} har {count} kortlekar. Flytta dem till din pod för att behålla dem, eller släng dem."
+    },
+    "move": "Flytta till min pod",
+    "discard": "Släng",
+    "notNow": "Inte nu",
+    "discardConfirm": "Radera allt du studerat som gäst? Det går inte att ångra.",
+    "discardYes": "Radera",
+    "cancel": "Avbryt",
+    "formHeading": "Flytta dina studier till din pod",
+    "explain": "Solid Memo kopierar dina studier till din pod och kontrollerar kopian. Först när alla kontroller går igenom registreras den som din och tas bort från den här webbläsaren. Går något fel tas kopian bort och dina studier stannar här.",
+    "storage": "Lagring i podden",
+    "noStorage": "Din profil anger ingen lagring i en pod. Ange var dina studier ska sparas.",
+    "location": "Plats i din pod",
+    "start": "Flytta",
+    "back": "Tillbaka",
+    "progressRegion": "Flyttar dina studier",
+    "running": "{step}…",
+    "runningCount": "{step}… ({done} av {total})",
+    "progressLabel": "Flyttens förlopp",
+    "keepOpen": "Håll sidan öppen tills flytten är klar.",
+    "step": {
+      "stage": "Förbereder en mapp i din pod",
+      "copy": "Kopierar dina studier",
+      "adopt": "Gör dem till dina",
+      "validate": "Kontrollerar kopian",
+      "verify": "Kontrollerar att inget ändrats under tiden",
+      "register": "Registrerar dem i din pod",
+      "tidy": "Tar bort dem från den här webbläsaren"
+    },
+    "failedRegion": "Flytten misslyckades",
+    "failedWhile": "Flytten misslyckades i steget ”{step}”:",
+    "stillHere": "Dina studier finns kvar i den här webbläsaren.",
+    "copyRemoved": "Den halvfärdiga kopian togs bort från din pod.",
+    "copyLeft": "Den halvfärdiga kopian kunde inte tas bort från din pod; den finns på {url}.",
+    "close": "Stäng",
+    "moved": "Dina studier finns i din pod nu.",
+    "movedNotTidied": "Dina studier finns i din pod nu. De kunde inte tas bort från den här webbläsaren: släng dem där när du inte längre behöver dem."
   },
   "pager": {
     "label": "Kortsidor",
@@ -723,6 +782,11 @@
       "one": "Den uppdaterade kopian uppfyller inte Solid Memos former ({count} avvikelse); dina data lämnas som de var.",
       "other": "Den uppdaterade kopian uppfyller inte Solid Memos former ({count} avvikelser); dina data lämnas som de var."
     },
+    "movedCopyInvalid": {
+      "one": "Kopian i din pod uppfyller inte Solid Memos former ({count} avvikelse); dina studier lämnas som de var.",
+      "other": "Kopian i din pod uppfyller inte Solid Memos former ({count} avvikelser); dina studier lämnas som de var."
+    },
+    "guestUrlsLeft": "<{url}> nämner fortfarande gästens pod efter flytten; dina studier lämnas som de var.",
     "instanceChangedDuringCopy": "Instansen ändrades medan den kopierades (i en annan flik eller app?); försök igen.",
     "resourceChangedDuringCopy": "<{url}> ändrades medan den kopierades (i en annan flik eller app?); försök igen.",
     "instanceBeingUpdated": "Solid Memo uppdaterar instansen på {container} och skriver inget till den förrän uppdateringen är klar (nekades: {method} {url}).",

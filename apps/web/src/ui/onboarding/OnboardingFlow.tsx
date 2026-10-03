@@ -8,8 +8,9 @@ type Step = "choose" | "webId";
 /**
  * Signed-out onboarding: get a Pod from a provider, or connect an
  * existing one — by typing a WebID, or by picking the provider to log in
- * at. Login itself happens on the identity provider's page; this flow
- * only finds out which provider that is.
+ * at — or try the app as a guest first (docs/guest-mode.md). Login itself
+ * happens on the identity provider's page; this flow only finds out which
+ * provider that is.
  */
 export function OnboardingFlow({
   providers,
@@ -17,12 +18,15 @@ export function OnboardingFlow({
   returning,
   onLogin,
   onLoginWithProvider,
+  onTryAsGuest,
 }: {
   providers: readonly PodProvider[];
   busy: boolean;
   returning: boolean;
   onLogin: (webId: string) => void;
   onLoginWithProvider: (provider: PodProvider) => void;
+  /** Offered on the first step when given: study as a guest, without logging in. */
+  onTryAsGuest?: () => void;
 }) {
   const { t } = useI18n();
   const [step, setStep] = useState<Step>(returning ? "webId" : "choose");
@@ -61,7 +65,7 @@ export function OnboardingFlow({
     );
   }
 
-  return (
+  const pod = (
     <section class="onboarding">
       <h2>{t("onboardingFlow.setUpHeading")}</h2>
       <p>{t("onboardingFlow.intro")}</p>
@@ -70,7 +74,8 @@ export function OnboardingFlow({
           <li key={provider.id}>
             <span class="provider-name">{provider.name}</span>
             <a
-              class="button primary"
+              // Trying the app is the first thing offered; creating a Pod comes second.
+              class={onTryAsGuest === undefined ? "button primary" : "button"}
               href={provider.signUpUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -93,5 +98,19 @@ export function OnboardingFlow({
         </button>
       </div>
     </section>
+  );
+
+  if (onTryAsGuest === undefined) return pod;
+  return (
+    <>
+      <section class="onboarding guest-start">
+        <h2>{t("onboardingFlow.tryHeading")}</h2>
+        <p>{t("onboardingFlow.tryAsGuestHint")}</p>
+        <button class="primary" onClick={onTryAsGuest} disabled={busy}>
+          {t("onboardingFlow.tryAsGuest")}
+        </button>
+      </section>
+      {pod}
+    </>
   );
 }

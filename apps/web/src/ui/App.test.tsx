@@ -342,4 +342,84 @@ describe("App", () => {
       await screen.findByRole("button", { name: "Log in with Solid" }),
     ).toBeInTheDocument();
   });
+
+  describe("as a guest", () => {
+    const guest: Session = { webId: "https://guest.solid-memo.invalid/profile/card#me", guest: true };
+
+    it("starts studying without logging in, in an instance named in the reader's language", async () => {
+      const useCases = makeUseCases();
+      renderApp(useCases);
+      fireEvent.click(await screen.findByRole("button", { name: "Try it without logging in" }));
+      expect(await screen.findByText(/You are trying Solid Memo as a guest/)).toBeInTheDocument();
+      expect(useCases.startGuest).toHaveBeenCalledWith("My study");
+      expect(screen.queryByRole("button", { name: "Log out" })).toBeNull();
+      expect(useCases.findGuestStudy).not.toHaveBeenCalled();
+    });
+
+    it("shows why a guest's study could not start", async () => {
+      const useCases = makeUseCases({ startGuest: vi.fn(async () => Promise.reject(new Error("no storage"))) });
+      renderApp(useCases);
+      fireEvent.click(await screen.findByRole("button", { name: "Try it without logging in" }));
+      expect(await screen.findByText("no storage")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Try it without logging in" })).toBeEnabled();
+    });
+
+    it("goes on with a guest's study restored, and logs in from it to keep it", async () => {
+      const loginWithWebId = vi.fn(() => new Promise<void>(() => {}));
+      const useCases = makeUseCases({
+        restoreSession: vi.fn(async () => ({ session: guest, origin: "restored" as const })),
+        loginWithWebId,
+      });
+      renderApp(useCases);
+      fireEvent.click(await screen.findByRole("button", { name: "Keep my study: log in" }));
+      expect(screen.getByText(/Log in to keep your study/)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Try it without logging in" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Back to my study" }));
+      expect(await screen.findByText(/You are trying Solid Memo as a guest/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Keep my study: log in" }));
+      fireEvent.input(screen.getByLabelText("WebID"), { target: { value: session.webId } });
+      fireEvent.click(screen.getByRole("button", { name: "Log in with Solid" }));
+      expect(loginWithWebId).toHaveBeenCalledWith(session.webId);
+    });
+
+    it("discards a guest's study once the guest confirms it", async () => {
+      const useCases = makeUseCases({
+        restoreSession: vi.fn(async () => ({ session: guest, origin: "restored" as const })),
+      });
+      renderApp(useCases);
+      fireEvent.click(await screen.findByRole("button", { name: "Discard" }));
+      const region = screen.getByRole("region", { name: "Discard your study as a guest" });
+      expect(region).toHaveTextContent("This cannot be undone.");
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(screen.queryByRole("region", { name: "Discard your study as a guest" })).toBeNull();
+      expect(useCases.discardGuest).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+      fireEvent.click(screen.getByRole("button", { name: "Delete it" }));
+      expect(await screen.findByRole("heading", { name: "Set up your Solid Pod" })).toBeInTheDocument();
+      expect(useCases.discardGuest).toHaveBeenCalledOnce();
+    });
+
+    it("says why a guest's study could not be discarded", async () => {
+      const useCases = makeUseCases({
+        restoreSession: vi.fn(async () => ({ session: guest, origin: "restored" as const })),
+        discardGuest: vi.fn(async () => Promise.reject(new Error("storage refused"))),
+      });
+      renderApp(useCases);
+      fireEvent.click(await screen.findByRole("button", { name: "Discard" }));
+      fireEvent.click(screen.getByRole("button", { name: "Delete it" }));
+      expect(await screen.findByText("storage refused")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Delete it" })).toBeEnabled();
+    });
+
+    it("offers a user who logged in the study a guest left in this browser", async () => {
+      const useCases = makeUseCases({
+        restoreSession: vi.fn(async () => restored),
+        findGuestStudy: vi.fn(async () => ({
+          instances: [{ instance: { url: "https://guest.solid-memo.invalid/solid-memo/", name: "My study" }, deckCount: 2 }],
+        })),
+      });
+      renderApp(useCases);
+      expect(await screen.findByText(/My study has 2 decks/)).toBeInTheDocument();
+    });
+  });
 });

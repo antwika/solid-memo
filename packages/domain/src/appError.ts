@@ -41,6 +41,11 @@ export const ERROR_TEMPLATES = {
     one: "The updated copy does not conform to Solid Memo's shapes ({count} violation); your data is left as it was.",
     other: "The updated copy does not conform to Solid Memo's shapes ({count} violations); your data is left as it was.",
   },
+  movedCopyInvalid: {
+    one: "The copy in your pod does not conform to Solid Memo's shapes ({count} violation); your study is left as it was.",
+    other: "The copy in your pod does not conform to Solid Memo's shapes ({count} violations); your study is left as it was.",
+  },
+  guestUrlsLeft: "<{url}> still names the guest's pod after the move; your study is left as it was.",
   instanceChangedDuringCopy: "The instance changed while it was being copied (in another tab or app?); try again.",
   resourceChangedDuringCopy: "<{url}> changed while it was being copied (in another tab or app?); try again.",
   instanceBeingUpdated:
