@@ -645,7 +645,7 @@ describe("createUseCases", () => {
       vi.mocked(deps.deckRepository.listCards).mockResolvedValue([current("b")]);
       const progress: string[] = [];
       const outcome = await createUseCases(deps).updateInstance(session, instance, (p) =>
-        progress.push(`${p.step} ${p.done}/${p.total}`),
+        progress.push(`${p.step} ${p.done}/${p.total}${p.part === undefined ? "" : ` (${p.part.done} of ${p.part.total})`}`),
       );
       expect(outcome).toEqual({ ok: true, instanceUrl: COPY, backupUrl: instance.url });
       const move = { from: instance.url, to: COPY };
@@ -671,16 +671,30 @@ describe("createUseCases", () => {
       expect(deps.updateJournal.end).toHaveBeenCalledWith(instance.url);
       expect(deps.instanceCopier.deleteRecursively).not.toHaveBeenCalled();
       expect(progress).toEqual([
-        "stage 0/0",
-        "access 1/8",
-        "copy 2/8",
-        "copy 3/8",
-        "copy 4/8",
-        "upgrade 4/8",
-        "validate 5/8",
-        "verify 6/8",
-        "switch 7/8",
-        "switch 8/8",
+        "stage 0/7 (0 of 3)",
+        "stage 0/7 (1 of 3)",
+        "stage 0/7 (2 of 3)",
+        "access 1/7",
+        "copy 2/7 (0 of 2)",
+        "copy 2/7 (1 of 2)",
+        "upgrade 3/7",
+        "upgrade 3/7 (0 of 6)",
+        "upgrade 3/7 (1 of 6)",
+        "upgrade 3/7 (2 of 6)",
+        "upgrade 3/7 (3 of 6)",
+        "upgrade 3/7 (4 of 6)",
+        "upgrade 3/7 (5 of 6)",
+        "validate 4/7",
+        "validate 4/7 (0 of 5)",
+        "validate 4/7 (1 of 5)",
+        "validate 4/7 (2 of 5)",
+        "validate 4/7 (3 of 5)",
+        "validate 4/7 (4 of 5)",
+        "verify 5/7 (0 of 3)",
+        "verify 5/7 (1 of 3)",
+        "verify 5/7 (2 of 3)",
+        "switch 6/7",
+        "switch 7/7",
       ]);
     });
 
@@ -1916,14 +1930,24 @@ describe("library deck upgrade", () => {
     ]);
     expect([...pod.reviews.keys()]).toEqual([STAGED_REVIEWS]);
     expect(pod.reviews.get(STAGED_REVIEWS)!.map((s) => s.cardId)).toEqual(["sweden"]);
-    expect(progress.map((p) => [p.step, p.done])).toEqual([
-      ["read", 0],
-      ["write", 1],
-      ["check", 2],
-      ["verify", 3],
-      ["switch", 4],
-      ["tidy", 5],
-      ["tidy", 6],
+    expect(progress.map((p) => [p.step, p.done, p.part])).toEqual([
+      ["read", 0, { done: 0, total: 3 }],
+      ["read", 0, { done: 1, total: 3 }],
+      ["read", 0, { done: 2, total: 3 }],
+      ["read", 0, { done: 3, total: 4 }],
+      ["write", 1, { done: 0, total: 4 }],
+      ["write", 1, { done: 1, total: 4 }],
+      ["write", 1, { done: 2, total: 4 }],
+      ["write", 1, { done: 3, total: 4 }],
+      ["check", 2, { done: 0, total: 2 }],
+      ["check", 2, { done: 1, total: 2 }],
+      ["verify", 3, { done: 0, total: 2 }],
+      ["verify", 3, { done: 1, total: 2 }],
+      ["switch", 4, undefined],
+      ["tidy", 5, undefined],
+      ["tidy", 5, { done: 0, total: 2 }],
+      ["tidy", 5, { done: 1, total: 2 }],
+      ["tidy", 6, undefined],
     ]);
     expect(progress.every((p) => p.total === 6)).toBe(true);
     expect(deps.updateJournal.begin).toHaveBeenCalledWith(copy.url, expect.stringContaining(STAGED_CARDS));

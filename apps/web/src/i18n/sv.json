@@ -353,6 +353,7 @@
   "deckUpgrade": {
     "progressRegion": "Uppdaterar kortleken",
     "running": "{step}…",
+    "runningCount": "{step}… ({done} av {total})",
     "progressLabel": "Uppdateringens förlopp",
     "keepOpen": "Håll sidan öppen tills uppdateringen är klar. Kortleken byts över först när allt har kontrollerats.",
     "step": {

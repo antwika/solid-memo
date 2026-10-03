@@ -1,3 +1,4 @@
+import type { StepPart } from "@solid-memo/domain/deckUpgrade";
 import { useI18n } from "./i18n";
 
 /**
@@ -11,6 +12,7 @@ export function StepProgress<Step extends string>({
   current,
   done,
   total,
+  part,
   status,
   progressLabel,
   hint,
@@ -20,9 +22,11 @@ export function StepProgress<Step extends string>({
   /** Every step, in order, with its label. */
   steps: readonly { step: Step; label: string }[];
   current: Step;
-  /** Units of work done, out of `total`. */
+  /** Steps finished, out of `total`. */
   done: number;
   total: number;
+  /** How far into the current step; the bar moves on within it. */
+  part?: StepPart;
   /** What it is doing now, in a sentence. */
   status: string;
   progressLabel: string;
@@ -34,7 +38,11 @@ export function StepProgress<Step extends string>({
   return (
     <div class="warning migration" role="region" aria-label={region}>
       <p role="status">{status}</p>
-      <progress value={done} max={Math.max(total, 1)} aria-label={progressLabel} />
+      <progress
+        value={done + (part === undefined ? 0 : Math.min(part.done / Math.max(part.total, 1), 1))}
+        max={Math.max(total, 1)}
+        aria-label={progressLabel}
+      />
       <ol class="step-list">
         {steps.map(({ step, label }, index) => {
           const state = finished || index < at ? "done" : index === at ? "current" : "waiting";

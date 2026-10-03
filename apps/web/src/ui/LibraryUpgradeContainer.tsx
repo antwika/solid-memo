@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
+import type { StepPart } from "@solid-memo/domain/deckUpgrade";
 import type { LibraryUpgradePlan } from "@solid-memo/domain/libraryUpgrade";
 import { useI18n } from "./i18n";
 import { LibraryUpgradeNotice } from "./LibraryUpgradeNotice";
@@ -62,7 +63,10 @@ export function LibraryUpgradeContainer({
     retry: false,
   });
 
-  const [progress, setProgress] = useState<{ step: DeckUpgradeScreenStep; done: number }>({ step: "read", done: 0 });
+  const [progress, setProgress] = useState<{ step: DeckUpgradeScreenStep; done: number; part?: StepPart }>({
+    step: "read",
+    done: 0,
+  });
   const upgradeMutation = useMutation({
     mutationFn: async (plan: LibraryUpgradePlan) => {
       setProgress({ step: "read", done: 0 });
@@ -88,7 +92,9 @@ export function LibraryUpgradeContainer({
     },
   });
 
-  if (upgradeMutation.isPending) return <DeckUpgradeProgress step={progress.step} done={progress.done} />;
+  if (upgradeMutation.isPending) {
+    return <DeckUpgradeProgress step={progress.step} done={progress.done} part={progress.part} />;
+  }
   const outcome = upgradeMutation.data;
   const plan = planQuery.data;
   if (outcome?.ok === false) {
