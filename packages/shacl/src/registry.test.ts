@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { SM } from "@solid-memo/vocab/vocab.generated";
 import { pickShape } from "./registry";
-import { CARD_V1, CARD_V2, DECK_V2, LIBRARY_DECK_V1, SHAPES } from "@solid-memo/vocab/descriptors.generated";
+import { CARD_V1, CARD_V2, DECK_V2, DECK_V6, LIBRARY_DECK_V1, LIBRARY_DECK_V5, SHAPES } from "@solid-memo/vocab/descriptors.generated";
 
 describe("the generated registry", () => {
   it("has every version from 1 to the latest of each kind", () => {
@@ -27,6 +27,18 @@ describe("pickShape", () => {
     expect(pickShape([SM.Deck], 1, "library")).toEqual({
       kind: "shape",
       descriptor: LIBRARY_DECK_V1,
+    });
+  });
+
+  it("picks deck format 6 in a pod and library deck format 5 in the library, from separate shape documents", () => {
+    expect(pickShape([SM.Deck], 6, "pod")).toEqual({ kind: "shape", descriptor: DECK_V6 });
+    expect(pickShape([SM.Deck], 5, "library")).toEqual({ kind: "shape", descriptor: LIBRARY_DECK_V5 });
+    expect(LIBRARY_DECK_V5.shapeDocument).toBe("library-deck/v5.ttl");
+    expect(pickShape([SM.Deck], 6, "library")).toEqual({
+      kind: "unknown-version",
+      shape: "libraryDeck",
+      version: 6,
+      latest: 5,
     });
   });
 

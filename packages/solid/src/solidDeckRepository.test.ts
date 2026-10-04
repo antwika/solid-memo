@@ -8,6 +8,7 @@ import {
   getInteger,
   getStringNoLocale,
   getStringWithLocale,
+  getStringWithLocaleAll,
   getStringNoLocaleAll,
   getThing,
   getUrl,
@@ -254,7 +255,7 @@ describe("createDeck", () => {
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
       direction: "front-to-back",
       createdAt: "2026-09-21T10:00:00.000Z",
-      formatVersion: 5,
+      formatVersion: 6,
       authors: [],
     });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
@@ -263,7 +264,7 @@ describe("createDeck", () => {
     expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe("Kanji N5");
     expect(getStringWithLocale(thing, DCTERMS.description, "en")).toBe("Flashcards: Kanji N5.");
     expect(getStringWithLocale(thing, DCTERMS.description, "sv")).toBe("Kortlek: Kanji N5.");
-    expect(getInteger(thing, SM.formatVersion)).toBe(5);
+    expect(getInteger(thing, SM.formatVersion)).toBe(6);
     expect(getUrl(thing, SM.studyDirection)).toBe(SM.frontToBack);
     expect(getUrlAll(thing, DCTERMS.creator)).toEqual([]);
     expect(getUrl(thing, DCTERMS.license)).toBeNull();
@@ -296,7 +297,7 @@ describe("importDeck", () => {
     version: "1",
     seriesUrl: "https://solid-memo.com/decks/index.ttl#capitals",
     themes: ["https://solid-memo.com/vocab/topics#geography"],
-    keywords: ["capitals"],
+    keywords: { en: ["capitals", "countries"], sv: ["huvudstäder"], "": ["legacy"] },
     cards: [
       { id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 },
       {
@@ -322,7 +323,7 @@ describe("importDeck", () => {
       reviewsDocumentUrl: `${INSTANCE}reviews/deck-fixed.ttl`,
       direction: "bidirectional",
       createdAt: "2026-09-21T10:00:00.000Z",
-      formatVersion: 5,
+      formatVersion: 6,
       authors: ["Anton Wiklund", "A friend"],
       license: content.license,
       description: content.description,
@@ -352,7 +353,7 @@ describe("importDeck", () => {
     expect(getStringWithLocale(entry, DCTERMS.title, "en")).toBe("Capitals");
     expect(getUrl(entry, PROV.wasDerivedFrom)).toBe(content.url);
     expect(getUrl(entry, DCTERMS.source)).toBeNull();
-    expect(getInteger(entry, SM.formatVersion)).toBe(5);
+    expect(getInteger(entry, SM.formatVersion)).toBe(6);
     expect(getUrl(entry, SM.studyDirection)).toBe(SM.bidirectional);
     expect(getUrlAll(entry, DCTERMS.creator)).toEqual([
       `${CATALOG}#agent-anton-wiklund`,
@@ -361,7 +362,9 @@ describe("importDeck", () => {
     const anton = getThing(calls[1][1] as SolidDataset, `${CATALOG}#agent-anton-wiklund`)!;
     expect(getStringNoLocale(anton, FOAF_NAME)).toBe("Anton Wiklund");
     expect(getUrlAll(entry, "http://www.w3.org/ns/dcat#theme")).toEqual(content.themes);
-    expect(getStringNoLocaleAll(entry, "http://www.w3.org/ns/dcat#keyword")).toEqual(content.keywords);
+    expect(getStringWithLocaleAll(entry, "http://www.w3.org/ns/dcat#keyword", "en")).toEqual(["capitals", "countries"]);
+    expect(getStringWithLocaleAll(entry, "http://www.w3.org/ns/dcat#keyword", "sv")).toEqual(["huvudstäder"]);
+    expect(getStringNoLocaleAll(entry, "http://www.w3.org/ns/dcat#keyword")).toEqual(["legacy"]);
     expect(getUrl(entry, DCTERMS.license)).toBe(content.license);
     expect(getStringWithLocale(entry, DCTERMS.description, "en")).toBe(
       content.description!.en,
@@ -399,12 +402,12 @@ describe("renameDeck", () => {
 
     const renamed = await makeRepository().renameDeck(deck, { en: "Kanji N4" });
 
-    expect(renamed).toEqual({ ...deck, title: { en: "Kanji N4" }, formatVersion: 5 });
+    expect(renamed).toEqual({ ...deck, title: { en: "Kanji N4" }, formatVersion: 6 });
     const [saveUrl, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
     const thing = getThing(saved as SolidDataset, deck.url)!;
     expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe("Kanji N4");
-    expect(getInteger(thing, SM.formatVersion)).toBe(5);
+    expect(getInteger(thing, SM.formatVersion)).toBe(6);
     expect(getUrl(thing, SM.studyDirection)).toBe(SM.frontToBack);
     expect(getUrl(thing, SM.cardsDocument)).toBe(deck.cardsDocumentUrl);
   });
@@ -455,13 +458,13 @@ describe("saveDeck", () => {
       direction: "bidirectional",
     });
 
-    expect(saved).toEqual({ ...deck, direction: "bidirectional", formatVersion: 5 });
+    expect(saved).toEqual({ ...deck, direction: "bidirectional", formatVersion: 6 });
     const [saveUrl, dataset] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(saveUrl).toBe(CATALOG);
     const thing = getThing(dataset as SolidDataset, deck.url)!;
     expect(getUrl(thing, SM.studyDirection)).toBe(SM.bidirectional);
     expect(getStringNoLocale(thing, SM.direction)).toBeNull();
-    expect(getInteger(thing, SM.formatVersion)).toBe(5);
+    expect(getInteger(thing, SM.formatVersion)).toBe(6);
     expect(getStringWithLocale(thing, DCTERMS.title, "en")).toBe(deck.title.en);
     expect(getUrl(thing, SM.reviewsDocument)).toBe(deck.reviewsDocumentUrl);
   });
@@ -479,7 +482,7 @@ describe("saveDeck", () => {
 
     const saved = await makeRepository().saveDeck({ ...deck, newCardsPerDay: 5 });
 
-    expect(saved).toEqual({ ...deck, newCardsPerDay: 5, formatVersion: 5 });
+    expect(saved).toEqual({ ...deck, newCardsPerDay: 5, formatVersion: 6 });
     const [, dataset] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     const thing = getThing(dataset as SolidDataset, deck.url)!;
     expect(getInteger(thing, SM.deckNewCardsPerDay)).toBe(5);
@@ -987,7 +990,7 @@ describe("library upgrade writes", () => {
     );
     const next = { ...current, cardsDocumentUrl: STAGED, sourceUrl: "https://solid-memo.com/decks/capitals/2.ttl" };
     const switched = await makeRepository().switchDeck(current, next);
-    expect(switched).toMatchObject({ cardsDocumentUrl: STAGED, sourceUrl: next.sourceUrl, license: CC0, formatVersion: 5 });
+    expect(switched).toMatchObject({ cardsDocumentUrl: STAGED, sourceUrl: next.sourceUrl, license: CC0, formatVersion: 6 });
     expect(saveSolidDatasetAt).toHaveBeenCalledOnce();
     const [url, saved] = vi.mocked(saveSolidDatasetAt).mock.calls[0];
     expect(url).toBe(CATALOG);

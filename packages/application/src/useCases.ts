@@ -1,6 +1,7 @@
 import { profileNameOf, type SolidAccount } from "@solid-memo/domain/account";
 import { defaultCatalogDescription, type Catalog } from "@solid-memo/domain/catalog";
 import { withAbout, type DeckAbout } from "@solid-memo/domain/deckAbout";
+import type { LangTexts } from "@solid-memo/domain/keywords";
 import { deckPreferences, withPace, type DeckPace } from "@solid-memo/domain/deckPace";
 import { isCopyOf } from "@solid-memo/domain/library";
 import { pickLocale, type Locale } from "@solid-memo/domain/locale";
@@ -258,8 +259,10 @@ export interface UseCases {
   setDeckDirection(deck: Deck, direction: DeckDirection): Promise<Deck>;
   /**
    * Replace what a deck says about itself: its description, in every
-   * language it is to have, as createDeck's title, topics and keywords
-   * (see withAbout).
+   * language it is to have, as createDeck's title, topics and keywords,
+   * each language's under the language the user stated (see withAbout):
+   * a tag that names no language is refused (textLanguageInvalid), as
+   * are new untagged keywords (textNeedsLanguage).
    */
   describeDeck(deck: Deck, about: DeckAbout): Promise<Deck>;
   /**
@@ -484,6 +487,29 @@ function deckTitle(title: LangText): LangText {
   const tidied = tidiedStated(title);
   if (Object.keys(tidied).length === 0) throw new Error("A deck needs a name");
   return tidied;
+}
+
+/**
+ * A deck's keywords as entered, under the canonical form of the language
+ * tag each language was given ("SV-se" → "sv-se", "iw" → "he"; lists of
+ * one language merged); a tag that names no language is refused
+ * (textLanguageInvalid). Only the tags the user states in this edit are
+ * checked: a tag the deck already has (in any case) is kept as stored,
+ * even one the app would not accept from the user ("und", "en-x-…") or
+ * would re-tag ("iw"), so data another app wrote is not changed or
+ * refused without the user touching it. Untagged keywords ("") are left
+ * for withAbout, which keeps them only as the deck has them (see
+ * tidiedKeywords).
+ */
+function deckKeywords(keywords: LangTexts, deck: Deck): LangTexts {
+  const stored = new Set(Object.keys(deck.keywords ?? {}).map((tag) => tag.toLowerCase()));
+  const canonical: Record<string, string[]> = {};
+  for (const [tag, list] of Object.entries(keywords)) {
+    const stated = tag === "" || stored.has(tag.toLowerCase()) ? tag : canonicalTag(tag);
+    if (stated === null) throw new AppError("textLanguageInvalid", { tag });
+    canonical[stated] = [...(canonical[stated] ?? []), ...list];
+  }
+  return canonical;
 }
 
 /**
@@ -1145,7 +1171,7 @@ export function createUseCases({
       return deckRepository.saveDeck({ ...deck, direction });
     },
     async describeDeck(deck, about) {
-      return deckRepository.saveDeck(withAbout(deck, about));
+      return deckRepository.saveDeck(withAbout(deck, { ...about, keywords: deckKeywords(about.keywords, deck) }));
     },
     async setDeckPace(deck, pace) {
       return deckRepository.saveDeck(withPace(deck, pace));

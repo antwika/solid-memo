@@ -92,8 +92,10 @@ describe("releaseText", () => {
   });
 
   it("refuses a source that states release triples itself", () => {
+    const versioned = SOURCE.replace("    solid-memo:studyDirection ", '    dcat:version "7" ;\n    solid-memo:studyDirection ');
+    expect(versioned).not.toBe(SOURCE);
     expect(() =>
-      releaseText("capitals", SOURCE.replace('dcat:keyword "capitals" ;', 'dcat:keyword "capitals" ;\n    dcat:version "7" ;'), {
+      releaseText("capitals", versioned, {
         version: 1,
         issued: "2026-09-28T10:00:00Z",
       }),

@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/preact";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/preact";
 import { LibraryDeckScreen } from "./LibraryDeckScreen";
 import { licenseLabel } from "@solid-memo/domain/license";
 import { NEW_TAB, newTab } from "../test/links";
 import type { LibraryDeck } from "@solid-memo/domain/library";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
+import { I18nProvider } from "./i18n";
 
 const CC0 = "https://creativecommons.org/publicdomain/zero/1.0/";
 const BY_SA = "https://creativecommons.org/licenses/by-sa/4.0/";
@@ -73,13 +74,39 @@ describe("LibraryDeckScreen", () => {
           "https://solid-memo.com/vocab/topics#geography",
           "https://solid-memo.com/vocab/topics#languages",
         ],
-        keywords: ["capitals", "countries"],
+        keywords: { en: ["capitals", "countries"], sv: ["huvudstäder", "länder"] },
       },
     });
     expect(fact("Topics")).toHaveTextContent("Languages, Geography");
     expect(fact("Keywords")).toHaveTextContent("capitals, countries");
     expect(fact("Release")).toHaveTextContent(/^Version 2, released .+$/);
     expect(fact("Release notes")).toHaveTextContent(/^Added Norway\.$/);
+  });
+
+  it("shows the keywords in the reader's language, and those in none, only", () => {
+    const keywords = { "en-gb": ["capitals"], sv: ["huvudstäder"], "sv-fi": ["huvudstäder", "städer"], zxx: ["ISO 3166"] };
+    renderScreen({ deck: { ...capitals, keywords } });
+    expect(fact("Keywords")).toHaveTextContent(/^capitals, ISO 3166$/);
+    cleanup();
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <LibraryDeckScreen
+          deck={{ ...capitals, keywords }}
+          browseHref="#/library-browse?deck=capitals"
+          previewHref="#/library-preview?deck=capitals"
+          imported={false}
+          busy={false}
+          error={null}
+          onImport={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    expect(fact("Nyckelord")).toHaveTextContent(/^huvudstäder, städer, ISO 3166$/);
+  });
+
+  it("shows no keywords when none are in the reader's language", () => {
+    renderScreen({ deck: { ...capitals, keywords: { sv: ["huvudstäder"] } } });
+    expect(screen.queryByText("Keywords", { selector: "dt" })).toBeNull();
   });
 
   it("uses the singular for one topic", () => {

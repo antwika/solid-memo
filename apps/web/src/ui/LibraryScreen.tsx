@@ -27,7 +27,8 @@ export function forgetLibrarySelection(memoryKey: string): void {
  * The deck library: ready-made decks to copy into the current instance.
  * Any number can be ticked and imported in one go. The list can be
  * narrowed to topics (checkboxes, from Solid Memo's topics scheme) and
- * by a search of names, descriptions and keywords. A row says only the
+ * by a search of names, descriptions and keywords, in every language
+ * (filterLibraryDecks). A row says only the
  * deck's name and size; clicking it (anywhere but the checkbox and the
  * Preview button) opens the deck's own page, where it is described in
  * full and can be imported on its own. Preview tries its cards first.

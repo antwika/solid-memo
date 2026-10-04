@@ -1,3 +1,4 @@
+import type { LangTexts } from "../keywords";
 import { librarySeriesUrlOf } from "../libraryLayout";
 
 /**
@@ -11,6 +12,6 @@ export function firstRelease(url: string) {
     version: "1",
     releases: [{ url, version: "1" }],
     themes: [] as string[],
-    keywords: [] as string[],
+    keywords: {} as LangTexts,
   };
 }

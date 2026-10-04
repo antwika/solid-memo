@@ -6,12 +6,13 @@ import {
   getStringNoLocale,
   getStringNoLocaleAll,
   getStringWithLocale,
+  getStringWithLocaleAll,
   getUrl,
   getUrlAll,
 } from "@inrupt/solid-client";
 import { describe, expect, it } from "vitest";
 import type { ShapeDescriptor } from "@solid-memo/vocab/shapeDescriptor";
-import { CARD_V2, CARD_V4, DECK_V2, DECK_V4, PREFERENCES_V2, REVIEW_STATE_V2 } from "@solid-memo/vocab/descriptors.generated";
+import { CARD_V2, CARD_V4, DECK_V2, DECK_V4, DECK_V6, LIBRARY_DECK_V5, PREFERENCES_V2, REVIEW_STATE_V2 } from "@solid-memo/vocab/descriptors.generated";
 import { applyRecord, readRecord, readVersioned, recordThing, storedVersionOf } from "./records";
 import { DCTERMS, RDF, SM } from "./vocab";
 
@@ -185,6 +186,63 @@ describe("language-tagged text", () => {
     expect(readRecord(thing, DECK_V4)?.title).toEqual({ en: "Capitals", sv: "Huvudstäder" });
     const untagged = buildThing(createThing({ url: URL_ })).addStringNoLocale(DCTERMS.title, "Capitals").build();
     expect(readRecord(untagged, DECK_V4)).toBeNull();
+  });
+});
+
+describe("several texts per language (a deck's keywords)", () => {
+  const KEYWORD = "http://www.w3.org/ns/dcat#keyword";
+  const deck = {
+    title: { sv: "Huvudstäder" },
+    description: { sv: "Kortlek." },
+    creator: [],
+    studyDirection: `${SM.frontToBack}` as const,
+    theme: [],
+    keyword: { sv: ["huvudstäder", "länder"], "": ["legacy"], en: ["capitals"] },
+    distribution: [],
+    cardsDocument: "https://pod.example/d.ttl",
+    reviewsDocument: "https://pod.example/r.ttl",
+  };
+
+  it("writes one literal per keyword, untagged ones without a tag, and reads them back by tag", () => {
+    const thing = recordThing(URL_, DECK_V6, deck, null);
+    expect(getStringWithLocaleAll(thing, KEYWORD, "sv")).toEqual(["huvudstäder", "länder"]);
+    expect(getStringWithLocaleAll(thing, KEYWORD, "en")).toEqual(["capitals"]);
+    expect(getStringNoLocaleAll(thing, KEYWORD)).toEqual(["legacy"]);
+    expect(readRecord(thing, DECK_V6)).toEqual({ ...deck, keyword: { "": ["legacy"], en: ["capitals"], sv: ["huvudstäder", "länder"] } });
+  });
+
+  it("merges tags that differ only in case, each keyword once, and reads none as empty", () => {
+    const thing = buildThing(recordThing(URL_, DECK_V6, { ...deck, keyword: {} }, null))
+      .addStringWithLocale(KEYWORD, "huvudstäder", "sv")
+      .addStringWithLocale(KEYWORD, "städer", "SV")
+      .addStringWithLocale(KEYWORD, "huvudstäder", "sv")
+      .build();
+    expect(readRecord(thing, DECK_V6)?.keyword).toEqual({ sv: ["huvudstäder", "städer"] });
+    expect(readRecord(recordThing(URL_, DECK_V6, { ...deck, keyword: {} }, null), DECK_V6)?.keyword).toEqual({});
+  });
+
+  it("reads only tagged keywords where the shape allows no untagged ones, and replaces them in place", () => {
+    const release = {
+      title: { en: "Capitals" },
+      description: { en: "Capitals." },
+      creator: [],
+      publisher: "https://solid-memo.com/decks/index.ttl#solid-memo",
+      studyDirection: `${SM.frontToBack}` as const,
+      theme: [],
+      keyword: { en: ["capitals"] },
+      language: [],
+      version: "1",
+      inSeries: "https://solid-memo.com/decks/index.ttl#capitals",
+      isVersionOf: "https://solid-memo.com/decks/index.ttl#capitals",
+      distribution: [],
+      wasDerivedFrom: [],
+    };
+    const existing = buildThing(recordThing(URL_, LIBRARY_DECK_V5, release, null)).addStringNoLocale(KEYWORD, "stray").build();
+    expect(readRecord(existing, LIBRARY_DECK_V5)?.keyword).toEqual({ en: ["capitals"] });
+    const thing = recordThing(URL_, LIBRARY_DECK_V5, { ...release, keyword: { sv: ["huvudstäder"] } }, existing);
+    expect(getStringWithLocaleAll(thing, KEYWORD, "en")).toEqual([]);
+    expect(getStringNoLocaleAll(thing, KEYWORD)).toEqual([]);
+    expect(readRecord(thing, LIBRARY_DECK_V5)?.keyword).toEqual({ sv: ["huvudstäder"] });
   });
 });
 

@@ -13,10 +13,11 @@ browser's engine cannot run, fails CI (see docs/validation.md):
   and the reference data (vocab/external.ttl, vocab/topics.ttl of the
   vocab package) beside it;
 - DCAT-AP 3 over pod catalog documents as the app writes them (the
-  valid pod fixtures of deck formats 4 and 5 under
+  valid pod fixtures of deck formats 4, 5 and 6 under
   packages/vocab/fixtures/deck/: format 5 titles and describes a deck in
-  any language, English or not). A cards document has no DCAT subjects,
-  so DCAT-AP has nothing to say about it;
+  any language, English or not, and format 6 tags its keywords with
+  their language, several per language). A cards document has no DCAT
+  subjects, so DCAT-AP has nothing to say about it;
 - SkoHub's SKOS shapes, best practice included, over vocab/v1.ttl and
   vocab/topics.ttl, where warnings fail too.
 
@@ -83,7 +84,11 @@ def main() -> int:
         name = release.relative_to(dist).as_posix()
         data = graph((release, f"{SITE}decks/{name}"), index, *reference)
         results.append(check(f"decks/{name} (DCAT-AP)", data, dcat_ap, warnings_fail=False))
-    pods = [VOCAB / "fixtures/deck/v4/valid/pod.ttl", *sorted((VOCAB / "fixtures/deck/v5/valid").glob("pod*.ttl"))]
+    pods = [
+        VOCAB / "fixtures/deck/v4/valid/pod.ttl",
+        *sorted((VOCAB / "fixtures/deck/v5/valid").glob("pod*.ttl")),
+        *sorted((VOCAB / "fixtures/deck/v6/valid").glob("pod*.ttl")),
+    ]
     for pod in pods:
         name = pod.relative_to(VOCAB / "fixtures").as_posix()
         data = graph((pod, "https://pod.example/solid-memo/main/catalog.ttl"), *reference)

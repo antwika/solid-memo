@@ -494,7 +494,14 @@ def write_deck(path: Path, *, title: dict[str, str], description: dict[str, str]
         "    dcat:keyword "
         + aligned(
             "dcat:keyword",
-            ['"Swedish"', ttl_str(word_class), '"vocabulary"', '"svenska"', ttl_str(SWEDISH_LABELS[word_class]), '"ordförråd"'],
+            [
+                '"Swedish"@en',
+                f"{ttl_str(word_class)}@en",
+                '"vocabulary"@en',
+                '"svenska"@sv',
+                f"{ttl_str(SWEDISH_LABELS[word_class])}@sv",
+                '"ordförråd"@sv',
+            ],
         )
         + " ;",
         "    dcterms:language "
@@ -507,7 +514,7 @@ def write_deck(path: Path, *, title: dict[str, str], description: dict[str, str]
         )
         + " ;",
         "    solid-memo:studyDirection solid-memo:frontToBack ;",
-        "    solid-memo:formatVersion 4 .",
+        "    solid-memo:formatVersion 5 .",  # format 5: keywords tagged with their language
         "",
     ]
     if creator_name is not None:

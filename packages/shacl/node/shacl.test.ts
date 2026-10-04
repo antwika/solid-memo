@@ -74,6 +74,10 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "deck/v5/invalid/pod-with-untagged-title.ttl": { path: `${DC}title`, message: "A deck's title is language-tagged text in any language, one per language" },
   "deck/v5/invalid/pod-with-two-titles-in-one-language.ttl": { path: `${DC}title`, message: 'Language "sv" has been used by 2 values' },
   "deck/v5/invalid/pod-without-description.ttl": { path: `${DC}description`, message: "A deck's description is language-tagged text in any language, one per language" },
+  "deck/v6/invalid/pod-with-typed-keyword.ttl": { path: "http://www.w3.org/ns/dcat#keyword", message: "A keyword is language-tagged text (\"…\"@sv), several per language; untagged keywords are kept only from older formats." },
+  "deck/v6/invalid/pod-with-keyword-iri.ttl": { path: "http://www.w3.org/ns/dcat#keyword", message: "A keyword is language-tagged text" },
+  "library-deck/v5/invalid/library-with-untagged-keyword.ttl": { path: "http://www.w3.org/ns/dcat#keyword", message: "A library deck's keyword is language-tagged text (\"…\"@sv), several per language." },
+  "deck-series/v3/invalid/library-with-keyword-iri.ttl": { path: "http://www.w3.org/ns/dcat#keyword", message: "A keyword is language-tagged text (\"…\"@sv), several per language, or untagged as copied from an older release." },
   "deck-series/v2/invalid/library-with-untagged-description.ttl": { path: `${DC}description`, message: "A description is language-tagged text, one per language, and one of them English" },
   "deck-series/v1/invalid/library-without-current-version.ttl": { path: "http://www.w3.org/ns/dcat#hasCurrentVersion", message: "A deck series names its current release." },
   "catalog/v1/invalid/without-publisher.ttl": { path: `${DC}publisher`, message: "A catalogue names its publisher" },
@@ -251,16 +255,22 @@ describe("the vendored profiles over their fixtures", async () => {
       const { turtle } = (await readTurtleTree(`${ROOT}fixtures`)).find((f) => f.path === path)!;
       return parseTurtle(turtle, `https://pod.example/${path}`);
     };
-    const index = await fixture("deck-series/v2/valid/library-index.ttl");
+    const index = await fixture("deck-series/v3/valid/library-index.ttl");
     await expect(
       validateProfile("pod", await fixture("deck/v4/valid/pod.ttl"), engines["dcat-ap"], reference),
     ).resolves.toBeUndefined();
-    for (const path of ["deck/v5/valid/pod-titled-in-swedish.ttl", "deck/v5/valid/pod-titled-in-japanese-and-english.ttl", "deck/v5/valid/pod-with-stand-in.ttl"]) {
+    for (const path of ["deck/v5/valid/pod-titled-in-swedish.ttl", "deck/v5/valid/pod-titled-in-japanese-and-english.ttl", "deck/v5/valid/pod-with-stand-in.ttl", "deck/v6/valid/pod.ttl"]) {
       await expect(validateProfile(path, await fixture(path), engines["dcat-ap"], reference), path).resolves.toBeUndefined();
     }
     await expect(
       validateProfile("release", await fixture("deck/v4/valid/library-release.ttl"), engines["dcat-ap"], [...reference, ...index]),
     ).resolves.toBeUndefined();
+    await expect(
+      validateProfile("release", await fixture("library-deck/v5/valid/library-release.ttl"), engines["dcat-ap"], [...reference, ...index]),
+    ).resolves.toBeUndefined();
+    for (const path of ["deck-series/v2/valid/library-index.ttl", "deck-series/v3/valid/library-index-with-untagged-keywords.ttl"]) {
+      await expect(validateProfile(path, await fixture(path), engines["dcat-ap"], reference), path).resolves.toBeUndefined();
+    }
     await expect(
       validateProfile("series", index, engines["dcat-ap"], reference),
     ).resolves.toBeUndefined();

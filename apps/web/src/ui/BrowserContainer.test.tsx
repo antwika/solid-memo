@@ -156,7 +156,7 @@ describe("BrowserContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save description" }));
 
     await waitFor(() => {
-      expect(useCases.describeDeck).toHaveBeenCalledWith(deck, { description: { en: "Kanji." }, topics: [], keywords: [] });
+      expect(useCases.describeDeck).toHaveBeenCalledWith(deck, { description: { en: "Kanji." }, topics: [], keywords: {} });
     });
     await waitFor(() => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });

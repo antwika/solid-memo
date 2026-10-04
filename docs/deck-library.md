@@ -19,14 +19,18 @@ flowchart LR
 ## Authoring a deck
 
 A deck's source is a Turtle file in [`packages/deck-library/decks/`](../packages/deck-library/decks/): one `sm:Deck`
-(also a `dcat:Dataset`) with its cards as hash-fragment subjects, in deck
-format 4 ([shapes.md](shapes.md)), without anything that makes it a
-release. Its title and description are language-tagged, one per language
+(also a `dcat:Dataset`) with its cards as hash-fragment subjects, in
+library deck format 5 ([shapes.md](shapes.md)), without anything that
+makes it a release. Its title and description are language-tagged, one per language
 and one of them English; the others are translations. Sources in format
-3 (untagged text) stay valid. A pod's own decks need no English since
-deck format 5, but the library stays at deck format 4 (`LibraryDeckV4`):
-English first is the library's curation policy, so every library deck
-can be read by anyone who reads English, not a rule of the data. Write
+3 and 4 stay valid. A pod's own decks need no English since deck format
+5, but the library's titles and descriptions still do (`LibraryDeckV4`
+and `LibraryDeckV5`): English first is the library's curation policy,
+so every library deck can be read by anyone who reads English, not a
+rule of the data. Keywords are language-tagged, several per language,
+and every keyword says its language: give each deck keywords in English
+and in Swedish, the app showing the reader's only (a word shared by
+both, such as "HTTP", is stated in each). Write
 each text in the language it is in, with `zxx` for text in no language
 (codes, numbers, symbols), and never the same words under English as a
 stand-in for another language.
@@ -52,11 +56,13 @@ stand-in for another language.
     prov:wasDerivedFrom <https://en.wikipedia.org/wiki/List_of_national_capitals> ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:geography ;
-    dcat:keyword "capitals" ,
-                 "countries" ;
+    dcat:keyword "capitals"@en ,
+                 "countries"@en ,
+                 "huvudstäder"@sv ,
+                 "länder"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;
@@ -85,7 +91,8 @@ stand-in for another language.
 - **Topics** are further `dcat:theme`s from
   [Solid Memo's topics](../packages/vocab/vocab/topics.ttl) (`topic:geography`,
   `topic:swedish`, …): the library can be filtered by them. **Keywords**
-  (`dcat:keyword`) are found by its search. **Languages** are EU
+  (`dcat:keyword`) are shown in the reader's language and found by its
+  search in any language. **Languages** are EU
   authority-table IRIs described in [packages/vocab/vocab/external.ttl](../packages/vocab/vocab/external.ttl)
   (add one there before a deck uses it).
 - **Creators** are `foaf:Agent` nodes of the document with a
@@ -297,7 +304,7 @@ The **index** is a `dcat:Catalog` (title, description, publisher
 `<#solid-memo>`, the EU data themes and the topics as its theme
 taxonomies, `dcat:dataset` per deck). Each deck is its series,
 `<#<name>>`, a `dcat:DatasetSeries` and `dcat:Dataset` with the current
-release's title, description, themes and keywords, `dcat:first`,
+release's title, description, themes and keywords (with their tags), `dcat:first`,
 `dcat:last`, `dcat:hasVersion` (every release) and
 `dcat:hasCurrentVersion`. Every release is described — the current one
 in full, everything but its cards, plus `sm:cardCount`; older ones with
@@ -308,17 +315,20 @@ is hosted.
 
 **Validation**, which fails the build and the release command alike:
 
-- every release against Solid Memo's shapes (`LibraryDeckV3` or `LibraryDeckV4`, the cards,
+- every release against Solid Memo's shapes (`LibraryDeckV3`, `LibraryDeckV4` or `LibraryDeckV5`, the cards,
   the agents, the distribution) and against DCAT-AP, with the index and
   the [reference data](validation.md#profiles-dcat-ap-and-skos) beside
   it;
 - what the shapes cannot say: a release is exactly one `sm:Deck`, the
   document itself, whose `dcat:version` and series are the ones its path
   says;
-- the index against the shapes (`CatalogV1`, `LibraryDeckSeriesV2`,
-  `LibraryDeckV3` or `LibraryDeckV4` for the current releases) and DCAT-AP.
+- the index against the shapes (`CatalogV1`, `LibraryDeckSeriesV3`,
+  `LibraryDeckV3`, `LibraryDeckV4` or `LibraryDeckV5` for the current
+  releases) and DCAT-AP.
   A series states the title and description of its current release in
-  every language it has, a format-3 release's untagged text as English;
+  every language it has, a format-3 release's untagged text as English,
+  and its keywords as the release has them (a format-4 release's
+  untagged);
 - each source as its next release would be, so a broken source fails
   before anyone releases it. A source with changes not released yet, or
   never released, is only a **warning** (on the dev server and in the
@@ -351,20 +361,23 @@ flowchart LR
 
 - `toLibraryDecks` ([libraryMapper.ts](../packages/solid/src/mappers/libraryMapper.ts))
   reads the catalogue's datasets, each series' current release (through
-  the `LibraryDeckSeriesV2` and `LibraryDeckV4` shapes, older formats
+  the `LibraryDeckSeriesV3` and `LibraryDeckV5` shapes, older formats
   migrated in memory) and its releases, showing the English title and
   description and keeping the other languages, which an import copies
   as they are (every tag, nothing guessed or added), and names creators
   from the agents in the index. An import writes the user's copy at the
-  latest formats (deck format 5, card format 5), whatever format the
-  release was frozen at: a format-4 release is valid format 5 as it is. A series or release
+  latest formats (deck format 6, card format 5), whatever format the
+  release was frozen at: a release's keywords keep their tags, and a
+  format-4 release's untagged keywords stay untagged, their language
+  unknown. A series or release
   that does not fit its shape is left out.
 - The library screen lists each deck's name and card count with a
   checkbox, filtered by **topic** (checkboxes of the topics the decks
   name, a broader topic finding the narrower: "Languages" finds the
-  Swedish decks) and by a **search** of names, descriptions and keywords
-  (`filterLibraryDecks` in [domain/library.ts](../packages/domain/src/library.ts)).
-  Clicking a row opens the deck's page: description, topics, keywords,
+  Swedish decks) and by a **search** of names, descriptions and keywords,
+  in every language (`filterLibraryDecks` in [domain/library.ts](../packages/domain/src/library.ts)).
+  Clicking a row opens the deck's page: description, topics, keywords
+  in the reader's language,
   the release (version, date, notes), authors, licence, dates and
   sources, an import button and "Browse cards" (a read-only, paged list
   fetched from the release document).

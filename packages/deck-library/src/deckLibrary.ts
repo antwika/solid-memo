@@ -144,8 +144,16 @@ export function checkLockfile(releases: readonly DeckRelease[], lock: Lockfile):
   if (problems.length > 0) throw new Error(`${LOCKFILE}:\n  ${problems.join("\n  ")}`);
 }
 
+/** Each release parsed once, however often the index and the checks read it. */
+const parsed = new WeakMap<DeckRelease, Quad[]>();
+
 function quadsOf(release: DeckRelease): Quad[] {
-  return parseTurtle(release.turtle, releaseUrlOf(release.deck, release.version));
+  let quads = parsed.get(release);
+  if (quads === undefined) {
+    quads = parseTurtle(release.turtle, releaseUrlOf(release.deck, release.version));
+    parsed.set(release, quads);
+  }
+  return quads;
 }
 
 /** A release's cards by subject, each with whether it is retired (owl:deprecated true). */
@@ -186,7 +194,10 @@ function textOf(quads: readonly Quad[], subject: string, predicate: string): Qua
 /**
  * The index: a dcat:Catalog of the library's decks. Each deck is a
  * dcat:DatasetSeries (and dcat:Dataset) whose members are its releases,
- * which are its versions too; every release is described (a
+ * which are its versions too, stating the current release's themes and
+ * keywords, the keywords with their language tags as the release has
+ * them (an older release's untagged ones untagged: deck series format 3
+ * allows both, and no language is guessed); every release is described (a
  * dcat:Dataset with its title, description, version, issue time and
  * notes), the current one in full — everything but its cards, plus
  * sm:cardCount, the cards it has in use (retired ones not counted) — so

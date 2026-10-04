@@ -74,9 +74,10 @@ flowchart LR
 │                        sm:invalidDataPolicy, sm:theme,
 │                        sm:formatVersion 4
 ├── catalog.ttl     one subject per deck (titles live ONLY here), a
-│                        sm:Deck and dcat:Dataset: sm:formatVersion 4,
+│                        sm:Deck and dcat:Dataset: sm:formatVersion 6,
 │                        dcterms:description, sm:studyDirection, optional
-│                        dcterms:creator/license, dcat:theme/keyword,
+│                        dcterms:creator/license, dcat:theme,
+│                        dcat:keyword (language-tagged),
 │                        prov:wasDerivedFrom, the deck's own study caps
 │                        (sm:deckNewCardsPerDay/MaxReviewsPerDay);
 │                        beside each deck its
@@ -146,7 +147,9 @@ graph LR
   beside the deck, with `foaf:name` and a `mailto:` `foaf:mbox`; the app
   shows them as "Name <email>"), licence (`dcterms:license`, a URL),
   topics (`dcat:theme`, concepts of the [topics](vocab.md#concept-schemes)
-  scheme) and keywords (`dcat:keyword`). Its cards document is named as
+  scheme) and keywords (`dcat:keyword`: since deck format 6
+  language-tagged, several per language; untagged ones saved before
+  are kept, their language unknown). Its cards document is named as
   its `dcat:distribution` (`#deck-X-cards`, with `dcat:accessURL`). A
   deck copied from the [deck library](deck-library.md) inherits the
   provenance and says which release it came from with
@@ -246,8 +249,12 @@ there were catalogues; its registration is written when the update switches over
 conforms to DCAT-AP (a test holds what the app writes to it).
 
 A deck's description, topics and keywords are edited in its Browser
-("Describe deck"); the description is required, as DCAT-AP asks of
-every dataset.
+("Describe deck"), the keywords one comma-separated list per language
+the user states; the description is required, as DCAT-AP asks of
+every dataset. Only the keyword languages the user states in an edit are
+checked and stored in their canonical form ("iw" → "he"); a language tag
+the deck already has, even one another app wrote that the app would not
+accept from the user, is kept as stored.
 
 ## The answer log
 

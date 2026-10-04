@@ -9,6 +9,7 @@
       "back": "Språk för baksidan",
       "deckName": "Språk för kortlekens namn",
       "description": "Språk för beskrivningen",
+      "keywords": "Språk för nyckelorden",
       "frontNote": "Språk för anteckningen under framsidan",
       "backLabel": "Språk för etiketten",
       "backNote": "Språk för anteckningen under baksidan",
@@ -27,6 +28,7 @@
     "field": {
       "deckName": "kortlekens namn",
       "description": "beskrivningen",
+      "keywords": "nyckelorden",
       "front": "framsidan",
       "back": "baksidan",
       "frontNote": "anteckningen under framsidan",
@@ -208,7 +210,7 @@
     "description": "Beskrivning",
     "topics": "Ämnen (valfritt)",
     "keywords": "Nyckelord (valfritt)",
-    "keywordsHint": "Separera nyckelorden med kommatecken.",
+    "keywordsHint": "Separera nyckelorden med kommatecken; lägg till nyckelord på ett annat språk som en översättning.",
     "saveButton": "Spara beskrivning",
     "cancelLabel": "Avbryt beskrivningen",
     "cancelButton": "Avbryt"
@@ -599,7 +601,7 @@
     "instanceFormat": "instansformat {version}",
     "catalogueFormat": "en katalog över varje instans kortlekar, som andra appar läser som en DCAT-katalog",
     "preferencesFormat": "inställningsformat {version}, som sparar svarsskalan, utvecklarläget, vad som ska hända med ogiltiga data och temat",
-    "deckFormat": "kortleksformat {version}, som beskriver kortlekar med standarderna DCAT och SKOS, ger varje kortlek en beskrivning och låter en kortleks titel och beskrivning vara på valfritt språk som du anger",
+    "deckFormat": "kortleksformat {version}, som beskriver kortlekar med standarderna DCAT och SKOS, ger varje kortlek en beskrivning och låter en kortleks titel, beskrivning och nyckelord vara på valfritt språk som du anger",
     "cardFormat": "kortformat {version}, som lägger till bilder på kort, låter en bibliotekskortlek ta ur bruk ett kort den inte längre använder och låter ett korts text vara på valfritt språk som du anger",
     "reviewFormat": "repetitionstillståndsformat {version}, som sparar varje studieriktnings tillstånd och dagens ångra-ögonblicksbild",
     "itemInstanceRecord": "Instanspost",

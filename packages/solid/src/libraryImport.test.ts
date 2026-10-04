@@ -1,10 +1,11 @@
 /**
  * A deck imported from the library, end to end, through the app's own use
  * cases and Solid adapters wired as in main.tsx (docs/deck-library.md): the
- * library publishes its releases at deck format 4 and their cards at the
- * format each was frozen at; an import writes the user's copy at the
- * formats this app writes (deck 5, card 5), its text exactly the release's,
- * and every write is checked against those shapes. The pod is a local one.
+ * library publishes its releases at library deck format 4 or 5 and their
+ * cards at the format each was frozen at; an import writes the user's
+ * copy at the formats this app writes (deck 6, card 5), its text exactly
+ * the release's, keywords included, and every write is checked against
+ * those shapes. The pod is a local one.
  */
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
@@ -27,6 +28,9 @@ const POD = "https://alice.example/";
 const ALICE = { webId: `${POD}profile/card#me` };
 const SITE = "https://solid-memo.com/";
 const RELEASE = `${SITE}decks/capitals/2.ttl`;
+/** A release of library deck format 5: its keywords tagged with their language. */
+const TAGGED_RELEASE = `${SITE}decks/capitals/3.ttl`;
+const KEYWORD = "http://www.w3.org/ns/dcat#keyword";
 const SM_NS = "https://solid-memo.com/vocab/v1#";
 const DCTERMS = "http://purl.org/dc/terms/";
 
@@ -85,7 +89,9 @@ const siteFetch: typeof fetch = async (input) => {
   const body =
     url === RELEASE
       ? `${await readFile(`${VOCAB_ROOT}fixtures/deck/v4/valid/library-release.ttl`, "utf8")}${CARDS}`
-      : await readFile(`${VOCAB_ROOT}${new URL(url).pathname.slice(1)}`, "utf8");
+      : url === TAGGED_RELEASE
+        ? `${await readFile(`${VOCAB_ROOT}fixtures/library-deck/v5/valid/library-release.ttl`, "utf8")}${CARDS}`
+        : await readFile(`${VOCAB_ROOT}${new URL(url).pathname.slice(1)}`, "utf8");
   const response = new Response(body, { headers: { "content-type": "text/turtle" } });
   Object.defineProperty(response, "url", { value: url });
   return response;
@@ -119,17 +125,17 @@ async function app() {
 }
 
 describe("a deck imported from the library", () => {
-  it("is written at deck format 5 and card format 5 from a format-4 release, its text exactly the release's", { timeout: 30_000 }, async () => {
-    // The library itself stays at format 4: no release is rebuilt for format 5.
-    expect(LATEST_VERSION.libraryDeck).toBe(4);
+  it("is written at deck format 6 and card format 5 from a format-4 release, its text exactly the release's", { timeout: 30_000 }, async () => {
+    // Releases are frozen: a format-4 release is read as it was published.
+    expect(LATEST_VERSION.libraryDeck).toBe(5);
     const { useCases, store } = await app();
     const instance = await useCases.createInstance(ALICE, { containerUrl: `${POD}solid-memo/`, name: "Main", registrationTarget: "private" });
 
     const deck = await useCases.importLibraryDeck(instance.url, { url: RELEASE } as LibraryDeck);
 
-    expect(deck).toMatchObject({ formatVersion: 5, sourceUrl: RELEASE, title: { en: "Capitals", sv: "Huvudstäder" } });
+    expect(deck).toMatchObject({ formatVersion: 6, sourceUrl: RELEASE, title: { en: "Capitals", sv: "Huvudstäder" }, keywords: { "": ["capitals"] } });
     const [listed] = await useCases.listDecks(instance.url);
-    expect(listed).toMatchObject({ formatVersion: 5, title: { en: "Capitals", sv: "Huvudstäder" } });
+    expect(listed).toMatchObject({ formatVersion: 6, title: { en: "Capitals", sv: "Huvudstäder" }, keywords: { "": ["capitals"] } });
     const cards = await useCases.listCards(listed!);
     expect(cards.map((card) => [card.id, card.formatVersion]).sort()).toEqual([
       ["dk", 5],
@@ -149,6 +155,8 @@ describe("a deck imported from the library", () => {
         `<${listed!.url}> <${DCTERMS}title> "Huvudstäder"@sv .`,
         `<${listed!.url}> <${DCTERMS}description> "Capitals of the world."@en .`,
         `<${listed!.url}> <${DCTERMS}description> "Världens huvudstäder."@sv .`,
+        // The release's keyword states no language, and none is guessed.
+        `<${listed!.url}> <${KEYWORD}> "capitals" .`,
         `${card("se")} <${SM_NS}front> "Sweden"@en .`,
         `${card("se")} <${SM_NS}front> "Sverige"@sv .`,
         `${card("se")} <${SM_NS}back> "Stockholm"@en .`,
@@ -166,14 +174,35 @@ describe("a deck imported from the library", () => {
         `${card("dk")} <${SM_NS}frontNote> "A kingdom."@en .`,
       ]),
     );
-    for (const subject of [`<${listed!.url}>`, ...["se", "no", "q12418", "dk"].map(card)]) {
+    expect(triples).toContain(`<${listed!.url}> <${SM_NS}formatVersion> "6"^^<http://www.w3.org/2001/XMLSchema#integer> .`);
+    for (const subject of ["se", "no", "q12418", "dk"].map(card)) {
       expect(triples, subject).toContain(`${subject} <${SM_NS}formatVersion> "5"^^<http://www.w3.org/2001/XMLSchema#integer> .`);
     }
     const texts = (subject: string, predicate: string) =>
       triples.filter((line) => line.startsWith(`${subject} <${predicate}> "`)).length;
     expect(texts(`<${listed!.url}>`, `${DCTERMS}title`)).toBe(2);
+    expect(texts(`<${listed!.url}>`, KEYWORD)).toBe(1);
     expect(texts(card("se"), `${SM_NS}front`)).toBe(2);
     expect(texts(card("no"), `${SM_NS}front`)).toBe(1);
     expect(texts(card("dk"), `${SM_NS}frontNote`)).toBe(1);
+  });
+
+  it("copies a format-5 release's keywords with their language tags", { timeout: 30_000 }, async () => {
+    const { useCases, store } = await app();
+    const instance = await useCases.createInstance(ALICE, { containerUrl: `${POD}solid-memo/`, name: "Main", registrationTarget: "private" });
+
+    const deck = await useCases.importLibraryDeck(instance.url, { url: TAGGED_RELEASE } as LibraryDeck);
+
+    expect(deck.keywords).toEqual({ en: ["capitals", "countries"], sv: ["huvudstäder", "länder"] });
+    const [listed] = await useCases.listDecks(instance.url);
+    expect(listed!.keywords).toEqual({ en: ["capitals", "countries"], sv: ["huvudstäder", "länder"] });
+    expect((await useCases.validateInstance(instance.url)).conforms).toBe(true);
+    const keywords = (await everyTriple(store)).filter((line) => line.startsWith(`<${listed!.url}> <${KEYWORD}> `)).sort();
+    expect(keywords).toEqual([
+      `<${listed!.url}> <${KEYWORD}> "capitals"@en .`,
+      `<${listed!.url}> <${KEYWORD}> "countries"@en .`,
+      `<${listed!.url}> <${KEYWORD}> "huvudstäder"@sv .`,
+      `<${listed!.url}> <${KEYWORD}> "länder"@sv .`,
+    ]);
   });
 });

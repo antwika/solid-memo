@@ -11,6 +11,7 @@ export type LanguageRole =
   | "back"
   | "deckName"
   | "description"
+  | "keywords"
   | "frontNote"
   | "backLabel"
   | "backNote"
@@ -21,6 +22,7 @@ const LEGENDS: Record<LanguageRole, MessageKey> = {
   back: "language.legend.back",
   deckName: "language.legend.deckName",
   description: "language.legend.description",
+  keywords: "language.legend.keywords",
   frontNote: "language.legend.frontNote",
   backLabel: "language.legend.backLabel",
   backNote: "language.legend.backNote",
@@ -29,7 +31,7 @@ const LEGENDS: Record<LanguageRole, MessageKey> = {
 
 /** Whose recent choices a role offers first: a deck's own text, or a card's. */
 function recentKinds(role: LanguageRole): RecentLanguageKind[] {
-  return role === "deckName" || role === "description" ? ["deck", "own"] : ["own", "deck"];
+  return role === "deckName" || role === "description" || role === "keywords" ? ["deck", "own"] : ["own", "deck"];
 }
 
 /**

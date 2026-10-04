@@ -23,16 +23,18 @@
     dcterms:created "2026-09-28T21:24:16.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:computing ;
-    dcat:keyword "networking" ,
-                 "ports" ,
-                 "TCP" ,
-                 "UDP" ,
-                 "nätverk" ,
-                 "portar" ;
+    dcat:keyword "networking"@en ,
+                 "ports"@en ,
+                 "TCP"@en ,
+                 "UDP"@en ,
+                 "nätverk"@sv ,
+                 "portar"@sv ,
+                 "TCP"@sv ,
+                 "UDP"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;

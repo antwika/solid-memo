@@ -69,6 +69,21 @@ the same words in several languages as text in each of them, so the
 format-4 era's identical English copies are left in the data untouched.
 An untagged card side stays untagged.
 
+Deck format 6, with library deck format 5 and library deck series
+format 3, lets a deck's keywords (`dcat:keyword`) be language-tagged,
+several per language ("capitals"@en, "huvudstäder"@sv), so the app can
+show a deck's keywords in the reader's language. The version moved
+because a format-5 reader knows only untagged keywords: it would read a
+tagged keyword as absent and drop it on its next save of the deck. The
+steps to deck 6, library deck 5 and series 3 keep untagged keywords
+untagged, their language unknown (`""` in the model): no language is
+guessed. Untagged keywords are valid only as kept from older formats:
+the app writes every new keyword under the language the user states.
+Library releases from library deck format 5 on tag every keyword (each
+deck has keywords in English and Swedish); older releases stay frozen
+with untagged keywords, and an import of one writes them untagged into
+the format-6 copy.
+
 Rules that hold across versions:
 
 - **Readers never refuse older data.** A subject is read with the shape
@@ -94,9 +109,12 @@ flowchart LR
     d2 -->|deck/2-to-3<br/>DCAT dataset: direction concept,<br/>default description, creator agents,<br/>release 1 as its source| d3["DeckV3"]
     d3 -->|deck/3-to-4<br/>title and description tagged English| d4["DeckV4"]
     d4 -->|deck/4-to-5<br/>restamped: nothing guessed| d5["DeckV5"]
+    d5 -->|deck/5-to-6<br/>keywords: untagged kept| d6["DeckV6"]
     l2["LibraryDeckV2"] -->|libraryDeck/2-to-3<br/>release 1 of its series| l3["LibraryDeckV3"]
     l3 -->|libraryDeck/3-to-4<br/>title and description tagged English| l4["LibraryDeckV4"]
+    l4 -->|libraryDeck/4-to-5<br/>keywords: untagged kept| l5["LibraryDeckV5"]
     s1["LibraryDeckSeriesV1"] -->|libraryDeckSeries/1-to-2<br/>title and description tagged English| s2["LibraryDeckSeriesV2"]
+    s2 -->|libraryDeckSeries/2-to-3<br/>keywords: untagged kept| s3["LibraryDeckSeriesV3"]
     r1["ReviewStateV1"] -->|reviewState/1-to-2<br/>partial snapshot dropped| r2["ReviewStateV2"]
     p1["PreferencesV1"] -->|preferences/1-to-2<br/>defaults filled| p2["PreferencesV2"]
     p2 -->|preferences/2-to-3<br/>block the instance on invalid data| p3["PreferencesV3"]
@@ -298,7 +316,12 @@ themes, each when the copy still has the old release's; a title or
 description the user changed is kept, given the languages the release
 adds only when it says the same as the release in every language both
 have, sharing at least one (so a copy whose English the user retagged
-to the language it is really in still agrees in the languages left). The default
+to the language it is really in still agrees in the languages left).
+Keywords compare language by language, in any order: a copy whose
+keywords are the old release's in every language takes the new
+release's, all languages at once (untagged keywords imported from a
+format-4 release give way to the new release's tagged ones), and a copy
+whose keywords the user changed in any language keeps them all. The default
 description the app gave a deck that had none ("Flashcards: <title>.")
 is not the user's: it gives way to the release's description. A copy upgraded
 before upgrades brought these texts along is given its own release's
@@ -364,7 +387,11 @@ flowchart TD
 
 1. Write `shapes/<class>/v<N+1>.ttl` (copy `v<N>.ttl`, change the version
    assertion to `sh:hasValue N+1`, add or change the properties). Add any
-   new terms to the [vocabulary](vocab.md).
+   new terms to the [vocabulary](vocab.md). A shape's `sh:name` version
+   must match its file's, with no gaps, so a class whose shape shares a
+   file with another's moves to a folder of its own when only one of them
+   gets a new version: library deck 5 is `shapes/library-deck/v5.ttl`, a
+   self-contained copy of `LibraryDeckV4` from `shapes/deck/v4.ttl`.
 2. `npm run generate`: the new record type, descriptor and
    `LATEST_VERSION` appear.
 3. Add `packages/domain/src/shapes/migrations/<class>/<N>-to-<N+1>.ts` and register

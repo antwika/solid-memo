@@ -102,7 +102,7 @@ describe("toDeck", () => {
         direction: "back-to-front",
         authors: ["Anton <anton@example.com>", `${CATALOG}#agent-gone`],
         themes: ["https://solid-memo.com/vocab/topics#geography"],
-        keywords: ["capitals"],
+        keywords: { "": ["capitals"] },
         formatVersion: 3,
       }),
     ]);

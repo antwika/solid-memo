@@ -1,6 +1,6 @@
-import type { LangText } from "@solid-memo/vocab/types.generated";
+import type { LangText, LangTexts } from "@solid-memo/vocab/types.generated";
 
-export type { LangText };
+export type { LangText, LangTexts };
 
 /**
  * Text in several languages: a language tag (lower case) to the text in
