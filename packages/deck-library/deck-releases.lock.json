@@ -37,10 +37,28 @@
       "sha256": "229988768d4ed88ad08448b5a757223f563a5d2df003fc319ec10ff6bebd3413"
     },
     {
+      "deck": "country-code-top-level-domains",
+      "version": 1,
+      "issued": "2026-10-04T05:20:50Z",
+      "sha256": "9e80c498055f30f3d61db1419d6ab0c2720d171baa0ed8ed17508b75647b71e1"
+    },
+    {
       "deck": "derivatives",
       "version": 1,
       "issued": "2026-10-04T00:32:41Z",
       "sha256": "0213bec91055e056126e73a34c1c69f2a76ca052560f734816209863801348db"
+    },
+    {
+      "deck": "english-and-british-monarchs",
+      "version": 1,
+      "issued": "2026-10-04T05:19:14Z",
+      "sha256": "4492758c5c0707968b049d3f4a82a63860e9c04f3ee6ac860a874666f4a096cc"
+    },
+    {
+      "deck": "eu-member-states",
+      "version": 1,
+      "issued": "2026-10-04T05:20:30Z",
+      "sha256": "98084e8abb99c454bf03d323529ded5e6f4a31c8d55313b1aeddc10dc5e57592"
     },
     {
       "deck": "famous-paintings",
@@ -53,6 +71,36 @@
       "version": 2,
       "issued": "2026-10-02T21:11:25Z",
       "sha256": "bea61e8fbc6261f2794ad4d4c685c18d011f19d09c51cdf09c34930c2be1d9f8"
+    },
+    {
+      "deck": "famous-sculptures",
+      "version": 1,
+      "issued": "2026-10-04T05:23:35Z",
+      "sha256": "9cbe3fdae017eda4d13949a3e2b1a80894ac74bb037c947f9450c9e23292e185"
+    },
+    {
+      "deck": "fifa-world-cup",
+      "version": 1,
+      "issued": "2026-10-04T05:23:57Z",
+      "sha256": "e85d099499f2b88a627dcfd4037550767994e74be1c2adeef65da6f464df23b8"
+    },
+    {
+      "deck": "french-basics",
+      "version": 1,
+      "issued": "2026-10-04T05:24:18Z",
+      "sha256": "b31896452e900a400a5ead547680ef0c5c6a2cde2ebb4dd9c6e1467cab699de1"
+    },
+    {
+      "deck": "geometry-formulas",
+      "version": 1,
+      "issued": "2026-10-04T05:25:03Z",
+      "sha256": "d77579ff6718f5185f1e7fbf7c5be3e454e21ba6c611bb447b9088be1e57ee56"
+    },
+    {
+      "deck": "german-basics",
+      "version": 1,
+      "issued": "2026-10-04T05:24:41Z",
+      "sha256": "d3071c37f06abee9a421a926338418950658100f78308adc477a8db52b5e18a2"
     },
     {
       "deck": "git-commands",
@@ -115,6 +163,12 @@
       "sha256": "e91fdd820b8bb069b7749f92bdbcb62869f544342fd42e1579fcfef820fdb612"
     },
     {
+      "deck": "nobel-peace-prize",
+      "version": 1,
+      "issued": "2026-10-04T05:19:51Z",
+      "sha256": "367e58d55ae106302c88315da9fb529a752cdb967d29896df22eb7d895e51752"
+    },
+    {
       "deck": "nobel-prize-in-literature",
       "version": 1,
       "issued": "2026-10-04T00:34:37Z",
@@ -125,6 +179,24 @@
       "version": 1,
       "issued": "2026-10-04T00:34:54Z",
       "sha256": "73a52de06e57900bc8a50f85cfdeef0b8399ac0a5c326c346acd10c12eee0356"
+    },
+    {
+      "deck": "nordic-mammals",
+      "version": 1,
+      "issued": "2026-10-04T05:22:32Z",
+      "sha256": "5ef184965d5f64da359664653f9fbf5683d225813054a22563502b46088fefd3"
+    },
+    {
+      "deck": "nordic-trees",
+      "version": 1,
+      "issued": "2026-10-04T05:22:53Z",
+      "sha256": "200dcfaaa784ef217bcadfd1963179a651075bc8f5dc763da5ae945b02305290"
+    },
+    {
+      "deck": "nordic-world-heritage-sites",
+      "version": 1,
+      "issued": "2026-10-04T05:21:10Z",
+      "sha256": "1f525009461f3e5cba395e0bfbf6901c74f0cfaa4d948b7649571f9099557127"
     },
     {
       "deck": "olympic-games",
@@ -145,10 +217,28 @@
       "sha256": "095f7e205dd0504f481ce18566025df0f541932ad8a812f5d28e766c4afa00eb"
     },
     {
+      "deck": "physical-constants",
+      "version": 1,
+      "issued": "2026-10-04T05:21:50Z",
+      "sha256": "b55a85f085636170706ff8d30d034e96153d5a16b0c87e0d919822f12c874fa7"
+    },
+    {
+      "deck": "shakespeare-plays",
+      "version": 1,
+      "issued": "2026-10-04T05:23:14Z",
+      "sha256": "5780ed9eb60889c0e807f63c7cdf5276cb6884f43f23360f87563b968e98cab7"
+    },
+    {
       "deck": "si-units",
       "version": 1,
       "issued": "2026-10-04T00:35:30Z",
       "sha256": "a1e0272718ad37f61e26ca3730a6641a0793fb6dc31cf35de4b21ace00931a50"
+    },
+    {
+      "deck": "solar-system",
+      "version": 1,
+      "issued": "2026-10-04T05:21:31Z",
+      "sha256": "cff7460215794a6f6b0dd994ce0467d539880e9e6326c63aa9c2f05798e5628e"
     },
     {
       "deck": "spanish-basics",
@@ -211,6 +301,12 @@
       "sha256": "6fc9a3ea74ecc8d5db70151c3f7ee1d4eafaff4186fc25819f4ce6d4589a88c1"
     },
     {
+      "deck": "swedish-prime-ministers",
+      "version": 1,
+      "issued": "2026-10-04T05:19:32Z",
+      "sha256": "de3b060f91d0d8ec5c06a150831d1e7a9d136536d3e59455be8836841172a63d"
+    },
+    {
       "deck": "swedish-verbs",
       "version": 1,
       "issued": "2026-09-28T17:02:16Z",
@@ -227,6 +323,30 @@
       "version": 3,
       "issued": "2026-10-02T22:06:46Z",
       "sha256": "b74a39ef4150b0ac3e23c728ac0bd63a69436dbe4b6de38f6a519e5cc3d25c55"
+    },
+    {
+      "deck": "unix-shell-commands",
+      "version": 1,
+      "issued": "2026-10-04T05:25:26Z",
+      "sha256": "40136770eeb3186c742cba694df24481b3e9801912827264131b25212a183c1b"
+    },
+    {
+      "deck": "us-presidents",
+      "version": 1,
+      "issued": "2026-10-04T05:18:55Z",
+      "sha256": "746206277b7650c07946cc0fb5a13a437f41d4aad0cfc7957bd6286dcb80d079"
+    },
+    {
+      "deck": "us-states-and-capitals",
+      "version": 1,
+      "issued": "2026-10-04T05:20:11Z",
+      "sha256": "0bef741db8349d2cae686763eb9c3bea76f933b9547620a2b42f8d4cea18110e"
+    },
+    {
+      "deck": "vitamins",
+      "version": 1,
+      "issued": "2026-10-04T05:22:11Z",
+      "sha256": "05b352ddafc39f5295e4165aa505cef0d495a1741ae129d17443926b64022f84"
     },
     {
       "deck": "world-currencies",
