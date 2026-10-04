@@ -447,9 +447,11 @@ describe("deckLibraryPlugin", () => {
 });
 
 describe("the deck library", () => {
+  // Every release is validated again, so the time grows with the library:
+  // each weekly taxonomy release adds some 33 000 triples.
   it("is valid and released as it is: every release, the index and every source", async () => {
     const { releases, warnings } = await readDeckLibrary(DECK_LIBRARY_ROOT, await loadValidators());
     expect(releases.length).toBeGreaterThan(0);
     expect(warnings).toEqual([]);
-  }, 120_000);
+  }, 600_000);
 });

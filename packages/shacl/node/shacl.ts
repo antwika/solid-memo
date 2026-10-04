@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { Store, type Quad } from "n3";
+import { DataFactory, Store, type Quad } from "n3";
 import { createEngine, type ShapeEngine } from "../src/engine.ts";
 import {
   coreOnly,
@@ -11,7 +11,7 @@ import {
 import { pickShape } from "../src/registry.ts";
 import { ALL_SHAPES } from "@solid-memo/vocab/descriptors.generated";
 import type { ShapeContext } from "@solid-memo/vocab/shapeDescriptor";
-import { RDF_TYPE, objectsOf, parseTurtle, readTurtleTree } from "@solid-memo/turtle/rdf";
+import { RDF_TYPE, parseTurtle, readTurtleTree } from "@solid-memo/turtle/rdf";
 import { SM_NS } from "@solid-memo/vocab/tooling/vocab";
 import { SHAPES_BASE } from "@solid-memo/vocab/tooling/shapes";
 import { shown } from "@solid-memo/domain/langText";
@@ -74,9 +74,12 @@ export async function validateTurtleDocument(
   ];
   const problems: string[] = [];
   for (const subject of subjects) {
-    const types = objectsOf(quads, subject, RDF_TYPE).map((o) => o.value);
+    // The store's index, not a scan of the document per subject: a
+    // release can hold thousands of cards.
+    const node = DataFactory.namedNode(subject);
+    const types = data.getObjects(node, DataFactory.namedNode(RDF_TYPE), null).map((o) => o.value);
     const version = Number(
-      objectsOf(quads, subject, `${SM_NS}formatVersion`)[0]?.value ?? "1",
+      data.getObjects(node, DataFactory.namedNode(`${SM_NS}formatVersion`), null)[0]?.value ?? "1",
     );
     const pick = pickShape(types, version, context);
     if (pick.kind === "untyped") {

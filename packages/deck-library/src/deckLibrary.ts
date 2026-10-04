@@ -144,8 +144,16 @@ export function checkLockfile(releases: readonly DeckRelease[], lock: Lockfile):
   if (problems.length > 0) throw new Error(`${LOCKFILE}:\n  ${problems.join("\n  ")}`);
 }
 
+/** Each release parsed once, however often the index and the checks read it. */
+const parsed = new WeakMap<DeckRelease, Quad[]>();
+
 function quadsOf(release: DeckRelease): Quad[] {
-  return parseTurtle(release.turtle, releaseUrlOf(release.deck, release.version));
+  let quads = parsed.get(release);
+  if (quads === undefined) {
+    quads = parseTurtle(release.turtle, releaseUrlOf(release.deck, release.version));
+    parsed.set(release, quads);
+  }
+  return quads;
 }
 
 /** A release's cards by subject, each with whether it is retired (owl:deprecated true). */
