@@ -130,10 +130,11 @@ TOPICS = {
     "languages", "swedish", "spanish", "latin", "greek",
     "geography", "computing", "science", "chemistry", "physics", "astronomy", "biology",
     "art", "music", "literature", "history", "mythology", "mathematics", "sports",
-    "economics", "labour-market", "french", "german",
+    "economics", "labour-market", "french", "german", "italian", "finnish", "portuguese", "film",
 }
 # BCP 47 tag -> EU authority-table language (vocab/external.ttl).
-LANGUAGES = {"en": "ENG", "sv": "SWE", "es": "SPA", "la": "LAT", "it": "ITA", "el": "ELL", "fr": "FRA", "de": "DEU"}
+LANGUAGES = {"en": "ENG", "sv": "SWE", "es": "SPA", "la": "LAT", "it": "ITA", "el": "ELL", "fr": "FRA", "de": "DEU",
+             "fi": "FIN", "pt": "POR"}
 # Text in no language (BCP 47): a tag, but not a language the deck is in.
 NO_LANGUAGE = "zxx"
 DIRECTIONS = {"frontToBack", "backToFront", "bidirectional"}

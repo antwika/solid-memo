@@ -29,7 +29,8 @@
                        topic:mythology ,
                        topic:mathematics ,
                        topic:sports ,
-                       topic:economics .
+                       topic:economics ,
+                       topic:film .
 
 topic:languages
     a skos:Concept ;
@@ -44,7 +45,10 @@ topic:languages
                   topic:latin ,
                   topic:greek ,
                   topic:french ,
-                  topic:german .
+                  topic:german ,
+                  topic:italian ,
+                  topic:finnish ,
+                  topic:portuguese .
 
 topic:swedish
     a skos:Concept ;
@@ -158,6 +162,33 @@ topic:german
     skos:inScheme <> ;
     skos:broader topic:languages .
 
+topic:italian
+    a skos:Concept ;
+    skos:prefLabel "Italian"@en ,
+                   "Italienska"@sv ;
+    skos:definition "The Italian language."@en ,
+                    "Det italienska språket."@sv ;
+    skos:inScheme <> ;
+    skos:broader topic:languages .
+
+topic:finnish
+    a skos:Concept ;
+    skos:prefLabel "Finnish"@en ,
+                   "Finska"@sv ;
+    skos:definition "The Finnish language."@en ,
+                    "Det finska språket."@sv ;
+    skos:inScheme <> ;
+    skos:broader topic:languages .
+
+topic:portuguese
+    a skos:Concept ;
+    skos:prefLabel "Portuguese"@en ,
+                   "Portugisiska"@sv ;
+    skos:definition "The Portuguese language."@en ,
+                    "Det portugisiska språket."@sv ;
+    skos:inScheme <> ;
+    skos:broader topic:languages .
+
 topic:physics
     a skos:Concept ;
     skos:prefLabel "Physics"@en ,
@@ -245,5 +276,14 @@ topic:economics
                    "Ekonomi"@sv ;
     skos:definition "Money, currencies and the economy."@en ,
                     "Pengar, valutor och ekonomin."@sv ;
+    skos:inScheme <> ;
+    skos:topConceptOf <> .
+
+topic:film
+    a skos:Concept ;
+    skos:prefLabel "Film"@en ,
+                   "Film"@sv ;
+    skos:definition "Films, film-makers and film awards."@en ,
+                    "Filmer, filmskapare och filmpriser."@sv ;
     skos:inScheme <> ;
     skos:topConceptOf <> .

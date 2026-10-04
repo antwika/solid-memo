@@ -72,6 +72,18 @@
     skos:prefLabel "German"@en ;
     skos:inScheme <http://publications.europa.eu/resource/authority/language> .
 
+<http://publications.europa.eu/resource/authority/language/FIN>
+    a skos:Concept ,
+      dcterms:LinguisticSystem ;
+    skos:prefLabel "Finnish"@en ;
+    skos:inScheme <http://publications.europa.eu/resource/authority/language> .
+
+<http://publications.europa.eu/resource/authority/language/POR>
+    a skos:Concept ,
+      dcterms:LinguisticSystem ;
+    skos:prefLabel "Portuguese"@en ;
+    skos:inScheme <http://publications.europa.eu/resource/authority/language> .
+
 <http://publications.europa.eu/resource/authority/file-type>
     a skos:ConceptScheme ;
     dcterms:title "File type"@en .

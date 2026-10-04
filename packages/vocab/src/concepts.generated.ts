@@ -178,6 +178,24 @@ export const TOPICS = {
       broader: "https://solid-memo.com/vocab/topics#languages",
     },
     {
+      iri: "https://solid-memo.com/vocab/topics#italian",
+      label: { en: "Italian", sv: "Italienska" },
+      definition: { en: "The Italian language.", sv: "Det italienska språket." },
+      broader: "https://solid-memo.com/vocab/topics#languages",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#finnish",
+      label: { en: "Finnish", sv: "Finska" },
+      definition: { en: "The Finnish language.", sv: "Det finska språket." },
+      broader: "https://solid-memo.com/vocab/topics#languages",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#portuguese",
+      label: { en: "Portuguese", sv: "Portugisiska" },
+      definition: { en: "The Portuguese language.", sv: "Det portugisiska språket." },
+      broader: "https://solid-memo.com/vocab/topics#languages",
+    },
+    {
       iri: "https://solid-memo.com/vocab/topics#physics",
       label: { en: "Physics", sv: "Fysik" },
       definition: { en: "Matter, energy, forces and their units.", sv: "Materia, energi, krafter och deras enheter." },
@@ -229,6 +247,11 @@ export const TOPICS = {
       iri: "https://solid-memo.com/vocab/topics#economics",
       label: { en: "Economics", sv: "Ekonomi" },
       definition: { en: "Money, currencies and the economy.", sv: "Pengar, valutor och ekonomin." },
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#film",
+      label: { en: "Film", sv: "Film" },
+      definition: { en: "Films, film-makers and film awards.", sv: "Filmer, filmskapare och filmpriser." },
     },
   ],
 } as const satisfies ConceptScheme;
