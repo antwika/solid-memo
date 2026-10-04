@@ -27,23 +27,23 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:biology ;
-    dcat:keyword "mammals" ,
-                 "zoology" ,
-                 "scientific names" ,
-                 "animal names" ,
-                 "Nordic countries" ,
-                 "däggdjur" ,
-                 "zoologi" ,
-                 "vetenskapliga namn" ,
-                 "djurnamn" ,
-                 "Norden" ;
+    dcat:keyword "mammals"@en ,
+                 "zoology"@en ,
+                 "scientific names"@en ,
+                 "animal names"@en ,
+                 "Nordic countries"@en ,
+                 "däggdjur"@sv ,
+                 "zoologi"@sv ,
+                 "vetenskapliga namn"@sv ,
+                 "djurnamn"@sv ,
+                 "Norden"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ,
                      <http://publications.europa.eu/resource/authority/language/LAT> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:22:32Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:58:41Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 63 cards, each checked against at least two sources; sources, method and quality control in authored/nordic-mammals.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#nordic-mammals> ;

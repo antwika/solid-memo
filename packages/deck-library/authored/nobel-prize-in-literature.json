@@ -8,16 +8,20 @@
     "en": "Every Nobel Prize in Literature from 1901 to 2025, one card per prize year: 118 cards with the year on the front and the laureate or laureates on the back, and a note on the language they wrote in (from Wikidata, checked against NobelPrize.org). Years with no award are left out; the deck ends with the 2025 prize, as the 2026 prize had not been announced when the deck was made on 4 October 2026. From the Nobel Prize API and Wikidata. Not affiliated with or endorsed by the Nobel Foundation.",
     "sv": "Varje Nobelpris i litteratur från 1901 till 2025, ett kort per prisår: 118 kort med året på framsidan och pristagaren eller pristagarna på baksidan, och en anteckning om vilket språk de skrev på (från Wikidata, kontrollerad mot NobelPrize.org). År då priset inte delades ut är utelämnade; kortleken slutar med 2025 års pris, eftersom 2026 års pris inte var tillkännagivet när kortleken gjordes den 4 oktober 2026. Från Nobelprisets API och Wikidata. Inte knuten till eller godkänd av Nobelstiftelsen."
   },
-  "keywords": [
-    "Nobel Prize in Literature",
-    "Nobel laureates",
-    "literature",
-    "authors",
-    "Nobelpriset i litteratur",
-    "nobelpristagare",
-    "litteratur",
-    "författare"
-  ],
+  "keywords": {
+    "en": [
+      "Nobel Prize in Literature",
+      "Nobel laureates",
+      "literature",
+      "authors"
+    ],
+    "sv": [
+      "Nobelpriset i litteratur",
+      "nobelpristagare",
+      "litteratur",
+      "författare"
+    ]
+  },
   "topics": [
     "literature"
   ],
@@ -80,7 +84,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks against Wikidata and the app's SHACL and DCAT-AP validators and with independent AI reviewers whose rounds are recorded in the quality-control log. No human subject expert has reviewed the cards yet.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Prizes. On 2026-10-04 the Nobel Prize API was queried for all prizes in literature (nobelPrizeCategory=lit, sorted by year, see Queries). It returned 125 prize years, 1901–2025. Seven of them (1914, 1918, 1935, 1940, 1941, 1942, 1943) have no laureates and the text \"No Nobel Prize was awarded this year\"; they are left out. Each of the other 118 years became one card, with the year (the API's awardYear, the year the prize is for) on the front.",
     "Laureates and names. The laureates of each year, in the order the API lists them, are on the back, joined by a comma where the prize was shared (1904, 1917, 1966, 1974). The names are the API's knownName: the English form (knownName.en) is used as untagged text, since a personal name has no language. Where the API's Swedish form (knownName.se) differs — the Russian transliterations Michail Sjolochov, Aleksandr Solzjenitsyn and Svetlana Aleksijevitj — the back is given in English and Swedish instead. One name was corrected: the API and NobelPrize.org write \"Miguel Angel Asturias\" without the accent, the card uses \"Miguel Ángel Asturias\", the Spanish spelling and the English and Swedish label on Wikidata (Q75603). Two further departures, both from review round 2: \"T. S. Eliot\" is written with a space between the initials (the API has \"T.S. Eliot\"), like \"V. S. Naipaul\" and \"J. M. Coetzee\" in the same deck, and as Wikidata's English and language-independent label; and the 1979 card keeps the Nobel Foundation's \"Odysseus Elytis\" but its note gives the spelling of Wikidata's English and Swedish labels, \"Odysseas Elytis\".",
     "Second source for every laureate. Wikidata was queried (query 1) for everyone with P166 award received = Q37922 (Nobel Prize in Literature) and the year of its P585 point in time qualifier, with their English and Swedish labels. Every one of the 122 laureates and years in the API was matched against it by the Wikidata id the API itself gives for each laureate (laureate.wikidata.id). All 122 matched with the same year, except one wrong link in the API (see Quality control): the API links Jean-Marie Gustave Le Clézio to Q7884119, which is an essay of his (\"Une lettre de J. M. G. Le Clézio\", described on Wikidata as \"essay by Jean-Marie Gustave Le Clézio\"); the laureate is Q42037, which Wikidata gives the 2008 prize. No laureate or year is on Wikidata and missing from the API.",

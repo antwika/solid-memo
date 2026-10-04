@@ -26,20 +26,20 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:literature ;
-    dcat:keyword "novels" ,
-                 "literature" ,
-                 "authors" ,
-                 "classics" ,
-                 "romaner" ,
-                 "litteratur" ,
-                 "författare" ,
-                 "klassiker" ;
+    dcat:keyword "novels"@en ,
+                 "literature"@en ,
+                 "authors"@en ,
+                 "classics"@en ,
+                 "romaner"@sv ,
+                 "litteratur"@sv ,
+                 "författare"@sv ,
+                 "klassiker"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T00:31:53Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:51:33Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 82 cards, each checked against at least two sources; sources, method and quality control in authored/classic-novels.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#classic-novels> ;

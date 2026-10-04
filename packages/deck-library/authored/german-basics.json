@@ -8,16 +8,20 @@
     "en": "125 basic German words and phrases for beginners: the numbers 0–20, the tens and 100, the days of the week, the months, eight colours, family members, greetings and polite phrases, and everyday nouns, adjectives and verbs. The front shows the German word in current spelling; nouns, days and months are given with their definite article (der Tisch, die Tür, das Buch). The back gives its English and Swedish meaning, or the digits for a number, with the plural of most nouns in a note. Words, genders and meanings from Wikidata's lexemes and a public-domain US Government course and phrase book (the Foreign Service Institute's German Basic Course and the War Department's German Phrase Book), checked against German and English Wiktionary, Folkets lexikon and the official German spelling rules.",
     "sv": "125 grundläggande tyska ord och fraser för nybörjare: talen 0–20, tiotalen och 100, veckodagarna, månaderna, åtta färger, familjemedlemmar, hälsningar och artighetsfraser samt vardagliga substantiv, adjektiv och verb. Framsidan visar det tyska ordet i nutida stavning; substantiv, veckodagar och månader står med bestämd artikel (der Tisch, die Tür, das Buch). Baksidan ger betydelsen på engelska och svenska, eller siffrorna för ett tal, och de flesta substantiv har pluralformen i en anteckning. Ord, genus och betydelser från Wikidatas lexem och en amerikansk statlig kurs och parlör fria från upphovsrätt (Foreign Service Institutes German Basic Course och krigsdepartementets German Phrase Book), kontrollerade mot tyska och engelska Wiktionary, Folkets lexikon och de officiella tyska stavningsreglerna."
   },
-  "keywords": [
-    "German",
-    "vocabulary",
-    "beginners",
-    "phrases",
-    "tyska",
-    "ordförråd",
-    "nybörjare",
-    "fraser"
-  ],
+  "keywords": {
+    "en": [
+      "German",
+      "vocabulary",
+      "beginners",
+      "phrases"
+    ],
+    "sv": [
+      "tyska",
+      "ordförråd",
+      "nybörjare",
+      "fraser"
+    ]
+  },
   "topics": [
     "languages",
     "german"
@@ -111,7 +115,7 @@
     }
   },
   "method": [
-    "The research, drafting and cross-checking of this deck were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks against Wikidata and the app's SHACL and DCAT-AP validators. Quality control round 0 below is the authoring agent's own source and machine checks; review rounds by independent AI reviewers, when they have been made, are recorded after it. The cards have not yet been reviewed by a human subject expert (a teacher of German or a translator).",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Word list. A list of 125 words and phrases for a first German course was drawn up by hand from the library editor's brief (numbers 0–20, the tens and 100; days; months; colours; family; greetings and polite phrases; everyday nouns, adjectives and verbs), choosing the most basic, standard word for each concept and avoiding words whose everyday form differs by region (see Excluded). No frequency list, textbook word list or phrase-book list was copied: the public-domain US Government course and phrase book below were read only for the meaning of greetings already on the list and for facts in the notes.",
     "Wikidata lexemes. SPARQL query 1 fetched every German lexeme (language Q188) whose lemma is a candidate, with its lexical category, grammatical gender (P5185), senses, English and German glosses and sense items (P5137). Phrases not found were looked up with the lexeme search (API calls 2): Wikidata has no German lexeme for guten Tag, guten Abend, gute Nacht or auf Wiedersehen. The full JSON of the lexeme chosen for each word (the numeral lexeme for numbers, the noun lexeme for nouns, the verb lexeme for verbs, and so on) was fetched with API calls 3; it gave the nominative plural form of each noun (the form with the features plural Q146786 and nominative Q131105). The English and Swedish lexemes named by the senses' translation statements (P5972) were fetched with API calls 4, and query 7 looked for English and Swedish senses that point to the German senses.",
     "Wikidata items. The items linked from the senses (P5137) were fetched with API calls 5 (labels and aliases in German, English, Swedish and mul). For concepts whose lexeme sense has no item (the colours red, blue, white and brown; cold; the greetings guten Tag and guten Abend) items were found with the item search (API calls 6). The items give the English and Swedish labels for numbers, days, months, colours, family members and everyday things, and the German label or alias that the builder checks against the front.",

@@ -8,18 +8,22 @@
     "en": "The host cities of all 55 Summer and Winter Olympic Games held from Athens 1896 to Milano Cortina 2026 (the Games cancelled in 1916, 1940 and 1944 and the 1906 Intercalated Games are not included). Front: the Games, e.g. \"1912 Summer Olympics\"; back: the host city in English and Swedish, both cities for the co-hosted 2026 Games, with a note where it helps (such as the 1956 equestrian events in Stockholm). Taken from Wikidata and checked against the IOC's list of Games (olympics.com) and Olympedia.",
     "sv": "Värdstäderna för alla 55 olympiska sommar- och vinterspel som hållits från Aten 1896 till Milano Cortina 2026 (de inställda spelen 1916, 1940 och 1944 och extraspelen i Aten 1906 ingår inte). Framsida: spelen, t.ex. ”Olympiska sommarspelen 1912”; baksida: värdstaden på engelska och svenska, båda städerna för spelen 2026, som hade två värdstäder, med en anteckning där den hjälper (som ridsporten i Stockholm 1956). Uppgifterna är hämtade från Wikidata och kontrollerade mot IOK:s lista över spelen (olympics.com) och Olympedia."
   },
-  "keywords": [
-    "Olympic Games",
-    "Summer Olympics",
-    "Winter Olympics",
-    "host cities",
-    "sports history",
-    "olympiska spelen",
-    "sommar-OS",
-    "vinter-OS",
-    "värdstäder",
-    "idrottshistoria"
-  ],
+  "keywords": {
+    "en": [
+      "Olympic Games",
+      "Summer Olympics",
+      "Winter Olympics",
+      "host cities",
+      "sports history"
+    ],
+    "sv": [
+      "olympiska spelen",
+      "sommar-OS",
+      "vinter-OS",
+      "värdstäder",
+      "idrottshistoria"
+    ]
+  },
   "topics": [
     "sports"
   ],
@@ -93,7 +97,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction. The deck was then cross-checked by independent AI reviewers (quality-control rounds 1–5: factual accuracy; language and translation; licensing, attribution and documentation; a final re-check of all cards and the documentation; a final full-deck review of facts and language), whose findings were verified and applied, and by machine checks against live Wikidata and the app's SHACL/DCAT-AP validators. The cards have not yet been reviewed by a human subject expert.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Finding the Games in Wikidata: a first query (query 1) asked for items that are instances (P31) of Summer Olympic Games (Q159821) or Winter Olympic Games (Q82414) and returned nothing, because the editions are instances of edition classes (for example Q135976384 \"Summer Olympic Games edition\", as the entity API showed for the 1912 Games, Q8118, query 2). Query 3 instead selected every item whose P3450 (sports season of league or competition) is Q159821 or Q82414, with its start and end times (P580/P582), the truthy P276 (location) and P17 (country) values and the English and Swedish labels. The raw CSV was saved.",
     "Selection: of the items from query 3, those with a start time (the Games actually held) from 1896 to 2026 became the cards: 30 Summer Games (1896–2024) and 25 Winter Games (1924–2026), 55 in all. The items for 1916, 1940 and 1944 (Summer) and 1940 and 1944 (Winter) have no start time: they were cancelled and are left out. Future Games (2028 onward) are left out. The 1906 Intercalated Games are not an edition of either series in Wikidata and are not counted by the IOC; they are left out (see the selection).",
     "Host cities: the Games' P276 is not uniform. For 40 Games its truthy value includes the host city (sometimes with preferred rank and the qualifier \"most precise value\"). For 14 others the truthy values are venues only (for 1972 Summer the preferred value is the Olympic Stadium, which hides the normal-rank Munich). Query 4 listed every P276 statement of all ranks that is a human settlement, and query 5 every P276 statement (all ranks) of the Games without a city, with the venue's P131 (located in the administrative unit). For these 14 Games the city comes from the venue: e.g. 1952 Winter, Bislett Stadion (Q866409) located in Oslo Municipality (Q5245991), whose capital (P36) is Oslo (Q585); 1972 Winter, Makomanai Open Stadium (Q673240) in Minami-ku (Q1134027), itself in Sapporo (query 7). Each of these was also confirmed by an English alias of the Games item of the form \"Oslo 1952\" where Wikidata has one (queries 8 and 9). For 1960 Winter the preferred P276 is the ski resort Palisades Tahoe (Q2182804), whose English alias is \"Squaw Valley\"; the card gives the historical name Squaw Valley, used by the IOC and Olympedia.",

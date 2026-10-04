@@ -8,16 +8,20 @@
   "en": "120 basic Spanish words and phrases for beginners: the numbers 0–20, the tens and 100, the days of the week, the months, eight colours, family members, greetings and common phrases, and everyday nouns and verbs. The front shows the Spanish word, nouns with their article (el libro), except the days and months, whose gender is in a note; the back gives its English and Swedish meaning, or the digits for a number. Words, genders and meanings from Wikidata's lexemes and the US Foreign Service Institute's Spanish Basic Course (public domain), checked against the Real Academia Española's dictionary, Wiktionary and Folkets lexikon.",
   "sv": "120 grundläggande spanska ord och fraser för nybörjare: talen 0–20, tiotalen och 100, veckodagarna, månaderna, åtta färger, familjemedlemmar, hälsningar och vanliga fraser samt vardagliga substantiv och verb. Framsidan visar det spanska ordet, substantiv med sin artikel (el libro) utom veckodagar och månader, vars genus står i en anteckning; baksidan ger betydelsen på engelska och svenska, eller siffrorna för ett tal. Ord, genus och betydelser från Wikidatas lexem och amerikanska Foreign Service Institutes Spanish Basic Course (fri från upphovsrätt), kontrollerade mot Real Academia Españolas ordbok, Wiktionary och Folkets lexikon."
  },
- "keywords": [
-  "Spanish",
-  "vocabulary",
-  "beginners",
-  "phrases",
-  "spanska",
-  "ordförråd",
-  "nybörjare",
-  "fraser"
- ],
+ "keywords": {
+  "en": [
+   "Spanish",
+   "vocabulary",
+   "beginners",
+   "phrases"
+  ],
+  "sv": [
+   "spanska",
+   "ordförråd",
+   "nybörjare",
+   "fraser"
+  ]
+ },
  "topics": [
   "languages",
   "spanish"
@@ -101,7 +105,7 @@
   }
  },
  "method": [
-  "The research, drafting and cross-checking of this deck were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks against Wikidata and the app's SHACL and DCAT-AP validators, followed by six independent AI review rounds (quality control below). The cards have not yet been reviewed by a human subject expert (a teacher of Spanish or a translator).",
+  "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
   "Word list. A candidate list of 120 words for a first Spanish course was drawn up by hand from the brief's categories (numbers 0–20, the tens and 100; days; months; colours; family; greetings and phrases; everyday nouns; everyday verbs), choosing the most basic word for each concept and avoiding words whose everyday form differs between Spain and Latin America. No frequency list or textbook word list was copied.",
   "Wikidata lexemes. The SPARQL query 1 fetched every Spanish lexeme (language Q1321) whose lemma is a candidate, with its category, gender (P5185), senses, glosses and sense items (P5137). Lemmas not found, or found without senses, were looked up with the lexeme search (API calls 2). The full JSON of the lexeme chosen for each word (the noun lexeme for nouns, the verb lexeme for verbs, and so on) was fetched with API calls 3, and the English and Swedish lexemes named by the senses' translation statements (P5972) with API calls 4. Feminine family words (hermana, hija, abuela) are forms of the lexemes hermano, hijo and abuelo, whose forms carry the feminine and singular features.",
   "Wikidata items. The items linked from the senses (P5137) were fetched with API calls 5 and gave English and Swedish labels for days, months, colours, numbers and everyday things. For concepts with no item link (colours yellow, white, green and grey; brother, sister, woman, man, street, window, hand, work; greetings) items were found with the item search (API calls 6) and fetched with API calls 7.",

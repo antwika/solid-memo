@@ -26,22 +26,22 @@
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:biology ,
                topic:chemistry ;
-    dcat:keyword "vitamins" ,
-                 "deficiency diseases" ,
-                 "fat-soluble vitamins" ,
-                 "water-soluble vitamins" ,
-                 "nutrition" ,
-                 "vitaminer" ,
-                 "bristsjukdomar" ,
-                 "fettlösliga vitaminer" ,
-                 "vattenlösliga vitaminer" ,
-                 "näringslära" ;
+    dcat:keyword "vitamins"@en ,
+                 "deficiency diseases"@en ,
+                 "fat-soluble vitamins"@en ,
+                 "water-soluble vitamins"@en ,
+                 "nutrition"@en ,
+                 "vitaminer"@sv ,
+                 "bristsjukdomar"@sv ,
+                 "fettlösliga vitaminer"@sv ,
+                 "vattenlösliga vitaminer"@sv ,
+                 "näringslära"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:22:11Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T11:04:34Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 35 cards, each checked against at least two sources; sources, method and quality control in authored/vitamins.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#vitamins> ;

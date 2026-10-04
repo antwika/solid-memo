@@ -30,22 +30,22 @@
                topic:geography ,
                topic:economics ,
                topic:history ;
-    dcat:keyword "European Union" ,
-                 "EU member states" ,
-                 "EU enlargement" ,
-                 "euro" ,
-                 "euro area" ,
-                 "Europeiska unionen" ,
-                 "EU:s medlemsländer" ,
-                 "EU:s utvidgning" ,
-                 "euron" ,
-                 "euroområdet" ;
+    dcat:keyword "European Union"@en ,
+                 "EU member states"@en ,
+                 "EU enlargement"@en ,
+                 "euro"@en ,
+                 "euro area"@en ,
+                 "Europeiska unionen"@sv ,
+                 "EU:s medlemsländer"@sv ,
+                 "EU:s utvidgning"@sv ,
+                 "euron"@sv ,
+                 "euroområdet"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:20:30Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:53:29Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 48 cards, each checked against at least two sources; sources, method and quality control in authored/eu-member-states.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#eu-member-states> ;

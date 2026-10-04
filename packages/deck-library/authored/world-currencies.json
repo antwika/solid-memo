@@ -8,18 +8,23 @@
     "en": "The currency of each of the 193 UN member states, with its ISO 4217 code: 193 cards with a country on the front and its currency on the back, in English and Swedish, such as Sweden → Swedish krona (SEK). Compiled from Wikidata and checked against the ISO 4217 lists of the maintenance agency SIX and the EU Interinstitutional Style Guide.",
     "sv": "Valutan i vart och ett av FN:s 193 medlemsländer, med sin ISO 4217-kod: 193 kort med ett land på framsidan och dess valuta på baksidan, på engelska och svenska, till exempel Sverige → svensk krona (SEK). Sammanställd från Wikidata och kontrollerad mot ISO 4217-listorna från förvaltaren SIX och EU:s interinstitutionella publikationshandbok."
   },
-  "keywords": [
-    "currencies",
-    "ISO 4217",
-    "countries",
-    "money",
-    "geography",
-    "valutor",
-    "valutakoder",
-    "länder",
-    "pengar",
-    "geografi"
-  ],
+  "keywords": {
+    "en": [
+      "currencies",
+      "ISO 4217",
+      "countries",
+      "money",
+      "geography"
+    ],
+    "sv": [
+      "valutor",
+      "valutakoder",
+      "länder",
+      "pengar",
+      "geografi",
+      "ISO 4217"
+    ]
+  },
   "topics": [
     "geography",
     "economics"
@@ -134,7 +139,7 @@
     }
   },
   "method": [
-    "The research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks against Wikidata and against the downloaded reference lists, and with three independent AI reviewers (factual accuracy; language and translation; licensing, attribution and documentation) whose findings were resolved in quality-control rounds 1–3. The cards have not yet been reviewed by a human subject expert.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (the downloaded reference lists, live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Selection: the Wikidata SPARQL endpoint was asked for every item that is a member (P463) of the United Nations (Q1065) with no end time on that statement (query 1). It returned 203 items; ten are historical predecessor states still tagged as members (Islamic State of Afghanistan, Republic of Afghanistan, Kingdom of Laos, Kingdom of Nepal, Mongolian People's Republic, People's Republic of Mozambique, Republic of the Congo (Léopoldville), Somali Democratic Republic, Third Hellenic Republic, realm of the United Kingdom) and were dropped. The rule: an item without an ISO 3166-1 alpha-2 code (P297) is not a current state. None of the ten has one, while of the other 193 member items only the Kingdom of Denmark (Q756617) lacks one, and it is represented by Denmark (Q35, DK) as described next (query 4); eight of the ten also have a dissolved date (P576), the Third Hellenic Republic and the realm of the United Kingdom have none. Wikidata records the Kingdom of Denmark (Q756617) and the Kingdom of the Netherlands (Q29999) as the members; the cards use Denmark (Q35) and the Netherlands (Q55), the countries whose currency is asked for. The resulting 193 states were compared with the 193 names on the UN's Member States page; they match one to one.",
     "Currencies: for the 193 items, Wikidata was asked for every currency (P38) statement that is not deprecated and has no end time, with each currency's ISO 4217 code (P498) and its English, Swedish and multilingual labels and aliases (query 3); the states' own labels and aliases and ISO 3166-1 alpha-2 codes (P297) came from query 2.",
     "Cross-checks: the ISO 4217 List One (XML, published 2026-09-17) was downloaded from SIX, the ISO 4217 maintenance agency, and fund codes (IsFund) were set aside. The English and Swedish versions of Annex A5 of the EU Interinstitutional Style Guide (list of countries, territories and currencies) were downloaded and parsed with a short Python script: in each table row of nine or more cells the third cell is the ISO 3166 code, the seventh the currency name and the eighth its ISO 4217 code, and a following three-cell row (name, code, subunit) adds a second currency to the same country; the rows were matched to the states by that ISO 3166 code (EL for Greece and UK for the United Kingdom in EU usage; the Netherlands, whose Wikidata item Q55 has no P297, by hand as NL). SIX entities were matched by name, seven by hand (both Congos are told apart by the code, plus Iran, Moldova, the two Koreas, Micronesia and Venezuela, which ISO writes in its long forms). A card's currency had to be in all three: the Wikidata P38 values, the SIX List One entry for the state and the EU Annex A5 row. For 173 states all three give exactly one currency, with the same code. For 13 more (Chile, Cyprus, France, Ghana, Ireland, Kiribati, Liberia, Lithuania, the Marshall Islands, the Netherlands, Timor-Leste, Tuvalu, Zimbabwe) ISO 4217 and the EU guide give exactly one and Wikidata's P38 includes it among further values (see quality control). For the remaining seven ISO 4217 lists two codes (next paragraph).",

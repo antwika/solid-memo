@@ -8,18 +8,22 @@
     "en": "77 Latin phrases still used in both English and Swedish, from ad hoc and carpe diem to status quo and vice versa. The Latin phrase on the front, its meaning in English and Swedish on the back, with the literal sense or origin as a note where it helps. Every phrase has an entry in Dictionary.com and in a Swedish reference work (Svenska Akademiens ordlista, Svensk ordbok or Nationalencyklopedin) and is recorded in Wikidata; the meanings are written for this deck, using the conventional translation where a phrase has one, and checked against those dictionaries and Wiktionary.",
     "sv": "77 latinska uttryck som fortfarande används både på svenska och engelska, från ad hoc och carpe diem till status quo och vice versa. Det latinska uttrycket på framsidan, betydelsen på svenska och engelska på baksidan, med den ordagranna betydelsen eller ursprunget som anteckning där det hjälper. Varje uttryck finns i Dictionary.com och i ett svenskt uppslagsverk (Svenska Akademiens ordlista, Svensk ordbok eller Nationalencyklopedin) och är registrerat i Wikidata; betydelserna är skrivna för den här kortleken, med den vedertagna översättningen där uttrycket har en, och kontrollerade mot de ordböckerna och Wiktionary."
   },
-  "keywords": [
-    "Latin",
-    "Latin phrases",
-    "idioms",
-    "loanwords",
-    "vocabulary",
-    "latin",
-    "latinska uttryck",
-    "bevingade ord",
-    "lånord",
-    "ordförråd"
-  ],
+  "keywords": {
+    "en": [
+      "Latin",
+      "Latin phrases",
+      "idioms",
+      "loanwords",
+      "vocabulary"
+    ],
+    "sv": [
+      "latin",
+      "latinska uttryck",
+      "bevingade ord",
+      "lånord",
+      "ordförråd"
+    ]
+  },
   "topics": [
     "languages",
     "latin"
@@ -133,7 +137,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, Anthropic) at Anton Wiklund’s direction, with machine checks against the sources and three independent AI review rounds (factual accuracy; language and translation; licensing, attribution and documentation); the cards have not yet been reviewed by a human subject expert.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Candidates. The authoring agent wrote a list of Latin phrases it judged to be in current English or Swedish use, from its own general knowledge; with duplicates and single words removed it holds 216 multi-word phrases. No list was copied from any source.",
     "Swedish use. Each candidate was looked up in SAOL and Svensk ordbok through the svenska.se search API (https://svenska.se/api/search/saol and /api/search/so, parameters q, size=10, exactMatch=true), searching for the whole phrase and for each of its words longer than two letters, and keeping a hit when the phrase is the headword (field ortografi) or an idiom (field idiom) of a returned article. Each candidate was also looked up in Nationalencyklopedin at https://www.ne.se/uppslagsverk/encyklopedi/lång/<phrase with spaces as hyphens>, keeping a hit when the page has an article title (reader-title heading); the title and opening text were saved. A missing NE article means only that no page exists at that URL slug: NE returns the same error page for a slug that does not exist at all as for a phrase it may treat under another title, so a “no” from NE is not proof that NE never mentions the phrase.",
     "English use. Each candidate was looked up at https://www.dictionary.com/browse/<phrase with spaces as hyphens> without following redirects: HTTP 200 means the phrase has its own entry (its meta description, which carries the first definition, was saved); a 301 redirect to another word or a 404 means it has none. Merriam-Webster, Cambridge and Collins refused automated requests (HTTP 403), so Dictionary.com is the English dictionary of record.",

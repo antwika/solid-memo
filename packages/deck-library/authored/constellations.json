@@ -8,17 +8,22 @@
     "en": "All 88 constellations recognised by the International Astronomical Union, in 88 cards studied both ways. Front: the constellation's official Latin name; back: its English and Swedish names, with the IAU abbreviation in a note. Names from the IAU's constellation table and Wikidata, checked against NASA, Wikipedia and Nationalencyklopedin.",
     "sv": "Alla 88 stjärnbilder som Internationella astronomiska unionen (IAU) erkänner, på 88 kort som övas åt båda hållen. Framsida: stjärnbildens officiella latinska namn; baksida: dess engelska och svenska namn, med IAU:s förkortning i en anteckning. Namnen kommer från IAU:s tabell över stjärnbilderna och från Wikidata och är kontrollerade mot NASA, Wikipedia och Nationalencyklopedin."
   },
-  "keywords": [
-    "constellations",
-    "astronomy",
-    "IAU",
-    "night sky",
-    "stars",
-    "stjärnbilder",
-    "astronomi",
-    "stjärnhimlen",
-    "stjärnor"
-  ],
+  "keywords": {
+    "en": [
+      "constellations",
+      "astronomy",
+      "IAU",
+      "night sky",
+      "stars"
+    ],
+    "sv": [
+      "stjärnbilder",
+      "astronomi",
+      "stjärnhimlen",
+      "stjärnor",
+      "IAU"
+    ]
+  },
   "topics": [
     "astronomy"
   ],
@@ -111,7 +116,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, Anthropic) at Anton Wiklund’s direction, with independent AI reviewers (three review rounds: factual accuracy, language and translation, licensing and documentation; then a final re-check) and machine checks against Wikidata at every build. No human subject expert has reviewed the cards yet.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "The list of constellations, their Latin names, abbreviations and English names come from the IAU's page “The Constellations”. Its old address (https://www.iau.org/public/themes/constellations/) returns 404 since the IAU's site was redesigned, and the new iau.org has no constellation page linked from its home page. The page was found in the IAU's own web archive at https://iauarchive.eso.org/public/themes/constellations/ (the reference used by the English Wikipedia article) and downloaded with curl on 2026-10-04; an Internet Archive copy of the old iau.org page from 2023-12-30 was also downloaded and has the identical table. The table under “Charts and tables” was parsed with a short Python script (parse_iau.py, reproduced verbatim under Queries; HTML tags stripped, the download links dropped, the remaining cells read in groups of six: name, pronunciation, abbreviation, English name, genitive, genitive pronunciation). It gives exactly 88 rows.",
     "Each card's front is the IAU name exactly as the table spells it (e.g. “Boötes” with its diaeresis), tagged as Latin. All 88 are tagged Latin by convention, Dorado included: the IAU names serve as the constellations’ scientific Latin names and are declined as Latin (the IAU table gives the genitive “Doradus”), although “dorado” itself is a Spanish word, as the Dorado card’s note says. The back's English text is the table's “English Name” (described on the page as “the popular name in English”) without its leading “the” (“the Great Bear” → “Great Bear”), with three kinds of exception: (a) Coma Berenices: the table reads “the Bernice's Hair”; the deck spells it “Berenice’s Hair”, as the Latin name itself (Berenices) and Wikipedia's Meaning column (“Berenice's hair”) do. (b) Pyxis: the table reads “the Mariner Compass”; the deck uses the usual English form “Mariner’s Compass” (Wikipedia's Meaning column: “mariner's compass”). (c) Eight constellations named after a figure — Andromeda, Cassiopeia, Cepheus, Eridanus, Hercules, Orion, Pegasus and Perseus — have the figure's own name as their English name, which is what English uses for them; the IAU table gives descriptions for seven of them (“the Chained Maiden”, “the Seated Queen”, “the King”, “the River”, “the Hunter”, “the Winged Horse”, “the Hero”; for Hercules it reads “the Hercules”), and those descriptions are quoted in the card's note instead. Using them as answers would have made the reversed cards ambiguous (“Hero” fits Hercules as well as Perseus) and would not translate the Swedish name on the same card (Cassiopeja, Orion, …).",
     "The Swedish names are the Swedish labels (rdfs:label @sv) of the Wikidata items. The items were found with one SPARQL query on https://query.wikidata.org/sparql (listed under Queries) that matches each IAU name against English labels of items that are instances of constellation (Q8928) or a subclass of it and have a short name (P1813); it returned exactly one item for each of the 88 names, and for every item the short name equals the IAU abbreviation. The English and Swedish aliases of the 88 items were fetched with a second query, so that a Wikidata check could also be added where an alias is exactly the card's English text. A first exploratory query (instances of Q8928 only) returned 97 items: it missed Aries and Cancer, which Wikidata types only as zodiac constellation (Q4193029), and included historical or non-IAU constellations (e.g. Sciurus Volans, Marmor Sculptile, Pomum Imperiale); it was used only to see how the data is modelled.",

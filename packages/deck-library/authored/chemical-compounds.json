@@ -8,16 +8,20 @@
     "en": "60 common chemical compounds and their formulas: the front is the compound's name in English and Swedish, the back its chemical formula with subscripts (conventional formulas for inorganic compounds, molecular formulas in Hill order for organic compounds). Compiled from Wikidata and PubChem; Swedish names checked against Swedish Wikipedia and, for the less common ones, Svenska Akademiens ordböcker and Swedish official sources.",
     "sv": "60 vanliga kemiska föreningar och deras formler: på framsidan föreningens namn på engelska och svenska, på baksidan dess kemiska formel med nedsänkta siffror (gängse formler för oorganiska föreningar, summaformler i Hill-ordning för organiska föreningar). Sammanställd från Wikidata och PubChem; de svenska namnen är kontrollerade mot svenskspråkiga Wikipedia och, för de mindre vanliga, mot Svenska Akademiens ordböcker och svenska myndighetskällor."
   },
-  "keywords": [
-    "chemistry",
-    "chemical compounds",
-    "chemical formulas",
-    "molecular formulas",
-    "kemi",
-    "kemiska föreningar",
-    "kemiska formler",
-    "summaformler"
-  ],
+  "keywords": {
+    "en": [
+      "chemistry",
+      "chemical compounds",
+      "chemical formulas",
+      "molecular formulas"
+    ],
+    "sv": [
+      "kemi",
+      "kemiska föreningar",
+      "kemiska formler",
+      "summaformler"
+    ]
+  },
   "topics": [
     "chemistry"
   ],
@@ -100,7 +104,7 @@
     }
   },
   "method": [
-    "Who did the work: the research, drafting and cross-checking were done by AI agents (Claude, Anthropic) at Anton Wiklund's direction, with machine checks (this builder's Wikidata checks, the app's SHACL and DCAT-AP validators, and a composition-comparison script). Round 0 of the quality-control log is the authoring agent's own checks; reviews by independent AI reviewers are recorded as further rounds when they have taken place. No human subject expert has reviewed the cards yet.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (a script comparing each formula's composition, live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Candidates: a list of about 70 compounds met in school chemistry and everyday life (acids, bases, salts, oxides, simple hydrocarbons, alcohols, sugars, a few well-known organic compounds) was drawn up by the authoring agent and looked up on Wikidata by exact English label (first query) or by label and alias (second query), requesting the chemical formula (P274), the Swedish label and the PubChem CID (P662). The raw SPARQL JSON responses were saved in the authoring agent's working notes, which are not published; the queries listed below reproduce them. Requests were made with curl and Python urllib with the User-Agent \"solid-memo deck research (https://github.com/antwika/solid-memo)\".",
     "Selection: 60 compounds were kept (see Selection). For them the third query fetched every P274 value, all English and Swedish labels and aliases, and the PubChem CIDs. Glucose (Q37525) has no PubChem CID on Wikidata; PubChem CID 5793 (D-Glucose) was used.",
     "Formula on the back: written with Unicode subscript digits. Inorganic compounds, including the carbon compounds conventionally counted as inorganic (CO, CO₂, HCN and the carbonates), use the conventional formula of chemistry teaching (electropositive part first, polyatomic ions kept together: H₂SO₄, NaHCO₃, NH₄NO₃, Ca(OH)₂, HCN), which is Wikidata's P274 value for all of them except HF, HCN and Ca(OH)₂, where Wikidata gives only the Hill-order FH, CHN and CaH₂O₂. Organic compounds use the molecular formula in Hill order (C, H, then other elements alphabetically), exactly as Wikidata's P274 and PubChem give it, e.g. C₂H₆O for ethanol, CH₄N₂O for urea. For ionic compounds the formula is the formula unit (empirical formula), not a molecule.",

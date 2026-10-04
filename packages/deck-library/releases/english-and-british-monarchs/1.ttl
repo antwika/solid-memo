@@ -25,22 +25,22 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:history ;
-    dcat:keyword "English monarchs" ,
-                 "British monarchs" ,
-                 "kings and queens of England" ,
-                 "royal houses" ,
-                 "British history" ,
-                 "engelska monarker" ,
-                 "brittiska monarker" ,
-                 "Englands kungar och drottningar" ,
-                 "kungahus" ,
-                 "brittisk historia" ;
+    dcat:keyword "English monarchs"@en ,
+                 "British monarchs"@en ,
+                 "kings and queens of England"@en ,
+                 "royal houses"@en ,
+                 "British history"@en ,
+                 "engelska monarker"@sv ,
+                 "brittiska monarker"@sv ,
+                 "Englands kungar och drottningar"@sv ,
+                 "kungahus"@sv ,
+                 "brittisk historia"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:19:14Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:53:09Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 42 cards, each checked against at least two sources; sources, method and quality control in authored/english-and-british-monarchs.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#english-and-british-monarchs> ;

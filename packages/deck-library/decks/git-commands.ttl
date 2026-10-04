@@ -23,20 +23,21 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:computing ;
-    dcat:keyword "Git" ,
-                 "version control" ,
-                 "command line" ,
-                 "branches" ,
-                 "commits" ,
-                 "versionshantering" ,
-                 "kommandorad" ,
-                 "Git-kommandon" ,
-                 "grenar" ,
-                 "incheckningar" ;
+    dcat:keyword "Git"@en ,
+                 "version control"@en ,
+                 "command line"@en ,
+                 "branches"@en ,
+                 "commits"@en ,
+                 "versionshantering"@sv ,
+                 "kommandorad"@sv ,
+                 "Git-kommandon"@sv ,
+                 "grenar"@sv ,
+                 "incheckningar"@sv ,
+                 "Git"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;

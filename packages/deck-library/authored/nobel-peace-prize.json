@@ -8,16 +8,20 @@
     "en": "Every Nobel Peace Prize from 1901 to 2025, one card per prize year: 106 cards with the year on the front and the laureate or laureates (people and organisations) on the back, with a short note where it helps, for example where the prize was awarded a year late, posthumously or declined, where a laureate received more than one Nobel Prize, or where an organisation has changed its name. Years with no award are left out; the deck ends with the 2025 prize, as the 2026 prize had not been announced when the deck was made on 4 October 2026. From the Nobel Prize API and Wikidata, checked against NobelPrize.org. Not affiliated with or endorsed by the Nobel Foundation or the Norwegian Nobel Committee.",
     "sv": "Varje Nobels fredspris från 1901 till 2025, ett kort per prisår: 106 kort med året på framsidan och pristagaren eller pristagarna (personer och organisationer) på baksidan, med en kort anteckning där den hjälper, till exempel där priset tilldelades ett år senare eller postumt eller avböjdes, där en pristagare fått mer än ett nobelpris eller där en organisation bytt namn. År då priset inte delades ut är utelämnade; kortleken slutar med 2025 års pris, eftersom 2026 års pris inte var tillkännagivet när kortleken gjordes den 4 oktober 2026. Från Nobelprisets API och Wikidata, kontrollerat mot NobelPrize.org. Inte knuten till eller godkänd av Nobelstiftelsen eller Norska Nobelkommittén."
   },
-  "keywords": [
-    "Nobel Peace Prize",
-    "Nobel laureates",
-    "peace",
-    "history",
-    "Nobels fredspris",
-    "nobelpristagare",
-    "fred",
-    "historia"
-  ],
+  "keywords": {
+    "en": [
+      "Nobel Peace Prize",
+      "Nobel laureates",
+      "peace",
+      "history"
+    ],
+    "sv": [
+      "Nobels fredspris",
+      "nobelpristagare",
+      "fred",
+      "historia"
+    ]
+  },
   "topics": [
     "history"
   ],
@@ -100,7 +104,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction. The deck was then cross-checked by independent AI reviewers (quality-control rounds 1–4: factual accuracy; language, translation and language tags; licensing, attribution and documentation; a re-check of the changed cards and a sample), whose findings were verified against the sources and applied or rejected with reasons, and by machine checks against live Wikidata and the app's SHACL and DCAT-AP validators. The cards have not yet been reviewed by a human subject expert.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Prizes and selection. On 2026-10-04 the Nobel Prize API was queried for all Nobel Peace Prizes (nobelPrizeCategory=pea, sorted by year; see Queries) and for all peace laureates. It returned 125 prize years, 1901–2025, and 140 laureates. Nineteen years have no laureates: 1914, 1915, 1916, 1918, 1923, 1924, 1928, 1932, 1939, 1940, 1941, 1942, 1943, 1948, 1955, 1956, 1966, 1967 and 1972; NobelPrize.org's summary page for each of them says \"No Nobel Prize was awarded this year\". They are left out. Each of the other 106 years became one card, with the year (the API's awardYear, the year the prize is for) on the front, tagged zxx as a number in no language.",
     "Back: English. The laureates of each year, in the order the API lists them, joined with \", \" and \" and \" (three laureates in 1994, 2011 and 2022). The English names are the API's knownName.en (people) or orgName.en (organisations), the names under which the Nobel Foundation lists the laureates, unchanged except in five places: the API's \"Le Duc Tho \" has a trailing space, removed; \"Maria Corina Machado\" is written \"María Corina Machado\", her Spanish name and Wikidata's English and language-independent label (as the literature deck restored the accent in Miguel Ángel Asturias); \"Oscar Arias Sánchez\" is likewise written \"Óscar Arias Sánchez\", Wikidata's English label (added in quality-control round 2); \"National Dialogue Quartet\" is written \"Tunisian National Dialogue Quartet\", Wikidata's English label, since the bare name does not say which country (NobelPrize.org's summary has the country only in the motivation: \"a pluralistic democracy in Tunisia\"); and \"Doctors Without Borders\" is written \"Médecins Sans Frontières\", Wikidata's English label and the title of the laureate's facts page on NobelPrize.org (the summary page gives both: \"Médecins Sans Frontières (Doctors Without Borders)\"). Titles in the Nobel Foundation's names are kept (Sir Austen Chamberlain, Sir Norman Angell, Lord Boyd Orr, Robert Cecil, Viscount Cecil of Chelwood).",
     "Back: Swedish. The same laureates joined with \", \" and \" och \". Each Swedish name is the API's Swedish name (knownName.se / orgName.se) unless Swedish has an established form that differs, taken from Wikidata's Swedish label (query 2): Henri Dunant (API \"Henry Dunant\"), Robert Cecil, 1:e viscount Cecil av Chelwood (API \"Robert Cecil, Vicomte Cecil av Chelwood\"), Eisaku Sato, Anwar Sadat, Yassir Arafat, FN:s klimatpanel (API \"Förenta Nationernas klimatpanel\"; Wikidata's sv alias, chosen in round 2 over the sv label \"Förenta nationernas klimatpanel\" to match the deck's other FN:s names and the Swedish Wikipedia list), FN:s fredsbevarande styrkor (API \"Förenta Nationernas fredsbevarande styrkor\"), Tunisiens nationella dialogkvartett (API \"Kvartetten för nationell dialog\"), Världslivsmedelsprogrammet (API \"World Food Programme\"), Dmitrij Muratov, Ales Bjaljatski, María Corina Machado and Institut de droit international (API \"Institutet för internationell rätt\", a translation not found in use; Wikidata's Swedish label and the Swedish Wikipedia list both use the French name). Swedish orthography writes only the first word of an organisation's name with a capital, so the API's \"Förenta Nationerna\" and \"Europeiska Unionen\" are \"Förenta nationerna\" and \"Europeiska unionen\" (Wikidata's Swedish labels), \"FNs barnfond\" is \"FN:s barnfond\" (the genitive colon after an abbreviation; the form in the Swedish Wikipedia list; Wikidata's Swedish label is only \"Unicef\"), and \"Internationella Rödakorskommittén\" (API and Wikidata) is \"Internationella rödakorskommittén\", as the Swedish Red Cross writes it in its statutes (verification), and \"Den 14:e Dalai Lama\" is \"Den 14:e Dalai lama\" (Swedish capitalises only Dalai in the title, as in the Swedish Wikipedia's articles Dalai lama and Tenzin Gyatso; round 2). \"Óscar Arias Sánchez\" has its accent in Swedish too (the Swedish Wikipedia's article gives it as his full name; round 2). Two organisations have no established Swedish name and keep their own name in Swedish, as both the API and Wikidata do: the 1947 Friends Service Council and American Friends Service Committee (the API's \"Vännernas samfunds råd\" and \"Vännernas samfund i USA\" are not in use, and the second means the Quakers in the USA, not the committee). The 1963 League of Red Cross Societies is \"Rödakorsföreningarnas förbund\", its name in Swedish government bills and Riksdag records of 1947–1990 (found with the Riksdag open-data search, see Queries; round 2); the API gives only the federation's present Swedish name, which the note gives. Every Swedish name was then compared with the chronological list of laureates on the Swedish Wikipedia (verification only).",

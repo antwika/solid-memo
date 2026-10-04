@@ -8,18 +8,26 @@
     "en": "55 everyday Unix and Linux shell commands: the front describes a task in plain words in English and Swedish, the back is the command that does it, with placeholders such as <file> or <dir>. Covers moving around the directory tree, files and directories, viewing and searching files (grep, find), permissions, processes and jobs, tar archives, pipes and redirection, disk usage and networking basics. POSIX commands and options are preferred; notes say where a command is GNU, XSI or Linux-specific. Every command was run with dash and bash on Linux (uutils and GNU coreutils) and checked against the POSIX.1-2024 specification and the GNU manuals.",
     "sv": "55 vardagliga skalkommandon för Unix och Linux: på framsidan en uppgift beskriven med vanliga ord på engelska och svenska, på baksidan kommandot som utför den, med platshållare som <file> eller <dir>. Omfattar förflyttning i katalogträdet, filer och kataloger, att visa och söka i filer (grep, find), rättigheter, processer och jobb, tar-arkiv, rör (pipes) och omdirigering, diskanvändning och grundläggande nätverkskommandon. POSIX-kommandon och POSIX-flaggor föredras; anteckningar talar om när ett kommando är specifikt för GNU, XSI eller Linux. Varje kommando har körts med dash och bash på Linux (uutils och GNU coreutils) och kontrollerats mot specifikationen POSIX.1-2024 och GNU:s handböcker."
   },
-  "keywords": [
-    "Unix",
-    "Linux",
-    "shell",
-    "command line",
-    "POSIX",
-    "terminal",
-    "skal",
-    "kommandorad",
-    "skalkommandon",
-    "kommandotolk"
-  ],
+  "keywords": {
+    "en": [
+      "Unix",
+      "Linux",
+      "shell",
+      "command line",
+      "POSIX",
+      "terminal"
+    ],
+    "sv": [
+      "skal",
+      "kommandorad",
+      "skalkommandon",
+      "kommandotolk",
+      "Unix",
+      "Linux",
+      "POSIX",
+      "terminal"
+    ]
+  },
   "topics": [
     "computing"
   ],
@@ -152,7 +160,7 @@
     }
   },
   "method": [
-    "Who did the work: the research, drafting and cross-checking were done by AI agents (Claude, Anthropic) at Anton Wiklund's direction, with machine checks (test runs of every command in a throwaway directory, the builder's dossier checks, and the app's SHACL and DCAT-AP validators). Round 0 of the quality-control log is the authoring agent's own checks; reviews by independent AI reviewers are recorded as further rounds when they have taken place. No human subject expert has reviewed the cards yet.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (a test run of every command in a throwaway directory, live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Candidate tasks: the authoring agent drew up its own working list of roughly 70 everyday shell tasks in the areas the library editor asked for (moving between directories, files and directories, viewing files, searching with grep and find, permissions, processes, tar archives, pipes and redirection, disk usage, networking basics), then cut it to 55. The working list itself was not saved; what was left out is recorded by kind under Selection, together with the four tasks that were tested and then dropped. The list was not taken from any published list, cheat sheet or manual.",
     "Portability: for each task the deck uses the POSIX.1-2024 utility and option where one exists (checked on the utility's page of the specification, pubs.opengroup.org/onlinepubs/9799919799/utilities/<name>.html, and chapter 2 of the Shell and Utilities volume for redirection, pipelines, background lists and the tilde). Where the usual answer is not POSIX the card keeps the usual answer and its note says so: grep -r (GNU), df -h and du -sh (-h is GNU; POSIX has -k), tar (not in POSIX.1-2024, which has pax; GNU tar options), ping (iputils), curl and ssh/scp (not POSIX utilities). Where the answer is POSIX but in the XSI option group the note says that too (ps -ef, kill -9, with the non-XSI kill -s KILL). Synonyms are named in notes rather than given cards of their own (ls -A, cd ~, rm -R, cp -r, kill -s KILL, tar -xf, bash's &>).",
     "Notation on the back: the exact command as typed, text in no language (tagged zxx), with placeholders in angle brackets for what the user supplies (<file>, <dir>, <path>, <source>, <target>, <old>, <new>, <link>, <pattern>, <command>, <command1>, <command2>, <user>, <host>, <pid>, <archive>, <url>, <file1>, <file2>), as in the git-commands deck. Placeholders are English words because they stand for what is typed; the fronts explain them in both languages. Where the task names a concrete value (20 lines, 4 echo requests, .txt, the octal mode 644) the back uses that value. The published Markdown report shows these placeholders as typed only when read as raw Markdown or in a viewer that keeps unknown tags: GitHub's renderer drops text such as <file> as an unknown HTML tag. The dossier (JSON) and the deck (Turtle) hold them intact.",

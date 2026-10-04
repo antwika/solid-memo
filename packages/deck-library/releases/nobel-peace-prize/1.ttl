@@ -25,20 +25,20 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:history ;
-    dcat:keyword "Nobel Peace Prize" ,
-                 "Nobel laureates" ,
-                 "peace" ,
-                 "history" ,
-                 "Nobels fredspris" ,
-                 "nobelpristagare" ,
-                 "fred" ,
-                 "historia" ;
+    dcat:keyword "Nobel Peace Prize"@en ,
+                 "Nobel laureates"@en ,
+                 "peace"@en ,
+                 "history"@en ,
+                 "Nobels fredspris"@sv ,
+                 "nobelpristagare"@sv ,
+                 "fred"@sv ,
+                 "historia"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:19:51Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:57:36Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 106 cards, each checked against at least two sources; sources, method and quality control in authored/nobel-peace-prize.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#nobel-peace-prize> ;

@@ -8,16 +8,20 @@
     "en": "87 landmark events of world history, from the Battle of Marathon to the September 11 attacks, spread across eras and continents. The front names the event in English and Swedish; the back gives the year it happened. A plain number is a year AD; years before Christ are written “490 BC” (“490 f.Kr.”). Years from Wikidata, each checked against Store norske leksikon.",
     "sv": "87 avgörande händelser i världshistorien, från slaget vid Marathon till 11 september-attackerna, spridda över epoker och världsdelar. Framsidan namnger händelsen på engelska och svenska; baksidan ger året då den inträffade. Ett tal utan tillägg är ett år efter Kristus; år före Kristus skrivs ”490 f.Kr.” (”490 BC”). Årtalen kommer från Wikidata och är kontrollerade mot Store norske leksikon."
   },
-  "keywords": [
-    "history",
-    "world history",
-    "dates",
-    "historical events",
-    "historia",
-    "världshistoria",
-    "årtal",
-    "historiska händelser"
-  ],
+  "keywords": {
+    "en": [
+      "history",
+      "world history",
+      "dates",
+      "historical events"
+    ],
+    "sv": [
+      "historia",
+      "världshistoria",
+      "årtal",
+      "historiska händelser"
+    ]
+  },
   "topics": [
     "history"
   ],
@@ -71,7 +75,7 @@
     }
   },
   "method": [
-    "Who did the work: the research, drafting and cross-checking of this deck were done by AI agents (Claude, Anthropic) at Anton Wiklund's direction on 4 October 2026, using the Wikidata Query Service, the Wikidata API and the Store norske leksikon (SNL) API, with the builder's machine checks against live Wikidata. Review by independent AI reviewers is part of the library's process and is logged under quality control; no human subject expert has reviewed the cards yet.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (the Store norske leksikon API, live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Candidates: from its own general knowledge, the authoring agent drew up, in five batches, about 250 search strings for widely taught events of world history (some events were searched more than once), deliberately including Africa, the Americas, Asia and Oceania as well as Europe and covering antiquity to the 21st century. No published list or timeline was copied. Each candidate was looked up with the Wikidata wbsearchentities API (English search, four hits; the exact requests are under Queries) and the right item picked by hand from the hits and their descriptions. Four titles that the search did not find were resolved to item ids through the English Wikipedia pageprops API (only the wikibase_item ids were used).",
     "Dates and labels: two SPARQL queries against https://query.wikidata.org/sparql (under Queries) returned, for every candidate item, its English and Swedish labels, Swedish aliases (first query), English and Swedish Wikipedia sitelinks, and the values of P585 point in time, P580 start time, P582 end time, P571 inception, P577 publication date, P619 launch date, P1619 date of official opening and P576 dissolution date. The raw JSON responses were saved and read item by item. One further query fetched the inception (P571) of Australia (Q408).",
     "Choosing the year: for each card the property that dates exactly the event on the front was chosen (for instance P582 end time of the siege of Constantinople for its fall, P580 start time of the Korean War for its outbreak, P1619 official opening of the Suez Canal, P619 launch of Vostok 1 for the first human in space). The card's evidence names the property and its value. Where an item had several conflicting dates, the one matching the card was used and the discrepancy recorded in quality control.",

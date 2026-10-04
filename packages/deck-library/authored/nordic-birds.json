@@ -8,18 +8,22 @@
     "en": "86 familiar breeding birds of Sweden and the Nordic countries. Front: the English name and the official Swedish name; back: the scientific name. Scientific and English names follow the global checklist AviList (v2025b; BirdLife Sverige's lists follow AviList v2025, whose names v2025b leaves unchanged). Names from Wikidata and Dyntaxa, checked against AviList and BirdLife Sverige's official Swedish list.",
     "sv": "86 välkända häckfåglar i Sverige och Norden. Framsida: det engelska namnet och det officiella svenska namnet; baksida: det vetenskapliga namnet. Vetenskapliga och engelska namn följer den globala checklistan AviList (v2025b; BirdLife Sveriges listor följer AviList v2025, vars namn är oförändrade i v2025b). Namnen kommer från Wikidata och Dyntaxa och är kontrollerade mot AviList och BirdLife Sveriges officiella Sverigelista."
   },
-  "keywords": [
-    "birds",
-    "ornithology",
-    "scientific names",
-    "bird names",
-    "Nordic countries",
-    "fåglar",
-    "ornitologi",
-    "vetenskapliga namn",
-    "fågelnamn",
-    "Norden"
-  ],
+  "keywords": {
+    "en": [
+      "birds",
+      "ornithology",
+      "scientific names",
+      "bird names",
+      "Nordic countries"
+    ],
+    "sv": [
+      "fåglar",
+      "ornitologi",
+      "vetenskapliga namn",
+      "fågelnamn",
+      "Norden"
+    ]
+  },
   "topics": [
     "biology"
   ],
@@ -93,7 +97,7 @@
     "Former names. For the 13 species whose genus changed (tits formerly in Parus, finches formerly in Carduelis, and Coloeus, Curruca, Astur, Lyrurus and Chroicocephalus), a back note gives the former combination. Each note is backed by the Dyntaxa synonym list and by a Wikidata taxon synonym or alias or the AviList protonym; the Wikidata queries are below (two first attempts timed out and were simplified).",
     "Cross-checks. During authoring, scripts compared every card's Wikidata taxon name and labels with the AviList species row, the Swedish list row, the NL2025b row and the Dyntaxa record, and the names with the final IOC World Bird List, v15.2 (https://www.worldbirdnames.org/IOC_Names_File_Plus-15.2.xlsx, downloaded 2026-10-04, licensed CC BY 3.0 Unported): every card's scientific, English and Swedish names agree across AviList, the Swedish list, NL2025b and Dyntaxa, and with Wikidata except for the letter-case differences recorded under quality control; all 86 scientific and English names are identical to IOC 15.2's. Those authoring scripts were not recorded verbatim, so in quality-control round 3 one cross-check script (crosscheck.py, run with the last command in the queries) was written and run over the final dossier. For every card it compares, as exact case-sensitive strings: the English front with AviList's English_name_AviList (short xlsx, sheet 'AviList v2025b short', rows with Taxon_rank 'species', keyed by Scientific_name), with IOC 15.2's English name (first sheet, rows whose rank column is 'Species', keyed by the scientific-name column), with the English column of the Swedish list's species row and of NL2025b's row of rank 'art', and with the record's Dyntaxa English vernacular names (live GBIF, language 'eng'); the Swedish front with the Swedish list, NL2025b and Dyntaxa's Swedish vernacular names (language 'swe'); and that the species row or one of its subspecies rows (an unindented binomial followed by indented trinomials of the same binomial) has category A or C with status H. All comparisons pass for all 86 cards except that Dyntaxa lacks the English front of the three cards named in step 8, which Wikidata supplies (and the builder checks). The IOC list is used only for this comparison; nothing in the deck comes from it, and as the builder has no CC BY 3.0 Unported licence entry, its download is recorded under the AviList source, whose editors succeeded it.",
     "Machine checks. Each card carries a Wikidata check of its taxon name (P225), and checks of its English and Swedish names as a label or alias wherever Wikidata has the text in exactly the card's letter case. The builder runs them against live Wikidata on every build.",
-    "Process. The research, drafting and cross-checking were done by AI agents (Claude, Anthropic) at Anton Wiklund's direction, with independent AI reviewers (factual accuracy, language and translation, and licensing and documentation: quality-control rounds 1–3 below) and machine checks by the deck builder and the app's validators. The cards have not yet been reviewed by a human subject expert (an ornithologist)."
+    "Process. Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released."
   ],
   "selection": "The deck has 86 bird species that are widespread, familiar breeding birds of Sweden, most of them also common in Norway, Finland and Denmark: garden and woodland songbirds, crows, woodpeckers, owls, raptors, waterfowl, waders, gulls and terns, and grouse. Inclusion criteria: (1) a species in AviList v2025b, the global checklist the Swedish lists follow since June 2025; (2) in BirdLife Sverige's official Swedish list 2025 in category A or C with breeding status H (two species, Canada Goose and Common Pheasant, are category C, introduced and established); (3) an accepted species in Dyntaxa with the same Swedish name; (4) a Wikidata item whose taxon name (P225) is the AviList name, whose Swedish label is the official Swedish name and whose English label or an alias is the AviList English name (in both cases letter case aside); together with Dyntaxa's English and Swedish vernacular names, every name on the cards is then present in a CC0 source in exactly the card's spelling and letter case (English: Dyntaxa for 83 species, a Wikidata label or alias for the other three; Swedish: Dyntaxa for all 86). The 123 candidates were drafted by the authoring agent from general knowledge of the Nordic avifauna (no published list of common birds was copied), and the list was then cut to 86 by the agent's editorial judgement of how familiar a species is to a Nordic beginner. Left out because of taxonomy or naming: Corvus cornix (Hooded Crow; in the Swedish list the subspecies Corvus corone cornix, gråkråka, of the species Corvus corone, kråka): AviList treats it as part of Corvus corone (Carrion Crow), so neither the name Corvus cornix nor the English name Hooded Crow is a species name under the deck's authority, and the Swedish list no longer has it as a species; Acanthis flammea (Redpoll, gråsiska): AviList treats Common, Lesser and Arctic Redpoll as one species named 'Redpoll'; a recent and contested lump; Anas crecca (kricka): AviList includes the American Green-winged Teal and names the species 'Green-winged Teal', while Wikidata calls it Eurasian Teal: the English side would be ambiguous; Delichon urbicum (hussvala): AviList's English name 'Western House Martin' is neither a label nor an alias on Wikidata (which has 'Common House Martin'); Emberiza schoeniclus (sävsparv): AviList's 'Common Reed Bunting' is not on Wikidata, which has 'Reed Bunting'; Glaucidium passerinum (sparvuggla): AviList's 'Eurasian Pygmy Owl' is not on Wikidata, which has 'Eurasian Pygmy Owlet'; Fratercula arctica (lunnefågel): a regular visitor but not a breeding bird in Sweden (status T in the Swedish list); Accipiter gentilis: not a separate card: AviList, the Swedish list and Dyntaxa place the goshawk in Astur, and the deck has it as Astur gentilis. Left out only to keep the deck near the requested size of about 80 (they met criteria 1, 2 and 4; Dyntaxa was only consulted for the species kept): Turdus viscivorus, Loxia curvirostra, Coccothraustes coccothraustes, Corvus frugilegus, Nucifraga caryocatactes, Anthus pratensis, Anthus trivialis, Riparia riparia, Phylloscopus sibilatrix, Sylvia borin, Curruca curruca, Muscicapa striata, Saxicola rubetra, Streptopelia decaocto, Strix uralensis, Milvus milvus, Branta leucopsis, Gallinula chloropus, Actitis hypoleucos, Gallinago gallinago, Larus marinus, Tetrastes bonasia, Alca torda, Oriolus oriolus, Alcedo atthis, Lagopus lagopus, Lagopus muta, Cinclus cinclus, Motacilla flava. Subspecies are not included. Former scientific names are given as a back note (not as an answer) on the 13 cards whose genus changed.",
   "queries": [
@@ -419,6 +423,22 @@
             "card": "(deck)",
             "issue": "Round 3 pointed to the wrong method steps: the species-row/subspecies-row explanation is in step 5 (BirdLife Sverige), not step 4 (AviList), and the Dyntaxa step is 6, not 5.",
             "resolution": "Verified against the method list (1 Scope, 2 Candidate list, 3 Wikidata, 4 AviList, 5 BirdLife Sverige, 6 Dyntaxa, 7 Selection, 8 Card text, 9 Former names, 10 Cross-checks, 11 Machine checks, 12 Process). In round 3, 'Method step 4 explains this' now reads 'Method step 5 explains this', and 'method steps 5 and 8' now reads 'method steps 6 and 8'. Only the step numbers were changed.",
+            "outcome": "fixed"
+          }
+        ]
+      },
+      {
+        "round": 5,
+        "date": "2026-10-04",
+        "reviewer": "Claude (AI), at Anton Wiklund's request — rebuild with live Wikidata checks",
+        "lens": "Live Wikidata checks at a rebuild",
+        "scope": "All 86 cards' Wikidata checks, re-run when the dossier's keywords were split by language",
+        "summary": "One check failed: Wikidata's English label of Q25332 had been changed from 'Osprey' to 'osprey' that morning. The card is unchanged; its check and evidence now follow the label.",
+        "findings": [
+          {
+            "card": "osprey",
+            "issue": "The check {qid Q25332, label en, equals 'Osprey'} failed: the item's revision history shows an edit at 2026-10-04T06:23:51Z (wbsetlabel-set, en) that set the English label to 'osprey'. Its English aliases are 'Pandion haliaetus', 'Western Osprey', 'sea hawk', 'river hawk' and 'fish hawk'.",
+            "resolution": "The card keeps 'Osprey', AviList v2025b's English name, written with a capital initial as every English name in the deck is; the selection compares the Wikidata label letter case aside. The check now expects 'osprey' and the Wikidata evidence records the change.",
             "outcome": "fixed"
           }
         ]
@@ -3496,7 +3516,7 @@
         {
           "source": "wikidata",
           "locator": "https://www.wikidata.org/wiki/Q25332",
-          "says": "taxon name (P225) 'Pandion haliaetus'; en label 'Osprey'; sv label 'fiskgjuse'",
+          "says": "taxon name (P225) 'Pandion haliaetus'; en label 'osprey' (written 'Osprey' until an edit of 2026-10-04T06:23:51Z changed only its case), en aliases include 'Western Osprey'; sv label 'fiskgjuse'",
           "retrieved": "2026-10-04"
         },
         {
@@ -3527,7 +3547,7 @@
         {
           "qid": "Q25332",
           "label": "en",
-          "equals": "Osprey"
+          "equals": "osprey"
         },
         {
           "qid": "Q25332",

@@ -25,22 +25,22 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:astronomy ;
-    dcat:keyword "Solar System" ,
-                 "planets" ,
-                 "dwarf planets" ,
-                 "moons" ,
-                 "astronomy" ,
-                 "solsystemet" ,
-                 "planeter" ,
-                 "dvärgplaneter" ,
-                 "månar" ,
-                 "astronomi" ;
+    dcat:keyword "Solar System"@en ,
+                 "planets"@en ,
+                 "dwarf planets"@en ,
+                 "moons"@en ,
+                 "astronomy"@en ,
+                 "solsystemet"@sv ,
+                 "planeter"@sv ,
+                 "dvärgplaneter"@sv ,
+                 "månar"@sv ,
+                 "astronomi"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:21:31Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T11:01:20Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 52 cards, each checked against at least two sources; sources, method and quality control in authored/solar-system.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#solar-system> ;

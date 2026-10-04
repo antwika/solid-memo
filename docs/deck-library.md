@@ -222,7 +222,8 @@ flowchart LR
   for scientific names, and names in each language they are written in
   (`"Henry VIII"@en`, `"Henrik VIII"@sv`). The first authored decks wrote
   language-neutral text untagged (`""`), which the builder still reads;
-  a new dossier does not.
+  a new dossier does not. Keywords are listed per language,
+  `{"en": [...], "sv": [...]}`, and built as library deck format 5.
 - **The provenance report**, `authored/<name>.md`, is generated: sources
   and licences, licence evidence, method, selection, queries, every
   quality-control round, and a table of every card with its evidence.
@@ -236,9 +237,9 @@ flowchart LR
   dossier; and fresh reviewers re-checked the changed cards and a third
   of the rest until no errors remained. Each report says so. The second
   twenty were made the same way the same day; in both, a fresh reviewer
-  finally checked every card before release. No human
-  subject expert has reviewed them yet: a correction is a change to the
-  dossier, logged as a new quality-control round, and a new release.
+  finally checked every card, and the maintainer reviews every deck in
+  full before it is released. A correction is a change to the dossier,
+  logged as a new quality-control round, and a new release.
 
 Every hand-written Turtle file in the repository — `packages/deck-library/decks/`, `packages/vocab/shapes/`,
 `packages/vocab/vocab/` and `packages/vocab/fixtures/` — follows one layout: `@base` first,

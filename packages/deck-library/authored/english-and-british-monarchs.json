@@ -8,18 +8,22 @@
     "en": "The 42 monarchs of England from William I (1066), of Great Britain from 1707 and of the United Kingdom from 1801, to Charles III. Front: the monarch's regnal name in English and Swedish; back: the years of the reign, counted from accession rather than coronation, with both periods for the two kings who reigned twice (a single year means the whole reign fell within that year); a note gives the royal house. Disputed claimants (Empress Matilda, Lady Jane Grey) are not counted, William III and Mary II have a card each, and there was no monarch during the Interregnum of 1649–1660. Based on Wikidata and the 1911 Encyclopædia Britannica (public domain), and checked against the Royal Household's website (royal.uk) and Wikipedia.",
     "sv": "De 42 monarkerna i England från Vilhelm I (1066), i Storbritannien från 1707 och i Förenade kungariket från 1801, fram till Charles III. Framsida: monarkens regentnamn på engelska och svenska; baksida: regeringsåren, räknade från trontillträdet och inte från kröningen, med båda perioderna för de två kungar som regerade två gånger (ett enda årtal betyder att hela regeringstiden föll inom det året); en anteckning anger kungahuset. Omstridda tronpretendenter (kejsarinnan Matilda, Jane Grey) räknas inte, Vilhelm III och Maria II har ett kort var, och under interregnumet 1649–1660 fanns ingen monark. Uppgifterna bygger på Wikidata och 1911 års upplaga av Encyclopædia Britannica (fri från upphovsrätt) och är kontrollerade mot det brittiska kungahusets webbplats (royal.uk) och Wikipedia."
   },
-  "keywords": [
-    "English monarchs",
-    "British monarchs",
-    "kings and queens of England",
-    "royal houses",
-    "British history",
-    "engelska monarker",
-    "brittiska monarker",
-    "Englands kungar och drottningar",
-    "kungahus",
-    "brittisk historia"
-  ],
+  "keywords": {
+    "en": [
+      "English monarchs",
+      "British monarchs",
+      "kings and queens of England",
+      "royal houses",
+      "British history"
+    ],
+    "sv": [
+      "engelska monarker",
+      "brittiska monarker",
+      "Englands kungar och drottningar",
+      "kungahus",
+      "brittisk historia"
+    ]
+  },
   "topics": [
     "history"
   ],
@@ -92,7 +96,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with independent AI reviewers and machine checks (the builder's checks against live Wikidata and the app's SHACL/DCAT-AP validators). The cards have not yet been reviewed by a human subject expert. Every query, URL and command run is listed under queries; the raw responses were saved in the research scratch directory.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released. Every query, URL and command run is listed under queries; the raw responses were saved in the research scratch directory.",
     "Offices: the Wikidata API (query 1) found the four items for the offices the deck covers: Monarch of England (Q18810062), Monarch of Great Britain (Q110324075, 1707–1800), monarch of the United Kingdom of Great Britain and Ireland (Q111722535, 1801–1927) and Monarch of the United Kingdom (Q9134365, since 1927).",
     "Selection and reign years: query 2 listed every non-deprecated position-held (P39) statement for the four offices with its start and end times. The query's filter, a start time in 1066 or later (FILTER(YEAR(?start) >= 1066)), returns 44 people: Harold Godwinson (Q159597), whose statement starts on 6 January 1066 (Julian; the endpoint shows 1066-01-11 after converting to Gregorian), and the 43 holders whose first statement starts on or after William I's accession on 25 December 1066 (Julian). Harold, the last king before the Norman Conquest, was then removed by hand, because the deck starts with the Norman Conquest; the Anglo-Saxon and Danish kings before him are already outside the filter. That left 43 people. Lady Jane Grey (Q162356), who has a P39 statement for July 1553, was left out as a disputed claimant (see the selection), leaving 42 cards. The statements of one person under successive offices were joined into one reign (Anne: England 1702–1707 and Great Britain 1707–1714; George III: Great Britain 1760–1801 and the United Kingdom 1801–1820; George V: 1910–1927 and 1927–1936). Reigns interrupted by another monarch keep both periods (Henry VI, Edward IV). The back gives the years only, start–end with an en dash; a reign that began and ended in the same year is a single year (Edward V, Edward VIII), and the description says so, since in the back-to-front direction \"1483\" and \"1936\" are years in which other monarchs also reigned; the reigning monarch's back is open-ended (\"2022–\").",
     "Calendar: Wikidata stores most dates before the British calendar change of 1752 in the Julian calendar (calendar model Q1985786), and the SPARQL endpoint (queries 2 and 23) returns every date converted to the proleptic Gregorian calendar, e.g. William I's start time, stored as 25 December 1066 (Julian), comes back as 1066-12-31. The first version of the dossier quoted the converted dates; in quality-control round 4 every date in the cards' Wikidata evidence was replaced by the value as stored, with its calendar model (Julian or Gregorian), from a fresh wbgetentities download (query 20). No year on any card changes. Some of Wikidata's dates around 1700 are stored as Gregorian although they are the Old Style days (e.g. William III, 28 December 1694); they are quoted as stored.",

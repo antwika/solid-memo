@@ -24,20 +24,21 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:geography ;
-    dcat:keyword "United States" ,
-                 "US states" ,
-                 "state capitals" ,
-                 "geography" ,
-                 "North America" ,
-                 "USA" ,
-                 "delstater" ,
-                 "huvudstäder" ,
-                 "geografi" ,
-                 "Nordamerika" ;
+    dcat:keyword "United States"@en ,
+                 "US states"@en ,
+                 "state capitals"@en ,
+                 "geography"@en ,
+                 "North America"@en ,
+                 "USA"@en ,
+                 "USA"@sv ,
+                 "delstater"@sv ,
+                 "huvudstäder"@sv ,
+                 "geografi"@sv ,
+                 "Nordamerika"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;

@@ -21,50 +21,50 @@
     {
       "deck": "chemical-compounds",
       "version": 1,
-      "issued": "2026-10-04T00:31:37Z",
-      "sha256": "adcd01edcffb24526054eb6b5080d580f5e9197a5b3e5e87377bcdb5484c31a6"
+      "issued": "2026-10-04T10:51:15Z",
+      "sha256": "9705988073cce0ee6106e7110636ffea5dcf520f835809260c6c542e57532eff"
     },
     {
       "deck": "classic-novels",
       "version": 1,
-      "issued": "2026-10-04T00:31:53Z",
-      "sha256": "3fc8257011a0709d79b1a2deb3874c65e82be96d97ea8808ee82c17f75514525"
+      "issued": "2026-10-04T10:51:33Z",
+      "sha256": "add8bd23f445a3442f7113f46d5a719f4a2d6d3575e43092864732e9036b7886"
     },
     {
       "deck": "classical-music-composers",
       "version": 1,
-      "issued": "2026-10-04T00:32:09Z",
-      "sha256": "6709a893b83cb28fa0549176edf0b11c4724ee6b94ca83a1ee043b3f9f52c620"
+      "issued": "2026-10-04T10:51:51Z",
+      "sha256": "2b203097a4a3d23be533683c53a669d167783e22b7a7fff593e569ff16605de7"
     },
     {
       "deck": "constellations",
       "version": 1,
-      "issued": "2026-10-04T00:32:25Z",
-      "sha256": "229988768d4ed88ad08448b5a757223f563a5d2df003fc319ec10ff6bebd3413"
+      "issued": "2026-10-04T10:52:10Z",
+      "sha256": "b55f59e59aee9ed9ab7abc22967f49583780fef4b6462909c83d38eddebc4d0e"
     },
     {
       "deck": "country-code-top-level-domains",
       "version": 1,
-      "issued": "2026-10-04T05:20:50Z",
-      "sha256": "9e80c498055f30f3d61db1419d6ab0c2720d171baa0ed8ed17508b75647b71e1"
+      "issued": "2026-10-04T10:52:30Z",
+      "sha256": "41c96952503d896d8387b7054f966acf72d52752d2d4309fb9f0ee82f513e58e"
     },
     {
       "deck": "derivatives",
       "version": 1,
-      "issued": "2026-10-04T00:32:41Z",
-      "sha256": "0213bec91055e056126e73a34c1c69f2a76ca052560f734816209863801348db"
+      "issued": "2026-10-04T10:52:49Z",
+      "sha256": "ef48000c3214d7fd3eea842daf014ba240d347b6d018600be671e0f21c6f56ce"
     },
     {
       "deck": "english-and-british-monarchs",
       "version": 1,
-      "issued": "2026-10-04T05:19:14Z",
-      "sha256": "4492758c5c0707968b049d3f4a82a63860e9c04f3ee6ac860a874666f4a096cc"
+      "issued": "2026-10-04T10:53:09Z",
+      "sha256": "6acdae519355fbfd8fcdacde8ed1408978893c5b1d9486f0e7da75d33d5c0523"
     },
     {
       "deck": "eu-member-states",
       "version": 1,
-      "issued": "2026-10-04T05:20:30Z",
-      "sha256": "98084e8abb99c454bf03d323529ded5e6f4a31c8d55313b1aeddc10dc5e57592"
+      "issued": "2026-10-04T10:53:29Z",
+      "sha256": "bc5ecd8f9c540a9a9689b1caa2ef7cff5554ae801976c3f4e47faae1a804863d"
     },
     {
       "deck": "famous-paintings",
@@ -87,50 +87,50 @@
     {
       "deck": "famous-sculptures",
       "version": 1,
-      "issued": "2026-10-04T05:23:35Z",
-      "sha256": "9cbe3fdae017eda4d13949a3e2b1a80894ac74bb037c947f9450c9e23292e185"
+      "issued": "2026-10-04T10:53:49Z",
+      "sha256": "92e75cb827642a30c4f737dfff6e6af154c1ca905f1df20544b5f1f6acfac7fa"
     },
     {
       "deck": "fifa-world-cup",
       "version": 1,
-      "issued": "2026-10-04T05:23:57Z",
-      "sha256": "e85d099499f2b88a627dcfd4037550767994e74be1c2adeef65da6f464df23b8"
+      "issued": "2026-10-04T10:54:09Z",
+      "sha256": "ec4d4a20067f30e9b749aec4dcf17716d0b28c88de2a595700609d335aab1cf4"
     },
     {
       "deck": "french-basics",
       "version": 1,
-      "issued": "2026-10-04T05:24:18Z",
-      "sha256": "b31896452e900a400a5ead547680ef0c5c6a2cde2ebb4dd9c6e1467cab699de1"
+      "issued": "2026-10-04T10:54:29Z",
+      "sha256": "1df0bb4a1914c3cd9a8b24a839523e1f9d524cfaddb48253e15dd78ef9795784"
     },
     {
       "deck": "geometry-formulas",
       "version": 1,
-      "issued": "2026-10-04T05:25:03Z",
-      "sha256": "d77579ff6718f5185f1e7fbf7c5be3e454e21ba6c611bb447b9088be1e57ee56"
+      "issued": "2026-10-04T10:54:49Z",
+      "sha256": "50a95d94d22e67ecc7d15297e0cf51c8d65c6460f6d8313b402824d37653d1be"
     },
     {
       "deck": "german-basics",
       "version": 1,
-      "issued": "2026-10-04T05:24:41Z",
-      "sha256": "d3071c37f06abee9a421a926338418950658100f78308adc477a8db52b5e18a2"
+      "issued": "2026-10-04T10:55:09Z",
+      "sha256": "876e7225f48ecc4c0e6236a36c0dff326d52f3fc2617881c55d8aaebf5ef51c7"
     },
     {
       "deck": "git-commands",
       "version": 1,
-      "issued": "2026-10-04T00:32:58Z",
-      "sha256": "bf7c5ea1390b765d0116b4817ffc684446babdde72286470a0726dddbbc33017"
+      "issued": "2026-10-04T10:55:30Z",
+      "sha256": "490baac352d79cd46c47df9355f1e17bbdaea41d98da913418b41e617489b886"
     },
     {
       "deck": "greek-alphabet",
       "version": 1,
-      "issued": "2026-10-04T00:33:14Z",
-      "sha256": "402fe538f63cbb4eae8c13b3a0926cf36115ea0e15e61d3a50996c5154d5eb3f"
+      "issued": "2026-10-04T10:55:50Z",
+      "sha256": "4114f331642281d5961aacf86aa5ae80defacf57719791b2a1d88a72a32cf68a"
     },
     {
       "deck": "greek-and-roman-gods",
       "version": 1,
-      "issued": "2026-10-04T00:33:30Z",
-      "sha256": "2e85171ad11e31eaa56bc5f752433893020c0dfaaf18d6f6811e069aaa09e820"
+      "issued": "2026-10-04T10:56:11Z",
+      "sha256": "fd559c0a780039e50c8bfa8e5d939f0442158c1ecc243285ea5d86e0d28088c4"
     },
     {
       "deck": "http-status-codes",
@@ -153,20 +153,20 @@
     {
       "deck": "human-skeleton",
       "version": 1,
-      "issued": "2026-10-04T00:33:46Z",
-      "sha256": "3d736bcd93de2603a6735cf046a2f43b70782a01e2f7aaf3919998eddcd95535"
+      "issued": "2026-10-04T10:56:32Z",
+      "sha256": "72d9f6281968668df12bbc8e5a5959fef50573bb888dbc3cf83a7cd148897012"
     },
     {
       "deck": "latin-phrases",
       "version": 1,
-      "issued": "2026-10-04T00:34:03Z",
-      "sha256": "6eb6e99c430a5685f385fef4f29e479e3998a71bc3c66a15e2dcb360ac3cc8eb"
+      "issued": "2026-10-04T10:56:53Z",
+      "sha256": "b6e8af105a0f86865868d5b35366ff0572edeb8b78ee1e3509eb710e91f2e9a6"
     },
     {
       "deck": "musical-terms",
       "version": 1,
-      "issued": "2026-10-04T00:34:19Z",
-      "sha256": "f1b538f99fa475ff561bfa4d16d560814540f257e41bcd45940609387779bb86"
+      "issued": "2026-10-04T10:57:15Z",
+      "sha256": "d82d19e6820e3e79e30ca9d2b9d1993e6c534a1c4e72c0c15e578a8c996211d4"
     },
     {
       "deck": "network-ports",
@@ -189,44 +189,44 @@
     {
       "deck": "nobel-peace-prize",
       "version": 1,
-      "issued": "2026-10-04T05:19:51Z",
-      "sha256": "367e58d55ae106302c88315da9fb529a752cdb967d29896df22eb7d895e51752"
+      "issued": "2026-10-04T10:57:36Z",
+      "sha256": "23e16647151b49b7f44669ad3ee0e1669775f3d1d434c01080581031e5bb71d4"
     },
     {
       "deck": "nobel-prize-in-literature",
       "version": 1,
-      "issued": "2026-10-04T00:34:37Z",
-      "sha256": "5b1f64e244cbaef92da453afb5c666b841483a0c0546e1f6a8bdd051e62b727b"
+      "issued": "2026-10-04T10:57:58Z",
+      "sha256": "b52f62f8f8fb0655e55addd5586a2e11def1defef3cbbe4b99d29ebca8968a15"
     },
     {
       "deck": "nordic-birds",
       "version": 1,
-      "issued": "2026-10-04T00:34:54Z",
-      "sha256": "73a52de06e57900bc8a50f85cfdeef0b8399ac0a5c326c346acd10c12eee0356"
+      "issued": "2026-10-04T10:58:20Z",
+      "sha256": "8025acdc90cae4bfad47b2f3931f85f5fa868dd395eb4216a535085246166359"
     },
     {
       "deck": "nordic-mammals",
       "version": 1,
-      "issued": "2026-10-04T05:22:32Z",
-      "sha256": "5ef184965d5f64da359664653f9fbf5683d225813054a22563502b46088fefd3"
+      "issued": "2026-10-04T10:58:41Z",
+      "sha256": "5969845f6acf4b243d84b13aa426129eaa3db8411a2b289afce17890447b568a"
     },
     {
       "deck": "nordic-trees",
       "version": 1,
-      "issued": "2026-10-04T05:22:53Z",
-      "sha256": "200dcfaaa784ef217bcadfd1963179a651075bc8f5dc763da5ae945b02305290"
+      "issued": "2026-10-04T10:59:04Z",
+      "sha256": "cb8f336fb8ff527a6e9a0bded2375f9cd61a043051c0bf6b9586b5ac39ee6151"
     },
     {
       "deck": "nordic-world-heritage-sites",
       "version": 1,
-      "issued": "2026-10-04T05:21:10Z",
-      "sha256": "1f525009461f3e5cba395e0bfbf6901c74f0cfaa4d948b7649571f9099557127"
+      "issued": "2026-10-04T10:59:25Z",
+      "sha256": "50d810ad3fb4fbac2643d337b08c500f630c07c67308f329f80bd8ee85d98b0f"
     },
     {
       "deck": "olympic-games",
       "version": 1,
-      "issued": "2026-10-04T00:35:12Z",
-      "sha256": "defe0e598870c47fda108180ee67d44559efc2b3212497a485a1b27092349d21"
+      "issued": "2026-10-04T10:59:48Z",
+      "sha256": "9da42690f59359df2dcbcad0687da3b1a1f4d76ad3e320d0a7002a622a40587b"
     },
     {
       "deck": "periodic-table",
@@ -249,38 +249,38 @@
     {
       "deck": "physical-constants",
       "version": 1,
-      "issued": "2026-10-04T05:21:50Z",
-      "sha256": "b55a85f085636170706ff8d30d034e96153d5a16b0c87e0d919822f12c874fa7"
+      "issued": "2026-10-04T11:00:10Z",
+      "sha256": "628137bceaf57cb492105ebfecbf9f81b628f8413db933fa99aa4e1acf42d3ee"
     },
     {
       "deck": "shakespeare-plays",
       "version": 1,
-      "issued": "2026-10-04T05:23:14Z",
-      "sha256": "5780ed9eb60889c0e807f63c7cdf5276cb6884f43f23360f87563b968e98cab7"
+      "issued": "2026-10-04T11:00:33Z",
+      "sha256": "25dac02049daeb9c3d2a19320c04add38c0505fddbf1522f7ff06ced5211f0df"
     },
     {
       "deck": "si-units",
       "version": 1,
-      "issued": "2026-10-04T00:35:30Z",
-      "sha256": "a1e0272718ad37f61e26ca3730a6641a0793fb6dc31cf35de4b21ace00931a50"
+      "issued": "2026-10-04T11:00:56Z",
+      "sha256": "16eaa0c742ca84abecf80c2ce097b67b5d61e0a515fb88ff3ddc1aef13ddf8a0"
     },
     {
       "deck": "solar-system",
       "version": 1,
-      "issued": "2026-10-04T05:21:31Z",
-      "sha256": "cff7460215794a6f6b0dd994ce0467d539880e9e6326c63aa9c2f05798e5628e"
+      "issued": "2026-10-04T11:01:20Z",
+      "sha256": "23d4fb417ecd94f0b55c096aa44e48b5f37849bfb9382ba5ece0276027acd5cc"
     },
     {
       "deck": "spanish-basics",
       "version": 1,
-      "issued": "2026-10-04T00:35:48Z",
-      "sha256": "7a5c59067bbf6dd4400c0902461de2bef0676ecdd46e712322755c581afd2665"
+      "issued": "2026-10-04T11:01:42Z",
+      "sha256": "2e99bf0ebb979f7fb357167988a567bbc169994a680c898ab45dc1ba5bb0a6a0"
     },
     {
       "deck": "sweden-counties-and-provinces",
       "version": 1,
-      "issued": "2026-10-04T00:36:13Z",
-      "sha256": "3a569a73481185ef4aa897bb187e15760c8fe14046ff7a058f5c314a204d08c4"
+      "issued": "2026-10-04T11:02:06Z",
+      "sha256": "171be4adabcef41a273ac71bc374601239e9784d3be965ba559e81f57126c6c1"
     },
     {
       "deck": "swedish-adjectives",
@@ -321,8 +321,8 @@
     {
       "deck": "swedish-monarchs",
       "version": 1,
-      "issued": "2026-10-04T00:36:34Z",
-      "sha256": "501caf9d5706f19b5fe524cead8c03a2d8f4758529da8f393d35d1559d8a7c8a"
+      "issued": "2026-10-04T11:02:30Z",
+      "sha256": "7bcf63cf95ad0368842104e77c5ddb8cda422a74f823aa52f850134dea6095ff"
     },
     {
       "deck": "swedish-nouns",
@@ -351,8 +351,8 @@
     {
       "deck": "swedish-prime-ministers",
       "version": 1,
-      "issued": "2026-10-04T05:19:32Z",
-      "sha256": "de3b060f91d0d8ec5c06a150831d1e7a9d136536d3e59455be8836841172a63d"
+      "issued": "2026-10-04T11:02:55Z",
+      "sha256": "4a38fcc218ae8333426db4d2c18caefb0377e22d6faec94e8c2f1099fc1717db"
     },
     {
       "deck": "swedish-verbs",
@@ -381,32 +381,32 @@
     {
       "deck": "unix-shell-commands",
       "version": 1,
-      "issued": "2026-10-04T05:25:26Z",
-      "sha256": "40136770eeb3186c742cba694df24481b3e9801912827264131b25212a183c1b"
+      "issued": "2026-10-04T11:03:19Z",
+      "sha256": "572b359cc43c700b5458976a59bf3659ec7285a97169500fd6bb8ef1d9539497"
     },
     {
       "deck": "us-presidents",
       "version": 1,
-      "issued": "2026-10-04T05:18:55Z",
-      "sha256": "746206277b7650c07946cc0fb5a13a437f41d4aad0cfc7957bd6286dcb80d079"
+      "issued": "2026-10-04T11:03:44Z",
+      "sha256": "8129caeea98e8b9949cad9005abb1a545d26da5c67d0b4ab6b53918e13a1d5f1"
     },
     {
       "deck": "us-states-and-capitals",
       "version": 1,
-      "issued": "2026-10-04T05:20:11Z",
-      "sha256": "0bef741db8349d2cae686763eb9c3bea76f933b9547620a2b42f8d4cea18110e"
+      "issued": "2026-10-04T11:04:09Z",
+      "sha256": "b03c9c6245b9239aec2ffe2aa6f07364d4e339663d79f367b5736417c95b4793"
     },
     {
       "deck": "vitamins",
       "version": 1,
-      "issued": "2026-10-04T05:22:11Z",
-      "sha256": "05b352ddafc39f5295e4165aa505cef0d495a1741ae129d17443926b64022f84"
+      "issued": "2026-10-04T11:04:34Z",
+      "sha256": "edf5ed0e6ccaae7352ea327420ae4ac3d6572a96c5896fa3ee7b1b8322ba6590"
     },
     {
       "deck": "world-currencies",
       "version": 1,
-      "issued": "2026-10-04T00:36:52Z",
-      "sha256": "9a98fd65f29ab759e3279ae2c9bc2744abfadfab21f623c7c6dc9b678a537f00"
+      "issued": "2026-10-04T11:05:00Z",
+      "sha256": "a649933840d4faff7f54e092fb381b399ffd6fece89ad43686fa06a578be7b58"
     },
     {
       "deck": "world-flags",
@@ -429,8 +429,8 @@
     {
       "deck": "world-history-dates",
       "version": 1,
-      "issued": "2026-10-04T00:37:12Z",
-      "sha256": "dbe89361285467cecb73139fc98564ba522e2036864440c546c26ed6151f2a80"
+      "issued": "2026-10-04T11:05:26Z",
+      "sha256": "d238af2f26246098afdbdecd67a6fea77b24656441855752a8d2710a56e40d48"
     }
   ]
 }

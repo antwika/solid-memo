@@ -23,20 +23,20 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:sports ;
-    dcat:keyword "Olympic Games" ,
-                 "Summer Olympics" ,
-                 "Winter Olympics" ,
-                 "host cities" ,
-                 "sports history" ,
-                 "olympiska spelen" ,
-                 "sommar-OS" ,
-                 "vinter-OS" ,
-                 "värdstäder" ,
-                 "idrottshistoria" ;
+    dcat:keyword "Olympic Games"@en ,
+                 "Summer Olympics"@en ,
+                 "Winter Olympics"@en ,
+                 "host cities"@en ,
+                 "sports history"@en ,
+                 "olympiska spelen"@sv ,
+                 "sommar-OS"@sv ,
+                 "vinter-OS"@sv ,
+                 "värdstäder"@sv ,
+                 "idrottshistoria"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;

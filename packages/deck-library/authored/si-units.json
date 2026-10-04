@@ -8,18 +8,22 @@
     "en": "The International System of Units (SI) in 53 cards: the 7 base units, the 22 derived units with special names and the 24 SI prefixes, including ronna, quetta, ronto and quecto from 2022. The front names a quantity or a prefix; the back gives the SI unit with its symbol, or the prefix's factor and symbol. Compiled from NIST's SI guide and prefix table, Swedac's regulations on units of measurement (STAFS 2009:26) and Wikidata, and checked against the BIPM SI Brochure.",
     "sv": "Internationella måttenhetssystemet (SI) i 53 kort: de 7 grundenheterna, de 22 härledda enheterna med särskilda namn och de 24 SI-prefixen, inklusive ronna, quetta, ronto och quekto från 2022. Framsidan anger en storhet eller ett prefix; baksidan ger SI-enheten och dess beteckning, eller prefixets faktor och beteckning. Sammanställd ur NIST:s SI-guide och prefixtabell, Swedacs föreskrifter om måttenheter (STAFS 2009:26) och Wikidata, och kontrollerad mot BIPM:s SI-broschyr."
   },
-  "keywords": [
-    "SI units",
-    "SI prefixes",
-    "metric system",
-    "units of measurement",
-    "physics",
-    "SI-enheter",
-    "SI-prefix",
-    "metriska systemet",
-    "måttenheter",
-    "fysik"
-  ],
+  "keywords": {
+    "en": [
+      "SI units",
+      "SI prefixes",
+      "metric system",
+      "units of measurement",
+      "physics"
+    ],
+    "sv": [
+      "SI-enheter",
+      "SI-prefix",
+      "metriska systemet",
+      "måttenheter",
+      "fysik"
+    ]
+  },
   "topics": [
     "physics",
     "science"
@@ -104,7 +108,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, Anthropic) at Anton Wiklund's direction, with machine checks (this builder's Wikidata checks and the app's SHACL and DCAT-AP validators); review rounds by independent AI reviewers are logged under Quality control. No human subject expert has reviewed the cards yet.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Units in English: downloaded NIST SP 811 (2008) as PDF and extracted its text with pypdf. Table 1 (SI base units, PDF p. 16) gave the 7 base units and Table 3 (\"The 22 SI coherent derived units with special names and symbols\", PDF p. 17) the 22 derived units: for each, the quantity, the unit name and the symbol. Where a row names several quantities (\"energy, work, amount of heat\") the card names the first one, which is unique among the 29 units.",
     "Prefixes: downloaded NIST's Metric (SI) Prefixes page and read its table of 24 prefixes (name, symbol, factor 10^30 to 10^−30). The deck uses all 24.",
     "Swedish: downloaded the consolidated Swedac regulation STAFS 2009:26 om måttenheter (amended up to STAFS 2020:2) and extracted its text. Bilaga 1.1 (SI-grundenheter), 1.1.1 (Celsiustemperatur), 1.2.3 (Härledda SI-enheter med särskilda namn och beteckningar) and 1.3 (Multipelprefix) gave the Swedish quantity names, unit names and the 20 prefixes it lists (hekto, deka, mikro, piko, yokto ...). Where STAFS names several quantities for one unit the card uses the one that matches the English front (\"elektrisk laddning\", \"elektrisk spänning\").",

@@ -8,18 +8,22 @@
     "en": "52 cards on stable facts about the Solar System: the eight planets in order from the Sun, the five dwarf planets the IAU recognises and where they orbit, the largest moon of each planet that has moons, which planet (or, for Charon, dwarf planet) 16 well-known moons orbit, and undisputed superlatives such as the largest, hottest and densest planet. Front: a question or description, e.g. \"4th planet from the Sun\"; back: the planet, moon or place in English and Swedish, with a note where it helps. Facts from NASA Science and Wikidata, checked against JPL's Solar System Dynamics tables, the IAU and the Swedish Wikipedia.",
     "sv": "52 kort med beständiga fakta om solsystemet: de åtta planeterna i ordning från solen, de fem dvärgplaneter som IAU erkänner och var de kretsar, den största månen hos varje planet som har månar, vilken planet (för Charon dvärgplanet) 16 välkända månar kretsar kring och obestridda fakta om vilken planet som är störst, hetast, tätast och så vidare. Framsida: en fråga eller beskrivning, t.ex. ”Fjärde planeten från solen”; baksida: planeten, månen eller platsen på engelska och svenska, med en anteckning där den hjälper. Uppgifterna kommer från NASA Science och Wikidata och är kontrollerade mot JPL:s tabeller (Solar System Dynamics), IAU och den svenskspråkiga Wikipedia."
   },
-  "keywords": [
-    "Solar System",
-    "planets",
-    "dwarf planets",
-    "moons",
-    "astronomy",
-    "solsystemet",
-    "planeter",
-    "dvärgplaneter",
-    "månar",
-    "astronomi"
-  ],
+  "keywords": {
+    "en": [
+      "Solar System",
+      "planets",
+      "dwarf planets",
+      "moons",
+      "astronomy"
+    ],
+    "sv": [
+      "solsystemet",
+      "planeter",
+      "dvärgplaneter",
+      "månar",
+      "astronomi"
+    ]
+  },
   "topics": [
     "astronomy"
   ],
@@ -123,7 +127,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with independent AI reviewers and machine checks against live Wikidata and the app's SHACL/DCAT-AP validators. The cards have not yet been reviewed by a human subject expert. This record describes the authoring round (quality-control round 0); later review rounds are logged below it as they happen.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Scope: the editor's brief asked for about 50 cards of stable, unambiguous Solar System facts: the planets in order, the IAU's dwarf planets and where they orbit, the largest moon of each planet that has moons, notable moons and their planets, and undisputed superlatives, avoiding moon counts, varying distances and anything recently revised.",
     "NASA pages: the script fetch_nasa.py (query 6) downloaded 37 pages of NASA Science (science.nasa.gov) and the NASA media usage guidelines, saved the HTML and a plain-text rendering, and the texts were searched for the sentences each card needed (planet order, \"largest\", \"smallest\", \"hottest\", \"densest\", \"least dense\", \"shortest day\", \"sideways\", \"retrograde\", \"largest moon\", \"only moon\", \"volcanically active\", \"Kuiper Belt\", \"asteroid belt\"; query 7 and the moon-page search, query 8). NASA's Planets page and Dwarf Planets page fetched today still list eight planets and \"five officially recognized dwarf planets\", which is the recency check for the dwarf planets (a 2025 candidate such as 2017 OF201 is not recognised by the IAU).",
     "Wikidata: a first label-based query (query 1) timed out (HTTP 504). Query 2 listed the natural satellites of Earth, Mars, Jupiter, Saturn, Uranus, Neptune and Pluto (items with P397 parent astronomical body, at least 40 sitelinks) with English and Swedish labels; query 3 the labels and classes of the Sun and planets; query 4 the items that are instances of dwarf planet (Q2199), which include non-IAU bodies such as Sedna and lack Makemake as a truthy value; Makemake's item (Q604) was found with the search API (query 5). The script entities.py (query 9) fetched the labels and aliases in English, Swedish and mul, and the statements P31, P361, P397, P2054, P2120, P2146, P2147, P2386 and others, for all the items; search.py (query 10) found the items of the Kuiper Belt, the asteroid belt, the Great Red Spot and the scattered disc.",

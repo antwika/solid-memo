@@ -8,18 +8,23 @@
     "en": "56 everyday Git commands: the front describes a task in plain words in English and Swedish, the back is the command that does it, with placeholders such as <branch> or <file>. Uses the current commands Git recommends (git switch and git restore rather than git checkout, git config set), with older equivalents in notes. Every command was run with Git 2.53.0 in a test repository and checked against the official Git reference manual.",
     "sv": "56 vardagliga Git-kommandon: på framsidan en uppgift beskriven med vanliga ord på engelska och svenska, på baksidan kommandot som utför den, med platshållare som <branch> eller <file>. Använder de aktuella kommandon som Git rekommenderar (git switch och git restore i stället för git checkout, git config set), med äldre motsvarigheter i anteckningar. Varje kommando har körts med Git 2.53.0 i ett testarkiv och kontrollerats mot Gits officiella referenshandbok."
   },
-  "keywords": [
-    "Git",
-    "version control",
-    "command line",
-    "branches",
-    "commits",
-    "versionshantering",
-    "kommandorad",
-    "Git-kommandon",
-    "grenar",
-    "incheckningar"
-  ],
+  "keywords": {
+    "en": [
+      "Git",
+      "version control",
+      "command line",
+      "branches",
+      "commits"
+    ],
+    "sv": [
+      "versionshantering",
+      "kommandorad",
+      "Git-kommandon",
+      "grenar",
+      "incheckningar",
+      "Git"
+    ]
+  },
   "topics": [
     "computing"
   ],
@@ -82,7 +87,7 @@
     }
   },
   "method": [
-    "Who did the work: the research, drafting and cross-checking were done by AI agents (Claude, Anthropic) at Anton Wiklund's direction, with machine checks (a test run of every command in a throwaway repository, the builder's dossier checks, and the app's SHACL and DCAT-AP validators). Round 0 of the quality-control log is the authoring agent's own checks; reviews by independent AI reviewers are recorded as further rounds when they have taken place. No human subject expert has reviewed the cards yet.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (a test run of every command in a throwaway repository, live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Candidate tasks: the authoring agent drew up a list of about 60 everyday Git tasks covering setting up a repository, staging and committing, undoing changes, branches, merging and rebasing, history, remotes, stashing and tags (see Selection). The list is the agent's own; it was not taken from any published list or cheat sheet.",
     "Current commands: where Git now offers a dedicated command, the deck uses it: git switch for changing and creating branches and git restore for discarding and unstaging changes (both documented in the current reference manual without any experimental warning, and suggested by git status itself: \"use git restore --staged <file>... to unstage\", \"use git restore <file>... to discard changes in working directory\"), and git config set for writing configuration, because the git-config manual lists the old form git config <name> <value> under DEPRECATED MODES and recommends the subcommands (introduced in Git 2.46.0 according to its release notes). The older equivalents (git checkout -b, git checkout -, git checkout <branch>, git checkout -- <file>, git reset <file>, git config --global ...) are given in back notes and were run too.",
     "Notation on the back: the exact command as typed, with placeholders in angle brackets (<branch>, <file>, <commit>, <url>, <name>, <tag>, <message>, <email>, <old>, <new>, <new-name>) as in the Git manual's synopses, and quotes where a value usually contains spaces (\"<name>\", \"<message>\"). Short options are used where Git has them (-c, -A, -p, -u, -m, -a, -d, -D, -f); the long form is named in a note where it is commonly seen. Remote commands that need a remote name use origin, the name git clone gives the remote, and the front says so.",

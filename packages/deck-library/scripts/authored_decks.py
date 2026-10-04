@@ -31,7 +31,9 @@ THE DOSSIER (authored/<name>.json)
   name              the deck's name, the dossier's file name.
   title, description
                     {"en": ..., "sv": ...}: English required, Swedish expected.
-  keywords          list of strings (English and Swedish).
+  keywords          {"en": [...], "sv": [...]}: the keywords in each language
+                    (library deck format 5 tags each one); a word written the
+                    same in both, such as "UNESCO", is listed under each.
   topics            Solid Memo topic ids (vocab/topics.ttl), e.g. ["history"].
   studyDirection    "frontToBack" | "backToFront" | "bidirectional".
   sides             the languages of the cards' text: {"front": ["en", "sv"],
@@ -211,13 +213,18 @@ def check_dossier(d: dict, name: str) -> list[str]:
         p += lang_text_problems(field, d[field], None, english=True)
         if "sv" not in d[field]:
             p.append(f"{field}: no Swedish text")
-    if not isinstance(d["keywords"], list) or not d["keywords"]:
-        p.append("keywords: a non-empty list")
+    keywords = d["keywords"]
+    if not isinstance(keywords, dict) or set(keywords) != {"en", "sv"}:
+        p.append('keywords: {"en": [...], "sv": [...]}')
     else:
-        for i, k in enumerate(d["keywords"]):
-            p += text_problems(f"keywords[{i}]", k)
-        if len(set(d["keywords"])) != len(d["keywords"]):
-            p.append("keywords: duplicates")
+        for lang, words in keywords.items():
+            if not isinstance(words, list) or not words:
+                p.append(f"keywords.{lang}: a non-empty list")
+                continue
+            for i, k in enumerate(words):
+                p += text_problems(f"keywords.{lang}[{i}]", k)
+            if len(set(words)) != len(words):
+                p.append(f"keywords.{lang}: duplicates")
     for t in d["topics"]:
         if t not in TOPICS:
             p.append(f"topics: {t!r} unknown")
@@ -512,11 +519,11 @@ def render_turtle(d: dict) -> str:
     out += [
         triple("dcat:theme", ["<http://publications.europa.eu/resource/authority/data-theme/EDUC>",
                               *[f"topic:{t}" for t in d["topics"]]]),
-        triple("dcat:keyword", [lit(k) for k in d["keywords"]]),
+        triple("dcat:keyword", [f"{lit(k)}@{l}" for l in ("en", "sv") for k in d["keywords"][l]]),
         triple("dcterms:language", [f"<http://publications.europa.eu/resource/authority/language/{LANGUAGES[l]}>"
                                     for l in deck_languages(d)]),
         f"    solid-memo:studyDirection solid-memo:{d['studyDirection']} ;",
-        "    solid-memo:formatVersion 4 .",
+        "    solid-memo:formatVersion 5 .",
         "",
         f"<{creator_id}>",
         "    a foaf:Agent ;",

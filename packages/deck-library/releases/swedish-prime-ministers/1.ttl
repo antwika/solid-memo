@@ -24,20 +24,20 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:history ;
-    dcat:keyword "prime ministers" ,
-                 "Sweden" ,
-                 "Swedish politics" ,
-                 "political history" ,
-                 "statsministrar" ,
-                 "Sverige" ,
-                 "svensk politik" ,
-                 "politisk historia" ;
+    dcat:keyword "prime ministers"@en ,
+                 "Sweden"@en ,
+                 "Swedish politics"@en ,
+                 "political history"@en ,
+                 "statsministrar"@sv ,
+                 "Sverige"@sv ,
+                 "svensk politik"@sv ,
+                 "politisk historia"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:19:32Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T11:02:55Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 35 cards, each checked against at least two sources; sources, method and quality control in authored/swedish-prime-ministers.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#swedish-prime-ministers> ;

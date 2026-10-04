@@ -23,22 +23,22 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:geography ;
-    dcat:keyword "Sweden" ,
-                 "counties" ,
-                 "provinces" ,
-                 "county seats" ,
-                 "geography" ,
-                 "lands of Sweden" ,
-                 "Sverige" ,
-                 "län" ,
-                 "landskap" ,
-                 "residensstäder" ,
-                 "landsdelar" ,
-                 "geografi" ;
+    dcat:keyword "Sweden"@en ,
+                 "counties"@en ,
+                 "provinces"@en ,
+                 "county seats"@en ,
+                 "geography"@en ,
+                 "lands of Sweden"@en ,
+                 "Sverige"@sv ,
+                 "län"@sv ,
+                 "landskap"@sv ,
+                 "residensstäder"@sv ,
+                 "landsdelar"@sv ,
+                 "geografi"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;

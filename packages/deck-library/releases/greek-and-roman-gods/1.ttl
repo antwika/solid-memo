@@ -26,20 +26,20 @@
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:mythology ,
                topic:history ;
-    dcat:keyword "Greek mythology" ,
-                 "Roman mythology" ,
-                 "Olympians" ,
-                 "gods" ,
-                 "grekisk mytologi" ,
-                 "romersk mytologi" ,
-                 "olympier" ,
-                 "gudar" ;
+    dcat:keyword "Greek mythology"@en ,
+                 "Roman mythology"@en ,
+                 "Olympians"@en ,
+                 "gods"@en ,
+                 "grekisk mytologi"@sv ,
+                 "romersk mytologi"@sv ,
+                 "olympier"@sv ,
+                 "gudar"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T00:33:30Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:56:11Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 43 cards, each checked against at least two sources; sources, method and quality control in authored/greek-and-roman-gods.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#greek-and-roman-gods> ;

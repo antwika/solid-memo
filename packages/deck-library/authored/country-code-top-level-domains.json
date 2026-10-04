@@ -8,18 +8,24 @@
     "en": "The country-code top-level domain (ccTLD) of each of the 193 UN member states: 193 cards with the country on the front, in English and Swedish, and its two-letter Internet domain on the back, such as Sweden → .se, studied in both directions. Each card gives the domain IANA has delegated to the country's registry, formed from its ISO 3166-1 code except for the United Kingdom (.uk, not .gb); internationalised domains in other scripts and the domains of territories that are not UN members are left out. Compiled from Wikidata and checked against IANA's Root Zone Database and the DNS root zone file.",
     "sv": "Den nationella toppdomänen (ccTLD) för vart och ett av FN:s 193 medlemsländer: 193 kort med landet på framsidan, på engelska och svenska, och dess tvåbokstaviga internetdomän på baksidan, till exempel Sverige → .se, att öva i båda riktningarna. Varje kort ger den domän som IANA har delegerat till landets domänregister, bildad av landets ISO 3166-1-kod utom för Storbritannien (.uk, inte .gb); internationaliserade domäner i andra skriftsystem och domäner för territorier som inte är medlemmar i FN ingår inte. Sammanställd från Wikidata och kontrollerad mot IANA:s rotzonsdatabas (Root Zone Database) och DNS-rotzonfilen."
   },
-  "keywords": [
-    "top-level domains",
-    "ccTLD",
-    "Internet domains",
-    "DNS",
-    "countries",
-    "toppdomäner",
-    "nationella toppdomäner",
-    "domännamn",
-    "internet",
-    "länder"
-  ],
+  "keywords": {
+    "en": [
+      "top-level domains",
+      "ccTLD",
+      "Internet domains",
+      "DNS",
+      "countries"
+    ],
+    "sv": [
+      "toppdomäner",
+      "nationella toppdomäner",
+      "domännamn",
+      "internet",
+      "länder",
+      "ccTLD",
+      "DNS"
+    ]
+  },
   "topics": [
     "computing",
     "geography"
@@ -83,7 +89,7 @@
     }
   },
   "method": [
-    "The research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks against live Wikidata, against downloaded copies of IANA's Root Zone Database and the DNS root zone file, and against the app's SHACL and DCAT-AP validators; independent AI reviewers may add quality-control rounds after round 0. The cards have not yet been reviewed by a human subject expert.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (IANA's Root Zone Database and the DNS root zone file, live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Selection: the Wikidata SPARQL endpoint was asked for every item that is a member (P463) of the United Nations (Q1065) with no end time on that statement, with its ISO 3166-1 alpha-2 code (P297) and every top-level Internet domain (P78) statement (query 1, run 2026-10-04). It returned 203 items, 11 of them without an ISO 3166-1 alpha-2 code. As in the library's world-currencies deck, ten of these are historical predecessor states still tagged as members (Islamic State of Afghanistan, Republic of Afghanistan, Kingdom of Laos, Kingdom of Nepal, Mongolian People's Republic, People's Republic of Mozambique, Republic of the Congo (Léopoldville), Somali Democratic Republic, Third Hellenic Republic, realm of the United Kingdom); they were dropped. The eleventh is the Kingdom of Denmark (Q756617), a member without P297; it and the Kingdom of the Netherlands (Q29999, which has P297 \"NL\") are the recorded members; the cards use Denmark (Q35) and the Netherlands (Q55), whose domains .dk and .nl are also the Kingdoms' P78 values. The resulting 193 items are exactly those of the world-currencies deck, and they were matched one to one with the 193 names on the UN's Member States page downloaded the same day (by normalised English name, the rest through a hand-written table of 28 UN name forms, listed in full under queries, such as \"Viet Nam\", \"Türkiye\", \"Naoero\").",
     "Domains: query 2 asked, for the 193 items and the two Kingdoms, for P297 and every P78 statement with its rank, start and end time, the domain item's English, Swedish and multilingual labels and its classes (P31). For 166 states P78 has exactly one value; for 27 it has more: internationalised (non-Latin) ccTLDs such as .рф, .中国 or .бг (classed Q843214), generic or geographic TLDs such as .quebec, .paris, .swiss, .gov and .mil, the legacy .su for Russia and .gb for the United Kingdom, overseas .wf, .re, .yt and .pm for France, and .eu (deprecated rank) for Belgium and Lithuania. The card's domain is the P78 value of best rank whose label is a dot followed by the state's ISO 3166-1 alpha-2 code in lower case; it is a country code top-level domain (P31 Q42032) for every state. The one exception to the ISO rule is the United Kingdom: its code is GB, but its P78 value of preferred rank is .uk (Q37913), and .gb (Q433862, normal rank) is described as \"reserved\"; the card gives .uk and a back note explains .gb. The Netherlands item Q55 has no P297 of normal or preferred rank (its \"NL\" statement is deprecated, so the truthy wdt:P297 of query 2 does not return it); the Kingdom's code NL (Q29999) was used.",
     "Cross-check against IANA: the Root Zone Database table (https://www.iana.org/domains/root/db) was downloaded and parsed into its 1595 rows (316 of type country-code), and the delegation record of each card's domain was fetched (fetch_iana_pages.py, one request per second). Every card's domain is listed with type country-code and a named manager (none is \"Not assigned\" or \"Reserved Domain - IANA\"); each card's evidence quotes the row (manager), the record's heading, registration date and last update. Then the root zone file itself (https://www.internic.net/domain/root.zone, SOA serial 2026100301) was downloaded and its NS records counted: every card's domain has NS records, i.e. is delegated in the DNS today.",

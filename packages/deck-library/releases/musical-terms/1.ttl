@@ -26,24 +26,25 @@
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:music ,
                topic:languages ;
-    dcat:keyword "music" ,
-                 "musical terms" ,
-                 "Italian" ,
-                 "tempo" ,
-                 "dynamics" ,
-                 "articulation" ,
-                 "musik" ,
-                 "musiktermer" ,
-                 "italienska" ,
-                 "dynamik" ,
-                 "artikulation" ;
+    dcat:keyword "music"@en ,
+                 "musical terms"@en ,
+                 "Italian"@en ,
+                 "tempo"@en ,
+                 "dynamics"@en ,
+                 "articulation"@en ,
+                 "musik"@sv ,
+                 "musiktermer"@sv ,
+                 "italienska"@sv ,
+                 "dynamik"@sv ,
+                 "artikulation"@sv ,
+                 "tempo"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ,
                      <http://publications.europa.eu/resource/authority/language/ITA> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T00:34:19Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:57:15Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 61 cards, each checked against at least two sources; sources, method and quality control in authored/musical-terms.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#musical-terms> ;

@@ -8,18 +8,23 @@
     "en": "35 fundamental physical constants in 70 cards: the seven exact defining constants of the SI, constants derived exactly from them, and measured constants of electromagnetism, atomic physics and gravitation, including the Planck units. For each constant one card asks for its standard symbol and one for its value (with unit where it has one). Values are exact where the SI makes them exact; otherwise they are the CODATA 2022 recommended values rounded to 5 significant figures and marked ≈. Values use a decimal point, as in CODATA's tables, and digits grouped in threes; the Swedish notes follow Swedish practice with a decimal comma. Compiled from the CODATA 2022 report (arXiv), the BIPM SI Brochure, Swedac's regulations on units (STAFS 2009:26) and Wikidata, and checked against NIST's CODATA tables.",
     "sv": "35 fundamentala fysikaliska konstanter i 70 kort: SI:s sju exakta definierande konstanter, konstanter som exakt härleds ur dem och uppmätta konstanter inom elektromagnetism, atomfysik och gravitation, bland dem Planckenheterna. För varje konstant frågar ett kort efter dess vedertagna beteckning och ett efter dess värde (med enhet där den har en). Värdena är exakta där SI gör dem exakta; i övriga fall är de CODATA:s rekommenderade värden från 2022, avrundade till 5 värdesiffror och markerade med ≈. Värdena skrivs med decimalpunkt, som i CODATA:s tabeller, och siffrorna grupperade tre och tre; de svenska anteckningarna följer svensk skrivsed med decimalkomma. Sammanställd ur CODATA:s rapport från 2022 (arXiv), BIPM:s SI-broschyr, Swedacs föreskrifter om måttenheter (STAFS 2009:26) och Wikidata, och kontrollerad mot NIST:s CODATA-tabeller."
   },
-  "keywords": [
-    "physical constants",
-    "CODATA",
-    "SI defining constants",
-    "physics",
-    "Planck units",
-    "fysikaliska konstanter",
-    "naturkonstanter",
-    "definierande konstanter",
-    "fysik",
-    "Planckenheter"
-  ],
+  "keywords": {
+    "en": [
+      "physical constants",
+      "CODATA",
+      "SI defining constants",
+      "physics",
+      "Planck units"
+    ],
+    "sv": [
+      "fysikaliska konstanter",
+      "naturkonstanter",
+      "definierande konstanter",
+      "fysik",
+      "Planckenheter",
+      "CODATA"
+    ]
+  },
   "topics": [
     "physics",
     "science"
@@ -123,7 +128,7 @@
     }
   },
   "method": [
-    "Who did the work. Research, drafting and cross-checking were done by AI agents (Claude, Anthropic) at Anton Wiklund's direction, with machine checks (this builder's Wikidata checks and the app's SHACL and DCAT-AP validators); any review rounds by independent AI reviewers are logged under Quality control. No human subject expert has reviewed the cards yet.",
+    "Who did the work. Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Which CODATA release. Downloaded NIST's constants home page and version history (Queries) on 2026-10-04. The version history says the 2022 CODATA values are \"the latest CODATA values available\" (Version 9.0, 9 May 2024), and the home page announces the 2026 adjustment, for which data must be published before 31 December 2026. So the 2022 values (published in Reviews of Modern Physics on 30 April 2025) are the current recommended values on 2026-10-04.",
     "Licences. The brief named NIST's CODATA pages as a public-domain content source. NIST's licensing statement says the Secretary of Commerce may secure copyright in Standard Reference Data, and the constants database is NIST Standard Reference Database 121, so it was used for verification only. The CODATA 2022 report itself is on arXiv (2409.03787v1) under CC BY 4.0 and was used as the content source for values, symbols and English names; the BIPM SI Brochure (CC BY 4.0) for the seven defining constants. The published article (APS) carries no open licence and was used only to check that the preprint's table matches it. This makes the deck CC BY 4.0 (see Licensing).",
     "Values. Extracted the text of the arXiv PDF with pypdf and read Table XXXIII (PDF pp. 51–55); downloaded NIST's complete ASCII listing (allascii.txt). values.py parses allascii.txt; crosscheck.py found the full digits of 33 of the 35 values in both the arXiv text and the published article's text; the two missing ones, the caesium frequency and the luminous efficacy Kcd, are not in CODATA's tables (a hit for 683 was only part of another number, the neutron-electron mass ratio 1838.683 662 00, so it does not count). The seven defining constants (exact) come from BIPM Table 1 and STAFS 2009:26 bilaga 1.1, which agree with each other and with NIST digit for digit; five of them are also in arXiv Table XXXIII.",

@@ -26,21 +26,21 @@
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:languages ,
                topic:spanish ;
-    dcat:keyword "Spanish" ,
-                 "vocabulary" ,
-                 "beginners" ,
-                 "phrases" ,
-                 "spanska" ,
-                 "ordförråd" ,
-                 "nybörjare" ,
-                 "fraser" ;
+    dcat:keyword "Spanish"@en ,
+                 "vocabulary"@en ,
+                 "beginners"@en ,
+                 "phrases"@en ,
+                 "spanska"@sv ,
+                 "ordförråd"@sv ,
+                 "nybörjare"@sv ,
+                 "fraser"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ,
                      <http://publications.europa.eu/resource/authority/language/SPA> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T00:35:48Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T11:01:42Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 120 cards, each checked against at least two sources; sources, method and quality control in authored/spanish-basics.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#spanish-basics> ;

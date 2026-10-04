@@ -25,22 +25,23 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:astronomy ;
-    dcat:keyword "constellations" ,
-                 "astronomy" ,
-                 "IAU" ,
-                 "night sky" ,
-                 "stars" ,
-                 "stjärnbilder" ,
-                 "astronomi" ,
-                 "stjärnhimlen" ,
-                 "stjärnor" ;
+    dcat:keyword "constellations"@en ,
+                 "astronomy"@en ,
+                 "IAU"@en ,
+                 "night sky"@en ,
+                 "stars"@en ,
+                 "stjärnbilder"@sv ,
+                 "astronomi"@sv ,
+                 "stjärnhimlen"@sv ,
+                 "stjärnor"@sv ,
+                 "IAU"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ,
                      <http://publications.europa.eu/resource/authority/language/LAT> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T00:32:25Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:52:10Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 88 cards, each checked against at least two sources; sources, method and quality control in authored/constellations.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#constellations> ;

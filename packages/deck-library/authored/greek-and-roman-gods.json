@@ -8,16 +8,20 @@
     "en": "43 cards on 22 Greek gods: the twelve Olympians (counting both Hestia and Dionysus, as lists differ), Hades, Persephone, Eros, Cronus and five personified gods such as Helios and Nike. One kind of card asks for the god's Roman counterpart (Zeus → Jupiter), the other for what the god is god of (Zeus → the sky and thunder), in English and Swedish. Correspondences, names and domains from Wikidata and the 1911 Encyclopædia Britannica, in our own words, checked against the Theoi Project and Swedish Wikipedia.",
     "sv": "43 kort om 22 grekiska gudar: de tolv olympierna (både Hestia och Dionysos medräknade, eftersom listorna skiljer sig åt), Hades, Persefone, Eros, Kronos och fem personifierade gudar som Helios och Nike. Den ena sortens kort frågar efter gudens romerska motsvarighet (Zeus → Jupiter), den andra efter vad guden är gud för (Zeus → himlen och åskan), på engelska och svenska. Motsvarigheter, namn och gudarnas områden från Wikidata och Encyclopædia Britannica från 1911, med egna ord, kontrollerade mot Theoi Project och svenska Wikipedia."
   },
-  "keywords": [
-    "Greek mythology",
-    "Roman mythology",
-    "Olympians",
-    "gods",
-    "grekisk mytologi",
-    "romersk mytologi",
-    "olympier",
-    "gudar"
-  ],
+  "keywords": {
+    "en": [
+      "Greek mythology",
+      "Roman mythology",
+      "Olympians",
+      "gods"
+    ],
+    "sv": [
+      "grekisk mytologi",
+      "romersk mytologi",
+      "olympier",
+      "gudar"
+    ]
+  },
   "topics": [
     "mythology",
     "history"
@@ -82,7 +86,7 @@
     }
   },
   "method": [
-    "The research, drafting and cross-checking of this deck were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks against Wikidata and the app's validators and three independent AI review rounds (factual accuracy; language and translation; licensing, attribution and documentation), whose findings were checked against the sources and resolved by the authoring agent (quality-control rounds 1–3). The cards have not yet been reviewed by a human subject expert.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Finding the right Wikidata property. The brief suggested P2959, which is \"permanent duplicated item\" and does not link gods. The statements of Zeus (Q34201) were listed (query 1); the Greek–Roman correspondences are recorded with P460 \"said to be the same as\" (Zeus → Jupiter Q4649) and the god's domains with P2925 \"domain of saint or deity\".",
     "Candidates. The twelve Olympians (Zeus, Hera, Poseidon, Demeter, Athena, Apollo, Artemis, Ares, Aphrodite, Hephaestus, Hermes, and both Hestia and Dionysus, since lists of the twelve differ on these two), plus Hades, Persephone, Eros and Cronus, and the personified gods Helios, Selene, Eos, Nike and Tyche, whose Roman counterparts are one-to-one. Their P460 values with English and Swedish labels were fetched with query 2; Eros, Helios, Nike and Dionysus were looked up by their English Wikipedia sitelinks (API call 4), and the labels, aliases and Swedish sitelinks of all Greek and Roman items with API call 5.",
     "Choosing the counterpart. P460 often lists several equivalents (Zeus: Jupiter, Thor, Amun, Indra and others). For each god the Roman deity among the P460 values was taken; where two Roman gods were listed (Hades: Pluto and Dis Pater; Dionysus: Bacchus and Liber; Persephone: Proserpina and Libera; Selene: Luna and Diana; Eros: Cupid via Q5011), the choice was made from the content sources and the other is mentioned in a note where it is common: Pluto, whose Wikidata description is \"god in Roman religion, Plouton in Greek\" and of whom the 1911 Britannica (\"Pluto\") says that among the Romans Hades \"was usually called Dis pater ... and Orcus, although the name Pluto is often used\" (so the card states this convention in its note); Bacchus, \"ancient Roman deity of wine\" in Wikidata, which the 1911 Britannica (\"Liber and Libera\") gives as another name of Liber; Proserpina, \"the Latin form of Persephone\" (1911 Britannica, \"Proserpine\"), Libera being only \"sometimes identified\" with her; Luna, \"Roman goddess of the Moon\" in Wikidata, Diana being Artemis's counterpart; Cupid, \"Roman deity, counterpart of Eros\" in Wikidata and \"the Latin name for the god of love, Eros\" in the 1911 Britannica (\"Cupid\"). The Theoi title lines agree with every choice but did not decide any (as first drafted, this step used them as the tie-break; changed in review round 3).",

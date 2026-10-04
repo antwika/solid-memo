@@ -8,17 +8,22 @@
   "en": "54 bones and bone groups of the human skeleton, from the skull to the foot. Front: the bone's everyday or anatomical name in English and Swedish; back: its Latin name in Terminologia Anatomica (TA98). Compiled from Wikidata, Svensk MeSH and the U.S. National Cancer Institute's SEER Training Modules, the Latin checked against TA98.",
   "sv": "54 ben och bengrupper i människans skelett, från skallen till foten. Framsida: benets vardagliga eller anatomiska namn på engelska och svenska; baksida: dess latinska namn enligt Terminologia Anatomica (TA98). Sammanställd från Wikidata, Svensk MeSH och amerikanska National Cancer Institutes SEER Training Modules, med latinet kontrollerat mot TA98."
  },
- "keywords": [
-  "anatomy",
-  "bones",
-  "human skeleton",
-  "Latin",
-  "Terminologia Anatomica",
-  "anatomi",
-  "skelettben",
-  "skelett",
-  "latin"
- ],
+ "keywords": {
+  "en": [
+   "anatomy",
+   "bones",
+   "human skeleton",
+   "Latin",
+   "Terminologia Anatomica"
+  ],
+  "sv": [
+   "anatomi",
+   "skelettben",
+   "skelett",
+   "latin",
+   "Terminologia Anatomica"
+  ]
+ },
  "topics": [
   "biology"
  ],
@@ -111,7 +116,7 @@
   }
  },
  "method": [
-  "Research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks and three review rounds by independent AI reviewers (factual accuracy; language and translation; licensing, attribution and documentation), logged under Quality control with every finding and how it was resolved (round 0 is the authoring agent's own source and machine check). The cards have not yet been reviewed by a human subject expert. Every value below was fetched on 2026-10-04; the exact queries and the code run on the downloads are listed under Queries. The raw responses and the authoring scripts were kept only in the authoring session's temporary working directory and are not preserved; rerunning the listed queries reproduces the data, though the live sources may have changed since.",
+  "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released. Every value below was fetched on 2026-10-04; the exact queries and the code run on the downloads are listed under Queries. The raw responses and the authoring scripts were kept only in the authoring session's temporary working directory and are not preserved; rerunning the listed queries reproduces the data, though the live sources may have changed since.",
   "Candidate list. The two SEER Training Module pages (U.S. National Cancer Institute, public domain) list the bones of the axial and appendicular skeleton. Their entries (cranial and facial bones, auditory ossicles, hyoid, vertebrae, sacrum, coccyx, sternum, ribs, clavicle, scapula, arm and leg bones, carpals, metacarpals, phalanges, hip bones, tarsals, metatarsals) were the starting list. It was extended with well-known bones and groups below that level: the atlas and axis, the auditory ossicles as a group, the vertebral column and the pelvis, the parts of the hip bone (ilium, ischium, pubis) and individual carpal and tarsal bones.",
   "Wikidata. A SPARQL query looked up the Wikidata item of each candidate by English label, requiring a Terminologia Anatomica 98 ID (P1323); items it missed were found with wbsearchentities, choosing the item about the human bone (e.g. Q5283631 human mandible, Q9604 human skull, not the general Q16370 or Q13147). wbgetentities then fetched every item's en, sv and la labels and aliases and its P1323 statements.",
   "Latin names (back). For each item, the TA98 entity page for its P1323 code was fetched from the TA98 online edition (ifaa.unifr.ch) and parsed for the Latin preferred term, Latin official synonym, English equivalent and English synonym. The card's Latin text follows TA98's naming: it is the TA98 Latin preferred term for the item's code, so TA98 decides which Latin form is on the back where several exist (Femur rather than Os femoris, Ossa metacarpi rather than Ossa metacarpalia). A single standardised anatomical term is a fact, not protected expression, so TA98 (all rights reserved) is listed as a verification source; no definitions, lists or other text were taken from it. Bracketed numbering in TA98 terms (e.g. \"vertebrae cervicales [C I - C VII]\", \"atlas [C I]\") is left out. TA98 prints the terms in lower case online; the cards capitalise the first letter, as the library brief does (\"Femur\"). Where TA98 gives two Latin terms (femur / os femoris, ossa carpi / ossa carpalia, os ilium / ilium) the preferred one is used. The same term is in Wikidata as a la label or alias for 44 of the 54 cards; for the other ten the Wikidata la label is missing (the skull), a synonym, a region name or malformed (see Quality control), and the term was confirmed in a second open source where one exists (a Wikidata en label or alias, a Wikidata sv alias, or a Svensk MeSH synonym or English entry term). For Ossa metacarpi and Ossa metatarsi no open source consulted has the exact preferred term (they give the TA98 official synonyms ossa metacarpalia and ossa metatarsalia, or the region names Metacarpus and Metatarsus), so these two backs rest on TA98 alone.",

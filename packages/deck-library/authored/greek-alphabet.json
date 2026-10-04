@@ -8,16 +8,20 @@
     "en": "The 24 letters of the Greek alphabet in 24 cards, studied in both directions. The front shows a letter in upper and lower case (Α α), the back its name in English and Swedish (alpha, alfa). Names and characters from Wikidata, checked against the Unicode Character Database, Svenska Akademiens ordlista, the SALDO lexicon and Nationalencyklopedin.",
     "sv": "Det grekiska alfabetets 24 bokstäver på 24 kort, som övas åt båda hållen. Framsidan visar en bokstav som versal och gemen (Α α), baksidan dess namn på engelska och svenska (alpha, alfa). Namnen och tecknen kommer från Wikidata och har kontrollerats mot Unicodes teckendatabas, Svenska Akademiens ordlista, lexikonet SALDO och Nationalencyklopedin."
   },
-  "keywords": [
-    "Greek alphabet",
-    "Greek letters",
-    "letter names",
-    "mathematical symbols",
-    "grekiska alfabetet",
-    "grekiska bokstäver",
-    "bokstavsnamn",
-    "matematiska symboler"
-  ],
+  "keywords": {
+    "en": [
+      "Greek alphabet",
+      "Greek letters",
+      "letter names",
+      "mathematical symbols"
+    ],
+    "sv": [
+      "grekiska alfabetet",
+      "grekiska bokstäver",
+      "bokstavsnamn",
+      "matematiska symboler"
+    ]
+  },
   "topics": [
     "languages",
     "greek",
@@ -112,7 +116,7 @@
     }
   },
   "method": [
-    "The deck was researched, drafted and cross-checked by AI agents (Claude, Anthropic) at Anton Wiklund's direction, with machine checks (the builder's Wikidata checks, the app's SHACL and DCAT-AP validators) and three independent AI review rounds (factual accuracy; language and translation; licensing, attribution and documentation), recorded under Quality control with how each finding was resolved. No human subject expert has reviewed the cards yet.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Selection: the Wikidata Query Service (https://query.wikidata.org/sparql) was asked for every value of has part(s) (P527) of Greek alphabet (Q8216), with English and Swedish labels, classes and Unicode characters (P487) (query 1). It returned exactly 24 items, one per letter of the standard 24-letter alphabet, and no others.",
     "Labels and aliases: a second SPARQL query for the English, Swedish and mul labels and aliases (query 2) returned no values because of how it combined OPTIONAL and GROUP_CONCAT, so the same data was read from the Wikidata API instead (query 3, wbgetentities for the 24 items with labels, aliases and claims in en, sv and mul) and printed with a small Python script that, for each of the 24 items in alphabet order, printed its labels and aliases per language and the values of P487 (Unicode character), P31, P279 and P361, without filtering. The Swedish labels are the Swedish names on the cards. The English labels of 18 items are the letters themselves (for example \"Α/α\"), so the English name was taken from the label or alias that spells the name: an exact lower-case label or alias for 18 letters (alpha, beta, delta, epsilon, zeta, eta, theta, iota, kappa, lambda, mu, nu, omicron, pi, sigma, phi, psi, omega); for gamma, rho, tau and upsilon Wikidata gives the name only capitalised (\"Gamma\", \"Rho\", \"Tau\", \"Upsilon\"), for xi only in phrases such as \"xi (Greek letter)\" and for chi as \"chi (Greek)\"; these six are written in lower case, as the other names are.",
     "Card fronts: each front is the upper-case letter, a space and the lower-case letter, written with the Greek code points U+0391–U+03A9 and U+03B1–U+03C9 (never the look-alike Latin letters, the micro sign U+00B5 or the ohm sign U+2126). The characters come from Wikidata: the Unicode character (P487) values of each item, and for the letters without them (capital alpha, iota, nu, xi, omicron) the single-character English aliases Α, Ι/ι, Ν/ν, Ξ/ξ and Ο/ο, which are the same Greek code points. They were compared with the Unicode Character Database's UnicodeData.txt (version 18.0.0, command 4): every front character is the GREEK CAPITAL LETTER or GREEK SMALL LETTER of the card's name. The builder's checks confirm every front character against Wikidata (step 7).",

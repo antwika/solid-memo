@@ -25,22 +25,24 @@
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:computing ,
                topic:geography ;
-    dcat:keyword "top-level domains" ,
-                 "ccTLD" ,
-                 "Internet domains" ,
-                 "DNS" ,
-                 "countries" ,
-                 "toppdomäner" ,
-                 "nationella toppdomäner" ,
-                 "domännamn" ,
-                 "internet" ,
-                 "länder" ;
+    dcat:keyword "top-level domains"@en ,
+                 "ccTLD"@en ,
+                 "Internet domains"@en ,
+                 "DNS"@en ,
+                 "countries"@en ,
+                 "toppdomäner"@sv ,
+                 "nationella toppdomäner"@sv ,
+                 "domännamn"@sv ,
+                 "internet"@sv ,
+                 "länder"@sv ,
+                 "ccTLD"@sv ,
+                 "DNS"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:20:50Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:52:30Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 193 cards, each checked against at least two sources; sources, method and quality control in authored/country-code-top-level-domains.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#country-code-top-level-domains> ;

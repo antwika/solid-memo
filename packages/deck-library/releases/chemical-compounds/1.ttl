@@ -25,20 +25,20 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:chemistry ;
-    dcat:keyword "chemistry" ,
-                 "chemical compounds" ,
-                 "chemical formulas" ,
-                 "molecular formulas" ,
-                 "kemi" ,
-                 "kemiska föreningar" ,
-                 "kemiska formler" ,
-                 "summaformler" ;
+    dcat:keyword "chemistry"@en ,
+                 "chemical compounds"@en ,
+                 "chemical formulas"@en ,
+                 "molecular formulas"@en ,
+                 "kemi"@sv ,
+                 "kemiska föreningar"@sv ,
+                 "kemiska formler"@sv ,
+                 "summaformler"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T00:31:37Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:51:15Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 60 cards, each checked against at least two sources; sources, method and quality control in authored/chemical-compounds.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#chemical-compounds> ;

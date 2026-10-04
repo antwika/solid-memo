@@ -8,19 +8,24 @@
     "en": "61 Italian terms from sheet music for tempo, dynamics, articulation and expression, from adagio and allegro to crescendo, staccato and dolce. The Italian term on the front, with its usual abbreviation where it has one; what it asks of the performer on the back, in English and Swedish, in our own words. Tempo terms describe a character, not a metronome figure. Checked against Theodore Baker's Dictionary of Musical Terms (1904), in the public domain, and Karl Gehrkens' Music Notation and Terminology (1914), in the public domain in the United States, with Wiktionary and Svensk ordbok.",
     "sv": "61 italienska termer ur notblad för tempo, dynamik, artikulation och uttryck, från adagio och allegro till crescendo, staccato och dolce. Den italienska termen på framsidan, med sin vanliga förkortning om den har någon; vad den ber musikern om på baksidan, på engelska och svenska, med egna ord. Tempotermerna beskriver en karaktär, inte en metronomsiffra. Kontrollerade mot Theodore Bakers Dictionary of Musical Terms (1904), fri från upphovsrätt, och Karl Gehrkens Music Notation and Terminology (1914), fri från upphovsrätt i USA, samt Wiktionary och Svensk ordbok."
   },
-  "keywords": [
-    "music",
-    "musical terms",
-    "Italian",
-    "tempo",
-    "dynamics",
-    "articulation",
-    "musik",
-    "musiktermer",
-    "italienska",
-    "dynamik",
-    "artikulation"
-  ],
+  "keywords": {
+    "en": [
+      "music",
+      "musical terms",
+      "Italian",
+      "tempo",
+      "dynamics",
+      "articulation"
+    ],
+    "sv": [
+      "musik",
+      "musiktermer",
+      "italienska",
+      "dynamik",
+      "artikulation",
+      "tempo"
+    ]
+  },
   "topics": [
     "music",
     "languages"
@@ -120,7 +125,7 @@
     "Writing the cards. The front is the Italian term as both books spell it, with accents as in modern Italian (più, not piu). A frontNote gives the abbreviation where Baker's table of abbreviations or Gehrkens gives one that is in common use (cresc., dim., rit., pp, sfz, D.C., pizz., espr., Tempo I). The back is a short definition in our own words in English, and the same in Swedish, giving the character of tempo terms rather than a metronome figure, since both books stress that tempo words are relative (Gehrkens §108–109: \"no absolute rate of speed can be indicated\"; Baker, Tempo-mark: \"They do not in themselves indicate a fixed and positive rate of speed, but only the general character of the movement\"). A backNote adds the literal meaning or a short disambiguation where it helps (allegro 'cheerful', rubato 'robbed', decrescendo = diminuendo).",
     "Cross-checking each card. Every card was checked against both public-domain books where both cover the term. Each card was also checked against the English Wiktionary entry where one exists, fetched with the Wiktionary REST API (https://en.wiktionary.org/api/rest_v1/page/definition/<term>), whose English and Italian sections were read for the musical sense; Wiktionary has no entry for tempo primo, meno mosso and più mosso, so those three rest on the two books alone (36 cards quote Wiktionary in their evidence). The Swedish wording was written by the authoring agent as idiomatic Swedish, translating the meaning given by the content sources. It was checked against Svensk ordbok (Svenska Akademien), queried through the search API behind svenska.se (https://svenska.se/api/search/so?q=<term>), for the 30 cards whose term has its own SO entry in the musical sense (mezzoforte was found in review round 1 under its one-word spelling; SO's dacapo is only the encore sense). In review round 1, 12 cards were checked against the Swedish Wiktionary (11 not covered by SO, plus mezzo forte, which has both) (and the three mezzo/fortepiano dynamics also against Swedish Wikipedia's article Dynamik (musik)). For the remaining 20 cards (larghetto, prestissimo, allargando, a tempo, tempo primo, meno mosso, più mosso, morendo, marcato, tenuto, arco, dal segno, attacca, grazioso, leggiero, tranquillo, sotto voce, pesante, giocoso, poco a poco) no Swedish reference with the term was found: their Swedish back is the authoring agent's translation of the English definition, not checked against a Swedish reference. Each card's evidence quotes what each source actually says, as seen on 2026-10-04.",
     "Machine checks against Wikidata. One SPARQL query (under Queries) looked up every Wikidata item whose Italian label is one of the candidate terms, with its English and Swedish labels, descriptions and P31 classes; a few items were then read with wbgetentities. Where an item is clearly the musical term (by its description, its P31 'musical concept' Q115211517, 'dynamics' Q113558 or 'articulation' Q372923, or its sitelinks), the card has a check that the item's Italian label equals the front. 39 cards have such a check; the builder (authored_decks.py check/build) runs them against live Wikidata. Many common terms (piano, forte, dolce, fine, arco, grave, corona) have no musical item with that Italian label, only homonyms (plan, fort, sweetness, end, bow, falling body, crown), so those cards have no check. Wikidata descriptions were not used for content: several disagree with the reference works (see Quality control).",
-    "Who did the work. The research, the drafting and the cross-checking were done by AI agents (Claude, Anthropic) at Anton Wiklund's direction, with machine checks (the builder's dossier validation and Wikidata checks, and the app's SHACL and DCAT-AP validators) and three independent AI review rounds (factual accuracy; language and translation; licensing, attribution and documentation), logged as rounds 1–3 under Quality control. The cards have not yet been reviewed by a human subject expert."
+    "Who did the work. Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released."
   ],
   "selection": "Included: 61 Italian (or, for glissando, Italian-formed) performance directions that appear on the music itself and are part of the basic vocabulary every music-theory primer teaches: 12 tempo marks from grave to prestissimo, 9 changes of tempo (accelerando, ritardando, rallentando, allargando, a tempo, tempo primo, rubato, meno mosso, più mosso), 12 dynamic marks and changes (pianissimo to fortissimo, crescendo, decrescendo, diminuendo, sforzando, fortepiano, morendo), 8 terms for articulation and playing technique (staccato, legato, marcato, tenuto, pizzicato, arco, glissando, tutti), 4 road-map terms (da capo, dal segno, fine, attacca), 12 expression terms (dolce, cantabile, espressivo, grazioso, maestoso, agitato, con brio, leggiero, tranquillo, sotto voce, pesante, giocoso) and 4 modifiers that combine with all the others (molto, poco a poco, sempre, subito). Left out: andantino, because the sources disagree on whether it is faster or slower than andante (Gehrkens §109 notes it is 'now quite universally taken slightly faster than andante' although the word means 'less going'), so the card would have no single right answer; ritenuto, because whether it differs from ritardando (immediately slower rather than gradually) is contested (Gehrkens §111 says most composers do not distinguish them, Baker says it is 'often used incorrectly for rallentando'); fermata, because the card would not have one clean answer: Baker lists both Corona (It.) 'A hold' and Fermata (It.) with 'A hold' only as its second sense after 'a pause, stop, or interruption'; Gehrkens uses fermata as the English name of the sign; Wikidata Q830328 (the sign) has the Italian label 'corona'; and the Italian word fermata also means a stop; stringendo, l'istesso tempo and con sordino, to keep the deck near the brief's 60 cards with the most common terms. Also left out: names of forms and pieces (sonata, scherzo, toccata), voice types, instrument names, French and German terms, Latin terms (ad libitum) and metronome ranges, which vary between sources.",
   "queries": [

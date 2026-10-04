@@ -26,21 +26,21 @@
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:languages ,
                topic:french ;
-    dcat:keyword "French" ,
-                 "vocabulary" ,
-                 "beginners" ,
-                 "phrases" ,
-                 "franska" ,
-                 "ordförråd" ,
-                 "nybörjare" ,
-                 "fraser" ;
+    dcat:keyword "French"@en ,
+                 "vocabulary"@en ,
+                 "beginners"@en ,
+                 "phrases"@en ,
+                 "franska"@sv ,
+                 "ordförråd"@sv ,
+                 "nybörjare"@sv ,
+                 "fraser"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ,
                      <http://publications.europa.eu/resource/authority/language/FRA> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:24:18Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:54:29Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 120 cards, each checked against at least two sources; sources, method and quality control in authored/french-basics.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#french-basics> ;

@@ -8,20 +8,24 @@
     "en": "Sweden's 21 counties and 25 provinces in 46 cards, in English and Swedish. A county card shows the county's name and asks for its seat (residensstad); a province card shows the province's name and asks for the land (landsdel) it traditionally belongs to: Götaland, Svealand or Norrland. Compiled from Wikidata and checked against the county administrative boards' websites, Nationalencyklopedin and Wikipedia.",
     "sv": "Sveriges 21 län och 25 landskap på 46 kort, på engelska och svenska. Ett länskort visar länets namn och frågar efter residensstaden; ett landskapskort visar landskapets namn och frågar efter landsdelen det traditionellt hör till: Götaland, Svealand eller Norrland. Sammanställd från Wikidata och kontrollerad mot länsstyrelsernas webbplatser, Nationalencyklopedin och Wikipedia."
   },
-  "keywords": [
-    "Sweden",
-    "counties",
-    "provinces",
-    "county seats",
-    "geography",
-    "lands of Sweden",
-    "Sverige",
-    "län",
-    "landskap",
-    "residensstäder",
-    "landsdelar",
-    "geografi"
-  ],
+  "keywords": {
+    "en": [
+      "Sweden",
+      "counties",
+      "provinces",
+      "county seats",
+      "geography",
+      "lands of Sweden"
+    ],
+    "sv": [
+      "Sverige",
+      "län",
+      "landskap",
+      "residensstäder",
+      "landsdelar",
+      "geografi"
+    ]
+  },
   "topics": [
     "geography"
   ],
@@ -125,7 +129,7 @@
     }
   },
   "method": [
-    "The deck was researched, drafted and cross-checked by AI agents (Claude, Anthropic) at Anton Wiklund's direction, with machine checks and independent AI review rounds, recorded under Quality control. No human subject expert has reviewed the cards yet.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Counties: the Wikidata Query Service (https://query.wikidata.org/sparql) was asked for every instance of county of Sweden (Q200547) without a dissolution date (P576), with its English and Swedish labels, its seat (P36 capital) and the seat's English and Swedish labels, and its county code (P507) (query 1). It returned exactly 21 counties, one seat each. The card front is the county's English label (\"Västra Götaland County\") and Swedish label (\"Västra Götalands län\"), the back the seat's English and Swedish labels (English \"Gothenburg\", Swedish \"Göteborg\"; all other seats have the same name in both languages).",
     "County seats were checked against the counties' own administrative boards: a script (command 4, given verbatim in Queries) fetched each board's start page https://www.lansstyrelsen.se/<county>.html, stripped scripts, styles and tags, and took the last match of the regular expressions Postadress (.{0,60}?) Telefon (postal address) and Besöksadress (.{0,60}?) Postadress (visiting address); in all 21 the town of the postal address is the Wikidata seat. The visiting-address pattern found nothing for Skåne, whose footer was then read by hand in the saved page. Skåne's board gives visiting addresses in both Kristianstad and Malmö, so its county residence page was read as well: governors have lived at Stortorget in Malmö since 1658 (with short exceptions); the card says Malmö and notes the Kristianstad office. Norrbotten's board also lists an office in Jokkmokk, with Luleå first. The government ordinance on the boards, Förordning (2017:868) med länsstyrelseinstruktion (https://data.riksdagen.se/dokument/sfs-2017-868.text, command 11), was also fetched and searched for the boards' seats; it does not name them, so it is not cited.",
     "As an independent check, the raw wikitext of Swedish Wikipedia's article Sveriges län (command 5) was read: its table's Residensstad column agrees with Wikidata for all 21 counties.",

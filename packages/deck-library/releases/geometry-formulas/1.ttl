@@ -25,23 +25,24 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:mathematics ;
-    dcat:keyword "geometry" ,
-                 "formulas" ,
-                 "area" ,
-                 "volume" ,
-                 "perimeter" ,
-                 "mathematics" ,
-                 "geometri" ,
-                 "formler" ,
-                 "volym" ,
-                 "omkrets" ,
-                 "matematik" ;
+    dcat:keyword "geometry"@en ,
+                 "formulas"@en ,
+                 "area"@en ,
+                 "volume"@en ,
+                 "perimeter"@en ,
+                 "mathematics"@en ,
+                 "geometri"@sv ,
+                 "formler"@sv ,
+                 "volym"@sv ,
+                 "omkrets"@sv ,
+                 "matematik"@sv ,
+                 "area"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:25:03Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T10:54:49Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 39 cards, each checked against at least two sources; sources, method and quality control in authored/geometry-formulas.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#geometry-formulas> ;

@@ -23,21 +23,21 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:art ;
-    dcat:keyword "sculpture" ,
-                 "sculptors" ,
-                 "art history" ,
-                 "statues" ,
-                 "monuments" ,
-                 "skulptur" ,
-                 "skulptörer" ,
-                 "bildhuggare" ,
-                 "konsthistoria" ,
-                 "statyer" ,
-                 "monument" ;
+    dcat:keyword "sculpture"@en ,
+                 "sculptors"@en ,
+                 "art history"@en ,
+                 "statues"@en ,
+                 "monuments"@en ,
+                 "skulptur"@sv ,
+                 "skulptörer"@sv ,
+                 "bildhuggare"@sv ,
+                 "konsthistoria"@sv ,
+                 "statyer"@sv ,
+                 "monument"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;

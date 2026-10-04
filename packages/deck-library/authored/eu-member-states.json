@@ -8,18 +8,22 @@
     "en": "The 27 member states of the European Union as of October 2026: the year each became a member (27 cards) and, for the 21 that use the euro, the year each joined the euro area (21 cards). Front: the country and the question, e.g. “Sweden: EU member since which year?” or “Finland: euro area member since which year?”; back: the year, with the full date in a note. The six founders count from 1958, when the Treaties of Rome came into force (some sources give 1957, the year they were signed); the euro year is when the country joined the euro area, which for the first eleven was 1999, when the euro was introduced for non-cash payments (notes and coins came in 2002). Taken from the EU's country profiles on european-union.europa.eu and Wikidata, and checked against the European Central Bank.",
     "sv": "EU:s 27 medlemsländer i oktober 2026: året då varje land blev medlem (27 kort) och, för de 21 som har euron, året då landet gick med i euroområdet (21 kort). Framsida: landet och frågan, t.ex. ”Sverige: EU-medlem sedan vilket år?” eller ”Finland: medlem i euroområdet sedan vilket år?”; baksida: året, med det fullständiga datumet i en anteckning. De sex grundarländerna räknas från 1958, då Romfördragen trädde i kraft (vissa källor anger 1957, då de undertecknades); euroåret är året då landet gick med i euroområdet, vilket för de första elva var 1999, då euron infördes för kontantlösa betalningar (sedlar och mynt kom 2002). Uppgifterna är hämtade från EU:s landsfakta på european-union.europa.eu och Wikidata och kontrollerade mot Europeiska centralbanken."
   },
-  "keywords": [
-    "European Union",
-    "EU member states",
-    "EU enlargement",
-    "euro",
-    "euro area",
-    "Europeiska unionen",
-    "EU:s medlemsländer",
-    "EU:s utvidgning",
-    "euron",
-    "euroområdet"
-  ],
+  "keywords": {
+    "en": [
+      "European Union",
+      "EU member states",
+      "EU enlargement",
+      "euro",
+      "euro area"
+    ],
+    "sv": [
+      "Europeiska unionen",
+      "EU:s medlemsländer",
+      "EU:s utvidgning",
+      "euron",
+      "euroområdet"
+    ]
+  },
   "topics": [
     "geography",
     "economics",
@@ -124,7 +128,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks against live Wikidata and the app's SHACL/DCAT-AP validators (scripts/validate_sources.ts). Quality-control round 0 records the authoring agent's own source and machine checks; reviews by independent AI reviewers are recorded as further rounds when they have been made. The cards have not yet been reviewed by a human subject expert.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "The set of member states: the EU's own list of countries (query 6, european-union.europa.eu/principles-countries-history/eu-countries_en, fetched on 2026-10-04) shows \"Pages (27)\" and the year filter \"Countries by year of entry 1958 1973 1981 1986 1995 2004 2007 2013\". Wikidata gave the same 27 (query 2: items with a P463 \"member of\" statement for the European Union, Q458, of any rank, with the P580/P582 qualifiers; the United Kingdom, Q145, is the one item with an end time, 2020-01-31). A first Wikidata query (query 1) that also required P31 sovereign state (Q3624078) returned only 25 of them, because the Netherlands (Q55) and Denmark (Q35) are modelled as constituent countries of their kingdoms; the class filter was dropped.",
     "Dates: fetch_profiles.py (query 5, whose full source is recorded there) downloaded the English and Swedish country profile of each of the 27 countries (…/eu-countries/<country>_en and …_sv) and extracted the overview, which gives \"EU Member State: since <date>\" and, for euro countries, \"Euro area: member since <date>\" (in Swedish \"EU-medlem: Sedan den …\" and \"Euroområdet: Medlem sedan den …\"). The year on each back is the year of these dates; the full date is in the back note. The English and Swedish pages agree on every date. Countries whose profile names another currency (Czechia, Denmark, Hungary, Poland, Romania, Sweden) have no euro card.",
     "Conventions: for the six founders the profiles give 1 January 1958, the day the Treaties of Rome (signed 25 March 1957) came into force and the EEC and Euratom came into being (europa.eu history page 1945-59, query 8; EUR-Lex summary of the EEC Treaty, query 10). Other sources use 1957 (the ECB) or record the signing date (Wikidata), so the convention is stated in the description and in each founder's back note. For the euro, the year is when the country joined the euro area: the profiles give 1 January 1999 for the first eleven, when the euro was introduced for non-cash transactions (europa.eu history page 1990-99, query 8), and 1 January 2001 for Greece; notes and coins came on 1 January 2002 (europa.eu history page 2000-09, query 13, entry \"1 January 2002 – Euro notes and coins launch in 12 countries\"), which the back notes of those twelve cards say. From Slovenia (2007) on, the profiles, the ECB and Wikidata give one date.",

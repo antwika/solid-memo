@@ -8,16 +8,20 @@
     "en": "120 basic French words and phrases for beginners: the numbers 0–20, the tens and 100, the days of the week, the months, eight colours, family members, greetings and polite phrases, everyday nouns, six adjectives and 16 verbs. The front shows the French word, nouns with their article (le livre, la maison; before a vowel or mute h, l' with the gender added: l'eau (f.)); the back gives its English and Swedish meaning, or the digits for a number, and for days and months a note on their gender. Words and genders from Wikidata's lexemes and the US Foreign Service Institute's French Basic Course (public domain), English and Swedish meanings from Wikidata where it has them and otherwise the authors' own, all checked against French, English and Swedish Wiktionary, the Lexique 3 database and Folkets lexikon.",
     "sv": "120 grundläggande franska ord och fraser för nybörjare: talen 0–20, tiotalen och 100, veckodagarna, månaderna, åtta färger, familjemedlemmar, hälsningar och artighetsfraser, vardagliga substantiv, sex adjektiv och 16 verb. Framsidan visar det franska ordet, substantiv med sin artikel (le livre, la maison; före vokal eller stumt h skrivs l' och genus anges: l'eau (f.)); baksidan ger betydelsen på engelska och svenska, eller siffrorna för ett tal, och för veckodagar och månader en anteckning om genus. Ord och genus från Wikidatas lexem och amerikanska Foreign Service Institutes French Basic Course (fri från upphovsrätt), engelska och svenska betydelser från Wikidata där sådana finns och annars författarnas egna, alla kontrollerade mot franska, engelska och svenska Wiktionary, databasen Lexique 3 och Folkets lexikon."
   },
-  "keywords": [
-    "French",
-    "vocabulary",
-    "beginners",
-    "phrases",
-    "franska",
-    "ordförråd",
-    "nybörjare",
-    "fraser"
-  ],
+  "keywords": {
+    "en": [
+      "French",
+      "vocabulary",
+      "beginners",
+      "phrases"
+    ],
+    "sv": [
+      "franska",
+      "ordförråd",
+      "nybörjare",
+      "fraser"
+    ]
+  },
   "topics": [
     "languages",
     "french"
@@ -111,7 +115,7 @@
     }
   },
   "method": [
-    "Who did the work. The research, drafting and cross-checking of this deck were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks against Wikidata and the app's SHACL and DCAT-AP validators. Besides the authoring agent's own checks (quality control, round 0), the deck went through independent AI review rounds, also by Claude (factual accuracy; language and language tags; licensing, attribution and documentation; and a re-check of changed cards and a sample), each recorded in the quality-control log with its findings and how they were resolved. The cards have not yet been reviewed by a human subject expert (a teacher of French or a translator).",
+    "Who did the work. Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "Word list. A candidate list of 120 words and phrases for a first French course was drawn up by hand from the brief's categories (numbers 0–20, the tens and 100; days; months; colours; family; greetings and polite phrases; everyday nouns; adjectives; verbs), choosing the most basic word for each concept, the same as the first authored Spanish deck where the languages allow. No frequency list or textbook word list was copied; Lexique 3's frequency columns were not consulted.",
     "Wikidata lexemes. SPARQL query 1 fetched every French lexeme (language Q150) whose lemma is a candidate, with its category, gender (P5185), senses, English and French glosses and sense items (P5137). Six candidates were not found: quatre-vingts and five phrases. The lexeme search (API calls 2) found quatre-vingt (L10500, lemma without s) but no lexeme for au revoir, à bientôt, s'il vous plaît, je vous en prie, excusez-moi or de rien (je vous en prie was searched in review round 3, see call 2; it too returns no lexeme). So the five phrases on the cards without a lexeme are au revoir, à bientôt, s'il vous plaît, je vous en prie and excusez-moi; de rien, a sixth phrase without one, is not a card. The full JSON of the lexeme chosen for each word (the numeral lexeme for numbers, the noun lexeme for nouns, the adjective lexeme for colours and adjectives, and so on) was fetched with API calls 3, and the English and Swedish lexemes named by the senses' translation statements (P5972) with API calls 4.",
     "Wikidata items. The items linked from the chosen senses (P5137), plus four items found with the item search (API calls 6: good evening Q19279366, goodbye Q2506912, hello Q12068060, thank you Q19279214), were fetched with API calls 5 (labels and aliases in fr, en, sv and mul). They gave the English and Swedish names of days, months, colours, family members, greetings and everyday things and the digit labels of the numbers. Where a sense has several items, the one for the card's meaning was used (eau: Q283 water; porte: sense S3, Q36794 door, not S1, Q53060 gate).",

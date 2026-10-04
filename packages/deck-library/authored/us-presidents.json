@@ -8,16 +8,20 @@
     "en": "All 47 presidencies of the United States as of 4 October 2026, from George Washington (1st, 1789) to Donald Trump (47th, since 2025), numbered as the US government numbers them. Front: the number, e.g. \"16th president of the United States\"; back: the president's name in English and Swedish, with the years in office in a note. Grover Cleveland (22nd and 24th) and Donald Trump (45th and 47th) served non-consecutive terms and are counted twice, so the 47 presidencies were held by 45 people. Taken from Wikidata and checked against the Office of the Historian of the US House of Representatives, the White House, USA.gov and the Miller Center (University of Virginia).",
     "sv": "USA:s alla 47 presidentskap per den 4 oktober 2026, från George Washington (den 1:a, 1789) till Donald Trump (den 47:e, sedan 2025), numrerade enligt den officiella amerikanska räkningen. Framsida: numret, t.ex. ”USA:s 16:e president”; baksida: presidentens namn på engelska och svenska, med åren i ämbetet i en anteckning. Grover Cleveland (den 22:a och 24:e) och Donald Trump (den 45:e och 47:e) satt två perioder som inte följde direkt på varandra och räknas två gånger, så de 47 presidentskapen har innehafts av 45 personer. Uppgifterna är hämtade från Wikidata och kontrollerade mot Office of the Historian vid USA:s representanthus, Vita huset, USA.gov och Miller Center (University of Virginia)."
   },
-  "keywords": [
-    "US presidents",
-    "President of the United States",
-    "American history",
-    "White House",
-    "amerikanska presidenter",
-    "USA:s president",
-    "amerikansk historia",
-    "Vita huset"
-  ],
+  "keywords": {
+    "en": [
+      "US presidents",
+      "President of the United States",
+      "American history",
+      "White House"
+    ],
+    "sv": [
+      "amerikanska presidenter",
+      "USA:s president",
+      "amerikansk historia",
+      "Vita huset"
+    ]
+  },
   "topics": [
     "history"
   ],
@@ -111,7 +115,7 @@
     }
   },
   "method": [
-    "Research, drafting and cross-checking were done by AI agents (Claude, by Anthropic) at Anton Wiklund's direction, with machine checks against live Wikidata and the app's SHACL/DCAT-AP validators; the library's process adds independent AI reviewers in later quality-control rounds. The cards have not yet been reviewed by a human subject expert.",
+    "Who did the work: Anton Wiklund compiled this deck with the help of AI agents (Claude, by Anthropic), which did the research, drafting and cross-checking at his direction. The cards were checked by machine (live Wikidata and the app's SHACL and DCAT-AP validators) and in independent review rounds by further Claude agents, each logged under Quality control with its findings and how they were resolved. Anton Wiklund reviews every deck in full before it is released.",
     "1. Wikidata (query 1): every non-deprecated P39 (position held) statement whose value is President of the United States (Q11696), with its P1545 (series ordinal), P580 (start time) and P582 (end time) qualifiers, its rank and the English and Swedish labels, was fetched as CSV from the Wikidata Query Service. The result also holds fictional presidents (characters from films, comics and television, among them \"Quentin Trembley\" with the ordinal \"8½\"), which have no numeric ordinal or are not humans. Query 2 therefore restricted the statements to those with a P1545 qualifier on items that are instances of human (P31 Q5) and fetched every English, Swedish and multilingual (mul) label and alias of those people. The rows with a whole-number ordinal are 47 statements, 1 to 47, on 45 items: Grover Cleveland (Q35171) holds two statements (22 and 24) and Donald Trump (Q22686) two (45 and 47, the latter of preferred rank and without an end time).",
     "2. Official US government check: the White House's former page listing all presidents (https://www.whitehouse.gov/about-the-white-house/presidents/) answered 404. USA.gov's page on the presidents (https://www.usa.gov/presidents, last updated March 2, 2026) states that Donald John Trump is the 47th and current president, sworn in on January 20, 2025, and links, for past presidents, to the table \"Presidents, Vice Presidents, & Coinciding Sessions of Congress\" of the House of Representatives' Office of the Historian. That table was downloaded (query 6) and parsed: it numbers 47 presidencies, Grover Cleveland as No. 22 and No. 24 and Donald J. Trump as No. 45 and No. 47 (\"Jan. 20, 2025–present\"). The White House's page on the current president (query 7) heads it \"45th & 47th President of the United States\".",
     "3. Independent check: the Miller Center of Public Affairs (University of Virginia) list of presidents (https://millercenter.org/president, query 8) gives a number, a first and last year and a name for each president. (Britannica's table of presidents was tried first and answered 403 to the research environment: curl -sL -A \"solid-memo deck research (https://github.com/antwika/solid-memo)\" -o britannica.html -w \"%{http_code} %{url_effective} %{size_download}\\n\" https://www.britannica.com/topic/Presidents-of-the-United-States-1846696; it was not used.)",

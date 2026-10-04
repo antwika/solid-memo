@@ -24,22 +24,26 @@
     dcterms:created "2026-10-04T12:00:00.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:computing ;
-    dcat:keyword "Unix" ,
-                 "Linux" ,
-                 "shell" ,
-                 "command line" ,
-                 "POSIX" ,
-                 "terminal" ,
-                 "skal" ,
-                 "kommandorad" ,
-                 "skalkommandon" ,
-                 "kommandotolk" ;
+    dcat:keyword "Unix"@en ,
+                 "Linux"@en ,
+                 "shell"@en ,
+                 "command line"@en ,
+                 "POSIX"@en ,
+                 "terminal"@en ,
+                 "skal"@sv ,
+                 "kommandorad"@sv ,
+                 "skalkommandon"@sv ,
+                 "kommandotolk"@sv ,
+                 "Unix"@sv ,
+                 "Linux"@sv ,
+                 "POSIX"@sv ,
+                 "terminal"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 ;
+    solid-memo:formatVersion 5 ;
     dcat:version "1" ;
-    dcterms:issued "2026-10-04T05:25:26Z"^^xsd:dateTime ;
+    dcterms:issued "2026-10-04T11:03:19Z"^^xsd:dateTime ;
     adms:versionNotes "First release: 55 cards, each checked against at least two sources; sources, method and quality control in authored/unix-shell-commands.md." ;
     dcterms:publisher <https://solid-memo.com/decks/index.ttl#solid-memo> ;
     dcat:inSeries <https://solid-memo.com/decks/index.ttl#unix-shell-commands> ;
