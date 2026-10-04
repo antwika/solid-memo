@@ -1,4 +1,5 @@
 import { licenseLabel } from "@solid-memo/domain/license";
+import { keywordsIn } from "@solid-memo/domain/keywords";
 import { topicLabels, type LibraryDeck, type LibrarySource } from "@solid-memo/domain/library";
 import { AuthorNames } from "./AuthorName";
 import { ErrorMessage } from "./ErrorMessage";
@@ -9,7 +10,8 @@ import { linkify } from "./linkify";
 import { ReaderText, ReaderTexts } from "./ReaderText";
 
 /**
- * One library deck in full — its blurb, what it is about, who made it
+ * One library deck in full — its blurb, what it is about (its keywords
+ * only those in the reader's language), who made it
  * and under what terms, when it was made and last changed, which
  * release it is and what changed in it, and what it was compiled from —
  * with a look at its cards and an import button for this deck alone.
@@ -37,8 +39,10 @@ export function LibraryDeckScreen({
   error: ErrorText | null;
   onImport: () => void;
 }) {
-  const { t, readerText, readerLang, formatDate, directionLabel } = useI18n();
+  const { t, locale, readerText, readerLang, formatDate, directionLabel } = useI18n();
   const topics = topicLabels(deck.themes);
+  /** Only those in the reader's language: none in it, no keywords shown. */
+  const keywords = keywordsIn(deck.keywords, locale);
   const current = deck.releases.find((release) => release.url === deck.url);
   return (
     <section>
@@ -73,10 +77,10 @@ export function LibraryDeckScreen({
             </dd>
           </>
         )}
-        {deck.keywords.length > 0 && (
+        {keywords.length > 0 && (
           <>
             <dt>{t("libraryDeck.keywords")}</dt>
-            <dd>{deck.keywords.join(", ")}</dd>
+            <dd>{keywords.join(", ")}</dd>
           </>
         )}
         <dt>{t("libraryDeck.release")}</dt>

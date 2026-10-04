@@ -272,7 +272,10 @@ def write_deck(path: Path, *, creator: str | None, created: str, script_url: str
         + aligned("dcat:theme", ["<http://publications.europa.eu/resource/authority/data-theme/EDUC>", "topic:computing"])
         + " ;",
         "    dcat:keyword "
-        + aligned("dcat:keyword", ['"networking"', '"ports"', '"TCP"', '"UDP"', '"nätverk"', '"portar"'])
+        + aligned(
+            "dcat:keyword",
+            ['"networking"@en', '"ports"@en', '"TCP"@en', '"UDP"@en', '"nätverk"@sv', '"portar"@sv', '"TCP"@sv', '"UDP"@sv'],
+        )
         + " ;",
         "    dcterms:language "
         + aligned(
@@ -284,7 +287,7 @@ def write_deck(path: Path, *, creator: str | None, created: str, script_url: str
         )
         + " ;",
         "    solid-memo:studyDirection solid-memo:bidirectional ;",
-        "    solid-memo:formatVersion 4 .",
+        "    solid-memo:formatVersion 5 .",  # format 5: keywords tagged with their language
         "",
     ]
     if creator_name is not None:

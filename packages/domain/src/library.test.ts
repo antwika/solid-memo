@@ -24,13 +24,13 @@ function libraryDeck(name: string, themes: string[], extra: Partial<LibraryDeck>
     direction: "front-to-back",
     sources: [],
     themes: [EDUC, ...themes],
-    keywords: [],
+    keywords: {},
     ...extra,
   };
 }
 
 const capitals = libraryDeck("capitals", [`${TOPIC}geography`], { description: { en: "Every country's capital." } });
-const nouns = libraryDeck("swedish-nouns", [`${TOPIC}swedish`], { keywords: ["Vocabulary"] });
+const nouns = libraryDeck("swedish-nouns", [`${TOPIC}swedish`], { keywords: { en: ["Vocabulary"], sv: ["Ordförråd"] } });
 const http = libraryDeck("http", [`${TOPIC}computing`]);
 
 describe("isCopyOf", () => {
@@ -74,5 +74,9 @@ describe("filterLibraryDecks", () => {
     expect(filterLibraryDecks(decks, { topics: [], query: "HTTP" })).toEqual([http]);
     expect(filterLibraryDecks(decks, { topics: [], query: "capital" })).toEqual([capitals]);
     expect(filterLibraryDecks(decks, { topics: [], query: "vocabulary" })).toEqual([nouns]);
+  });
+
+  it("searches the keywords in every language, not only the reader's", () => {
+    expect(filterLibraryDecks(decks, { topics: [], query: "ordförråd" })).toEqual([nouns]);
   });
 });

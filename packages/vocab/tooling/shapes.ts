@@ -238,13 +238,19 @@ function parseProperty(
     fail(`<${shape}> lists sh:in values of another kind than the field's.`);
   }
   const name = of("name")[0]?.value ?? localName(predicate);
-  // A text is one field however many languages it is in: required or not.
-  const cardinality: Cardinality =
-    kind === "text" || kind === "anyText"
-      ? minCount >= 1 ? "one" : "optional"
-      : maxCount === undefined ? "many" : minCount >= 1 ? "one" : "optional";
-  if (cardinality === "many" && kind !== "string" && kind !== "iri") {
-    fail(`<${shape}> repeats a ${kind}; only strings and IRIs may repeat.`);
+  // A text with one value per language (sh:uniqueLang true) is one field
+  // however many languages it is in: required or not. Without
+  // sh:uniqueLang it holds several values per language ("many").
+  const textual = kind === "text" || kind === "anyText";
+  const uniqueLang = of("uniqueLang")[0]?.value === "true";
+  if (textual && !uniqueLang && maxCount !== undefined) {
+    fail(`<${shape}> limits a text with several values per language; drop sh:maxCount or add sh:uniqueLang true.`);
+  }
+  const cardinality: Cardinality = textual
+    ? uniqueLang ? (minCount >= 1 ? "one" : "optional") : "many"
+    : maxCount === undefined ? "many" : minCount >= 1 ? "one" : "optional";
+  if (cardinality === "many" && !textual && kind !== "string" && kind !== "iri") {
+    fail(`<${shape}> repeats a ${kind}; only strings, IRIs and texts may repeat.`);
   }
   return {
     name,
@@ -270,6 +276,9 @@ function alternativesKind(quads: readonly Quad[], list: Quad_Object): TermKind |
 }
 
 function tsType(field: ShapeField): string {
+  if (field.kind === "text" || field.kind === "anyText") {
+    return field.cardinality === "many" ? "LangTexts" : "LangText";
+  }
   const scalar =
     field.kind === "enum" || field.kind === "iriEnum"
       ? field.values!.map((v) => JSON.stringify(v)).join(" | ")
@@ -277,9 +286,7 @@ function tsType(field: ShapeField): string {
         ? "number"
         : field.kind === "boolean"
           ? "boolean"
-          : field.kind === "text" || field.kind === "anyText"
-            ? "LangText"
-            : "string";
+          : "string";
   return field.cardinality === "many"
     ? field.kind === "enum" || field.kind === "iriEnum"
       ? `readonly (${scalar})[]`
@@ -321,6 +328,14 @@ export function renderDomainTypes(models: readonly ShapeModel[]): string {
     " * (\"\") holds it.",
     " */",
     "export type LangText = Readonly<Record<string, string>>;",
+    "",
+    "/**",
+    " * Several texts per language (rdf:langString values without",
+    " * sh:uniqueLang, such as a deck's keywords): language tag, lower case, to",
+    " * the texts in that language, in stored order. Where a shape also allows",
+    " * untagged text, the empty tag (\"\") holds it; {} is none.",
+    " */",
+    "export type LangTexts = Readonly<Record<string, readonly string[]>>;",
     "",
     "/** The record kinds the shapes describe (see docs/shapes.md). */",
     `export type ShapeName = ${shapes.map((s) => JSON.stringify(s)).join(" | ")};`,

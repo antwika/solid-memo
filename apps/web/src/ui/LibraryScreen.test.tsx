@@ -127,9 +127,12 @@ describe("LibraryScreen", () => {
     expect(screen.queryByRole("group", { name: "Topics" })).toBeNull();
   });
 
-  it("searches names, descriptions and keywords, and says when nothing matches", () => {
-    renderScreen({ decks: [capitals, { ...rivers, keywords: ["water"] }] });
+  it("searches names, descriptions and keywords, in every language, and says when nothing matches", () => {
+    renderScreen({ decks: [capitals, { ...rivers, keywords: { en: ["water"], sv: ["vattendrag"] } }] });
     fireEvent.input(screen.getByLabelText("Search"), { target: { value: "WATER" } });
+    expect(screen.getByRole("checkbox", { name: "Rivers" })).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Capitals of the world" })).toBeNull();
+    fireEvent.input(screen.getByLabelText("Search"), { target: { value: "vattendrag" } });
     expect(screen.getByRole("checkbox", { name: "Rivers" })).toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "Capitals of the world" })).toBeNull();
     fireEvent.input(screen.getByLabelText("Search"), { target: { value: "volcano" } });

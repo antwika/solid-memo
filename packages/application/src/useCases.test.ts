@@ -89,7 +89,7 @@ const libraryContent: LibraryDeckContent = {
   version: "1",
   seriesUrl: "https://solid-memo.com/decks/index.ttl#capitals",
   themes: [],
-  keywords: [],
+  keywords: {},
   cards: [{ id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 }],
 };
 
@@ -533,14 +533,59 @@ describe("createUseCases", () => {
   it("describeDeck saves the deck's description in the languages given, topics and keywords, refusing an empty description", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
-    await useCases.describeDeck(deck, { description: { en: " Kanji. " }, topics: [], keywords: ["kanji"] });
-    expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({ ...deck, description: { en: "Kanji." }, keywords: ["kanji"] });
+    await useCases.describeDeck(deck, { description: { en: " Kanji. " }, topics: [], keywords: { en: ["kanji"] } });
+    expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({ ...deck, description: { en: "Kanji." }, keywords: { en: ["kanji"] } });
     // Only the language the user stated: no English stands in for it.
-    await useCases.describeDeck(deck, { description: { sv: "Kanji." }, topics: [], keywords: [] });
+    await useCases.describeDeck(deck, { description: { sv: "Kanji." }, topics: [], keywords: {} });
     expect(deps.deckRepository.saveDeck).toHaveBeenLastCalledWith({ ...deck, description: { sv: "Kanji." } });
-    await expect(useCases.describeDeck(deck, { description: { en: "" }, topics: [], keywords: [] })).rejects.toThrow(
+    await expect(useCases.describeDeck(deck, { description: { en: "" }, topics: [], keywords: {} })).rejects.toThrow(
       "A deck needs a description.",
     );
+  });
+
+  it("describeDeck saves keywords under the canonical form of each stated language, refusing a tag that names no language and new untagged keywords", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    const legacy = { ...deck, keywords: { "": ["kanji"] } };
+    await useCases.describeDeck(legacy, {
+      description: { en: "Kanji." },
+      topics: [],
+      keywords: { "": ["kanji"], "JA-jp": ["漢字"], iw: ["קאנג'י"], he: ["כתב"] },
+    });
+    expect(deps.deckRepository.saveDeck).toHaveBeenLastCalledWith({
+      ...deck,
+      description: { en: "Kanji." },
+      keywords: { "": ["kanji"], "ja-jp": ["漢字"], he: ["קאנג'י", "כתב"] },
+    });
+    await expect(
+      useCases.describeDeck(deck, { description: { en: "Kanji." }, topics: [], keywords: { Swedish: ["kanji"] } }),
+    ).rejects.toThrow("“Swedish” is not a language code.");
+    await expect(
+      useCases.describeDeck(legacy, { description: { en: "Kanji." }, topics: [], keywords: { "": ["kanji", "N5"] } }),
+    ).rejects.toThrow("Choose the language of the keywords.");
+  });
+
+  it("describeDeck keeps the keyword tags the deck already has as stored, checking only the ones the user states", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    // Tags another app wrote: ones the app would refuse ("und", "en-x-custom")
+    // or re-tag ("iw") if the user chose them.
+    const stored = { ...deck, keywords: { und: ["foo"], "en-x-custom": ["bar"], iw: ["קאנג'י"] } };
+    await useCases.describeDeck(stored, {
+      description: { en: "Only the description changed." },
+      topics: [],
+      keywords: { und: ["foo"], "EN-x-Custom": ["bar"], iw: ["קאנג'י"], he: ["כתב"] },
+    });
+    expect(deps.deckRepository.saveDeck).toHaveBeenLastCalledWith({
+      ...deck,
+      description: { en: "Only the description changed." },
+      keywords: { und: ["foo"], "en-x-custom": ["bar"], iw: ["קאנג'י"], he: ["כתב"] },
+    });
+    // A tag the deck does not have is still checked.
+    await expect(
+      useCases.describeDeck(stored, { description: { en: "Kanji." }, topics: [], keywords: { "fr-x-custom": ["baz"] } }),
+    ).rejects.toThrow("“fr-x-custom” is not a language code.");
+    expect(deps.deckRepository.saveDeck).toHaveBeenCalledTimes(1);
   });
 
   describe("stateCardLanguages", () => {

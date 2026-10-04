@@ -45,13 +45,16 @@ function release(version: number, cards: LibraryCard[]): LibraryDeckContent {
     seriesUrl: librarySeriesUrlOf(`${LIBRARY}1.ttl`),
     title: version === 1 ? { en: "Capitals" } : { en: "Capitals", sv: "Huvudstäder" },
     description: { en: "Capitals of Europe." },
-    formatVersion: 4,
+    formatVersion: 5,
     authors: ["Anton Wiklund"],
     license: "https://creativecommons.org/publicdomain/zero/1.0/",
     direction: "front-to-back",
     version: String(version),
     themes: [],
-    keywords: [],
+    // Release 2 adds a keyword in English and its Swedish keywords, ASCII:
+    // the Community Solid Server's in-memory store cuts a patched document
+    // with more characters outside ASCII short (docs/testing.md).
+    keywords: version === 1 ? { en: ["capitals"] } : { en: ["capitals", "europe"], sv: ["huvudstader"] },
     cards,
   };
 }
@@ -71,7 +74,7 @@ const library: DeckLibrary = {
         { url: V2.url, version: "2" },
       ],
       themes: [],
-      keywords: [],
+      keywords: V2.keywords,
       title: V2.title,
       cardCount: V2.cards.length,
       authors: V2.authors,
@@ -184,7 +187,14 @@ describe.each(SERVERS)("a library deck upgrade on $name", ({ url: server }) => {
 
     expect(outcome, JSON.stringify(outcome)).toMatchObject({ ok: true, tidied: true });
     const upgraded = (await deckRepository.readDeck(deck.url))!;
-    expect(upgraded).toMatchObject({ url: deck.url, sourceUrl: V2.url, title: { en: "Capitals", sv: "Huvudstäder" } });
+    expect(upgraded).toMatchObject({
+      url: deck.url,
+      sourceUrl: V2.url,
+      formatVersion: 6,
+      title: { en: "Capitals", sv: "Huvudstäder" },
+      // Still the old release's, the keywords take up the new release's, every language.
+      keywords: { en: ["capitals", "europe"], sv: ["huvudstader"] },
+    });
     expect(upgraded.cardsDocumentUrl).toMatch(new RegExp(`/decks/${deck.id}-[0-9a-f-]+\\.ttl$`));
     expect(upgraded.reviewsDocumentUrl).toMatch(new RegExp(`/reviews/${deck.id}-[0-9a-f-]+\\.ttl$`));
     const cards = await deckRepository.listCards(upgraded);
@@ -205,6 +215,23 @@ describe.each(SERVERS)("a library deck upgrade on $name", ({ url: server }) => {
       (request) => isWrite(request) && [deck.cardsDocumentUrl, deck.reviewsDocumentUrl].includes(request.url),
     );
     expect(toOld.map((request) => request.method)).toEqual(["DELETE", "DELETE"]);
+  });
+
+  it("keeps the keywords the user changed, in every language", async () => {
+    const seeded = await seedDeck(server);
+    const { useCases, deckRepository } = app();
+    const deck = await useCases.describeDeck(seeded, {
+      description: { en: "Capitals of Europe." },
+      topics: [],
+      keywords: { en: ["capitals", "mine"] },
+    });
+    const plan = (await useCases.planLibraryUpgrade(deck))!;
+    expect(plan.keywords).toBeUndefined();
+
+    const outcome = await useCases.applyLibraryUpgrade(deck, plan);
+
+    expect(outcome, JSON.stringify(outcome)).toMatchObject({ ok: true });
+    expect((await deckRepository.readDeck(deck.url))!.keywords).toEqual({ en: ["capitals", "mine"] });
   });
 
   it("gives up, deleting what it wrote, when a review is saved elsewhere while it runs", async (context) => {

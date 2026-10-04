@@ -168,7 +168,7 @@ describe("sameCardChanges", () => {
 
 describe("sameDeckState", () => {
   it("holds when only what an upgrade leaves alone changed", () => {
-    expect(sameDeckState(deck, { ...deck, keywords: ["geography"] })).toBe(true);
+    expect(sameDeckState(deck, { ...deck, keywords: { en: ["geography"] } })).toBe(true);
   });
 
   it("fails when where its documents are, its release, direction, title or description changed", () => {
@@ -189,10 +189,10 @@ describe("sameDeckState", () => {
 describe("withDeckChanges", () => {
   it("writes what the upgrade changes onto the deck as stored, keeping changes made meanwhile", () => {
     const next = { ...deck, sourceUrl: plan.releaseUrl, cardsDocumentUrl: "new", title: { en: "Capitals" } };
-    const stored = { ...deck, keywords: ["geography"] };
+    const stored = { ...deck, keywords: { en: ["geography"] } };
     expect(withDeckChanges(stored, deck, next)).toEqual({
       ...deck,
-      keywords: ["geography"],
+      keywords: { en: ["geography"] },
       sourceUrl: plan.releaseUrl,
       cardsDocumentUrl: "new",
     });

@@ -100,13 +100,34 @@ describe("toLibraryDecks", () => {
         createdAt: "2026-09-22T09:49:00.236Z",
         modifiedAt: "2026-09-27T20:12:13.000Z",
         themes: [EDUC, "https://solid-memo.com/vocab/topics#geography"],
-        keywords: ["capitals"],
+        keywords: { "": ["capitals"] },
         sources: [
           { url: WIKIPEDIA, title: "List of national capitals", authors: ["Wikipedia contributors"], license: BY_SA },
           { url: "https://iupac.org/", authors: ["IUPAC"] },
           { url: WIKIDATA, authors: [] },
         ],
       },
+    ]);
+  });
+
+  it("reads a library deck 5 release's keywords per language, as its series states them", async () => {
+    const index = await datasetFromIndex(`
+@prefix sm: <https://solid-memo.com/vocab/v1#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+<> a dcat:Catalog ; dcterms:title "Library" ; dcterms:description "Decks." ; dcterms:publisher <#solid-memo> ; dcat:dataset <#capitals> .
+<#capitals> a dcat:DatasetSeries, dcat:Dataset ; sm:formatVersion 3 ;
+   dcterms:title "Capitals"@en ; dcterms:description "Capitals."@en ; dcat:keyword "capitals"@en, "huvudstäder"@sv ;
+   dcterms:publisher <#solid-memo> ; dcat:first <capitals/1.ttl> ; dcat:last <capitals/1.ttl> ;
+   dcat:hasVersion <capitals/1.ttl> ; dcat:hasCurrentVersion <capitals/1.ttl> .
+<capitals/1.ttl> a sm:Deck, dcat:Dataset ; sm:formatVersion 5 ;
+   dcterms:title "Capitals"@en ; dcterms:description "Capitals of the world."@en ;
+   dcat:keyword "capitals"@en, "countries"@en, "huvudstäder"@sv, "länder"@sv, "stray" ;
+   dcterms:publisher <#solid-memo> ; sm:studyDirection sm:frontToBack ; dcat:theme <${EDUC}> ;
+   dcat:version "1" ; dcat:inSeries <#capitals> ; dcat:isVersionOf <#capitals> ; dcat:distribution <capitals/1.ttl#turtle> .
+`);
+    expect(toLibraryDecks(index)).toEqual([
+      expect.objectContaining({ keywords: { en: ["capitals", "countries"], sv: ["huvudstäder", "länder"] } }),
     ]);
   });
 
@@ -221,7 +242,7 @@ describe("toLibraryDeckContent", () => {
       version: "1",
       seriesUrl: SERIES,
       themes: [EDUC],
-      keywords: [],
+      keywords: {},
       cards: [
         { id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 },
         {
@@ -258,7 +279,7 @@ describe("toLibraryDeckContent", () => {
       version: "1",
       seriesUrl: SERIES,
       themes: [EDUC],
-      keywords: [],
+      keywords: {},
       cards: [{ id: "se", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 }],
     });
   });
@@ -266,11 +287,11 @@ describe("toLibraryDeckContent", () => {
   it("refuses a deck in a newer format than it writes", () => {
     const dataset = deckDocument(
       thing(CANONICAL, (t) =>
-        t.addIri(RDF.type, SM.Deck).addInteger(SM.formatVersion, 5),
+        t.addIri(RDF.type, SM.Deck).addInteger(SM.formatVersion, 6),
       ),
     );
     expect(() => toLibraryDeckContent(DOC, dataset)).toThrow(
-      `This deck is in a newer format than this version of Solid Memo can read. Reload the page to get the latest version.\nurl: ${DOC}\nversion: 5\nlatest: 4`,
+      `This deck is in a newer format than this version of Solid Memo can read. Reload the page to get the latest version.\nurl: ${DOC}\nversion: 6\nlatest: 5`,
     );
   });
 

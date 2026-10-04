@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { readVersioned, recordThing } from "./records";
 import { LATEST_VERSION, type ShapeName } from "@solid-memo/vocab/types.generated";
-import { MIGRATIONS, migrate } from "@solid-memo/domain/shapes/migrations";
+import { MIGRATIONS, migrate, stepFor } from "@solid-memo/domain/shapes/migrations";
 import { toRdfJsDataset, mockSolidDatasetFrom, setThing, buildThing, createThing, getSolidDataset, getThingAll, getUrlAll } from "@inrupt/solid-client";
 import { createEngine, mergeDatasets } from "@solid-memo/shacl/engine";
 import { coreOnly, PROFILES, REFERENCE_DATA } from "@solid-memo/shacl/profiles";
@@ -51,16 +51,19 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
     3: { title: "Own", description: "Mine.", creator: ["https://pod.example/c.ttl#agent-anton"], studyDirection: `${SM_NS}bidirectional`, theme: ["https://solid-memo.com/vocab/topics#geography"], keyword: ["capitals"], distribution: ["https://pod.example/c.ttl#deck-1-cards"], cardsDocument: "https://pod.example/d.ttl", reviewsDocument: "https://pod.example/r.ttl", source: "https://solid-memo.com/decks/x/1.ttl" },
     4: { title: { en: "Own", sv: "Egen" }, description: { en: "Mine.", sv: "Min." }, creator: ["https://pod.example/c.ttl#agent-anton"], studyDirection: `${SM_NS}bidirectional`, theme: ["https://solid-memo.com/vocab/topics#geography"], keyword: ["capitals"], distribution: ["https://pod.example/c.ttl#deck-1-cards"], cardsDocument: "https://pod.example/d.ttl", reviewsDocument: "https://pod.example/r.ttl", source: "https://solid-memo.com/decks/x/1.ttl" },
     5: { title: { sv: "Egen", ja: "自分の" }, description: { sv: "Min." }, creator: ["https://pod.example/c.ttl#agent-anton"], studyDirection: `${SM_NS}bidirectional`, theme: ["https://solid-memo.com/vocab/topics#geography"], keyword: ["capitals"], distribution: ["https://pod.example/c.ttl#deck-1-cards"], cardsDocument: "https://pod.example/d.ttl", reviewsDocument: "https://pod.example/r.ttl", source: "https://solid-memo.com/decks/x/1.ttl" },
+    6: { title: { sv: "Egen" }, description: { sv: "Min." }, creator: ["https://pod.example/c.ttl#agent-anton"], studyDirection: `${SM_NS}bidirectional`, theme: ["https://solid-memo.com/vocab/topics#geography"], keyword: { en: ["capitals", "countries"], sv: ["huvudstäder"], "sv-fi": ["städer"], zxx: ["ISO 3166"], "": ["legacy"] }, distribution: ["https://pod.example/c.ttl#deck-1-cards"], cardsDocument: "https://pod.example/d.ttl", reviewsDocument: "https://pod.example/r.ttl", source: "https://solid-memo.com/decks/x/1.ttl" },
   },
   libraryDeck: {
     1: { title: "Capitals", creator: [], source: [] },
     2: { title: "Capitals", creator: [], direction: "front-to-back", source: ["https://en.wikipedia.org/"] },
     3: { title: "Capitals", description: "Capitals.", creator: [], publisher: "https://solid-memo.com/decks/index.ttl#solid-memo", studyDirection: `${SM_NS}frontToBack`, theme: [EDUC], keyword: [], language: [], version: "2", versionNotes: "Added Norway.", inSeries: "https://solid-memo.com/decks/index.ttl#x", isVersionOf: "https://solid-memo.com/decks/index.ttl#x", prev: "https://solid-memo.com/decks/x/1.ttl", previousVersion: "https://solid-memo.com/decks/x/1.ttl", distribution: ["https://solid-memo.com/decks/x/2.ttl#turtle"], wasDerivedFrom: ["https://en.wikipedia.org/"] },
     4: { title: { en: "Capitals", sv: "Huvudstäder" }, description: { en: "Capitals.", sv: "Huvudstäder." }, creator: [], publisher: "https://solid-memo.com/decks/index.ttl#solid-memo", studyDirection: `${SM_NS}frontToBack`, theme: [EDUC], keyword: [], language: [], version: "2", versionNotes: "Added Norway.", inSeries: "https://solid-memo.com/decks/index.ttl#x", isVersionOf: "https://solid-memo.com/decks/index.ttl#x", prev: "https://solid-memo.com/decks/x/1.ttl", previousVersion: "https://solid-memo.com/decks/x/1.ttl", distribution: ["https://solid-memo.com/decks/x/2.ttl#turtle"], wasDerivedFrom: ["https://en.wikipedia.org/"] },
+    5: { title: { en: "Capitals", sv: "Huvudstäder" }, description: { en: "Capitals.", sv: "Huvudstäder." }, creator: [], publisher: "https://solid-memo.com/decks/index.ttl#solid-memo", studyDirection: `${SM_NS}frontToBack`, theme: [EDUC], keyword: { en: ["capitals", "countries"], sv: ["huvudstäder", "länder"] }, language: [], version: "3", versionNotes: "Keywords tagged with their language.", inSeries: "https://solid-memo.com/decks/index.ttl#x", isVersionOf: "https://solid-memo.com/decks/index.ttl#x", prev: "https://solid-memo.com/decks/x/2.ttl", previousVersion: "https://solid-memo.com/decks/x/2.ttl", distribution: ["https://solid-memo.com/decks/x/3.ttl#turtle"], wasDerivedFrom: ["https://en.wikipedia.org/"] },
   },
   libraryDeckSeries: {
     1: { title: "Capitals", description: "Capitals.", publisher: "https://solid-memo.com/decks/index.ttl#solid-memo", theme: [EDUC], keyword: [], first: "https://solid-memo.com/decks/x/1.ttl", last: "https://solid-memo.com/decks/x/2.ttl", hasVersion: ["https://solid-memo.com/decks/x/1.ttl", "https://solid-memo.com/decks/x/2.ttl"], hasCurrentVersion: "https://solid-memo.com/decks/x/2.ttl" },
     2: { title: { en: "Capitals", sv: "Huvudstäder" }, description: { en: "Capitals.", sv: "Huvudstäder." }, publisher: "https://solid-memo.com/decks/index.ttl#solid-memo", theme: [EDUC], keyword: [], first: "https://solid-memo.com/decks/x/1.ttl", last: "https://solid-memo.com/decks/x/2.ttl", hasVersion: ["https://solid-memo.com/decks/x/1.ttl", "https://solid-memo.com/decks/x/2.ttl"], hasCurrentVersion: "https://solid-memo.com/decks/x/2.ttl" },
+    3: { title: { en: "Capitals", sv: "Huvudstäder" }, description: { en: "Capitals.", sv: "Huvudstäder." }, publisher: "https://solid-memo.com/decks/index.ttl#solid-memo", theme: [EDUC], keyword: { en: ["capitals"], sv: ["huvudstäder", "länder"], "": ["legacy"] }, first: "https://solid-memo.com/decks/x/1.ttl", last: "https://solid-memo.com/decks/x/3.ttl", hasVersion: ["https://solid-memo.com/decks/x/1.ttl", "https://solid-memo.com/decks/x/2.ttl", "https://solid-memo.com/decks/x/3.ttl"], hasCurrentVersion: "https://solid-memo.com/decks/x/3.ttl" },
   },
   catalog: {
     1: { title: "Main", description: "My decks.", publisher: "https://pod.example/profile/card#me", themeTaxonomy: ["https://solid-memo.com/vocab/topics"], dataset: ["https://pod.example/c.ttl#deck-1"] },
@@ -153,7 +156,7 @@ describe("shapes, descriptors and migrations", () => {
 });
 
 describe("format 5 over the format-4 fixtures", () => {
-  /** The valid format-4 fixtures of a kind (a pod's decks: library releases stay at format 4). */
+  /** The valid format-4 fixtures of a kind (a pod's decks: library releases have formats of their own). */
   async function validFixtures(dir: string) {
     const names = (await readdir(`${ROOT}fixtures/${dir}/v4/valid`)).filter((name) => !name.startsWith("library-"));
     return Promise.all(
@@ -177,10 +180,37 @@ describe("format 5 over the format-4 fixtures", () => {
       for (const thing of things) {
         const read = readVersioned(thing, shape)!;
         expect(read.storedVersion, name).toBe(4);
-        const migrated = migrate(shape, read.record, { subject: thing.url });
+        const migrated = stepFor(shape, 4).up(read.record.data, { subject: thing.url });
         // Nothing guessed, nothing dropped: the data is the format-4 data, restamped.
         expect(migrated, `${name} ${thing.url}`).toEqual(read.record.data);
         const written = toRdfJsDataset(setThing(dataset, recordThing(thing.url, descriptor, migrated as never, thing)));
+        await expect(engine.validateNode(written, thing.url, descriptor.shapeIri), `${name} ${thing.url}`).resolves.toEqual([]);
+      }
+    }
+  });
+});
+
+describe("deck format 6 over the format-5 fixtures", () => {
+  it("a valid format-5 deck, migrated and written, conforms to format 6, its keywords kept untagged and nothing else changed", async () => {
+    const dir = `${ROOT}fixtures/deck/v5/valid`;
+    const names = await readdir(dir);
+    expect(names.length).toBeGreaterThan(0);
+    const descriptor = SHAPES.deck[6];
+    const engine = createEngine(await loader.load(descriptor));
+    for (const name of names) {
+      const url = `https://pod.example/deck/v5/valid/${name}`;
+      const dataset = await getSolidDataset(url, { fetch: turtleFetch(await readFile(`${dir}/${name}`, "utf8")) });
+      const things = getThingAll(dataset).filter((thing) => getUrlAll(thing, RDF.type).includes(SM.Deck));
+      expect(things.length, name).toBeGreaterThan(0);
+      for (const thing of things) {
+        const read = readVersioned(thing, "deck")!;
+        expect(read.storedVersion, name).toBe(5);
+        const stored = read.record.data as { keyword: readonly string[] };
+        const migrated = migrate("deck", read.record, { subject: thing.url });
+        // Nothing guessed: the untagged keywords stay untagged, the rest is the format-5 data.
+        expect(stored.keyword, name).toEqual(["capitals"]);
+        expect(migrated, `${name} ${thing.url}`).toEqual({ ...stored, keyword: { "": ["capitals"] } });
+        const written = toRdfJsDataset(setThing(dataset, recordThing(thing.url, descriptor, migrated, thing)));
         await expect(engine.validateNode(written, thing.url, descriptor.shapeIri), `${name} ${thing.url}`).resolves.toEqual([]);
       }
     }
@@ -210,7 +240,7 @@ describe("what the app writes, under DCAT-AP", () => {
       license: "https://creativecommons.org/publicdomain/zero/1.0/",
       sourceUrl: "https://solid-memo.com/decks/capitals/1.ttl",
       themes: ["https://solid-memo.com/vocab/topics#geography"],
-      keywords: ["capitals"],
+      keywords: { en: ["capitals", "countries"], sv: ["huvudstäder"] },
     };
     const written = toRdfJsDataset(
       withCatalog(withDeck(mockSolidDatasetFrom(CATALOG), deck), CATALOG, {

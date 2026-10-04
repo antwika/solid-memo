@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/preact";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/preact";
 import { BrowserScreen, CARDS_PER_PAGE } from "./BrowserScreen";
 import type { Card, Deck } from "@solid-memo/domain/deck";
 import { I18nProvider } from "./i18n";
 import { statusTexts } from "../test/liveRegions";
-import { rememberLanguage } from "./remembered";
+import { recentLanguages, rememberLanguage } from "./remembered";
 
 const deck: Deck = {
   id: "deck-1",
@@ -27,10 +27,8 @@ const card: Card = {
   formatVersion: 1,
 };
 
-function renderScreen(
-  overrides: Partial<Parameters<typeof BrowserScreen>[0]> = {},
-) {
-  const props = {
+function renderProps(overrides: Partial<Parameters<typeof BrowserScreen>[0]> = {}) {
+  return {
     deck,
     deckHref: "#/deck?deck=d",
     cards: [card],
@@ -48,6 +46,12 @@ function renderScreen(
     // Every card listed is the user's to settle, unless a test says otherwise.
     toSettle: overrides.toSettle ?? overrides.cards ?? [card],
   };
+}
+
+function renderScreen(
+  overrides: Partial<Parameters<typeof BrowserScreen>[0]> = {},
+) {
+  const props = renderProps(overrides);
   const view = render(<BrowserScreen {...props} />);
   return { ...view, props };
 }
@@ -59,7 +63,7 @@ describe("BrowserScreen deck editing", () => {
         ...deck,
         description: { en: "Kanji of the N5 level." },
         themes: ["https://solid-memo.com/vocab/topics#languages"],
-        keywords: ["kanji", "JLPT"],
+        keywords: { en: ["kanji", "JLPT"] },
       },
     });
     const about = screen.getByRole("region", { name: "About this deck" });
@@ -71,7 +75,9 @@ describe("BrowserScreen deck editing", () => {
     expect(screen.getByLabelText("Description")).not.toHaveAttribute("lang");
     expect(screen.getByLabelText("Description")).toHaveAccessibleDescription("Language: English");
     expect(screen.getByLabelText("Keywords (optional)")).toHaveValue("kanji, JLPT");
-    expect(screen.getByLabelText("Keywords (optional)")).toHaveAccessibleDescription("Separate keywords with commas.");
+    expect(screen.getByLabelText("Keywords (optional)")).toHaveAccessibleDescription(
+      "Language: English Separate keywords with commas; add keywords in another language as a translation.",
+    );
     expect(screen.getByRole("checkbox", { name: "Languages" })).toBeChecked();
     fireEvent.input(screen.getByLabelText("Description"), { target: { value: "The N5 kanji." } });
     fireEvent.click(screen.getByRole("checkbox", { name: "Languages" }));
@@ -82,13 +88,13 @@ describe("BrowserScreen deck editing", () => {
     expect(props.onDescribeDeck).toHaveBeenCalledWith({
       description: { en: "The N5 kanji." },
       topics: ["https://solid-memo.com/vocab/topics#science"],
-      keywords: ["kanji", "N5"],
+      keywords: { en: ["kanji", "N5"] },
     });
     expect(screen.getByRole("button", { name: "Describe deck" })).toBeInTheDocument();
   });
 
   it("shows only what a deck states, and cancels describing", () => {
-    renderScreen({ deck: { ...deck, keywords: ["kanji"] } });
+    renderScreen({ deck: { ...deck, keywords: { en: ["kanji"] } } });
     const about = screen.getByRole("region", { name: "About this deck" });
     expect(about).toHaveTextContent(/^Keywords: kanjiDescribe deck$/);
     fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
@@ -113,7 +119,7 @@ describe("BrowserScreen deck editing", () => {
     expect(props.onDescribeDeck).toHaveBeenCalledWith({
       description: { en: "Kanji of the N5 level.", sv: "Kanji på nivå N5." },
       topics: [],
-      keywords: [],
+      keywords: {},
     });
   });
 
@@ -131,16 +137,124 @@ describe("BrowserScreen deck editing", () => {
     expect(document.getElementById("deck-description-error")).toHaveTextContent("");
   });
 
-  it("starts a description for a deck with no name in the language last chosen on this device, else none", () => {
+  it("starts a description and keywords for a deck with no name in the language last chosen on this device, else none", () => {
     localStorage.clear();
     renderScreen({ deck: { ...deck, title: {} } });
     fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
-    expect(screen.getByRole("button", { name: "Language: not stated" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Language: not stated" })).toHaveLength(2);
     fireEvent.click(screen.getByRole("button", { name: "Cancel describing" }));
     rememberLanguage("deck", "fi");
     fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
     expect(screen.getByLabelText("Description")).toHaveAttribute("lang", "fi");
+    expect(screen.getByLabelText("Keywords (optional)")).toHaveAttribute("lang", "fi");
     localStorage.clear();
+  });
+
+  it("shows only the keywords in the reader's language, and those in none", () => {
+    const keywords = { en: ["kanji", "JLPT"], sv: ["kanji-tecken"], "": ["N5"] };
+    renderScreen({ deck: { ...deck, keywords } });
+    expect(screen.getByRole("region", { name: "About this deck" })).toHaveTextContent(/^Keywords: kanji, JLPT, N5Describe deck$/);
+    cleanup();
+    render(
+      <I18nProvider locale="sv" onChoose={() => undefined}>
+        <BrowserScreen {...renderProps({ deck: { ...deck, keywords } })} />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("region", { name: "Om den här kortleken" })).toHaveTextContent(/^Nyckelord: kanji-tecken, N5Beskriv kortleken$/);
+  });
+
+  it("shows no keyword line when no keyword is in the reader's language", () => {
+    renderScreen({ deck: { ...deck, themes: ["https://solid-memo.com/vocab/topics#geography"], keywords: { sv: ["kanji-tecken"] } } });
+    expect(screen.getByRole("region", { name: "About this deck" })).toHaveTextContent(/^Topics: GeographyDescribe deck$/);
+  });
+
+  it("edits the keywords per language, clearing one language leaving the others", () => {
+    const { props } = renderScreen({
+      deck: { ...deck, description: { en: "Kanji." }, keywords: { sv: ["tecken"], en: ["kanji"] } },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(screen.getByLabelText("Keywords (optional)")).toHaveValue("kanji");
+    expect(screen.getByLabelText("Keywords (optional)")).not.toHaveAttribute("lang");
+    expect(screen.getByLabelText("Text in Swedish")).toHaveValue("tecken");
+    expect(screen.getByLabelText("Text in Swedish")).toHaveAttribute("lang", "sv");
+    fireEvent.input(screen.getByLabelText("Keywords (optional)"), { target: { value: " , " } });
+    fireEvent.input(screen.getByLabelText("Text in Swedish"), { target: { value: "tecken, skrivtecken, tecken" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(props.onDescribeDeck).toHaveBeenCalledWith({
+      description: { en: "Kanji." },
+      topics: [],
+      keywords: { sv: ["tecken", "skrivtecken"] },
+    });
+  });
+
+  it("asks for the language of keywords before saving them, and forgets the question on Cancel", () => {
+    localStorage.clear();
+    const { props } = renderScreen({ deck: { ...deck, description: { en: "Kanji." }, keywords: { en: ["kanji"] } } });
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    // The description's translations are open from the start; the keywords' behind their toggle.
+    fireEvent.click(screen.getAllByRole("button", { name: "Translations (0)" })[1]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Add a translation" })[1]!);
+    fireEvent.input(screen.getByLabelText("Translation, its language not chosen"), { target: { value: "tecken" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(props.onDescribeDeck).not.toHaveBeenCalled();
+    const picker = screen.getByRole("button", { name: "Language: not stated" });
+    expect(picker).toHaveFocus();
+    expect(picker).toHaveAccessibleDescription("Choose the language of the keywords.");
+    expect(document.getElementById("deck-keywords-error")).toHaveTextContent("Choose the language of the keywords.");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel describing" }));
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(document.getElementById("deck-keywords-error")).toHaveTextContent("");
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Translations (0)" })[1]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Add a translation" })[1]!);
+    fireEvent.input(screen.getByLabelText("Translation, its language not chosen"), { target: { value: "tecken" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    fireEvent.click(screen.getByRole("button", { name: "Language: not stated" }));
+    expect(screen.getByRole("group", { name: "Language of the keywords" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Swedish — svenska (sv)" }));
+    expect(document.getElementById("deck-keywords-error")).toHaveTextContent("");
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(props.onDescribeDeck).toHaveBeenCalledWith({
+      description: { en: "Kanji." },
+      topics: [],
+      keywords: { en: ["kanji"], sv: ["tecken"] },
+    });
+    expect(recentLanguages("deck")).toEqual(["en", "sv"]);
+    localStorage.clear();
+  });
+
+  it("keeps keywords saved with no language as they are, or some removed, and asks their language for any added", () => {
+    const { props } = renderScreen({ deck: { ...deck, description: { en: "Kanji." }, keywords: { "": ["kanji", "N5"] } } });
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(screen.getByLabelText("Keywords (optional)")).toHaveValue("kanji, N5");
+    expect(screen.getByLabelText("Keywords (optional)")).toHaveAccessibleDescription(
+      "Language: not stated Separate keywords with commas; add keywords in another language as a translation.",
+    );
+    fireEvent.input(screen.getByLabelText("Keywords (optional)"), { target: { value: "N5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(props.onDescribeDeck).toHaveBeenLastCalledWith({ description: { en: "Kanji." }, topics: [], keywords: { "": ["N5"] } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    fireEvent.input(screen.getByLabelText("Keywords (optional)"), { target: { value: "kanji, JLPT" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(props.onDescribeDeck).toHaveBeenCalledTimes(1);
+    const picker = screen.getByRole("button", { name: "Language: not stated" });
+    expect(picker).toHaveFocus();
+    fireEvent.click(picker);
+    fireEvent.click(screen.getByRole("radio", { name: "English (en)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(props.onDescribeDeck).toHaveBeenLastCalledWith({ description: { en: "Kanji." }, topics: [], keywords: { en: ["kanji", "JLPT"] } });
+  });
+
+  it("starts keywords in the language of the description, not one it does not state", () => {
+    renderScreen({ deck: { ...deck, title: { ja: "漢字" }, description: { "": "Kanji." } } });
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(screen.getByLabelText("Keywords (optional)")).toHaveAttribute("lang", "ja");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel describing" }));
+    cleanup();
+    renderScreen({ deck: { ...deck, description: { sv: "Kanji." } } });
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(screen.getByLabelText("Keywords (optional)")).toHaveAttribute("lang", "sv");
   });
 
   it("shows topics alone, and nothing more for a deck that says nothing", () => {

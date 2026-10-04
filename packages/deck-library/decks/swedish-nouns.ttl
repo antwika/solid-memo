@@ -25,16 +25,16 @@
     dcterms:created "2026-09-23T21:20:07.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:swedish ;
-    dcat:keyword "Swedish" ,
-                 "nouns" ,
-                 "vocabulary" ,
-                 "svenska" ,
-                 "substantiv" ,
-                 "ordförråd" ;
+    dcat:keyword "Swedish"@en ,
+                 "nouns"@en ,
+                 "vocabulary"@en ,
+                 "svenska"@sv ,
+                 "substantiv"@sv ,
+                 "ordförråd"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:frontToBack ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;

@@ -20,19 +20,19 @@
     prov:wasDerivedFrom <https://en.wikipedia.org/wiki/List_of_chemical_elements> ,
                         <https://iupac.org/what-we-do/periodic-table-of-elements/> ;
     dcterms:created "2026-09-22T15:49:38.000Z"^^xsd:dateTime ;
-    dcterms:modified "2026-10-02T21:59:11.000Z"^^xsd:dateTime ;
+    dcterms:modified "2026-10-04T04:34:28.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:chemistry ;
-    dcat:keyword "chemical elements" ,
-                 "chemistry" ,
-                 "periodic table" ,
-                 "grundämnen" ,
-                 "kemi" ,
-                 "periodiska systemet" ;
+    dcat:keyword "chemical elements"@en ,
+                 "chemistry"@en ,
+                 "periodic table"@en ,
+                 "grundämnen"@sv ,
+                 "kemi"@sv ,
+                 "periodiska systemet"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ,
                      <http://publications.europa.eu/resource/authority/language/SWE> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;

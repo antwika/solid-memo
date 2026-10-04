@@ -20,17 +20,18 @@
     prov:wasDerivedFrom <https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status> ,
                         <https://www.iana.org/assignments/http-status-codes> ;
     dcterms:created "2026-09-22T16:29:47.000Z"^^xsd:dateTime ;
-    dcterms:modified "2026-10-02T21:51:49.000Z"^^xsd:dateTime ;
+    dcterms:modified "2026-10-04T04:34:28.000Z"^^xsd:dateTime ;
     dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EDUC> ,
                topic:computing ;
-    dcat:keyword "HTTP" ,
-                 "status codes" ,
-                 "web" ,
-                 "statuskoder" ,
-                 "webb" ;
+    dcat:keyword "HTTP"@en ,
+                 "status codes"@en ,
+                 "web"@en ,
+                 "HTTP"@sv ,
+                 "statuskoder"@sv ,
+                 "webb"@sv ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ;
     solid-memo:studyDirection solid-memo:bidirectional ;
-    solid-memo:formatVersion 4 .
+    solid-memo:formatVersion 5 .
 
 <#anton-wiklund>
     a foaf:Agent ;

@@ -26,7 +26,7 @@ type LanguageFilter = "all" | BrowserLanguageFilter;
 
 /**
  * Management view for one deck: describe it (description, topics,
- * keywords), choose which way it is studied, add
+ * keywords, the text in the languages the user states), choose which way it is studied, add
  * cards, and open any card's own page (where it
  * is edited) through its front. Retired cards are listed only when asked.
  * A card whose language is the user's to settle (`toSettle`: not one
@@ -72,7 +72,7 @@ export function BrowserScreen({
   toSettle?: readonly Card[];
   busy: boolean;
   error: ErrorText | null;
-  /** Replace the deck's description, topics and keywords. */
+  /** Replace the deck's description, topics and keywords (per language). */
   onDescribeDeck: (about: DeckAbout) => void;
   /** Study the deck front→back, back→front or both ways. */
   onChangeDirection: (direction: DeckDirection) => void;

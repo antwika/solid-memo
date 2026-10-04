@@ -76,7 +76,7 @@ describe("fetchLibraryDeck", () => {
       version: "1",
       seriesUrl: expect.any(String),
       themes: ["http://publications.europa.eu/resource/authority/data-theme/EDUC"],
-      keywords: [],
+      keywords: {},
       cards: [
         { id: "sweden", front: { "": "Sweden" }, back: { "": "Stockholm" }, formatVersion: 1 },
       ],

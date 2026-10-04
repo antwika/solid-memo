@@ -40,6 +40,9 @@ describe("describeChanges", () => {
     expect(describeChanges({ ...plan, add: [], change: [], remove: [], title: { en: "Capitals", sv: "Huvudstäder" } }, en)).toBe(
       "updates the deck's name, description or keywords",
     );
+    expect(describeChanges({ ...plan, add: [], change: [], remove: [], keywords: { en: ["capitals"], sv: ["huvudstäder"] } }, en)).toBe(
+      "updates the deck's name, description or keywords",
+    );
   });
 
   it("counts retirements and cards brought back, not what is added or changed retired", () => {

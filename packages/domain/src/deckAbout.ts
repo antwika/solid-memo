@@ -1,13 +1,14 @@
 import { AppError } from "./appError";
 import { TOPICS } from "@solid-memo/vocab/concepts.generated";
 import type { Deck } from "./deck";
+import { noKeywords, tidiedKeywords, type LangTexts } from "./keywords";
 import { tidiedStated, type LangText } from "./langText";
 
 /**
  * What a deck says about itself beyond its name (see docs/data-model.md):
  * a description, which every deck has (DCAT-AP asks one of every
  * dataset), the topics of Solid Memo's topics scheme it is about, and
- * free-text keywords.
+ * free-text keywords in the languages the user stated.
  */
 export interface DeckAbout {
   /**
@@ -17,7 +18,12 @@ export interface DeckAbout {
   description: LangText;
   /** IRIs of concepts of the topics scheme. */
   topics: string[];
-  keywords: string[];
+  /**
+   * The keywords in every language they are to have, each under the
+   * language the user stated (see tidiedKeywords); untagged ones ("")
+   * only as the deck has them. A language left out is removed.
+   */
+  keywords: LangTexts;
 }
 
 const TOPIC_IRIS: readonly string[] = TOPICS.concepts.map((concept) => concept.iri);
@@ -27,7 +33,7 @@ export function topicsOfDeck(deck: Deck): string[] {
   return (deck.themes ?? []).filter((theme) => TOPIC_IRIS.includes(theme));
 }
 
-/** Keywords as typed: comma-separated, trimmed, each once. */
+/** Keywords as typed in one language: comma-separated, trimmed, each once. */
 export function parseKeywords(text: string): string[] {
   return [...new Set(text.split(",").map((keyword) => keyword.trim()).filter((k) => k !== ""))];
 }
@@ -36,7 +42,9 @@ export function parseKeywords(text: string): string[] {
  * The deck with what it says about itself replaced: the description, in
  * the languages given, trimmed (see tidiedStated), the topics replacing
  * the ones it named (other themes, such as the EU education theme of a
- * library deck, are kept), the keywords. Refuses an empty description.
+ * library deck, are kept), the keywords, per language (see
+ * tidiedKeywords). Refuses an empty description, and new keywords whose
+ * language is not stated.
  */
 export function withAbout(deck: Deck, about: DeckAbout): Deck {
   const description = tidiedStated(about.description);
@@ -45,11 +53,12 @@ export function withAbout(deck: Deck, about: DeckAbout): Deck {
     ...(deck.themes ?? []).filter((theme) => !TOPIC_IRIS.includes(theme)),
     ...about.topics,
   ];
+  const keywords = tidiedKeywords(about.keywords, deck.keywords);
   const { themes: _themes, keywords: _keywords, ...rest } = deck;
   return {
     ...rest,
     description,
     ...(themes.length === 0 ? {} : { themes }),
-    ...(about.keywords.length === 0 ? {} : { keywords: about.keywords }),
+    ...(noKeywords(keywords) ? {} : { keywords }),
   };
 }

@@ -1,5 +1,6 @@
 import { TOPICS } from "@solid-memo/vocab/concepts.generated";
 import type { CardContent, Deck, DeckDirection } from "./deck";
+import { allKeywords, type LangTexts } from "./keywords";
 import type { LangText } from "./langText";
 import { librarySeriesUrlOf } from "./libraryLayout";
 
@@ -22,7 +23,8 @@ export interface LibraryDeck {
   releases: LibraryRelease[];
   /** dcat:theme concepts: the EU education theme and Solid Memo's topics. */
   themes: string[];
-  keywords: string[];
+  /** The current release's keywords, per language (see keywords.ts). */
+  keywords: LangTexts;
   /** The deck's title, in every language it states it in (one of them English). */
   title: LangText;
   cardCount: number;
@@ -84,7 +86,11 @@ export interface LibraryDeckContent {
   modifiedAt?: string;
   /** dcat:theme concepts: the EU education theme and Solid Memo's topics. */
   themes: string[];
-  keywords: string[];
+  /**
+   * The release's keywords, per language; an older release's untagged
+   * ones under "" (see keywords.ts).
+   */
+  keywords: LangTexts;
   cards: LibraryCard[];
 }
 
@@ -141,9 +147,9 @@ function isAbout(deck: LibraryDeck, topic: string): boolean {
 }
 
 /**
- * The decks about every chosen topic whose title or description (in any
- * language) or keywords contain the query (case-insensitively); all of
- * them when nothing is chosen or typed.
+ * The decks about every chosen topic whose title, description or
+ * keywords, in any language, contain the query (case-insensitively); all
+ * of them when nothing is chosen or typed.
  */
 export function filterLibraryDecks(
   decks: readonly LibraryDeck[],
@@ -154,7 +160,7 @@ export function filterLibraryDecks(
     (deck) =>
       topics.every((topic) => isAbout(deck, topic)) &&
       (needle === "" ||
-        [...Object.values(deck.title), ...Object.values(deck.description ?? {}), ...deck.keywords].some((text) =>
+        [...Object.values(deck.title), ...Object.values(deck.description ?? {}), ...allKeywords(deck.keywords)].some((text) =>
           text.toLocaleLowerCase().includes(needle),
         )),
   );

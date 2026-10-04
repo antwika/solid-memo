@@ -12,6 +12,7 @@ import {
   type Thing,
 } from "@inrupt/solid-client";
 import { directionOfConcept } from "@solid-memo/domain/concepts";
+import { copyKeywords } from "@solid-memo/domain/keywords";
 import { agentUrlOf } from "@solid-memo/domain/agentRecord";
 import { libraryCardFromRecord, libraryDeckFromRecord } from "@solid-memo/domain/deckRecord";
 import type {
@@ -78,7 +79,7 @@ function toLibraryDeck(
     ...(createdAt === undefined ? {} : { createdAt }),
     ...(modifiedAt === undefined ? {} : { modifiedAt }),
     themes: [...release.theme],
-    keywords: [...release.keyword],
+    keywords: copyKeywords(release.keyword),
     sources: release.wasDerivedFrom.map((sourceUrl) =>
       toLibrarySource(sourceUrl, getThing(index, sourceUrl)),
     ),

@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import type { UseCases } from "@solid-memo/application/useCases";
+import { withAbout } from "@solid-memo/domain/deckAbout";
 import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
 import { statisticsOf } from "@solid-memo/domain/statistics";
 
@@ -61,7 +62,8 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     }),
     renameDeck: vi.fn(async (deck, title) => ({ ...deck, title })),
     setDeckDirection: vi.fn(async (deck, direction) => ({ ...deck, direction })),
-    describeDeck: vi.fn(async (deck, about) => ({ ...deck, ...about })),
+    // As the real one does: keywords tidied, and left off when there are none.
+    describeDeck: vi.fn(async (deck, about) => withAbout(deck, about)),
     setDeckPace: vi.fn(async (deck, pace) => ({ ...deck, ...pace })),
     removeDeck: vi.fn(async () => undefined),
     listLibraryDecks: vi.fn(async () => []),
