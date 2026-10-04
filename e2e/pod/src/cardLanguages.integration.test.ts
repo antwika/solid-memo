@@ -66,13 +66,13 @@ function page(beforeWrite: (url: string) => Promise<void> = async () => undefine
 /** An instance with a deck whose cards an older app saved with untagged sides, one card tagged already. */
 async function seed(server: string): Promise<{ instanceUrl: string; deck: Deck }> {
   const base = new URL(`languages-${crypto.randomUUID()}/`, server).href;
-  const webId = `${base}profile/card#me`;
+  const webId = `${base}profile/card.ttl#me`;
   const typeIndex = `${base}settings/privateTypeIndex.ttl`;
   const put = async (url: string, body: string) => {
     const response = await fetch(url, { method: "PUT", headers: { "content-type": "text/turtle" }, body });
     if (!response.ok) throw new Error(`Seeding ${url}: ${response.status}`);
   };
-  await put(`${base}profile/card`, `<#me> <http://www.w3.org/ns/solid/terms#privateTypeIndex> <${typeIndex}> .`);
+  await put(`${base}profile/card.ttl`, `<#me> <http://www.w3.org/ns/solid/terms#privateTypeIndex> <${typeIndex}> .`);
   await put(typeIndex, `<> a <http://www.w3.org/ns/solid/terms#TypeIndex>, <http://www.w3.org/ns/solid/terms#UnlistedDocument> .`);
   const useCases = page();
   const instance = await useCases.createInstance({ webId }, { containerUrl: `${base}solid-memo/`, name: "Main", registrationTarget: "private" });
