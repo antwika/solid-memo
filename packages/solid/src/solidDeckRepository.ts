@@ -20,9 +20,10 @@ import {
   type DeckDirection,
 } from "@solid-memo/domain/deck";
 import { cardToRecord } from "@solid-memo/domain/deckRecord";
+import { withStatedLanguages } from "@solid-memo/domain/deckLanguages";
 import { catalogUrlOf, documentsInUse, ensureTrailingSlash } from "@solid-memo/domain/instanceLayout";
 import { documentUrlOf } from "@solid-memo/domain/subjectUrl";
-import { CARD_V4 } from "@solid-memo/vocab/descriptors.generated";
+import { CARD_V5 } from "@solid-memo/vocab/descriptors.generated";
 import { deleteDataset, getSolidDatasetOrNull, saveDataset } from "./datasets";
 import { DCTERMS } from "./vocab";
 import {
@@ -60,9 +61,14 @@ export function createSolidDeckRepository({
   loadEngine = defaultLoadEngine,
 }: SolidDeckRepositoryDeps): DeckRepository {
   /** Save a document once the subjects the write touched are checked. */
-  async function save(url: string, dataset: SolidDataset, subjects: readonly string[]): Promise<void> {
+  async function save(
+    url: string,
+    dataset: SolidDataset,
+    subjects: readonly string[],
+    options?: { whole?: boolean },
+  ): Promise<void> {
     await checkWrite(dataset, subjects);
-    await saveDataset(url, dataset, fetch);
+    await saveDataset(url, dataset, fetch, options);
   }
 
   return {
@@ -200,6 +206,25 @@ export function createSolidDeckRepository({
           : setThing(current, cardThing(deck, card, thing));
       }, dataset);
       await save(deck.cardsDocumentUrl, updated, cards.map((card) => card.url));
+    },
+
+    async stateCardLanguages(deck, cardIds, languages): Promise<number> {
+      const dataset = await getSolidDatasetOrNull(deck.cardsDocumentUrl, fetch);
+      if (dataset === null) return 0;
+      let updated = dataset;
+      const stated: string[] = [];
+      for (const id of cardIds) {
+        const thing = getThing(updated, `${deck.cardsDocumentUrl}#${id}`);
+        const card = thing === null ? null : toCard(thing);
+        const restated = card === null ? null : withStatedLanguages(card, languages);
+        if (restated === null) continue;
+        updated = setThing(updated, cardThing(deck, restated, thing));
+        stated.push(restated.url);
+      }
+      // One PUT of the whole document, If-Match the read above: a cards document changed
+      // meanwhile is not overwritten, and no PATCH of text is cut short (saveDataset's `whole`).
+      if (stated.length > 0) await save(deck.cardsDocumentUrl, updated, stated, { whole: true });
+      return stated.length;
     },
 
     async applyCardChanges(deck, changes): Promise<void> {
@@ -384,7 +409,7 @@ export function createSolidDeckRepository({
   ): ThingPersisted {
     return recordThing(
       `${deck.cardsDocumentUrl}#${card.id}`,
-      CARD_V4,
+      CARD_V5,
       cardToRecord(card, card.createdAt ?? now().toISOString()),
       existing,
     );

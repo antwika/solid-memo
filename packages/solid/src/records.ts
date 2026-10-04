@@ -88,7 +88,7 @@ function readScalar(thing: Thing, field: FieldDescriptor): string | number | boo
  * value of each language: the shapes allow one); null when there are none.
  * Untagged literals are not part of a text.
  */
-function readText(thing: Thing, predicate: string): LangText | null {
+export function readText(thing: Thing, predicate: string): LangText | null {
   const text: LangText = Object.fromEntries(
     [...getStringByLocaleAll(thing, predicate)].map(([language, values]) => [language.toLowerCase(), values[0]]),
   );

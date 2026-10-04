@@ -3,11 +3,13 @@ import type { LangText } from "@solid-memo/vocab/types.generated";
 export type { LangText };
 
 /**
- * Text in several languages, as deck format 4 states titles and
- * descriptions: a language tag (lower case) to the text in that language,
- * one of them English. The app shows the text in the reader's language
- * when there is one, and edits the text in the page's language (else the
- * English), keeping the other languages as they are.
+ * Text in several languages: a language tag (lower case) to the text in
+ * that language, as deck format 5 states titles and descriptions and card
+ * format 5 notes and labels; a card side may instead hold one untagged
+ * text (""), saved before the user stated its language. The app shows the
+ * text in the reader's language when there is one, and edits each
+ * language's text under the tag the user states, keeping the others as
+ * they are.
  */
 
 /** The tag of the English text: "en", or a regional English ("en-gb"). */
@@ -56,56 +58,17 @@ export function shown(text: LangText, languages: readonly string[] = []): string
 }
 
 /**
- * The tag of the text the app edits: the English, else the first by tag
- * (the untagged text of a card side, "", comes first); undefined when the
- * text is in no language.
- */
-export function editedTag(text: LangText): string | undefined {
-  return englishTag(text) ?? Object.keys(text).sort()[0];
-}
-
-/** The text the app edits: the English, else the text shown; empty when there is none. */
-export function editedText(text: LangText | undefined): string {
-  return text === undefined ? "" : (english(text) ?? shown(text));
-}
-
-/**
- * A card side's text as entered: every language's text trimmed and an
- * empty one left out; no text at all when the edited one is cleared, for
- * clearing what the app shows clears the side's text.
+ * Text as entered, its languages as the form states them: every
+ * language's text trimmed and an empty one left out, for clearing a
+ * language's text removes that language. A card side may keep untagged
+ * text (""), but only as it was saved (see validateCardContent).
  */
 export function tidiedSideText(text: LangText): LangText {
-  const tag = editedTag(text);
-  const kept = Object.fromEntries(
+  return Object.fromEntries(
     Object.entries(text)
       .map(([tag, value]) => [tag, value.trim()])
       .filter(([, value]) => value !== ""),
   );
-  return tag === undefined || tag in kept ? kept : {};
-}
-
-/**
- * A card side's text with the edited text replaced by `value`, every
- * other language kept. A side with no text yet gets untagged text (""):
- * the app does not know what language a user types in.
- */
-export function withEditedText(text: LangText, value: string): LangText {
-  return { ...text, [editedTag(text) ?? ""]: value };
-}
-
-/**
- * Text as entered: every language's text trimmed and an empty one left
- * out; undefined when no English is left, for a text needs its English
- * (clearing the English clears the text).
- */
-export function tidied(text: LangText | undefined): LangText | undefined {
-  if (text === undefined) return undefined;
-  const kept = Object.fromEntries(
-    Object.entries(text)
-      .map(([tag, value]) => [tag, value.trim()])
-      .filter(([, value]) => value !== ""),
-  );
-  return englishTag(kept) === undefined ? undefined : kept;
 }
 
 /** Whether two texts say the same in the same languages. */
@@ -121,68 +84,64 @@ export function inEnglish(value: string): LangText {
 }
 
 /**
- * Text typed on a page in `locale`, the user's own (a deck's name or
- * description, a note, a label): what the app knows of its language is
- * that the user typed it on that page. The formats ask for English text,
- * so on another page the typed text stands in for it as well, until
- * someone writes a translation.
- */
-
-/**
- * The tag of the text edited on a page in `locale`: that language's,
- * else the English, else the first by tag; undefined when the text is in
- * no language.
- */
-export function typedTag(text: LangText, locale: string): string | undefined {
-  return matchingTag(text, locale) ?? editedTag(text);
-}
-
-/** The text edited on a page in `locale`, as `typedTag` picks it; empty when there is none. */
-export function typedText(text: LangText | undefined, locale: string): string {
-  const tag = text === undefined ? undefined : typedTag(text, locale);
-  return tag === undefined ? "" : text![tag];
-}
-
-/** New text typed on a page in `locale`: in that language, and as the English the formats ask for. */
-export function typedIn(value: string, locale: string): LangText {
-  return { en: value, [locale.toLowerCase()]: value };
-}
-
-/**
- * The text with what `typedTag` picks replaced by `value`, typed on a page
- * in `locale`, every other language kept; an English that only stood in
- * for the replaced text (the same words) is replaced too, as is a missing
- * one. Blank text is no text: clearing what the reader sees clears the
- * translations too.
- */
-export function withTyped(text: LangText | undefined, value: string, locale: string): LangText {
-  if (value.trim() === "") return {};
-  if (text === undefined) return typedIn(value, locale);
-  const tag = typedTag(text, locale) ?? locale.toLowerCase();
-  const en = englishTag(text);
-  const standIn = en === undefined || text[en] === text[tag];
-  return { ...text, [tag]: value, ...(standIn ? { [en ?? "en"]: value } : {}) };
-}
-
-/**
- * Language-tagged text that needs no English (a picture's description)
- * with what `typedTag` picks replaced by `value`, typed on a page in
- * `locale`; new text is in that language. Blank text is no text, as for
- * `withTyped`.
- */
-export function withTypedTagged(text: LangText | undefined, value: string, locale: string): LangText {
-  if (value.trim() === "") return {};
-  const tag = (text === undefined ? undefined : typedTag(text, locale)) ?? locale.toLowerCase();
-  return { ...text, [tag]: value };
-}
-
-/**
- * Language-tagged text that needs no English (a picture's description) as
- * entered: every language's text trimmed and an empty one left out;
- * undefined when none is left, as when the edited text is cleared.
+ * Language-tagged text that needs no English (a note, a label, a
+ * picture's description) as entered, as `tidiedSideText`; undefined when
+ * none is left. Untagged text ("") is kept, not refused: such text must
+ * state its language, and validateCardContent, meeting it, asks the user
+ * for the language of that very part (textNeedsLanguage).
  */
 export function tidiedTagged(text: LangText | undefined): LangText | undefined {
   if (text === undefined) return undefined;
   const kept = tidiedSideText(text);
   return Object.keys(kept).length === 0 ? undefined : kept;
+}
+
+/**
+ * Text whose languages the user stated (a deck's name or description) as
+ * entered: every language's text trimmed and an empty one left out, for
+ * clearing a language's text removes that language; empty when none is
+ * left. Each value is under the tag the user chose, or the app inferred
+ * from the text's own tags, the deck's or the device's recent choices —
+ * never one guessed from the page — and tags are kept lower case, as the
+ * pod reads them. Untagged text ("") states no language, which such
+ * text must, and two tags that differ only in case are one language
+ * twice: the app asks for the language, and refuses one the text already
+ * has, before it saves, so meeting either is a mistake in the app, not
+ * the user's.
+ *
+ * The same words under several tags are text in several languages
+ * ("Stockholm" in English and Swedish, "1969" in Swedish and Italian),
+ * kept as they are: that includes the identical English copies the
+ * formats once asked for, which the app cannot tell from a translation.
+ */
+export function tidiedStated(text: LangText): LangText {
+  if ("" in text && text[""].trim() !== "") throw new Error("Text whose language is stated cannot be untagged");
+  const tidied: Record<string, string> = {};
+  for (const [tag, value] of Object.entries(text)) {
+    const trimmed = value.trim();
+    if (trimmed === "") continue;
+    const lower = tag.toLowerCase();
+    if (lower in tidied) throw new Error(`Text whose language is stated has ${lower} twice`);
+    tidied[lower] = trimmed;
+  }
+  return tidied;
+}
+
+/**
+ * The tag the texts use most, counting each text once per tag it has;
+ * the first one met on a tie. Untagged text ("") states no language, so
+ * it is no evidence of one: undefined when no text has a tag.
+ */
+export function usualTag(texts: readonly LangText[]): string | undefined {
+  const counts = new Map<string, number>();
+  for (const text of texts) {
+    for (const tag of Object.keys(text)) {
+      if (tag !== "") counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  let usual: string | undefined;
+  for (const [tag, count] of counts) {
+    if (usual === undefined || count > counts.get(usual)!) usual = tag;
+  }
+  return usual;
 }

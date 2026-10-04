@@ -39,10 +39,18 @@ export type RouteRef =
       nothing is recorded. */
   | { screen: "libraryPreview"; instanceUrl: string; libraryDeckUrl: string }
   | { screen: "deckDetail"; instanceUrl: string; deckUrl: string }
-  /** The deck's own preferences: its daily limits. */
-  | { screen: "deckPreferences"; instanceUrl: string; deckUrl: string }
-  /** `page` is 1-based; absent means the first page. */
-  | { screen: "browser"; instanceUrl: string; deckUrl: string; page?: number }
+  /** The deck's own preferences: its daily limits. `section` is the part
+      the screen opens on, its heading focused: the deck's languages. */
+  | { screen: "deckPreferences"; instanceUrl: string; deckUrl: string; section?: "languages" }
+  /** `page` is 1-based; absent means the first page. `languages` narrows
+      the list to the cards whose language is yet to settle; absent lists all. */
+  | {
+    screen: "browser";
+    instanceUrl: string;
+    deckUrl: string;
+    page?: number;
+    languages?: BrowserLanguageFilter;
+  }
   | { screen: "cardCreator"; instanceUrl: string; deckUrl: string }
   | { screen: "card"; instanceUrl: string; deckUrl: string; cardUrl: string }
   /** A study session over the deck's due and new prompts. */
@@ -52,6 +60,14 @@ export type RouteRef =
   | { screen: "statistics"; instanceUrl: string }
   /** Developer tool: the instance's documents checked against the shapes. */
   | { screen: "validation"; instanceUrl: string };
+
+/**
+ * The cards the Browser narrows its list down to: those with a side that
+ * does not say its language.
+ */
+export type BrowserLanguageFilter = "unstated";
+
+const BROWSER_LANGUAGE_FILTERS: BrowserLanguageFilter[] = ["unstated"];
 
 const STORAGE_SOURCES: StorageSource[] = ["profile", "linkHeader", "manual"];
 
@@ -106,11 +122,13 @@ export function routeToHash(ref: RouteRef): string {
       return `#/deck-preferences${params({
         instance: ref.instanceUrl,
         deck: ref.deckUrl,
+        ...(ref.section === undefined ? {} : { section: ref.section }),
       })}`;
     case "browser":
       return `#/browse${params({
         instance: ref.instanceUrl,
         deck: ref.deckUrl,
+        ...(ref.languages === undefined ? {} : { languages: ref.languages }),
         ...(ref.page !== undefined && ref.page > 1
           ? { page: String(ref.page) }
           : {}),
@@ -246,15 +264,21 @@ export function parseHash(hash: string): RouteRef | null {
         ? null
         : { screen: "deckDetail", instanceUrl, deckUrl };
     case "/deck-preferences":
-      return instanceUrl === null || deckUrl === null
-        ? null
+      if (instanceUrl === null || deckUrl === null) return null;
+      return query.get("section") === "languages"
+        ? { screen: "deckPreferences", instanceUrl, deckUrl, section: "languages" }
         : { screen: "deckPreferences", instanceUrl, deckUrl };
     case "/browse": {
       if (instanceUrl === null || deckUrl === null) return null;
       const page = parsePage(query.get("page"));
-      return page === null
-        ? { screen: "browser", instanceUrl, deckUrl }
-        : { screen: "browser", instanceUrl, deckUrl, page };
+      const languages = query.get("languages") as BrowserLanguageFilter | null;
+      return {
+        screen: "browser",
+        instanceUrl,
+        deckUrl,
+        ...(page === null ? {} : { page }),
+        ...(languages !== null && BROWSER_LANGUAGE_FILTERS.includes(languages) ? { languages } : {}),
+      };
     }
     case "/new-card":
       return instanceUrl === null || deckUrl === null

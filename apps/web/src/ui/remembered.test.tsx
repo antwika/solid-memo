@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/preact";
-import { forget, useRemembered } from "./remembered";
+import { forget, recentLanguages, rememberLanguage, useRemembered } from "./remembered";
 
 function Counter({ memoryKey }: { memoryKey: string }) {
   const [count, setCount] = useRemembered(memoryKey, 0);
@@ -37,5 +37,46 @@ describe("useRemembered", () => {
     forget("dropped");
     render(<Counter memoryKey="dropped" />);
     expect(screen.getByRole("button")).toHaveTextContent("0");
+  });
+});
+
+describe("recent languages", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("are none at first", () => {
+    expect(recentLanguages("deck")).toEqual([]);
+  });
+
+  it("lists the latest choice first, each once, five at most", () => {
+    for (const tag of ["en", "sv", "fi", "de", "sv", "ja", "fr"]) rememberLanguage("own", tag);
+    expect(recentLanguages("own")).toEqual(["fr", "ja", "sv", "de", "fi"]);
+  });
+
+  it("keeps a deck's text and a card's own text apart", () => {
+    rememberLanguage("deck", "sv");
+    expect(recentLanguages("deck")).toEqual(["sv"]);
+    expect(recentLanguages("own")).toEqual([]);
+  });
+
+  it("are kept on this device, past the page", () => {
+    rememberLanguage("deck", "pt-br");
+    expect(JSON.parse(localStorage.getItem("solid-memo:recentLanguages.deck")!)).toEqual(["pt-br"]);
+  });
+
+  it("leave out what is not a language tag as the app stores it", () => {
+    localStorage.setItem("solid-memo:recentLanguages.own", JSON.stringify(["sv", 7, "PT-BR", "x-private", "fi"]));
+    expect(recentLanguages("own")).toEqual(["sv", "fi"]);
+    localStorage.setItem("solid-memo:recentLanguages.own", "{not json");
+    expect(recentLanguages("own")).toEqual([]);
+    localStorage.setItem("solid-memo:recentLanguages.own", JSON.stringify({ sv: true }));
+    expect(recentLanguages("own")).toEqual([]);
+  });
+
+  it("are none, and are not kept, when the browser's storage refuses", () => {
+    const refusing = () => {
+      throw new Error("SecurityError");
+    };
+    expect(recentLanguages("deck", refusing)).toEqual([]);
+    expect(() => rememberLanguage("deck", "sv", refusing)).not.toThrow();
   });
 });

@@ -214,7 +214,7 @@ solid-memo:backImageDescription
 solid-memo:frontNote
     a owl:DatatypeProperty ;
     rdfs:label "front note" ;
-    rdfs:comment "A short note under the front's text, smaller, shown once the answer is revealed, so it never gives the answer away: what holds of the front (\"Out of use\")." ;
+    rdfs:comment "A short note under the front's text, smaller, shown once the answer is revealed, so it never gives the answer away: what holds of the front (\"Out of use\"). Language-tagged text in any language, one per language." ;
     rdfs:domain solid-memo:Card ;
     rdfs:range xsd:string ;
     rdfs:isDefinedBy <> ;
@@ -223,7 +223,7 @@ solid-memo:frontNote
 solid-memo:backLabel
     a owl:DatatypeProperty ;
     rdfs:label "back label" ;
-    rdfs:comment "A short caption above the back's text that says what kind of answer it is (\"Out of use · replaced by\", \"Capital\", \"Past tense\"), shown whenever the back is, smaller than it. The back's text stays the answer itself." ;
+    rdfs:comment "A short caption above the back's text that says what kind of answer it is (\"Out of use · replaced by\", \"Capital\", \"Past tense\"), shown whenever the back is, smaller than it. The back's text stays the answer itself. Language-tagged text in any language, one per language." ;
     rdfs:domain solid-memo:Card ;
     rdfs:range xsd:string ;
     rdfs:isDefinedBy <> ;
@@ -232,7 +232,7 @@ solid-memo:backLabel
 solid-memo:backNote
     a owl:DatatypeProperty ;
     rdfs:label "back note" ;
-    rdfs:comment "A short note under the back's text, smaller, shown once the answer is revealed: when or why something changed, where it comes from. The back's text stays the answer itself." ;
+    rdfs:comment "A short note under the back's text, smaller, shown once the answer is revealed: when or why something changed, where it comes from. The back's text stays the answer itself. Language-tagged text in any language, one per language." ;
     rdfs:domain solid-memo:Card ;
     rdfs:range xsd:string ;
     rdfs:isDefinedBy <> ;

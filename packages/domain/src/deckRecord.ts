@@ -3,7 +3,7 @@ import { directionOfConcept, conceptOfDirection } from "./concepts";
 import { defaultDeckDescriptionText, distributionUrlOf, TURTLE_MEDIA_TYPE } from "./dcat";
 import { isEmptyText, type Card, type CardContent, type Deck } from "./deck";
 import type { LibraryCard, LibraryDeckContent } from "./library";
-import type { AgentV1, CardV4, DeckV4, DistributionV1, LibraryDeckV4 } from "@solid-memo/vocab/types.generated";
+import type { AgentV1, CardV5, DeckV5, DistributionV1, LibraryDeckV4 } from "@solid-memo/vocab/types.generated";
 import { fragmentIdOf } from "./subjectUrl";
 
 /**
@@ -19,7 +19,7 @@ export type AuthorOf = (agentUrl: string) => string;
 export function deckFromRecord(
   url: string,
   storedVersion: number,
-  data: DeckV4,
+  data: DeckV5,
   authorOf: AuthorOf,
 ): Deck {
   return {
@@ -44,7 +44,7 @@ export function deckFromRecord(
 }
 
 /** The deck as its latest record; a deck that states no description gets the default one. */
-export function deckToRecord(deck: Deck): DeckV4 {
+export function deckToRecord(deck: Deck): DeckV5 {
   return {
     title: deck.title,
     description: deck.description ?? defaultDeckDescriptionText(deck.title),
@@ -85,7 +85,7 @@ export function deckDistribution(deck: Deck): { url: string; record: Distributio
  * The content of a card record; null when a side has neither text nor a
  * picture — the one rule of the card shape a record cannot carry.
  */
-export function cardContentFromRecord(data: CardV4): CardContent | null {
+export function cardContentFromRecord(data: CardV5): CardContent | null {
   const front = data.front ?? {};
   const back = data.back ?? {};
   if (isEmptyText(front) && data.frontImage === undefined) return null;
@@ -103,7 +103,7 @@ export function cardContentFromRecord(data: CardV4): CardContent | null {
   };
 }
 
-export function cardFromRecord(url: string, storedVersion: number, data: CardV4): Card | null {
+export function cardFromRecord(url: string, storedVersion: number, data: CardV5): Card | null {
   const content = cardContentFromRecord(data);
   if (content === null) return null;
   return {
@@ -117,18 +117,18 @@ export function cardFromRecord(url: string, storedVersion: number, data: CardV4)
 }
 
 /** A card of a library release; null as for cardContentFromRecord. */
-export function libraryCardFromRecord(url: string, storedVersion: number, data: CardV4): LibraryCard | null {
+export function libraryCardFromRecord(url: string, storedVersion: number, data: CardV5): LibraryCard | null {
   const content = cardContentFromRecord(data);
   if (content === null) return null;
   return { id: fragmentIdOf(url), ...content, formatVersion: storedVersion, ...retiredOf(data) };
 }
 
-function retiredOf(data: CardV4): { retired?: true } {
+function retiredOf(data: CardV5): { retired?: true } {
   return data.deprecated === true ? { retired: true } : {};
 }
 
 /** Empty text, a missing picture, picture description, label or note leave their fields out, as does a card in use its retirement. */
-export function cardToRecord(card: CardContent & { retired?: true }, createdAt: string): CardV4 {
+export function cardToRecord(card: CardContent & { retired?: true }, createdAt: string): CardV5 {
   return {
     ...(isEmptyText(card.front) ? {} : { front: card.front }),
     ...(isEmptyText(card.back) ? {} : { back: card.back }),

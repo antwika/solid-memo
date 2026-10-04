@@ -28,6 +28,17 @@ describe("a deck's default description", () => {
     });
     expect(descriptionInFormat4("Every capital.", "Capitals")).toEqual({ en: "Every capital." });
   });
+
+  it("names a format-5 deck titled in no English by the title it has", () => {
+    expect(defaultDeckDescriptionText({ sv: "Huvudstäder" })).toEqual({
+      en: "Flashcards: Huvudstäder.",
+      sv: "Kortlek: Huvudstäder.",
+    });
+    expect(defaultDeckDescriptionText({ ja: "日本語の単語" })).toEqual({
+      en: "Flashcards: 日本語の単語.",
+      sv: "Kortlek: 日本語の単語.",
+    });
+  });
 });
 
 describe("isDefaultDeckDescription", () => {
@@ -38,5 +49,23 @@ describe("isDefaultDeckDescription", () => {
     expect(isDefaultDeckDescription({ en: "Flashcards: Capitals.", sv: "Mina huvudstäder." }, titles)).toBe(false);
     expect(isDefaultDeckDescription({ en: "Every capital." }, titles)).toBe(false);
     expect(isDefaultDeckDescription({ en: "Flashcards: Hauptstädte.", de: "Karten" }, [{ de: "Hauptstädte" }])).toBe(false);
+  });
+
+  it("knows the default of a deck titled in no English", () => {
+    expect(isDefaultDeckDescription({ en: "Flashcards: Huvudstäder.", sv: "Kortlek: Huvudstäder." }, [{ sv: "Huvudstäder" }])).toBe(true);
+    expect(isDefaultDeckDescription({ en: "Flashcards: 日本語の単語.", sv: "Kortlek: 日本語の単語." }, [{ ja: "日本語の単語" }])).toBe(true);
+    expect(isDefaultDeckDescription({ en: "Flashcards: 日本語の単語.", sv: "Kortlek: 日本語の単語." }, [{ ja: "日本語" }])).toBe(false);
+  });
+
+  it("stays in sync when the user retags the title the default was written for", () => {
+    // Written for a Japanese title the step to format 4 tagged English.
+    const description = defaultDeckDescriptionText({ en: "日本語の単語" });
+    expect(isDefaultDeckDescription(description, [{ ja: "日本語の単語" }])).toBe(true);
+    // A Swedish title retagged German: the default named the deck by it, so it
+    // is known by the title it was written for (a release's, say), not the new.
+    const capitals = defaultDeckDescriptionText({ en: "Capitals", sv: "Huvudstäder" });
+    const retagged = { en: "Capitals", de: "Huvudstäder" };
+    expect(isDefaultDeckDescription(capitals, [retagged])).toBe(false);
+    expect(isDefaultDeckDescription(capitals, [retagged, { en: "Capitals", sv: "Huvudstäder" }])).toBe(true);
   });
 });

@@ -27,7 +27,7 @@ import type {
   RegistrationOptions,
   RegistrationTarget,
 } from "@solid-memo/domain/instance";
-import type { LibraryCard, LibraryDeck } from "@solid-memo/domain/library";
+import type { LibraryCard, LibraryDeck, LibraryDeckContent } from "@solid-memo/domain/library";
 import {
   applyLibraryUpgrade,
   planLibraryUpgrade,
@@ -51,7 +51,9 @@ import {
   type DeckUpgradeStep,
   type StepPart,
 } from "@solid-memo/domain/deckUpgrade";
-import { typedIn, withTyped } from "@solid-memo/domain/langText";
+import { tidiedStated, type LangText } from "@solid-memo/domain/langText";
+import { canonicalTag } from "@solid-memo/domain/languageTag";
+import { unlikeRelease, withStatedLanguages, type StatedLanguages } from "@solid-memo/domain/deckLanguages";
 import {
   isDeckOutdated,
   isOutdated,
@@ -237,20 +239,29 @@ export interface UseCases {
   /** Permanently delete an instance and all its decks and cards. */
   deleteInstance(session: Session, instance: Instance): Promise<void>;
   listDecks(instanceUrl: string): Promise<Deck[]>;
-  /** A new deck by the name typed on a page in `locale`, in that language (typedIn). */
-  createDeck(instanceUrl: string, name: string, locale: Locale): Promise<Deck>;
-  /** Rename the deck in the language of the page the name was typed on (withTyped), keeping its other languages. */
-  renameDeck(deck: Deck, name: string, locale: Locale): Promise<Deck>;
+  /**
+   * A new deck by `title`: its name in every language it is given in,
+   * each under the language the user stated, the tag lower case (see
+   * tidiedStated). The same words in several languages are saved as
+   * given: they are the name in each of those languages.
+   */
+  createDeck(instanceUrl: string, title: LangText): Promise<Deck>;
+  /**
+   * Rename the deck: `title` is its name in every language it is to have,
+   * a language left out or cleared removed, as createDeck.
+   */
+  renameDeck(deck: Deck, title: LangText): Promise<Deck>;
   /**
    * Change how the deck is studied. Review state is kept: a card's
    * front→back state waits, unused, while the deck is studied back→front.
    */
   setDeckDirection(deck: Deck, direction: DeckDirection): Promise<Deck>;
   /**
-   * Replace what a deck says about itself: its description (typed on a
-   * page in `locale`), topics and keywords.
+   * Replace what a deck says about itself: its description, in every
+   * language it is to have, as createDeck's title, topics and keywords
+   * (see withAbout).
    */
-  describeDeck(deck: Deck, about: DeckAbout, locale: Locale): Promise<Deck>;
+  describeDeck(deck: Deck, about: DeckAbout): Promise<Deck>;
   /**
    * Set the deck's own daily limits; a limit left out follows the
    * instance's preferences again.
@@ -278,6 +289,12 @@ export interface UseCases {
    */
   addReleaseLanguages(deck: Deck): Promise<Deck | null>;
   /**
+   * The library release an imported deck was copied from, as it is in
+   * the library; null for a deck not from the library. The forms leave a
+   * text that is still the release's as it is (see sameText). Writes nothing.
+   */
+  deckRelease(deck: Deck): Promise<LibraryDeckContent | null>;
+  /**
    * Apply the upgrade the user agreed to, safely (domain/deckUpgrade.ts):
    * the upgraded cards — and the review states, when cards with some are
    * removed — are written into new documents, read back, and the deck's
@@ -301,12 +318,24 @@ export interface UseCases {
   listCards(deck: Deck): Promise<Card[]>;
   /**
    * Rejects, without any pod write, unless each side has text or an
-   * http(s) image URL.
+   * http(s) image URL, and every text states its language
+   * (validateCardContent).
    */
   addCard(deck: Deck, content: CardContent): Promise<Card>;
-  /** Same validation as addCard. */
+  /** Same validation as addCard; a side's untagged text may stay as `card` has it, untouched. */
   updateCard(deck: Deck, card: Card, content: CardContent): Promise<Card>;
   removeCard(deck: Deck, card: Card): Promise<void>;
+  /**
+   * Say which language the deck's untagged ("") fronts, and its untagged
+   * backs, are in: each such side's text is kept, under that language.
+   * A side that states its language is never touched, nor is a card still
+   * as its library release has it (unlikeRelease), which a later release
+   * would no longer update once changed. One conditional write of the
+   * cards document (changedElsewhere when it changed since it was read);
+   * none when nothing is to change. Rejects a tag that is no language
+   * code (textLanguageInvalid) before any write. How many cards changed.
+   */
+  stateCardLanguages(deck: Deck, languages: StatedLanguages): Promise<number>;
   /**
    * What bringing the instance's cards up to this app's format would
    * touch — reads every deck's cards, writes nothing. Empty when there is
@@ -447,6 +476,17 @@ const NO_GUEST_POD: GuestPod = {
 };
 
 /**
+ * A deck's name as entered (see tidiedStated). The app requires a name
+ * before it saves, so a name with no text left is a mistake in the app:
+ * a plain Error.
+ */
+function deckTitle(title: LangText): LangText {
+  const tidied = tidiedStated(title);
+  if (Object.keys(tidied).length === 0) throw new Error("A deck needs a name");
+  return tidied;
+}
+
+/**
  * The progress of an update through its `total` steps, reported as it
  * goes: the step it is on, the steps finished and, for a step with more
  * than one unit of work (documents, decks, writes), how far into it.
@@ -512,9 +552,12 @@ export function createUseCases({
   ruleset = "",
   guestPod = NO_GUEST_POD,
 }: Dependencies): UseCases {
-  /** Normalized card content, or a throw naming what is missing. */
-  function validContent(content: CardContent): CardContent {
-    const validation = validateCardContent(content);
+  /**
+   * Normalized card content, or a throw naming what is missing; `saved`
+   * the card edited, if any, whose untagged sides may stay as they are.
+   */
+  function validContent(content: CardContent, saved?: CardContent): CardContent {
+    const validation = validateCardContent(content, saved);
     if (!validation.ok) {
       throw validation.error;
     }
@@ -1092,17 +1135,17 @@ export function createUseCases({
     listDecks(instanceUrl) {
       return deckRepository.listDecks(instanceUrl);
     },
-    createDeck(instanceUrl, name, locale) {
-      return deckRepository.createDeck(instanceUrl, typedIn(name.trim(), locale));
+    async createDeck(instanceUrl, title) {
+      return deckRepository.createDeck(instanceUrl, deckTitle(title));
     },
-    renameDeck(deck, name, locale) {
-      return deckRepository.renameDeck(deck, withTyped(deck.title, name.trim(), locale));
+    async renameDeck(deck, title) {
+      return deckRepository.renameDeck(deck, deckTitle(title));
     },
     setDeckDirection(deck, direction) {
       return deckRepository.saveDeck({ ...deck, direction });
     },
-    async describeDeck(deck, about, locale) {
-      return deckRepository.saveDeck(withAbout(deck, about, locale));
+    async describeDeck(deck, about) {
+      return deckRepository.saveDeck(withAbout(deck, about));
     },
     async setDeckPace(deck, pace) {
       return deckRepository.saveDeck(withPace(deck, pace));
@@ -1122,6 +1165,9 @@ export function createUseCases({
     },
     planLibraryUpgrade(deck) {
       return planUpgrade(deck, () => deckRepository.listCards(deck));
+    },
+    async deckRelease(deck) {
+      return deck.sourceUrl === undefined ? null : deckLibrary.fetchLibraryDeck(deck.sourceUrl);
     },
     async addReleaseLanguages(deck) {
       if (deck.sourceUrl === undefined) return null;
@@ -1256,10 +1302,29 @@ export function createUseCases({
       return deckRepository.addCard(deck, validContent(content));
     },
     async updateCard(deck, card, content) {
-      return deckRepository.updateCard(deck, card, validContent(content));
+      return deckRepository.updateCard(deck, card, validContent(content, card));
     },
     removeCard(deck, card) {
       return deckRepository.removeCard(deck, card);
+    },
+    async stateCardLanguages(deck, languages) {
+      const stated: StatedLanguages = {};
+      for (const side of ["front", "back"] as const) {
+        const tag = languages[side];
+        if (tag === undefined) continue;
+        const canonical = canonicalTag(tag);
+        if (canonical === null) throw new AppError("textLanguageInvalid", { tag });
+        stated[side] = canonical;
+      }
+      if (Object.keys(stated).length === 0) return 0;
+      const [cards, release] = await Promise.all([
+        deckRepository.listCards(deck),
+        deck.sourceUrl === undefined ? null : deckLibrary.fetchLibraryDeck(deck.sourceUrl),
+      ]);
+      const ids = unlikeRelease(cards, release?.cards)
+        .filter((card) => withStatedLanguages(card, stated) !== null)
+        .map((card) => card.id);
+      return ids.length === 0 ? 0 : deckRepository.stateCardLanguages(deck, ids, stated);
     },
     async planMigration(instanceUrl) {
       const [instance, preferences, catalog, decks, digest] = await Promise.all([

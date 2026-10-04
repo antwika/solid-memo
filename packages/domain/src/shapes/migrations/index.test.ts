@@ -45,7 +45,29 @@ describe("the migration chain", () => {
 describe("migrate", () => {
   it("returns a latest record untouched", () => {
     const data = { front: { en: "Sweden" }, back: { "": "Stockholm" } };
-    expect(migrate("card", { version: 4, data }, CONTEXT)).toBe(data);
+    expect(migrate("card", { version: 5, data }, CONTEXT)).toBe(data);
+  });
+
+  it("restamps a format-4 deck and card, changing nothing: no language guessed, stand-ins and untagged sides kept", () => {
+    const card = { front: { "": "Sweden" }, back: { en: "Stockholm", sv: "Stockholm" }, backNote: { en: "Huvudstad.", sv: "Huvudstad." } };
+    expect(migrate("card", { version: 4, data: card }, CONTEXT)).toEqual(card);
+    const deck = {
+      title: { en: "Japanska glosor", sv: "Japanska glosor" },
+      description: { en: "Flashcards: Japanska glosor.", sv: "Kortlek: Japanska glosor." },
+      creator: [],
+      studyDirection: `${SM}frontToBack` as const,
+      theme: [],
+      keyword: [],
+      distribution: [],
+      cardsDocument: "d",
+      reviewsDocument: "r",
+    };
+    expect(migrate("deck", { version: 4, data: deck }, CONTEXT)).toEqual(deck);
+  });
+
+  it("leaves the library's kinds at their format: English first is the library's policy", () => {
+    expect(LATEST_VERSION.libraryDeck).toBe(4);
+    expect(LATEST_VERSION.libraryDeckSeries).toBe(2);
   });
 
   it("walks a record up to the latest version", () => {

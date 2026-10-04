@@ -550,6 +550,7 @@ export function Workspace({
             useCases={useCases}
             instance={activeInstance!}
             deck={activeDeck!}
+            section={route.section}
             onDeckRemoved={() =>
               replace({ screen: "home", instanceUrl: instanceUrl! })
             }
@@ -569,6 +570,7 @@ export function Workspace({
             deck={activeDeck!}
             deckHref={deckHref(instanceUrl!, deckUrl!)}
             page={route.page ?? 1}
+            languageFilter={route.languages}
             addCardHref={routeToHash({
               screen: "cardCreator",
               instanceUrl: instanceUrl!,
@@ -583,6 +585,14 @@ export function Workspace({
               })
             }
             onPageChange={(page) => replace({ ...route, page })}
+            onLanguageFilterChange={(languages) =>
+              replace({
+                screen: "browser",
+                instanceUrl: route.instanceUrl,
+                deckUrl: route.deckUrl,
+                ...(languages === undefined ? {} : { languages }),
+              })
+            }
           />
         );
       case "cardCreator":

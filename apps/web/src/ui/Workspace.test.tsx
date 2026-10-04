@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Workspace } from "./Workspace";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Card, Deck } from "@solid-memo/domain/deck";
+import type { LangText } from "@solid-memo/domain/langText";
 import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { Session } from "@solid-memo/domain/session";
@@ -599,6 +600,8 @@ describe("Workspace", () => {
     fireEvent.input(screen.getByLabelText("Name"), {
       target: { value: "Kana" },
     });
+    fireEvent.click(screen.getByRole("button", { name: "Language: not stated" }));
+    fireEvent.click(screen.getByRole("radio", { name: "English (en)" }));
     fireEvent.submit(
       screen.getByRole("button", { name: "Create deck" }).closest("form")!,
     );
@@ -1122,6 +1125,63 @@ describe("Workspace", () => {
     expect(await screen.findByText("Page 2 of 2")).toBeInTheDocument();
   });
 
+  it("keeps the Browser's language filter in the URL with its page, and restores both on Back from a card", async () => {
+    const deck: Deck = {
+      id: "deck-1",
+      url: `${instanceA.url}catalog.ttl#deck-1`,
+      title: { en: "Capitals" },
+      cardsDocumentUrl: `${instanceA.url}decks/deck-1.ttl`,
+      reviewsDocumentUrl: `${instanceA.url}reviews/deck-1.ttl`,
+      direction: "front-to-back" as const,
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+      authors: [],
+    };
+    const cards: Card[] = Array.from({ length: CARDS_PER_PAGE + 2 }, (_, i): Card => ({
+      id: `card-${i + 1}`,
+      url: `${deck.cardsDocumentUrl}#card-${i + 1}`,
+      // The first says its language; the others, two pages of them, do not.
+      front: i === 0 ? { en: `Country ${i + 1}` } : { "": `Country ${i + 1}` },
+      back: { "": `Capital ${i + 1}` },
+      createdAt: "2026-09-21T10:00:00.000Z",
+      formatVersion: 1,
+    }));
+    cards[0]!.back = { en: "Capital 1" };
+    const useCases = makeUseCases({
+      listInstances: vi.fn(async () => [instanceA]),
+      listDecks: vi.fn(async () => [deck]),
+      listCards: vi.fn(async () => cards),
+    });
+    renderWorkspace(useCases);
+
+    fireEvent.click(await screen.findByRole("link", { name: "Capitals" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Browser" }));
+    const browserHash = window.location.hash;
+    fireEvent.click(await screen.findByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Page 2 of 2")).toBeInTheDocument();
+
+    // A change of filter starts at its first page.
+    fireEvent.click(screen.getByRole("radio", { name: "No language stated" }));
+    expect(await screen.findByText("Page 1 of 2")).toBeInTheDocument();
+    expect(window.location.hash).toBe(`${browserHash}&languages=unstated`);
+    expect(screen.queryByRole("link", { name: "Country 1" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Page 2 of 2")).toBeInTheDocument();
+    expect(window.location.hash).toBe(`${browserHash}&languages=unstated&page=2`);
+
+    fireEvent.click(screen.getByRole("link", { name: `Country ${CARDS_PER_PAGE + 2}` }));
+    expect(await screen.findByRole("heading", { name: "Card" })).toBeInTheDocument();
+
+    window.history.back();
+    expect(await screen.findByText("Page 2 of 2")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "No language stated" })).toBeChecked();
+    expect(screen.getByRole("link", { name: `Country ${CARDS_PER_PAGE + 2}` })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: "All cards" }));
+    expect(await screen.findByRole("link", { name: "Country 1" })).toBeInTheDocument();
+    expect(window.location.hash).toBe(browserHash);
+  });
+
   it("removes a deck from its preferences and lands on the deck list", async () => {
     vi.stubGlobal("confirm", vi.fn(() => true));
     const deck: Deck = {
@@ -1171,9 +1231,9 @@ describe("Workspace", () => {
       makeUseCases({
         listInstances: vi.fn(async () => [instanceA]),
         listDecks: vi.fn(async () => [{ ...deck, title: { en: name } }]),
-        renameDeck: vi.fn(async (renamed: Deck, newName: string) => {
-          name = newName;
-          return { ...renamed, title: { en: newName } };
+        renameDeck: vi.fn(async (renamed: Deck, title: LangText) => {
+          name = title.en;
+          return { ...renamed, title };
         }),
       }),
     );
@@ -1531,7 +1591,7 @@ describe("Workspace", () => {
     });
 
     it("shows a saved edit on the page and in its breadcrumb", async () => {
-      let front = card.front;
+      let front: Card["front"] = { ja: "水" };
       await openBrowser(
         makeUseCases({
           listInstances: vi.fn(async () => [instanceA]),

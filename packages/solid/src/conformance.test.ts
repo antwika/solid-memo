@@ -1,12 +1,12 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { recordThing } from "./records";
+import { readVersioned, recordThing } from "./records";
 import { LATEST_VERSION, type ShapeName } from "@solid-memo/vocab/types.generated";
-import { MIGRATIONS } from "@solid-memo/domain/shapes/migrations";
-import { toRdfJsDataset, mockSolidDatasetFrom, setThing, buildThing, createThing } from "@inrupt/solid-client";
+import { MIGRATIONS, migrate } from "@solid-memo/domain/shapes/migrations";
+import { toRdfJsDataset, mockSolidDatasetFrom, setThing, buildThing, createThing, getSolidDataset, getThingAll, getUrlAll } from "@inrupt/solid-client";
 import { createEngine, mergeDatasets } from "@solid-memo/shacl/engine";
 import { coreOnly, PROFILES, REFERENCE_DATA } from "@solid-memo/shacl/profiles";
-import { datasetFromTurtle } from "@solid-memo/shacl/testing/turtle";
+import { datasetFromTurtle, turtleFetch } from "@solid-memo/shacl/testing/turtle";
 import { withCatalog, withDeck } from "./mappers/deckMapper";
 import type { Deck } from "@solid-memo/domain/deck";
 import { createShapeLoader } from "@solid-memo/shacl/shapeLoader";
@@ -50,6 +50,7 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
     2: { title: "Own", creator: ["Anton"], direction: "bidirectional", cardsDocument: "https://pod.example/d.ttl", reviewsDocument: "https://pod.example/r.ttl", source: "https://solid-memo.com/decks/x.ttl" },
     3: { title: "Own", description: "Mine.", creator: ["https://pod.example/c.ttl#agent-anton"], studyDirection: `${SM_NS}bidirectional`, theme: ["https://solid-memo.com/vocab/topics#geography"], keyword: ["capitals"], distribution: ["https://pod.example/c.ttl#deck-1-cards"], cardsDocument: "https://pod.example/d.ttl", reviewsDocument: "https://pod.example/r.ttl", source: "https://solid-memo.com/decks/x/1.ttl" },
     4: { title: { en: "Own", sv: "Egen" }, description: { en: "Mine.", sv: "Min." }, creator: ["https://pod.example/c.ttl#agent-anton"], studyDirection: `${SM_NS}bidirectional`, theme: ["https://solid-memo.com/vocab/topics#geography"], keyword: ["capitals"], distribution: ["https://pod.example/c.ttl#deck-1-cards"], cardsDocument: "https://pod.example/d.ttl", reviewsDocument: "https://pod.example/r.ttl", source: "https://solid-memo.com/decks/x/1.ttl" },
+    5: { title: { sv: "Egen", ja: "自分の" }, description: { sv: "Min." }, creator: ["https://pod.example/c.ttl#agent-anton"], studyDirection: `${SM_NS}bidirectional`, theme: ["https://solid-memo.com/vocab/topics#geography"], keyword: ["capitals"], distribution: ["https://pod.example/c.ttl#deck-1-cards"], cardsDocument: "https://pod.example/d.ttl", reviewsDocument: "https://pod.example/r.ttl", source: "https://solid-memo.com/decks/x/1.ttl" },
   },
   libraryDeck: {
     1: { title: "Capitals", creator: [], source: [] },
@@ -79,6 +80,7 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
     3: { front: "Yugoslavia", frontNote: { en: "Dissolved in 1992." }, backLabel: { en: "Capital" }, back: "Belgrade", backNote: { en: "The capital until 1992." }, deprecated: true },
     // Card format 4 gained the picture descriptions without a version bump: an older reader ignores them.
     4: { front: { en: "Mona Lisa", sv: "Mona Lisa" }, back: { "": "Leonardo da Vinci" }, frontNote: { en: "In the Louvre." }, frontImage: "https://example.org/mona-lisa.jpg", frontImageDescription: { sv: "Ett porträtt av en kvinna med knäppta händer" }, backImage: "https://example.org/leonardo.jpg", backImageDescription: { en: "A drawing of an old man with a long beard", sv: "En teckning av en gammal man med långt skägg" } },
+    5: { front: { zxx: "404" }, back: { en: "Not Found", fi: "Ei löydy" }, frontNote: { fi: "HTTP-tilakoodi." }, backLabel: { sv: "Betydelse" }, backNote: { en: "The page is gone.", sv: "The page is gone." } },
   },
   reviewState: {
     1: { easeFactor: 2.5, intervalDays: 1, repetitions: 1, due: "2026-09-22", firstReviewedAt: "2026-09-21T10:00:00.000Z", lastReviewedAt: "2026-09-21T10:00:00.000Z", previousDue: "2026-09-21" },
@@ -147,6 +149,41 @@ describe("shapes, descriptors and migrations", () => {
       { en: "Each side of a card needs text or a picture.", sv: "Varje sida av ett kort behöver text eller en bild." },
       { en: "A picture is an IRI (<https://…>), never a string literal.", sv: "En bild är en IRI (<https://…>), aldrig en strängliteral." },
     ]);
+  });
+});
+
+describe("format 5 over the format-4 fixtures", () => {
+  /** The valid format-4 fixtures of a kind (a pod's decks: library releases stay at format 4). */
+  async function validFixtures(dir: string) {
+    const names = (await readdir(`${ROOT}fixtures/${dir}/v4/valid`)).filter((name) => !name.startsWith("library-"));
+    return Promise.all(
+      names.map(async (name) => ({ name: `${dir}/v4/valid/${name}`, turtle: await readFile(`${ROOT}fixtures/${dir}/v4/valid/${name}`, "utf8") })),
+    );
+  }
+
+  it.each([
+    ["card", "card", SM.Card],
+    ["deck", "deck", SM.Deck],
+  ] as const)("a valid format-4 %s, migrated and written, conforms to format 5 and keeps its text", async (dir, shape, type) => {
+    const fixtures = await validFixtures(dir);
+    expect(fixtures.length).toBeGreaterThan(0);
+    const descriptor = SHAPES[shape][5];
+    const engine = createEngine(await loader.load(descriptor));
+    for (const { name, turtle } of fixtures) {
+      const url = `https://pod.example/${name}`;
+      const dataset = await getSolidDataset(url, { fetch: turtleFetch(turtle) });
+      const things = getThingAll(dataset).filter((thing) => getUrlAll(thing, RDF.type).includes(type));
+      expect(things.length, name).toBeGreaterThan(0);
+      for (const thing of things) {
+        const read = readVersioned(thing, shape)!;
+        expect(read.storedVersion, name).toBe(4);
+        const migrated = migrate(shape, read.record, { subject: thing.url });
+        // Nothing guessed, nothing dropped: the data is the format-4 data, restamped.
+        expect(migrated, `${name} ${thing.url}`).toEqual(read.record.data);
+        const written = toRdfJsDataset(setThing(dataset, recordThing(thing.url, descriptor, migrated as never, thing)));
+        await expect(engine.validateNode(written, thing.url, descriptor.shapeIri), `${name} ${thing.url}`).resolves.toEqual([]);
+      }
+    }
   });
 });
 

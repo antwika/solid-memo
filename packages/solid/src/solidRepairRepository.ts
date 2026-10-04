@@ -3,7 +3,6 @@ import {
   getDatetime,
   getInteger,
   getStringNoLocale,
-  getStringWithLocale,
   getThing,
   removeThing,
   setThing,
@@ -14,6 +13,7 @@ import type { RepairRepository } from "@solid-memo/application/ports";
 import { defaultDeckDescription, defaultDeckDescriptionText } from "@solid-memo/domain/dcat";
 import type { Repair, RepairKind } from "@solid-memo/domain/repair";
 import { getSolidDatasetOrNull, saveDataset } from "./datasets";
+import { readText } from "./records";
 import { DCTERMS, SM } from "./vocab";
 
 const FOAF_NAME = "http://xmlns.com/foaf/0.1/name";
@@ -64,11 +64,10 @@ function repairedThing(
   const builder = buildThing(thing);
   switch (repair.kind) {
     case "describe-deck": {
-      // Format 4 states text language-tagged, the app's own in English and Swedish.
+      // Format 4 states text language-tagged, the app's own in English and
+      // Swedish; from format 5 the title may be in any language, so it is read in every one.
       if (repair.version >= 4) {
-        const en = getStringWithLocale(thing, DCTERMS.title, "en") ?? "a deck";
-        const sv = getStringWithLocale(thing, DCTERMS.title, "sv");
-        const description = defaultDeckDescriptionText(sv === null ? { en } : { en, sv });
+        const description = defaultDeckDescriptionText(readText(thing, DCTERMS.title) ?? { en: "a deck" });
         builder.removeAll(DCTERMS.description);
         for (const [language, text] of Object.entries(description)) {
           builder.addStringWithLocale(DCTERMS.description, text, language);

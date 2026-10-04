@@ -14,6 +14,8 @@ import type { RouteChange, RouteRef } from "./router";
  * first), so focus waits for it: the returned ref goes on the element
  * holding the screen, and the first h2 to appear in it is focused. A
  * screen without one, once it shows something that is not loading, is focused itself.
+ * A screen opened at one of its parts (a link to a section) marks that
+ * part's heading `data-arrival`, and that heading is focused instead.
  */
 export function useScreenFocus(route: RouteRef | null, change: RouteChange) {
   const screenRef = useRef<HTMLDivElement>(null);
@@ -30,6 +32,7 @@ export function useScreenFocus(route: RouteRef | null, change: RouteChange) {
     if (!pending.current || screen === null) return;
     const arrive = () => {
       const target =
+        screen.querySelector<HTMLElement>("[data-arrival]") ??
         screen.querySelector<HTMLElement>("h2") ??
         (screen.firstElementChild !== null && screen.querySelector(".loading") === null
           ? screen

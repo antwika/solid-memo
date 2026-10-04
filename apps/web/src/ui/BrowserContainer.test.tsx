@@ -27,24 +27,27 @@ const card: Card = {
   formatVersion: 1,
 };
 
-function renderContainer(useCases: UseCases) {
+function renderContainer(useCases: UseCases, shown: Deck = deck, languageFilter?: "unstated") {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
+  const onLanguageFilterChange = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
       <BrowserContainer
         useCases={useCases}
-        deck={deck}
+        deck={shown}
         deckHref="#/deck?deck=d"
         addCardHref="#/new-card?deck=d"
         page={1}
+        languageFilter={languageFilter}
         cardHref={(c) => `#/card?card=${c.id}`}
         onPageChange={vi.fn()}
+        onLanguageFilterChange={onLanguageFilterChange}
       />
     </QueryClientProvider>,
   );
-  return { queryClient };
+  return { queryClient, onLanguageFilterChange };
 }
 
 describe("BrowserContainer", () => {
@@ -153,11 +156,43 @@ describe("BrowserContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save description" }));
 
     await waitFor(() => {
-      expect(useCases.describeDeck).toHaveBeenCalledWith(deck, { description: "Kanji.", topics: [], keywords: [] }, "en");
+      expect(useCases.describeDeck).toHaveBeenCalledWith(deck, { description: { en: "Kanji." }, topics: [], keywords: [] });
     });
     await waitFor(() => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ["decks"] });
     });
+  });
+
+  it("marks the cards whose language is the user's to settle, and lists them as the route says", async () => {
+    const tagged: Card = { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, front: { ja: "火" }, back: { en: "fire" } };
+    const { onLanguageFilterChange } = renderContainer(
+      makeUseCasesFake({ listCards: vi.fn(async () => [card, tagged]) }),
+      deck,
+      "unstated",
+    );
+    expect(await screen.findByText("No language stated", { selector: ".unstated-tag" })).toBeInTheDocument();
+    expect(screen.queryByText("火")).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: "All cards" }));
+    expect(onLanguageFilterChange).toHaveBeenCalledWith(undefined);
+  });
+
+  it("leaves a library copy's cards still as its release has them unmarked, and marks none until it is read", async () => {
+    const changed: Card = { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, front: { "": "火" } };
+    const copy = { ...deck, sourceUrl: "https://library.example/kanji/1" };
+    let read: (release: never) => void = () => undefined;
+    renderContainer(
+      makeUseCasesFake({
+        listCards: vi.fn(async () => [card, changed]),
+        deckRelease: vi.fn(() => new Promise<never>((resolve) => (read = resolve))),
+      }),
+      copy,
+    );
+    expect(await screen.findByText("火")).toBeInTheDocument();
+    expect(screen.queryByText("No language stated", { selector: ".unstated-tag" })).toBeNull();
+    read({ cards: [{ ...card, formatVersion: 4 }, { ...changed, front: { "": "木" }, formatVersion: 4 }] } as never);
+    const tags = await screen.findAllByText("No language stated", { selector: ".unstated-tag" });
+    expect(tags).toHaveLength(1);
+    expect(tags[0]!.closest("tr")).toHaveTextContent("火");
   });
 
   it("shows a describe error", async () => {

@@ -1,6 +1,40 @@
 {
   "language": {
-    "label": "Språk"
+    "label": "Språk",
+    "button": "Språk: {language}",
+    "notStated": "Språk: inte angivet",
+    "unstatedHint": "Ange vilket språk texten är på.",
+    "legend": {
+      "front": "Språk för framsidan",
+      "back": "Språk för baksidan",
+      "deckName": "Språk för kortlekens namn",
+      "description": "Språk för beskrivningen",
+      "frontNote": "Språk för anteckningen under framsidan",
+      "backLabel": "Språk för etiketten",
+      "backNote": "Språk för anteckningen under baksidan",
+      "pictureDescription": "Språk för bildens beskrivning"
+    },
+    "none": "Inget språk (koder, siffror, symboler)",
+    "otherOption": "Annat språk…",
+    "otherLabel": "Språkkod, t.ex. fi, pt-BR",
+    "done": "Klar",
+    "translations": "Översättningar ({count})",
+    "add": "Lägg till en översättning",
+    "translationLabel": "Text på {language}",
+    "translationUnstated": "Översättning, språket inte valt",
+    "remove": "Ta bort texten på {language}",
+    "removeUnstated": "Ta bort den här översättningen",
+    "field": {
+      "deckName": "kortlekens namn",
+      "description": "beskrivningen",
+      "front": "framsidan",
+      "back": "baksidan",
+      "frontNote": "anteckningen under framsidan",
+      "backLabel": "etiketten",
+      "backNote": "anteckningen under baksidan",
+      "frontImageDescription": "beskrivningen av framsidans bild",
+      "backImageDescription": "beskrivningen av baksidans bild"
+    }
   },
   "theme": {
     "toDark": "Byt till mörkt läge",
@@ -25,8 +59,6 @@
     },
     "networkError": "Kunde inte nå din Pod. Kontrollera anslutningen och försök igen.",
     "unexpectedError": "Något gick fel. Försök igen, eller läs in sidan på nytt. Detaljer (på engelska): {detail}",
-    "editingLanguage": "Du redigerar texten på {language}. Översättningarna ändras inte.",
-    "editingUntagged": "Du redigerar texten utan angivet språk. Översättningarna ändras inte.",
     "technicalDetails": "Tekniska detaljer",
     "opensInNewTab": "(öppnas i en ny flik)"
   },
@@ -105,7 +137,13 @@
     "removeCardLabel": "Ta bort kortet {card}",
     "removeConfirm": "Ta bort kortet ”{card}”? Det går inte att ångra.",
     "loading": "Läser in kort…",
-    "removed": "Tog bort kortet ”{card}”."
+    "removed": "Tog bort kortet ”{card}”.",
+    "unstatedTag": "Inget språk angivet",
+    "languageFilter": {
+      "legend": "Kort som visas",
+      "all": "Alla kort",
+      "unstated": "Inget språk angivet"
+    }
   },
   "card": {
     "heading": "Kort",
@@ -204,6 +242,16 @@
     "resetConfirm": "Återställa dagens studier av ”{title}”? De {studied} du har studerat idag återgår till hur de var innan, och dagens svar kastas.",
     "cardsInDeck": "{cards} i den här kortleken. Lägg till, redigera eller ta bort kort under Bläddra."
   },
+  "deckLanguagesNotice": {
+    "region": "Språken i kortlekens text",
+    "heading": "En del av kortlekens text anger inte vilket språk den är på.",
+    "unstated": {
+      "one": "{count} kortsida anger inget språk.",
+      "other": "{count} kortsidor anger inget språk."
+    },
+    "unchecked": "Biblioteksutgåvan som den kopierades från kunde inte läsas, så det går inte att veta hur mycket av den du ska ange.",
+    "link": "Ange språken"
+  },
   "deckList": {
     "loading": "Läser in kortlekar…",
     "setAside": "Lagd åt sidan: dess data behöver repareras",
@@ -263,7 +311,37 @@
     "maxReviewsUnit": "högst antal repetitioner per dag",
     "emptyHint": "Ett tomt fält följer dina {link}.",
     "studyPreferencesLink": "studieinställningar",
-    "saveButton": "Spara inställningar"
+    "saveButton": "Spara inställningar",
+    "languages": {
+      "heading": "Språk",
+      "loading": "Kontrollerar kortens språk…",
+      "unreadable": "Det gick inte att kontrollera kortens språk.",
+      "unstated": {
+        "one": "{count} framsida och {backs} anger inte sitt språk.",
+        "other": "{count} framsidor och {backs} anger inte sitt språk."
+      },
+      "backs": {
+        "one": "{count} baksida",
+        "other": "{count} baksidor"
+      },
+      "fronts": "Framsidor",
+      "backsLegend": "Baksidor",
+      "stateButton": "Ange språket",
+      "confirmFronts": {
+        "one": "Spara {count} framsida som {language}?",
+        "other": "Spara {count} framsidor som {language}?"
+      },
+      "confirmBacks": {
+        "one": "Spara {count} baksida som {language}?",
+        "other": "Spara {count} baksidor som {language}?"
+      },
+      "stated": {
+        "one": "Sparade språket för {count} kort.",
+        "other": "Sparade språket för {count} kort."
+      },
+      "releaseHint": "Kort som fortfarande är som i bibliotekets utgåva räknas inte: en senare utgåva uppdaterar dem.",
+      "settled": "Varje kort anger vilket språk dess text är på."
+    }
   },
   "deckProvenance": {
     "by": "Av {authors}",
@@ -521,8 +599,8 @@
     "instanceFormat": "instansformat {version}",
     "catalogueFormat": "en katalog över varje instans kortlekar, som andra appar läser som en DCAT-katalog",
     "preferencesFormat": "inställningsformat {version}, som sparar svarsskalan, utvecklarläget, vad som ska hända med ogiltiga data och temat",
-    "deckFormat": "kortleksformat {version}, som beskriver kortlekar med standarderna DCAT och SKOS, ger varje kortlek en beskrivning och låter en kortleks titel och beskrivning finnas på flera språk",
-    "cardFormat": "kortformat {version}, som lägger till bilder på kort, låter en bibliotekskortlek ta ur bruk ett kort den inte längre använder och låter ett korts text ange sitt språk",
+    "deckFormat": "kortleksformat {version}, som beskriver kortlekar med standarderna DCAT och SKOS, ger varje kortlek en beskrivning och låter en kortleks titel och beskrivning vara på valfritt språk som du anger",
+    "cardFormat": "kortformat {version}, som lägger till bilder på kort, låter en bibliotekskortlek ta ur bruk ett kort den inte längre använder och låter ett korts text vara på valfritt språk som du anger",
     "reviewFormat": "repetitionstillståndsformat {version}, som sparar varje studieriktnings tillstånd och dagens ångra-ögonblicksbild",
     "itemInstanceRecord": "Instanspost",
     "itemCatalogue": "Katalog över kortlekarna",
@@ -834,6 +912,10 @@
     "cardFrontEmpty": "Framsidan behöver text eller en bild.",
     "cardBackEmpty": "Baksidan behöver text eller en bild.",
     "deckNeedsDescription": "En kortlek behöver en beskrivning.",
+    "textNeedsLanguage": "Välj språket för {field}.",
+    "textLanguageInvalid": "”{tag}” är ingen språkkod.",
+    "textLanguageTaken": "Det finns redan text på {language}. Ändra eller ta bort den först.",
+    "textMixesUnstated": "Den här texten anger inte vilket språk den är på, så den kan inte ha översättningar. Välj dess språk först.",
     "dailyLimitInvalid": "En daglig gräns är ett heltal, 0 eller mer.",
     "webIdEmpty": "Ange ditt WebID.",
     "webIdInvalidUrl": "Det är ingen giltig URL. Ett WebID ser ut som https://du.example/profile/card#me.",

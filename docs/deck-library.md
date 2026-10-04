@@ -22,8 +22,14 @@ A deck's source is a Turtle file in [`packages/deck-library/decks/`](../packages
 (also a `dcat:Dataset`) with its cards as hash-fragment subjects, in deck
 format 4 ([shapes.md](shapes.md)), without anything that makes it a
 release. Its title and description are language-tagged, one per language
-and one of them English, which the app shows; the others are
-translations. Sources in format 3 (untagged text) stay valid.
+and one of them English; the others are translations. Sources in format
+3 (untagged text) stay valid. A pod's own decks need no English since
+deck format 5, but the library stays at deck format 4 (`LibraryDeckV4`):
+English first is the library's curation policy, so every library deck
+can be read by anyone who reads English, not a rule of the data. Write
+each text in the language it is in, with `zxx` for text in no language
+(codes, numbers, symbols), and never the same words under English as a
+stand-in for another language.
 
 ```turtle
 @base <https://solid-memo.com/decks/capitals-of-the-world> .
@@ -97,7 +103,10 @@ translations. Sources in format 3 (untagged text) stay valid.
   shows the flag alone on the front) or both on each side. From card
   format 4 a side's text may be tagged with its language, one text per
   language: the [famous paintings deck](../packages/deck-library/decks/famous-paintings.ttl)
-  tags its backs `@en`. Untagged text means the language is not known.
+  tags its backs `@en`. Untagged text means the language is not known:
+  tag a new card's sides, as the app does for every card a user writes.
+  A card's notes and label are tagged too; the library's cards are in
+  card format 4, which asks for one of them in English.
 - **A released card is never removed, but retired**: to stop using a
   card, keep it and add `owl:deprecated true` (card format 3). Copies of
   the deck keep it and its review history, but no longer study it, and
@@ -277,8 +286,11 @@ flowchart LR
   reads the catalogue's datasets, each series' current release (through
   the `LibraryDeckSeriesV2` and `LibraryDeckV4` shapes, older formats
   migrated in memory) and its releases, showing the English title and
-  description and keeping the other languages, which an import copies,
-  and names creators from the agents in the index. A series or release
+  description and keeping the other languages, which an import copies
+  as they are (every tag, nothing guessed or added), and names creators
+  from the agents in the index. An import writes the user's copy at the
+  latest formats (deck format 5, card format 5), whatever format the
+  release was frozen at: a format-4 release is valid format 5 as it is. A series or release
   that does not fit its shape is left out.
 - The library screen lists each deck's name and card count with a
   checkbox, filtered by **topic** (checkboxes of the topics the decks

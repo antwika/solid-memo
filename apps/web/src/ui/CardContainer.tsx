@@ -1,13 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "preact/hooks";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Card, CardContent, Deck } from "@solid-memo/domain/deck";
+import { deckLanguages } from "@solid-memo/domain/deckLanguages";
 import { CardScreen } from "./CardScreen";
 import { useI18n } from "./i18n";
 
 /**
  * Owns the edit/remove mutations of one card's page. The card itself is
  * resolved by the Workspace from the ["cards", …] query, so a save shows
- * up here as a fresh `card` prop once that query is invalidated.
+ * up here as a fresh `card` prop once that query is invalidated. The
+ * deck's cards (the same query) give the languages its new text starts
+ * in.
  */
 export function CardContainer({
   useCases,
@@ -23,6 +27,12 @@ export function CardContainer({
 }) {
   const { errorText } = useI18n();
   const queryClient = useQueryClient();
+
+  const cardsQuery = useQuery({
+    queryKey: ["cards", deck.cardsDocumentUrl],
+    queryFn: () => useCases.listCards(deck),
+  });
+  const languages = useMemo(() => deckLanguages(cardsQuery.data ?? []), [cardsQuery.data]);
 
   const updateCardMutation = useMutation({
     mutationFn: (content: CardContent) =>
@@ -52,6 +62,8 @@ export function CardContainer({
   return (
     <CardScreen
       card={card}
+      deckTitle={deck.title}
+      languages={languages}
       busy={updateCardMutation.isPending || removeCardMutation.isPending}
       saved={updateCardMutation.isSuccess}
       error={

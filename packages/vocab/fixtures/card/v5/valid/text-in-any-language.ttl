@@ -1,0 +1,28 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+
+<#helsinki>
+    a solid-memo:Card ;
+    solid-memo:front "Suomen pääkaupunki"@fi ;
+    solid-memo:frontNote "Pääkaupunki vuodesta 1812."@fi ;
+    solid-memo:back "Helsinki"@fi ;
+    solid-memo:formatVersion 5 .
+
+<#http-404>
+    a solid-memo:Card ;
+    solid-memo:front "404"@zxx ;
+    solid-memo:back "Not Found"@en ;
+    solid-memo:formatVersion 5 .
+
+<#se>
+    a solid-memo:Card ;
+    solid-memo:front "Sweden" ;
+    solid-memo:back "Stockholm" ;
+    solid-memo:formatVersion 5 .
+
+<#stockholm>
+    a solid-memo:Card ;
+    solid-memo:front "Sverige"@sv ;
+    solid-memo:back "Stockholm"@sv ;
+    solid-memo:backNote "Huvudstad sedan 1600-talet."@en ,
+                        "Huvudstad sedan 1600-talet."@sv ;
+    solid-memo:formatVersion 5 .

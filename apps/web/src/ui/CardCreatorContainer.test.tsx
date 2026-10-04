@@ -21,8 +21,8 @@ const deck: Deck = {
 const card: Card = {
   id: "card-1",
   url: `${deck.cardsDocumentUrl}#card-1`,
-  front: { "": "水" },
-  back: { "": "water" },
+  front: { ja: "水" },
+  back: { en: "water" },
   createdAt: "2026-09-21T10:00:00.000Z",
   formatVersion: 1,
 };
@@ -55,18 +55,19 @@ function submitCard(front: string, back: string) {
 }
 
 describe("CardCreatorContainer", () => {
-  it("adds a card and stays on the page for the next one", async () => {
-    const useCases = makeUseCasesFake({ addCard: vi.fn(async () => card) });
+  it("adds a card, in the languages the deck's cards have, and stays on the page for the next one", async () => {
+    const useCases = makeUseCasesFake({ addCard: vi.fn(async () => card), listCards: vi.fn(async () => [card]) });
     const { queryClient } = renderContainer(useCases);
     const queueKey = ["studyQueue", deck.url];
     queryClient.setQueryData(queueKey, { due: [], newCards: [], studiedToday: 0 });
+    await waitFor(() => expect(document.getElementById("card-front-language-0")).toHaveTextContent("Language: Japanese"));
 
-    submitCard("水", "water");
+    submitCard("火", "fire");
 
     await waitFor(() => {
       expect(useCases.addCard).toHaveBeenCalledWith(deck, {
-        front: { "": "水" },
-        back: { "": "water" },
+        front: { ja: "火" },
+        back: { en: "fire" },
       });
     });
     await waitFor(() => {
@@ -83,11 +84,13 @@ describe("CardCreatorContainer", () => {
   it("shows an add error", async () => {
     renderContainer(
       makeUseCasesFake({
+        listCards: vi.fn(async () => [card]),
         addCard: vi.fn(async () => {
           throw new Error("write refused");
         }),
       }),
     );
+    await waitFor(() => expect(document.getElementById("card-back-language-0")).toHaveTextContent("Language: English"));
 
     submitCard("x", "y");
     expect(await screen.findByText("write refused")).toBeInTheDocument();

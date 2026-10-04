@@ -1,11 +1,23 @@
 import { Fragment } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { Deck } from "@solid-memo/domain/deck";
+import { AppError } from "@solid-memo/domain/appError";
+import type { LangText } from "@solid-memo/domain/langText";
+import type { DeckLanguages, StatedLanguages } from "@solid-memo/domain/deckLanguages";
 import type { DeckPace } from "@solid-memo/domain/deckPace";
 import type { StudyPreferences } from "@solid-memo/domain/preferences";
 import { ErrorMessage } from "./ErrorMessage";
 import { useI18n, type I18n, type ErrorText } from "./i18n";
 import { ReaderText } from "./ReaderText";
+import { DeckLanguagesSection } from "./DeckLanguagesSection";
+import {
+  draftOf,
+  LangTextField,
+  rememberLanguages,
+  textOfDraft,
+  useMissingLanguage,
+  type LangTextDraft,
+} from "./LangTextField";
 
 type Limit = keyof DeckPace;
 
@@ -40,6 +52,13 @@ function limitUnit(t: I18n["t"], limit: Limit, count: number): string {
  * by what it counts, in the number of the value shown in it; that and
  * the hint about empty fields describe it.
  *
+ * The name is edited in every language it has, each the user's to state
+ * (LangTextField).
+ *
+ * Below the limits, the deck's text whose language is not settled
+ * (DeckLanguagesSection): its untagged card sides, stated here in bulk.
+ * A link may open the screen there (`section`).
+ *
  * Rename gives way to the name's field, which takes the focus; Save and
  * Cancel give it back to Rename. The buttons that start a change keep
  * the focus while it saves (aria-disabled), as the screen stays.
@@ -49,11 +68,16 @@ export function DeckPreferencesScreen({
   deckHref,
   preferences,
   preferencesHref,
+  languages,
+  languagesUnreadable = null,
+  section,
+  stated = null,
   busy,
   error,
   onSave,
   onRename,
   onRemove,
+  onStateLanguages,
 }: {
   deck: Deck;
   /** URL of the deck's page; its name links there. */
@@ -62,19 +86,29 @@ export function DeckPreferencesScreen({
   preferences: Pick<StudyPreferences, Limit>;
   /** URL of the instance's preferences, where those limits are set. */
   preferencesHref: string;
+  /** What the deck's cards say of their languages (deckLanguages); undefined while they are read. */
+  languages: DeckLanguages | undefined;
+  /** Why the deck's languages could not be checked (its cards or library release unread); null when they could. */
+  languagesUnreadable?: ErrorText | null;
+  /** The part of the screen a link opened it at: its heading takes the focus. */
+  section?: "languages";
+  /** How many cards the last statement of languages changed; null before any. */
+  stated?: number | null;
   busy: boolean;
   error: ErrorText | null;
   onSave: (pace: DeckPace) => void;
-  onRename: (name: string) => void;
+  onRename: (title: LangText) => void;
   /** Remove the deck and all its cards (after the user confirms). */
   onRemove: () => void;
+  /** State the language of the deck's untagged card fronts and backs. */
+  onStateLanguages: (languages: StatedLanguages) => void;
 }) {
-  const { t, tx, readerText, typedPart, typedText } = useI18n();
-  const editedName = typedPart(deck.title);
+  const { t, tx, locale, readerText, errorText } = useI18n();
   /** The deck-name draft while renaming; null otherwise. */
-  const [deckName, setDeckName] = useState<string | null>(null);
+  const [deckName, setDeckName] = useState<LangTextDraft | null>(null);
+  const { missing, ask, clear } = useMissingLanguage("deck-name");
   const renameRef = useRef<HTMLButtonElement>(null);
-  const nameRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   /** Rename takes the focus once it is back: the renaming was saved or cancelled. */
   const backToRename = useRef(false);
 
@@ -90,6 +124,7 @@ export function DeckPreferencesScreen({
 
   function stopRenaming() {
     backToRename.current = true;
+    clear();
     setDeckName(null);
   }
 
@@ -99,10 +134,16 @@ export function DeckPreferencesScreen({
     maxReviewsPerDay: deck.maxReviewsPerDay?.toString() ?? "",
   }));
 
-  function handleRenameSubmit(event: Event, name: string) {
+  function handleRenameSubmit(event: Event, name: LangTextDraft) {
     event.preventDefault();
     if (busy) return;
-    onRename(name.trim());
+    const result = textOfDraft(name);
+    if ("missing" in result) {
+      ask(result.missing);
+      return;
+    }
+    rememberLanguages("deck", result.text, name);
+    onRename(result.text);
     stopRenaming();
   }
 
@@ -145,7 +186,9 @@ export function DeckPreferencesScreen({
           <button
             ref={renameRef}
             onClick={() => {
-              if (!busy) setDeckName(typedText(deck.title));
+              if (!busy) {
+                setDeckName(draftOf(deck.title, [locale, ...navigator.languages]));
+              }
             }}
             aria-disabled={busy}
           >
@@ -160,23 +203,31 @@ export function DeckPreferencesScreen({
           class="card-edit"
           onSubmit={(e) => handleRenameSubmit(e, deckName)}
         >
-          <label for="deck-name">{t("deckPreferences.deckName")}</label>
-          <input
-            ref={nameRef}
+          <LangTextField
             id="deck-name"
-            type="text"
-            lang={editedName.lang}
-            aria-describedby={editedName.hint === null ? undefined : "deck-name-language"}
-            value={deckName}
-            onInput={(e) => setDeckName(e.currentTarget.value)}
+            label={t("deckPreferences.deckName")}
+            role="deckName"
+            draft={deckName}
+            suggestions={Object.keys({ ...deck.title, ...deck.description })}
+            translationsOpen
             required
             disabled={busy}
+            missing={missing}
+            errorId="deck-name-error"
+            inputRef={nameRef}
+            onChange={(next) => {
+              clear();
+              setDeckName(next);
+            }}
           />
-          {editedName.hint !== null && (
-            <p id="deck-name-language" class="hint field-hint">
-              {editedName.hint}
-            </p>
-          )}
+          <ErrorMessage
+            id="deck-name-error"
+            error={
+              missing === undefined
+                ? null
+                : errorText(new AppError("textNeedsLanguage", { field: t("language.field.deckName") }))
+            }
+          />
           <div class="edit-actions">
             <button type="submit" aria-disabled={busy}>
               {t("deckPreferences.saveName")}
@@ -236,6 +287,15 @@ export function DeckPreferencesScreen({
           {t("deckPreferences.saveButton")}
         </button>
       </form>
+      <DeckLanguagesSection
+        deck={deck}
+        languages={languages}
+        unreadable={languagesUnreadable}
+        arrival={section === "languages"}
+        busy={busy}
+        stated={stated}
+        onStateLanguages={onStateLanguages}
+      />
       <ErrorMessage error={error} />
     </section>
   );

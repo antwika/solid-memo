@@ -1,4 +1,5 @@
 import { useState } from "preact/hooks";
+import { canonicalTag } from "@solid-memo/domain/languageTag";
 
 /** Values kept past their screen, for the life of the page. */
 const memory = new Map<string, unknown>();
@@ -30,4 +31,51 @@ export function useRemembered<T>(
 /** Drops what is kept under `key`, so its next screen starts afresh. */
 export function forget(key: string): void {
   memory.delete(key);
+}
+
+/**
+ * Whose language a recent choice was: a deck's own text (its name and
+ * description) or a card's own text (its notes, label and pictures'
+ * descriptions). Card sides take theirs from the deck's cards instead.
+ */
+export type RecentLanguageKind = "deck" | "own";
+
+/** How many recent languages are kept of each kind. */
+export const RECENT_LANGUAGES = 5;
+
+const recentKey = (kind: RecentLanguageKind) => `solid-memo:recentLanguages.${kind}`;
+
+/**
+ * The languages last chosen for text of `kind` on this device, the
+ * latest first. Kept in the browser's storage, which may be missing or
+ * refuse (a private window, blocked site data) or hold something else:
+ * then there are none, and nothing is preselected from them.
+ */
+export function recentLanguages(
+  kind: RecentLanguageKind,
+  storage: () => Storage = () => globalThis.localStorage,
+): string[] {
+  let stored: unknown;
+  try {
+    stored = JSON.parse(storage().getItem(recentKey(kind)) ?? "[]");
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(stored)) return [];
+  const tags = stored.filter((tag): tag is string => typeof tag === "string" && canonicalTag(tag) === tag);
+  return [...new Set(tags)].slice(0, RECENT_LANGUAGES);
+}
+
+/** Notes `tag` as the latest language chosen for text of `kind` on this device. */
+export function rememberLanguage(
+  kind: RecentLanguageKind,
+  tag: string,
+  storage: () => Storage = () => globalThis.localStorage,
+): void {
+  const recent = [tag, ...recentLanguages(kind, storage).filter((other) => other !== tag)];
+  try {
+    storage().setItem(recentKey(kind), JSON.stringify(recent.slice(0, RECENT_LANGUAGES)));
+  } catch {
+    // Without storage the choice is not offered again; nothing else depends on it.
+  }
 }

@@ -28,8 +28,9 @@ export function defaultDeckDescription(title: string): string {
 }
 
 /**
- * The default description in format 4: in English and Swedish, the
- * Swedish naming the deck by its Swedish title when it has one.
+ * The default description from format 4 on: in English and Swedish, the
+ * Swedish naming the deck by its Swedish title when it has one, both by
+ * its English title, or (format 5, a title in no English) the one shown.
  */
 export function defaultDeckDescriptionText(title: LangText): LangText {
   const name = english(title) ?? shown(title);

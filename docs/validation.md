@@ -167,8 +167,9 @@ After the build, CI checks what Solid Memo publishes again with an
 independent SHACL engine, pySHACL (pinned in
 `scripts/requirements-ci.txt`), which also runs SPARQL-based constraints:
 [scripts/shacl_crosscheck.py](../scripts/shacl_crosscheck.py) holds the
-built library's index and every release, and a pod catalog document as
-the app writes it, to DCAT-AP, and the vocabulary's concept schemes to
+built library's index and every release, and the pod catalog documents
+of the deck format 4 and 5 fixtures (format 5 titles a deck in any
+language, English or not), to DCAT-AP, and the vocabulary's concept schemes to
 SkoHub's SKOS shapes, best practice included. A disagreement between the
 engines, or a constraint the browser's engine cannot run, fails CI.
 Locally: `pip install -r scripts/requirements-ci.txt`, then `npm run

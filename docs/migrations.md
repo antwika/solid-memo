@@ -50,6 +50,25 @@ reader knows only untagged text: it would read a tagged side as empty
 and drop the card. The step to format 4 changes nothing in the data, as
 a format-3 side's text is untagged and stays so: no language is guessed.
 
+Deck format 5 and card format 5 let a deck's title and description, and
+a card's notes and label, be language-tagged text in any language, one
+value per language: English is no longer required. A deck titled only
+in Swedish, or a note only in Finnish, is whole. `zxx` tags text in no
+language (codes, numbers, symbols). Library releases stay at deck format
+4: English first is the library's curation policy, not a rule of the
+data, so no release is rebuilt; an imported release is written in
+format 5. The version moved because a format-4 validator flags a title
+or note with no English, and a format-4 app drops such a note when the
+card is edited. The steps to format 5 change nothing but the version
+(restamped: nothing guessed): every format-4 deck and card is valid
+format 5 already. Text the step to deck format 4 tagged English and
+text saved the same in English and another language stay as they are:
+a pure step cannot tell an identical English copy from a real
+translation ("Stockholm"@en and "Stockholm"@sv), and the app accepts
+the same words in several languages as text in each of them, so the
+format-4 era's identical English copies are left in the data untouched.
+An untagged card side stays untagged.
+
 Rules that hold across versions:
 
 - **Readers never refuse older data.** A subject is read with the shape
@@ -70,9 +89,11 @@ flowchart LR
     v1["CardV1"] -->|card/1-to-2| v2["CardV2"]
     v2 -->|card/2-to-3<br/>in use: nothing to change| v3["CardV3"]
     v3 -->|card/3-to-4<br/>text stays untagged| v4["CardV4"]
+    v4 -->|card/4-to-5<br/>restamped: nothing guessed| v5["CardV5"]
     d1["DeckV1"] -->|deck/1-to-2<br/>direction: front-to-back| d2["DeckV2"]
     d2 -->|deck/2-to-3<br/>DCAT dataset: direction concept,<br/>default description, creator agents,<br/>release 1 as its source| d3["DeckV3"]
     d3 -->|deck/3-to-4<br/>title and description tagged English| d4["DeckV4"]
+    d4 -->|deck/4-to-5<br/>restamped: nothing guessed| d5["DeckV5"]
     l2["LibraryDeckV2"] -->|libraryDeck/2-to-3<br/>release 1 of its series| l3["LibraryDeckV3"]
     l3 -->|libraryDeck/3-to-4<br/>title and description tagged English| l4["LibraryDeckV4"]
     s1["LibraryDeckSeriesV1"] -->|libraryDeckSeries/1-to-2<br/>title and description tagged English| s2["LibraryDeckSeriesV2"]
@@ -275,7 +296,9 @@ A new study direction is taken up when the copy is still studied the old
 release's way. So are the deck's title, description, keywords and
 themes, each when the copy still has the old release's; a title or
 description the user changed is kept, given the languages the release
-adds only while its English is still the release's. The default
+adds only when it says the same as the release in every language both
+have, sharing at least one (so a copy whose English the user retagged
+to the language it is really in still agrees in the languages left). The default
 description the app gave a deck that had none ("Flashcards: <title>.")
 is not the user's: it gives way to the release's description. A copy upgraded
 before upgrades brought these texts along is given its own release's

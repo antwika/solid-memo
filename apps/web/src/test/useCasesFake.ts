@@ -59,7 +59,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     createDeck: vi.fn(async () => {
       throw new Error("createDeck fake not configured");
     }),
-    renameDeck: vi.fn(async (deck, name) => ({ ...deck, name })),
+    renameDeck: vi.fn(async (deck, title) => ({ ...deck, title })),
     setDeckDirection: vi.fn(async (deck, direction) => ({ ...deck, direction })),
     describeDeck: vi.fn(async (deck, about) => ({ ...deck, ...about })),
     setDeckPace: vi.fn(async (deck, pace) => ({ ...deck, ...pace })),
@@ -72,6 +72,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
     planLibraryUpgrade: vi.fn(async () => null),
     getStatistics: vi.fn(async () => statisticsOf([], "2026-09-21")),
     addReleaseLanguages: vi.fn(async () => null),
+    deckRelease: vi.fn(async () => null),
     applyLibraryUpgrade: vi.fn(async (deck, plan) => ({
       ok: true as const,
       deck: { ...deck, sourceUrl: plan.releaseUrl },
@@ -86,6 +87,7 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       throw new Error("updateCard fake not configured");
     }),
     removeCard: vi.fn(async () => undefined),
+    stateCardLanguages: vi.fn(async () => 0),
     planRepair: vi.fn(() => ({ repairs: [], unrepairable: [] })),
     applyRepairs: vi.fn(async () => undefined),
     planMigration: vi.fn(async () => ({

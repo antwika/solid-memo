@@ -61,6 +61,12 @@ const roundTrips: RouteRef[] = [
     deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
   },
   {
+    screen: "deckPreferences",
+    instanceUrl: "https://pod.example/solid-memo/a/",
+    deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
+    section: "languages",
+  },
+  {
     screen: "browser",
     instanceUrl: "https://pod.example/solid-memo/a/",
     deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
@@ -70,6 +76,19 @@ const roundTrips: RouteRef[] = [
     instanceUrl: "https://pod.example/solid-memo/a/",
     deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
     page: 3,
+  },
+  {
+    screen: "browser",
+    instanceUrl: "https://pod.example/solid-memo/a/",
+    deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
+    languages: "unstated",
+  },
+  {
+    screen: "browser",
+    instanceUrl: "https://pod.example/solid-memo/a/",
+    deckUrl: "https://pod.example/solid-memo/a/decks.ttl#deck-1",
+    page: 2,
+    languages: "unstated",
   },
   {
     screen: "cardCreator",
@@ -119,6 +138,22 @@ describe("routeToHash / parseHash", () => {
       });
     },
   );
+
+  it("lists every card in the Browser for a language filter it does not know", () => {
+    expect(parseHash("#/browse?instance=a&deck=b&languages=french")).toEqual({
+      screen: "browser",
+      instanceUrl: "a",
+      deckUrl: "b",
+    });
+  });
+
+  it("opens a deck's preferences at their start for a section it does not know", () => {
+    expect(parseHash("#/deck-preferences?instance=a&deck=b&section=limits")).toEqual({
+      screen: "deckPreferences",
+      instanceUrl: "a",
+      deckUrl: "b",
+    });
+  });
 
   it("parses identifiers containing URL metacharacters", () => {
     const ref: RouteRef = {

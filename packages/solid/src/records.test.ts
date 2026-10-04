@@ -241,7 +241,7 @@ describe("readVersioned", () => {
   it("reads a newer version with the latest shape it knows, passing the stored version through", () => {
     expect(readVersioned(card(7), "card")).toEqual({
       storedVersion: 7,
-      record: { version: 4, data: { front: { "": "Sweden" }, back: { "": "Stockholm" } } },
+      record: { version: 5, data: { front: { "": "Sweden" }, back: { "": "Stockholm" } } },
     });
     expect(readVersioned(card(0), "card")?.record.version).toBe(1);
   });

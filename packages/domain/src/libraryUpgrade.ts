@@ -7,7 +7,7 @@ import {
 } from "./deck";
 import type { LibraryCard, LibraryDeckContent, LibraryRelease } from "./library";
 import { isDefaultDeckDescription } from "./dcat";
-import { english, sameText, type LangText } from "./langText";
+import { sameText, type LangText } from "./langText";
 
 /**
  * Bringing an imported deck up to a newer release of its library deck
@@ -61,8 +61,9 @@ export interface LibraryUpgradePlan {
  * A text of the copy as an upgrade leaves it; undefined when it stays as
  * it is. The newer release's when the copy still has the older one's,
  * as the user left it. Else the copy's own, with the languages the
- * release has and the copy lacks, as long as the copy's English is the
- * release's: a deck the user renamed keeps its name, in every language.
+ * release has and the copy lacks, as long as the copy says what the
+ * release says in every language both have (see withLanguagesOf): a deck
+ * the user renamed keeps its name, in every language.
  */
 export function upgradedText(
   mine: LangText | undefined,
@@ -76,10 +77,16 @@ export function upgradedText(
 
 /**
  * The copy's text with the languages `release` adds, when both say the
- * same in English; undefined when that adds nothing.
+ * same in every language both have, sharing at least one; undefined when
+ * that adds nothing. A copy whose English the user moved to the language
+ * it is really in (retagged) still agrees, in the languages left. Tags
+ * compare exactly: a copy retagged to a regional English ("en-gb")
+ * shares no language with a release in plain English, so it is left as
+ * it is, where comparing English text (see english) once matched them.
  */
 function withLanguagesOf(mine: LangText, release: LangText): LangText | undefined {
-  if (english(mine) !== english(release)) return undefined;
+  const shared = Object.keys(mine).filter((tag) => tag in release);
+  if (shared.length === 0 || shared.some((tag) => mine[tag] !== release[tag])) return undefined;
   const added = Object.keys(release).filter((tag) => !(tag in mine));
   return added.length === 0 ? undefined : { ...release, ...mine };
 }
@@ -97,8 +104,8 @@ function upgradedList(
 
 /**
  * The deck with its title and description in the languages its own
- * release states them in and the copy lacks, where the copy's English
- * is the release's; null when that adds nothing. For a copy upgraded
+ * release states them in and the copy lacks, where the copy says what
+ * the release says in every language both have; null when that adds nothing. For a copy upgraded
  * before upgrades brought the texts along: nothing the user wrote changes.
  */
 export function withReleaseLanguages(deck: Deck, release: LibraryDeckContent): Deck | null {

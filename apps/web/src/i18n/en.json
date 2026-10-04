@@ -1,6 +1,40 @@
 {
   "language": {
-    "label": "Language"
+    "label": "Language",
+    "button": "Language: {language}",
+    "notStated": "Language: not stated",
+    "unstatedHint": "State which language this text is in.",
+    "legend": {
+      "front": "Language of the front",
+      "back": "Language of the back",
+      "deckName": "Language of the deck's name",
+      "description": "Language of the description",
+      "frontNote": "Language of the note under the front",
+      "backLabel": "Language of the label",
+      "backNote": "Language of the note under the back",
+      "pictureDescription": "Language of the picture's description"
+    },
+    "none": "No language (codes, numbers, symbols)",
+    "otherOption": "Other language…",
+    "otherLabel": "Language code, e.g. fi, pt-BR",
+    "done": "Done",
+    "translations": "Translations ({count})",
+    "add": "Add a translation",
+    "translationLabel": "Text in {language}",
+    "translationUnstated": "Translation, its language not chosen",
+    "remove": "Remove the {language} text",
+    "removeUnstated": "Remove this translation",
+    "field": {
+      "deckName": "the deck's name",
+      "description": "the description",
+      "front": "the front",
+      "back": "the back",
+      "frontNote": "the note under the front",
+      "backLabel": "the label",
+      "backNote": "the note under the back",
+      "frontImageDescription": "the front picture's description",
+      "backImageDescription": "the back picture's description"
+    }
   },
   "theme": {
     "toDark": "Switch to dark mode",
@@ -25,8 +59,6 @@
     },
     "networkError": "Could not reach your Pod. Check your connection and try again.",
     "unexpectedError": "Something went wrong. Try again, or reload the page. Details: {detail}",
-    "editingLanguage": "You are editing the text in {language}. Its translations stay as they are.",
-    "editingUntagged": "You are editing the text in no stated language. Its translations stay as they are.",
     "technicalDetails": "Technical details",
     "opensInNewTab": "(opens in a new tab)"
   },
@@ -105,7 +137,13 @@
     "removeCardLabel": "Remove card {card}",
     "removeConfirm": "Remove the card \"{card}\"? This cannot be undone.",
     "loading": "Loading cards…",
-    "removed": "Removed the card \"{card}\"."
+    "removed": "Removed the card \"{card}\".",
+    "unstatedTag": "No language stated",
+    "languageFilter": {
+      "legend": "Cards to list",
+      "all": "All cards",
+      "unstated": "No language stated"
+    }
   },
   "card": {
     "heading": "Card",
@@ -204,6 +242,16 @@
     "resetConfirm": "Reset today's study of \"{title}\"? The {studied} you studied today will go back to how they were before, and today's answers will be discarded.",
     "cardsInDeck": "{cards} in this deck. Add, edit or remove cards in the Browser."
   },
+  "deckLanguagesNotice": {
+    "region": "Languages of the deck's text",
+    "heading": "Some of this deck's text does not say which language it is in.",
+    "unstated": {
+      "one": "{count} card side states no language.",
+      "other": "{count} card sides state no language."
+    },
+    "unchecked": "The library release it was copied from could not be read, so how much of it is yours to settle is not known.",
+    "link": "Set the languages"
+  },
   "deckList": {
     "loading": "Loading decks…",
     "setAside": "Set aside: its data needs repair",
@@ -266,7 +314,37 @@
     },
     "emptyHint": "An empty field defaults to your {link}.",
     "studyPreferencesLink": "study preferences",
-    "saveButton": "Save preferences"
+    "saveButton": "Save preferences",
+    "languages": {
+      "heading": "Languages",
+      "loading": "Checking the languages of the cards…",
+      "unreadable": "The languages of the cards could not be checked.",
+      "unstated": {
+        "one": "{count} card front and {backs} do not say their language.",
+        "other": "{count} card fronts and {backs} do not say their language."
+      },
+      "backs": {
+        "one": "{count} back",
+        "other": "{count} backs"
+      },
+      "fronts": "Fronts",
+      "backsLegend": "Backs",
+      "stateButton": "State the language",
+      "confirmFronts": {
+        "one": "Save {count} front as {language}?",
+        "other": "Save {count} fronts as {language}?"
+      },
+      "confirmBacks": {
+        "one": "Save {count} back as {language}?",
+        "other": "Save {count} backs as {language}?"
+      },
+      "stated": {
+        "one": "Saved the language of {count} card.",
+        "other": "Saved the language of {count} cards."
+      },
+      "releaseHint": "Cards still as their library release has them are left out: a later release updates them.",
+      "settled": "Every card says which language its text is in."
+    }
   },
   "deckProvenance": {
     "by": "By {authors}",
@@ -524,8 +602,8 @@
     "instanceFormat": "instance format {version}",
     "catalogueFormat": "a catalogue of each instance's decks, which other apps read as a DCAT catalogue",
     "preferencesFormat": "preferences format {version}, which records the answer scale, developer mode, what to do with invalid data and the theme",
-    "deckFormat": "deck format {version}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description come in several languages",
-    "cardFormat": "card format {version}, which adds pictures on cards, lets a library deck retire a card it no longer uses and lets a card's text state its language",
+    "deckFormat": "deck format {version}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description be in any language you state",
+    "cardFormat": "card format {version}, which adds pictures on cards, lets a library deck retire a card it no longer uses and lets a card's text be in any language you state",
     "reviewFormat": "review-state format {version}, which keeps each study direction's state and the day's undo snapshot",
     "itemInstanceRecord": "Instance record",
     "itemCatalogue": "Catalogue of the decks",
@@ -837,6 +915,10 @@
     "cardFrontEmpty": "The front needs text or an image.",
     "cardBackEmpty": "The back needs text or an image.",
     "deckNeedsDescription": "A deck needs a description.",
+    "textNeedsLanguage": "Choose the language of {field}.",
+    "textLanguageInvalid": "“{tag}” is not a language code.",
+    "textLanguageTaken": "There is already text in {language}. Edit or remove it first.",
+    "textMixesUnstated": "This text does not say which language it is in, so it cannot have translations. Choose its language first.",
     "dailyLimitInvalid": "A daily limit is a whole number, 0 or more.",
     "webIdEmpty": "Enter your WebID.",
     "webIdInvalidUrl": "That is not a valid URL. A WebID looks like https://you.example/profile/card#me.",
