@@ -202,7 +202,7 @@ describe("a guest's study", () => {
       backNote: { en: "Huvudstad sedan 1299.", sv: "Huvudstad sedan 1299." },
     });
     for (const subject of [old.url, unstated.url, standIn.url]) await restamp(guestStore, subject, 4);
-    // A format-5 deck beside it, with a note in Finnish only: valid at 5, not at 4.
+    // A deck of the current formats beside it (deck 6, card 5), with a note in Finnish only: valid at 5, not at 4.
     const current = await useCases.createDeck(guestInstance!.url, { en: "Capitals" });
     const finnish = await useCases.addCard(current, { front: { fi: "Suomi" }, back: { fi: "Helsinki" } });
     await addTriples(guestStore, current.cardsDocumentUrl, [`<${finnish.url}> <${SM_NS}frontNote> "Pääkaupunki vuodesta 1812."@fi .`]);
@@ -220,7 +220,8 @@ describe("a guest's study", () => {
     const triples = await everyTriple(aliceStore);
     const stated = (subject: string) => triples.find((line) => line.startsWith(`<${moved(subject)}> <${SM_NS}formatVersion> `));
     for (const subject of [old.url, unstated.url, standIn.url]) expect(stated(subject), subject).toContain('"4"');
-    for (const subject of [current.url, finnish.url]) expect(stated(subject), subject).toContain('"5"');
+    expect(stated(current.url)).toContain('"6"');
+    expect(stated(finnish.url)).toContain('"5"');
     // The text is as the guest's pod had it: nothing tagged, nothing dropped.
     expect(triples).toEqual(
       expect.arrayContaining([

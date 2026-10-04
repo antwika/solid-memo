@@ -3,6 +3,7 @@ import { AppError } from "@solid-memo/domain/appError";
 import { TOPICS } from "@solid-memo/vocab/concepts.generated";
 import type { Deck } from "@solid-memo/domain/deck";
 import { parseKeywords, topicsOfDeck, type DeckAbout } from "@solid-memo/domain/deckAbout";
+import { keywordsIn, type LangTexts } from "@solid-memo/domain/keywords";
 import { topicLabels } from "@solid-memo/domain/library";
 import { shownTag } from "@solid-memo/domain/langText";
 import { ErrorMessage } from "./ErrorMessage";
@@ -12,6 +13,7 @@ import {
   rememberLanguages,
   textOfDraft,
   useMissingLanguage,
+  type DraftEntry,
   type LangTextDraft,
 } from "./LangTextField";
 import { linkify } from "./linkify";
@@ -27,6 +29,14 @@ import { ReaderText, ReaderTexts } from "./ReaderText";
  * language it has, each the user's to state (LangTextField); a deck with
  * none yet starts it in the language of the name the reader sees, else
  * the one last chosen for a deck's text on this device.
+ *
+ * Keywords are edited the same way, a comma-separated entry per
+ * language, each the user's to state; a deck with none yet starts them
+ * in the language of its description, else its name, else the one last
+ * chosen. Keywords saved with no language (from an older format) stay
+ * as they are, or some removed, until the user states their language:
+ * a keyword added to them asks for it. The reader is shown only the
+ * keywords in their language, and those in none (see keywordsIn).
  */
 export function DeckAboutSection({
   deck,
@@ -39,20 +49,29 @@ export function DeckAboutSection({
 }) {
   const { t, tx, locale, readerText, readerLang, errorText } = useI18n();
   /** The drafts while editing; null otherwise. */
-  const [draft, setDraft] = useState<{ description: LangTextDraft; topics: string[]; keywords: string } | null>(
-    null,
-  );
+  const [draft, setDraft] = useState<{
+    description: LangTextDraft;
+    topics: string[];
+    keywords: LangTextDraft;
+  } | null>(null);
   const { missing, ask, clear } = useMissingLanguage("deck-description");
+  const keywordsQuestion = useMissingLanguage("deck-keywords");
   const topics = topicLabels(deck.themes ?? []);
-  const keywords = deck.keywords ?? [];
+  /** The keywords the reader is shown: those in their language. */
+  const keywords = keywordsIn(deck.keywords, locale);
 
   function edit() {
+    const languages = [locale, ...navigator.languages];
+    const titleTag = shownTag(deck.title, languages);
+    const descriptionTag = deck.description === undefined ? undefined : shownTag(deck.description, languages);
     setDraft({
-      description: draftOf(deck.description, [locale, ...navigator.languages], {
-        tag: shownTag(deck.title, [locale, ...navigator.languages]) ?? recentLanguages("deck")[0] ?? null,
+      description: draftOf(deck.description, languages, {
+        tag: titleTag ?? recentLanguages("deck")[0] ?? null,
       }),
       topics: topicsOfDeck(deck),
-      keywords: keywords.join(", "),
+      keywords: draftOf(joinedKeywords(deck.keywords), languages, {
+        tag: [descriptionTag, titleTag].find((tag) => tag !== undefined && tag !== "") ?? recentLanguages("deck")[0] ?? null,
+      }),
     });
   }
 
@@ -71,11 +90,17 @@ export function DeckAboutSection({
       ask(result.missing);
       return;
     }
+    const typed = keywordsOfDraft(draft!.keywords, deck.keywords);
+    if ("missing" in typed) {
+      keywordsQuestion.ask(typed.missing);
+      return;
+    }
     rememberLanguages("deck", result.text, draft!.description);
+    rememberLanguages("deck", typed.keywords, draft!.keywords);
     onSave({
       description: result.text,
       topics: draft!.topics,
-      keywords: parseKeywords(draft!.keywords),
+      keywords: typed.keywords,
     });
     setDraft(null);
   }
@@ -143,18 +168,35 @@ export function DeckAboutSection({
           </label>
         ))}
       </fieldset>
-      <label for="deck-keywords">{t("deckAbout.keywords")}</label>
-      <input
+      <LangTextField
         id="deck-keywords"
-        type="text"
-        value={draft.keywords}
-        aria-describedby="deck-keywords-hint"
-        onInput={(e) => setDraft({ ...draft, keywords: e.currentTarget.value })}
+        label={t("deckAbout.keywords")}
+        role="keywords"
+        draft={draft.keywords}
+        suggestions={Object.keys({ ...deck.keywords, ...deck.description, ...deck.title }).filter((tag) => tag !== "")}
+        hint={
+          <p id="deck-keywords-hint" class="hint field-hint">
+            {t("deckAbout.keywordsHint")}
+          </p>
+        }
+        describedBy="deck-keywords-hint"
+        translationsOpen={draft.keywords.length > 1}
         disabled={busy}
+        missing={keywordsQuestion.missing}
+        errorId="deck-keywords-error"
+        onChange={(keywords) => {
+          keywordsQuestion.clear();
+          setDraft({ ...draft, keywords });
+        }}
       />
-      <p id="deck-keywords-hint" class="hint field-hint">
-        {t("deckAbout.keywordsHint")}
-      </p>
+      <ErrorMessage
+        id="deck-keywords-error"
+        error={
+          keywordsQuestion.missing === undefined
+            ? null
+            : errorText(new AppError("textNeedsLanguage", { field: t("language.field.keywords") }))
+        }
+      />
       <div class="edit-actions">
         <button type="submit" disabled={busy}>
           {t("deckAbout.saveButton")}
@@ -164,6 +206,7 @@ export function DeckAboutSection({
           aria-label={t("deckAbout.cancelLabel")}
           onClick={() => {
             clear();
+            keywordsQuestion.clear();
             setDraft(null);
           }}
           disabled={busy}
@@ -173,4 +216,38 @@ export function DeckAboutSection({
       </div>
     </form>
   );
+}
+
+/** Keywords as a field edits them: each language's keywords comma-separated. */
+function joinedKeywords(keywords: LangTexts | undefined): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(keywords ?? {})
+      .filter(([, list]) => list.length > 0)
+      .map(([tag, list]) => [tag, list.join(", ")]),
+  );
+}
+
+/**
+ * The keywords a draft says, per language: each entry's keywords
+ * (parseKeywords) under its language, an entry with none left out —
+ * clearing one language's keywords leaves the others'. The entry,
+ * instead, whose keywords need their language: one with none chosen yet,
+ * or one of untagged keywords ("") that are not only some of those
+ * `saved` has untagged, for the app asks the user rather than guess.
+ */
+function keywordsOfDraft(
+  draft: LangTextDraft,
+  saved: LangTexts | undefined,
+): { keywords: LangTexts } | { missing: DraftEntry } {
+  const keywords: Record<string, string[]> = {};
+  const savedUntagged = saved?.[""] ?? [];
+  for (const entry of draft) {
+    const list = parseKeywords(entry.value);
+    if (list.length === 0) continue;
+    if (entry.tag === null || (entry.tag === "" && list.some((keyword) => !savedUntagged.includes(keyword)))) {
+      return { missing: entry };
+    }
+    keywords[entry.tag] = list;
+  }
+  return { keywords };
 }

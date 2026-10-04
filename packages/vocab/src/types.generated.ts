@@ -8,6 +8,14 @@
  */
 export type LangText = Readonly<Record<string, string>>;
 
+/**
+ * Several texts per language (rdf:langString values without
+ * sh:uniqueLang, such as a deck's keywords): language tag, lower case, to
+ * the texts in that language, in stored order. Where a shape also allows
+ * untagged text, the empty tag ("") holds it; {} is none.
+ */
+export type LangTexts = Readonly<Record<string, readonly string[]>>;
+
 /** The record kinds the shapes describe (see docs/shapes.md). */
 export type ShapeName = "agent" | "answer" | "card" | "catalog" | "deck" | "deckSchedule" | "distribution" | "documentReceipt" | "instance" | "libraryDeck" | "libraryDeckSeries" | "preferences" | "reviewState";
 
@@ -17,13 +25,13 @@ export const LATEST_VERSION = {
   answer: 1,
   card: 5,
   catalog: 1,
-  deck: 5,
+  deck: 6,
   deckSchedule: 1,
   distribution: 1,
   documentReceipt: 1,
   instance: 2,
-  libraryDeck: 4,
-  libraryDeckSeries: 2,
+  libraryDeck: 5,
+  libraryDeckSeries: 3,
   preferences: 4,
   reviewState: 2,
 } as const;
@@ -199,6 +207,25 @@ export interface DeckV5 {
   readonly maxReviewsPerDay?: number;
 }
 
+/** Deck format 6 as a catalog entry in a pod: a dcat:Dataset whose keywords are language-tagged, several per language. */
+export interface DeckV6 {
+  readonly title: LangText;
+  readonly description: LangText;
+  readonly created?: string;
+  readonly modified?: string;
+  readonly creator: readonly string[];
+  readonly license?: string;
+  readonly studyDirection: "https://solid-memo.com/vocab/v1#frontToBack" | "https://solid-memo.com/vocab/v1#backToFront" | "https://solid-memo.com/vocab/v1#bidirectional";
+  readonly theme: readonly string[];
+  readonly keyword: LangTexts;
+  readonly distribution: readonly string[];
+  readonly cardsDocument: string;
+  readonly reviewsDocument: string;
+  readonly source?: string;
+  readonly newCardsPerDay?: number;
+  readonly maxReviewsPerDay?: number;
+}
+
 /** Deck schedule format 1: the deck, the versions of its two documents it was computed from, the direction and day boundary it was computed with, the study day it was computed on, the prompts due by day, the new ones, and that day's reviews and introductions. */
 export interface DeckScheduleV1 {
   readonly deck: string;
@@ -313,6 +340,30 @@ export interface LibraryDeckV4 {
   readonly wasDerivedFrom: readonly string[];
 }
 
+/** Library deck format 5: one release of a deck, a dcat:Dataset in the deck's series, whose keywords are language-tagged, several per language. */
+export interface LibraryDeckV5 {
+  readonly title: LangText;
+  readonly description: LangText;
+  readonly created?: string;
+  readonly modified?: string;
+  readonly issued?: string;
+  readonly creator: readonly string[];
+  readonly publisher: string;
+  readonly license?: string;
+  readonly studyDirection: "https://solid-memo.com/vocab/v1#frontToBack" | "https://solid-memo.com/vocab/v1#backToFront" | "https://solid-memo.com/vocab/v1#bidirectional";
+  readonly theme: readonly string[];
+  readonly keyword: LangTexts;
+  readonly language: readonly string[];
+  readonly version: string;
+  readonly versionNotes?: string;
+  readonly inSeries: string;
+  readonly isVersionOf: string;
+  readonly prev?: string;
+  readonly previousVersion?: string;
+  readonly distribution: readonly string[];
+  readonly wasDerivedFrom: readonly string[];
+}
+
 /** A library deck across its releases: a dcat:DatasetSeries. */
 export interface LibraryDeckSeriesV1 {
   readonly title: string;
@@ -333,6 +384,19 @@ export interface LibraryDeckSeriesV2 {
   readonly publisher: string;
   readonly theme: readonly string[];
   readonly keyword: readonly string[];
+  readonly first: string;
+  readonly last: string;
+  readonly hasVersion: readonly string[];
+  readonly hasCurrentVersion: string;
+}
+
+/** A library deck across its releases: a dcat:DatasetSeries. */
+export interface LibraryDeckSeriesV3 {
+  readonly title: LangText;
+  readonly description: LangText;
+  readonly publisher: string;
+  readonly theme: readonly string[];
+  readonly keyword: LangTexts;
   readonly first: string;
   readonly last: string;
   readonly hasVersion: readonly string[];
@@ -412,13 +476,13 @@ export type AgentRecord = { version: 1; data: AgentV1 };
 export type AnswerRecord = { version: 1; data: AnswerV1 };
 export type CardRecord = { version: 1; data: CardV1 } | { version: 2; data: CardV2 } | { version: 3; data: CardV3 } | { version: 4; data: CardV4 } | { version: 5; data: CardV5 };
 export type CatalogRecord = { version: 1; data: CatalogV1 };
-export type DeckRecord = { version: 1; data: DeckV1 } | { version: 2; data: DeckV2 } | { version: 3; data: DeckV3 } | { version: 4; data: DeckV4 } | { version: 5; data: DeckV5 };
+export type DeckRecord = { version: 1; data: DeckV1 } | { version: 2; data: DeckV2 } | { version: 3; data: DeckV3 } | { version: 4; data: DeckV4 } | { version: 5; data: DeckV5 } | { version: 6; data: DeckV6 };
 export type DeckScheduleRecord = { version: 1; data: DeckScheduleV1 };
 export type DistributionRecord = { version: 1; data: DistributionV1 };
 export type DocumentReceiptRecord = { version: 1; data: DocumentReceiptV1 };
 export type InstanceRecord = { version: 1; data: InstanceV1 } | { version: 2; data: InstanceV2 };
-export type LibraryDeckRecord = { version: 1; data: LibraryDeckV1 } | { version: 2; data: LibraryDeckV2 } | { version: 3; data: LibraryDeckV3 } | { version: 4; data: LibraryDeckV4 };
-export type LibraryDeckSeriesRecord = { version: 1; data: LibraryDeckSeriesV1 } | { version: 2; data: LibraryDeckSeriesV2 };
+export type LibraryDeckRecord = { version: 1; data: LibraryDeckV1 } | { version: 2; data: LibraryDeckV2 } | { version: 3; data: LibraryDeckV3 } | { version: 4; data: LibraryDeckV4 } | { version: 5; data: LibraryDeckV5 };
+export type LibraryDeckSeriesRecord = { version: 1; data: LibraryDeckSeriesV1 } | { version: 2; data: LibraryDeckSeriesV2 } | { version: 3; data: LibraryDeckSeriesV3 };
 export type PreferencesRecord = { version: 1; data: PreferencesV1 } | { version: 2; data: PreferencesV2 } | { version: 3; data: PreferencesV3 } | { version: 4; data: PreferencesV4 };
 export type ReviewStateRecord = { version: 1; data: ReviewStateV1 } | { version: 2; data: ReviewStateV2 };
 
@@ -445,13 +509,13 @@ export type LatestRecord = {
   answer: AnswerV1;
   card: CardV5;
   catalog: CatalogV1;
-  deck: DeckV5;
+  deck: DeckV6;
   deckSchedule: DeckScheduleV1;
   distribution: DistributionV1;
   documentReceipt: DocumentReceiptV1;
   instance: InstanceV2;
-  libraryDeck: LibraryDeckV4;
-  libraryDeckSeries: LibraryDeckSeriesV2;
+  libraryDeck: LibraryDeckV5;
+  libraryDeckSeries: LibraryDeckSeriesV3;
   preferences: PreferencesV4;
   reviewState: ReviewStateV2;
 };

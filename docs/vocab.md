@@ -88,11 +88,13 @@ Solid Memo's text properties (`sm:front`, `sm:back`, `sm:frontNote`,
 `sm:backImageDescription`, and `dcterms:title` and
 `dcterms:description` on a deck) say their language with the literal's
 own language tag (`"Huvudstäder"@sv`), one value per language, not
-with a term of ours. Tags are BCP 47, stored in lower case. Text in no
+with a term of ours. A deck's keywords (`dcat:keyword`) are tagged the
+same way, the one text with several values per language
+(`"capitals"@en, "countries"@en, "huvudstäder"@sv`). Tags are BCP 47, stored in lower case. Text in no
 language — codes, numbers, symbols ("404", "Fe") — is tagged `zxx`,
 BCP 47's "no linguistic content", rather than with a language it is
 not in; a page shows it with no `lang`. A card side saved untagged
-(`xsd:string`) says nothing about its language: it is not known, not
+(`xsd:string`), or a keyword saved before deck format 6, says nothing about its language: it is not known, not
 none. Which formats require which tags is the [shapes](shapes.md)'
 business.
 

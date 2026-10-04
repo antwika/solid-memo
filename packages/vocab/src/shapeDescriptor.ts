@@ -18,16 +18,23 @@ export type TermKind =
   | "enum"
   /** An IRI from a fixed list (sh:in over IRIs): a concept of a SKOS scheme. */
   | "iriEnum"
-  /** Language-tagged literals (rdf:langString), at most one per language: a LangText. */
+  /**
+   * Language-tagged literals (rdf:langString): a LangText, at most one per
+   * language; with cardinality "many", a LangTexts of several per language.
+   */
   | "text"
   /**
    * Untagged text (xsd:string), its language unknown, or language-tagged
-   * text, at most one per language, never both: a LangText whose empty
-   * tag ("") holds the untagged text.
+   * text: a LangText, at most one per language and never both, whose
+   * empty tag ("") holds the untagged text; with cardinality "many", a
+   * LangTexts of several per language, untagged ones under "".
    */
   | "anyText";
 
-/** "one" = exactly one; "optional" = at most one; "many" = any number. */
+/**
+ * "one" = exactly one; "optional" = at most one; "many" = any number (for
+ * text: any number per language, which sh:uniqueLang true limits to one).
+ */
 export type Cardinality = "one" | "optional" | "many";
 
 export interface FieldDescriptor {

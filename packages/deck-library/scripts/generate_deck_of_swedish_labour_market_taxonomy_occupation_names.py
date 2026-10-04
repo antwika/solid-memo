@@ -140,9 +140,10 @@ REPRODUCIBILITY
   and which cards were retired or brought back.
 
 LANGUAGE
-  Solid Memo is English first. The deck is in deck format 4, which states the
+  Solid Memo is English first. The deck is in deck format 5, which states the
   title and description in several languages: English and Swedish (TEXTS),
-  the app showing the reader's. The notes and labels on the cards are in
+  the app showing the reader's, and tags each keyword with its language
+  (KEYWORDS). The notes and labels on the cards are in
   every language of TEXTS; the occupation names, front and back, are Swedish
   and tagged so. The cards are in card format 4, which states a text's
   language (card format 3 brought the notes and retired cards).
@@ -715,7 +716,7 @@ def xsd_datetime(timestamp: str) -> str:
     return when.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
-# The deck's texts, by language. Deck format 4 states a title and description
+# The deck's texts, by language. Deck format 5 states a title and description
 # in several languages, one of them English, which Solid Memo shows.
 TEXTS = {
     "en": {
@@ -737,7 +738,11 @@ TEXTS = {
         ),
     },
 }
-KEYWORDS = ["occupations", "labour market", "Sweden", "Arbetsförmedlingen", "Arbetsmarknadstaxonomi"]
+# The deck's keywords, by language (deck format 5 tags each with its language).
+KEYWORDS = {
+    "en": ["occupations", "labour market", "labour market taxonomy", "Sweden", "Arbetsförmedlingen"],
+    "sv": ["yrken", "arbetsmarknad", "arbetsmarknadstaxonomi", "Sverige", "Arbetsförmedlingen"],
+}
 
 
 def english_list(items: list[str]) -> str:
@@ -1099,13 +1104,15 @@ def write_deck(path: Path, cards: list[Card], retired: dict[str, Released], left
         + aligned("dcat:theme", ["<http://publications.europa.eu/resource/authority/data-theme/EDUC>",
                                  "topic:labour-market"])
         + " ;",
-        "    dcat:keyword " + aligned("dcat:keyword", [ttl_str(k) for k in KEYWORDS]) + " ;",
+        "    dcat:keyword "
+        + aligned("dcat:keyword", [f"{ttl_str(k)}@{lang}" for lang, ks in KEYWORDS.items() for k in ks])
+        + " ;",
         "    dcterms:language "
         + aligned("dcterms:language", ["<http://publications.europa.eu/resource/authority/language/ENG>",
                                        "<http://publications.europa.eu/resource/authority/language/SWE>"])
         + " ;",
         "    solid-memo:studyDirection solid-memo:frontToBack ;",
-        "    solid-memo:formatVersion 4 .",
+        "    solid-memo:formatVersion 5 .",  # format 5: keywords tagged with their language
         "",
     ]
     if creator_name is not None:

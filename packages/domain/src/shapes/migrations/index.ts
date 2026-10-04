@@ -7,11 +7,14 @@ import { DECK_1_TO_2 } from "./deck/1-to-2";
 import { DECK_2_TO_3 } from "./deck/2-to-3";
 import { DECK_3_TO_4 } from "./deck/3-to-4";
 import { DECK_4_TO_5 } from "./deck/4-to-5";
+import { DECK_5_TO_6 } from "./deck/5-to-6";
 import { INSTANCE_1_TO_2 } from "./instance/1-to-2";
 import { LIBRARY_DECK_1_TO_2 } from "./libraryDeck/1-to-2";
 import { LIBRARY_DECK_2_TO_3 } from "./libraryDeck/2-to-3";
 import { LIBRARY_DECK_3_TO_4 } from "./libraryDeck/3-to-4";
+import { LIBRARY_DECK_4_TO_5 } from "./libraryDeck/4-to-5";
 import { LIBRARY_DECK_SERIES_1_TO_2 } from "./libraryDeckSeries/1-to-2";
+import { LIBRARY_DECK_SERIES_2_TO_3 } from "./libraryDeckSeries/2-to-3";
 import { PREFERENCES_1_TO_2 } from "./preferences/1-to-2";
 import { PREFERENCES_2_TO_3 } from "./preferences/2-to-3";
 import { PREFERENCES_3_TO_4 } from "./preferences/3-to-4";
@@ -34,11 +37,14 @@ export const MIGRATIONS: readonly AnyMigrationStep[] = [
   DECK_2_TO_3,
   DECK_3_TO_4,
   DECK_4_TO_5,
+  DECK_5_TO_6,
   INSTANCE_1_TO_2,
   LIBRARY_DECK_1_TO_2,
   LIBRARY_DECK_2_TO_3,
   LIBRARY_DECK_3_TO_4,
+  LIBRARY_DECK_4_TO_5,
   LIBRARY_DECK_SERIES_1_TO_2,
+  LIBRARY_DECK_SERIES_2_TO_3,
   PREFERENCES_1_TO_2,
   PREFERENCES_2_TO_3,
   PREFERENCES_3_TO_4,

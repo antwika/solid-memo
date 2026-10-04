@@ -9,6 +9,7 @@ import {
   type ThingPersisted,
 } from "@inrupt/solid-client";
 import type { LangText } from "@solid-memo/domain/langText";
+import { copyKeywords, noKeywords, type LangTexts } from "@solid-memo/domain/keywords";
 import type { DeckRepository } from "@solid-memo/application/ports";
 import {
   CARD_FORMAT_VERSION,
@@ -319,7 +320,8 @@ export function createSolidDeckRepository({
   /**
    * A fresh deck's identity and document locations, before any write.
    * An import carries over the library release's provenance — its
-   * authors, licence, description, topics and keywords, and which
+   * authors, licence, description, topics and keywords (per language,
+   * an older release's untagged ones kept untagged), and which
    * release it is — and the direction it is meant to be studied in. The
    * format version is always this app's own: the copy is written in the
    * format this app writes.
@@ -334,7 +336,7 @@ export function createSolidDeckRepository({
       description?: LangText;
       direction: DeckDirection;
       themes: string[];
-      keywords: string[];
+      keywords: LangTexts;
     },
   ): Deck {
     const base = ensureTrailingSlash(instanceUrl);
@@ -355,9 +357,9 @@ export function createSolidDeckRepository({
         : { description: source.description }),
       ...(source === undefined ? {} : { sourceUrl: source.url }),
       ...(source === undefined || source.themes.length === 0 ? {} : { themes: source.themes }),
-      ...(source === undefined || source.keywords.length === 0
+      ...(source === undefined || noKeywords(source.keywords)
         ? {}
-        : { keywords: source.keywords }),
+        : { keywords: copyKeywords(source.keywords) }),
     };
   }
 

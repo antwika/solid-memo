@@ -3,7 +3,8 @@ import { directionOfConcept, conceptOfDirection } from "./concepts";
 import { defaultDeckDescriptionText, distributionUrlOf, TURTLE_MEDIA_TYPE } from "./dcat";
 import { isEmptyText, type Card, type CardContent, type Deck } from "./deck";
 import type { LibraryCard, LibraryDeckContent } from "./library";
-import type { AgentV1, CardV5, DeckV5, DistributionV1, LibraryDeckV4 } from "@solid-memo/vocab/types.generated";
+import { copyKeywords, noKeywords } from "./keywords";
+import type { AgentV1, CardV5, DeckV6, DistributionV1, LibraryDeckV5 } from "@solid-memo/vocab/types.generated";
 import { fragmentIdOf } from "./subjectUrl";
 
 /**
@@ -19,7 +20,7 @@ export type AuthorOf = (agentUrl: string) => string;
 export function deckFromRecord(
   url: string,
   storedVersion: number,
-  data: DeckV5,
+  data: DeckV6,
   authorOf: AuthorOf,
 ): Deck {
   return {
@@ -37,14 +38,14 @@ export function deckFromRecord(
     description: data.description,
     ...(data.source === undefined ? {} : { sourceUrl: data.source }),
     ...(data.theme.length === 0 ? {} : { themes: [...data.theme] }),
-    ...(data.keyword.length === 0 ? {} : { keywords: [...data.keyword] }),
+    ...(noKeywords(data.keyword) ? {} : { keywords: copyKeywords(data.keyword) }),
     ...(data.newCardsPerDay === undefined ? {} : { newCardsPerDay: data.newCardsPerDay }),
     ...(data.maxReviewsPerDay === undefined ? {} : { maxReviewsPerDay: data.maxReviewsPerDay }),
   };
 }
 
 /** The deck as its latest record; a deck that states no description gets the default one. */
-export function deckToRecord(deck: Deck): DeckV5 {
+export function deckToRecord(deck: Deck): DeckV6 {
   return {
     title: deck.title,
     description: deck.description ?? defaultDeckDescriptionText(deck.title),
@@ -54,7 +55,7 @@ export function deckToRecord(deck: Deck): DeckV5 {
     ...(deck.license === undefined ? {} : { license: deck.license }),
     studyDirection: conceptOfDirection(deck.direction),
     theme: deck.themes ?? [],
-    keyword: deck.keywords ?? [],
+    keyword: deck.keywords ?? {},
     distribution: [distributionUrlOf(deck.url)],
     cardsDocument: deck.cardsDocumentUrl,
     reviewsDocument: deck.reviewsDocumentUrl,
@@ -147,7 +148,7 @@ export function cardToRecord(card: CardContent & { retired?: true }, createdAt: 
 export function libraryDeckFromRecord(
   url: string,
   storedVersion: number,
-  data: LibraryDeckV4,
+  data: LibraryDeckV5,
   cards: LibraryCard[],
   authorOf: AuthorOf,
 ): LibraryDeckContent {
@@ -164,7 +165,7 @@ export function libraryDeckFromRecord(
     ...(data.versionNotes === undefined ? {} : { versionNotes: data.versionNotes }),
     ...(data.modified === undefined ? {} : { modifiedAt: data.modified }),
     themes: [...data.theme],
-    keywords: [...data.keyword],
+    keywords: copyKeywords(data.keyword),
     cards,
   };
 }

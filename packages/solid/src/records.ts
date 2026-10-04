@@ -18,6 +18,7 @@ import {
 import {
   LATEST_VERSION,
   type LangText,
+  type LangTexts,
   type ShapeName,
   type VersionedRecord,
 } from "@solid-memo/vocab/types.generated";
@@ -35,7 +36,7 @@ import { RDF, SM } from "./vocab";
  * mapper can only read and write what the shape says (see docs/shapes.md).
  */
 
-type FieldValue = string | number | boolean | readonly string[] | LangText;
+type FieldValue = string | number | boolean | readonly string[] | LangText | LangTexts;
 
 /** One field's value; undefined when absent, null when a required one is. */
 function readField(thing: Thing, field: FieldDescriptor): FieldValue | null | undefined {
@@ -45,6 +46,9 @@ function readField(thing: Thing, field: FieldDescriptor): FieldValue | null | un
         return getUrlAll(thing, field.predicate);
       case "iriEnum":
         return getUrlAll(thing, field.predicate).filter((v) => field.values!.includes(v));
+      case "text":
+      case "anyText":
+        return readTexts(thing, field.predicate, field.kind === "anyText");
       default:
         return getStringNoLocaleAll(thing, field.predicate);
     }
@@ -103,6 +107,28 @@ function readAnyText(thing: Thing, predicate: string): LangText | null {
 }
 
 /**
+ * Texts with several values per language (a deck's keywords): every
+ * language-tagged value, by lower-case language tag (tags that differ
+ * only in case are one language), each once, in stored order; for a
+ * field that may also be untagged, the untagged values under the empty
+ * tag. Empty ({}) when there are none.
+ */
+function readTexts(thing: Thing, predicate: string, untagged: boolean): LangTexts {
+  const texts: Record<string, string[]> = {};
+  const add = (tag: string, values: readonly string[]) => {
+    texts[tag] = [...new Set([...(texts[tag] ?? []), ...values])];
+  };
+  if (untagged) {
+    const values = getStringNoLocaleAll(thing, predicate);
+    if (values.length > 0) add("", values);
+  }
+  for (const [language, values] of getStringByLocaleAll(thing, predicate)) {
+    add(language.toLowerCase(), values);
+  }
+  return texts;
+}
+
+/**
  * The subject as a record of the shape; null when a required field is
  * missing (or an enum holds a value the shape does not list).
  */
@@ -156,6 +182,16 @@ export function applyRecord<T>(
     builder.removeAll(field.predicate);
     const value = (record as Record<string, FieldValue | undefined>)[field.name];
     if (value === undefined) continue;
+    if ((field.kind === "text" || field.kind === "anyText") && field.cardinality === "many") {
+      const texts = value as LangTexts;
+      for (const language of Object.keys(texts).sort()) {
+        for (const one of texts[language]) {
+          if (language === "") builder.addStringNoLocale(field.predicate, one);
+          else builder.addStringWithLocale(field.predicate, one, language);
+        }
+      }
+      continue;
+    }
     if (field.kind === "text" || field.kind === "anyText") {
       const text = value as LangText;
       for (const language of Object.keys(text).sort()) {

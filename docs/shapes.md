@@ -9,6 +9,8 @@ format version under [`packages/vocab/shapes/`](../packages/vocab/shapes/), publ
 ```
 shapes/instance/v1.ttl        https://solid-memo.com/shapes/instance/v1.ttl#shape
 shapes/deck/v1.ttl, v2.ttl    …/deck/v2.ttl#inPod  and  …/deck/v2.ttl#inLibrary
+shapes/library-deck/v5.ttl    …/library-deck/v5.ttl#inLibrary  (library deck 5 on)
+shapes/deck-series/v1.ttl … v3.ttl
 shapes/card/v1.ttl, v2.ttl
 shapes/review-state/v1.ttl, v2.ttl
 shapes/preferences/v1.ttl … v4.ttl
@@ -19,8 +21,11 @@ The shape IRIs include `.ttl` on purpose: they dereference on a static
 host without any redirect trick. A deck is shaped two ways because it
 lives in two places: `<#inPod>` (a catalog entry, with the links to its
 two documents) and `<#inLibrary>` (a [deck library](deck-library.md)
-document, which has no pod documents and may list its sources). Both
-share the same named property shapes.
+document, which has no pod documents and may list its sources). Up to
+format 4 both share one file and its named property shapes; library
+deck 5, a version the pod's deck does not share, has a self-contained
+file of its own (`shapes/library-deck/`), since a shape's `sh:name`
+version must match its file's.
 
 ## Conventions
 
@@ -76,10 +81,13 @@ share the same named property shapes.
 | Deck 3 | A `dcat:Dataset` too. `dcterms:title` and `dcterms:description` 1..1; `dcterms:created`, `dcterms:modified` 0..1; `dcterms:creator` 0..n IRIs (foaf:Agent nodes); `dcterms:license` 0..1; `sm:studyDirection` 1..1, a concept of `sm:StudyDirections` (`sm:direction` forbidden); `dcat:theme` 0..n IRIs, `dcat:keyword` 0..n; `dcterms:source` forbidden. In a pod also `dcat:distribution` 0..n, the two document links, `prov:wasDerivedFrom` 0..1 (the library release it came from), and the deck's own study caps `sm:deckNewCardsPerDay` and `sm:deckMaxReviewsPerDay`, integers ≥ 0, 0..1 each (added without a version bump: an older reader ignores them). In the library, one release: `dcterms:publisher`, `dcat:version` (1, 2, …), `dcat:inSeries`, `dcat:isVersionOf` 1..1; `dcat:prev`, `dcat:previousVersion`, `adms:versionNotes`, `dcterms:issued` 0..1; `dcat:theme` including the EU theme EDUC; `dcterms:language` 0..n; `dcat:distribution` 1..n; `prov:wasDerivedFrom` 0..n; no document links and no study caps |
 | Deck 4 | Deck 3, but `dcterms:title` and `dcterms:description` are language-tagged text (`rdf:langString`): one or more values, at most one per language (`sh:uniqueLang`), exactly one of them English (`sh:qualifiedValueShape [ sh:languageIn ("en") ]`, `sh:qualifiedMinCount 1`, `sh:qualifiedMaxCount 1`). The app shows the text in the reader's language (the browser's preferred languages), else the English; it edits the text in the page's language, else the English, and keeps the other languages. Text typed on a page in another language than English is written in that language and, since English is required, as the English too while it has no translation of its own (renaming then replaces both) |
 | Deck 5 | Deck 4 in a pod (`<#inPod>`, `DeckV5` only), but `dcterms:title` and `dcterms:description` are language-tagged text in any language: one or more values, at most one per language (`sh:uniqueLang`), English no longer required. A deck titled only in Swedish or Japanese is a whole deck. A library release stays library deck 4 (`LibraryDeckV4`, English required): English first is the library's curation policy, not a rule of the data. The app edits each language's text under the tag the user states and no longer writes an identical English copy; a title deck 4 tagged English though it is in another language stays so until the user retags it, and one saved the same in English and another language is accepted as text in each language and left untouched. The step from deck 4 changes nothing: every format-4 deck is a format-5 deck |
+| Deck 6 | Deck 5 in a pod (`DeckV6` only), but `dcat:keyword` 0..n is language-tagged text in any language, several values per language (no `sh:uniqueLang`). Untagged keywords (`sh:or` of `xsd:string` and `rdf:langString`), their language unknown, are accepted only as kept from older formats: the app writes every keyword under the language the user states. The app shows the keywords in the reader's language (any tag with its primary subtag) and those in no stated language (untagged and `zxx`), with no fallback to another language. The step from deck 5 keeps the keywords untagged |
+| Library deck 5 | Library deck 4 (`LibraryDeckV5`, in `shapes/library-deck/v5.ttl`), but `dcat:keyword` 0..n is language-tagged text, several values per language; untagged keywords are invalid. The step from library deck 4 keeps a frozen release's keywords untagged |
 | Preferences 3 | Preferences 2 + `sm:invalidDataPolicy` 1..1, a concept of `sm:InvalidDataPolicies` |
 | Preferences 4 | Preferences 3 + `sm:theme` 1..1, a concept of `sm:Themes` (see [theme.md](theme.md)) |
 | Library deck series 1 | The deck across its releases in the library index: a `dcat:DatasetSeries` and `dcat:Dataset`; title, description, publisher 1..1; `dcat:first`, `dcat:last`, `dcat:hasCurrentVersion` 1..1; `dcat:hasVersion` 1..n; themes and keywords 0..n |
 | Library deck series 2 | Library deck series 1 with the version stated (`sh:hasValue 2`) and the title and description as language-tagged text, as in deck format 4 |
+| Library deck series 3 | Library deck series 2, but the keywords, copied from the current release, are language-tagged text, several per language, or untagged as a library deck 4 release has them |
 | Catalog 1 | A `dcat:Catalog` (an instance's `catalog.ttl#catalog`, the library index): title, description, `dcterms:publisher` 1..1; licence, modification time 0..1; `dcat:themeTaxonomy`, `dcat:dataset` 0..n |
 | Agent 1 | A `foaf:Agent`: `foaf:name` 1..1, `foaf:mbox` 0..1 (a `mailto:` IRI) |
 | Distribution 1 | A `dcat:Distribution`: `dcat:accessURL` 1..1; `dcat:downloadURL`, `dcat:mediaType`, `dcterms:format` 0..1 |
@@ -127,11 +135,12 @@ only.
 | `xsd:boolean` | `boolean` | `boolean` |
 | `xsd:dateTime` | ISO 8601 `string` | `dateTime` |
 | `sh:nodeKind sh:IRI` | `string` | `iri` |
-| `rdf:langString` | `LangText`: language tag (lower case) → text; one field however many languages, required with `sh:minCount 1` | `text` |
+| `rdf:langString` + `sh:uniqueLang true` | `LangText`: language tag (lower case) → text; one field however many languages, required with `sh:minCount 1` | `text` |
 | `sh:or ( [ sh:datatype xsd:string ] [ sh:datatype rdf:langString ] )` | `LangText`, the untagged literal under the empty tag (`""`) | `anyText` |
+| either text above without `sh:uniqueLang true` (no `sh:maxCount` allowed) | `LangTexts`: language tag → texts, several per language, `{}` for none | `text` / `anyText`, `many` |
 | no `sh:minCount` | optional (`?:`) | `optional` |
 | `sh:minCount 1 ; sh:maxCount 1` | required | `one` |
-| no `sh:maxCount` (strings and IRIs only) | `readonly string[]` | `many` |
+| no `sh:maxCount` (strings and IRIs; text, see above) | `readonly string[]` | `many` |
 | `sh:maxCount 0` | not a field: the writer removes the predicate | `absent` |
 
 `sm:formatVersion` and `rdf:type` (the class and any `sh:hasValue`

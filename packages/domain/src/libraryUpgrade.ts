@@ -7,6 +7,7 @@ import {
 } from "./deck";
 import type { LibraryCard, LibraryDeckContent, LibraryRelease } from "./library";
 import { isDefaultDeckDescription } from "./dcat";
+import { copyKeywords, noKeywords, sameKeywords, type LangTexts } from "./keywords";
 import { sameText, type LangText } from "./langText";
 
 /**
@@ -52,8 +53,12 @@ export interface LibraryUpgradePlan {
    */
   title?: LangText;
   description?: LangText;
-  /** The release's keywords and themes, when the copy still has the old release's and they changed. */
-  keywords?: string[];
+  /**
+   * The release's keywords and themes, when the copy still has the old
+   * release's and they changed; keywords compare language by language
+   * (see sameKeywords).
+   */
+  keywords?: LangTexts;
   themes?: string[];
 }
 
@@ -89,6 +94,15 @@ function withLanguagesOf(mine: LangText, release: LangText): LangText | undefine
   if (shared.length === 0 || shared.some((tag) => mine[tag] !== release[tag])) return undefined;
   const added = Object.keys(release).filter((tag) => !(tag in mine));
   return added.length === 0 ? undefined : { ...release, ...mine };
+}
+
+/** Keywords as an upgrade leaves them: the release's, when the copy still has the older release's; else undefined. */
+function upgradedKeywords(
+  mine: LangTexts | undefined,
+  before: LangTexts,
+  after: LangTexts,
+): LangTexts | undefined {
+  return sameKeywords(mine, before) && !sameKeywords(before, after) ? copyKeywords(after) : undefined;
 }
 
 /** A list as an upgrade leaves it: the release's, when the copy still has the older release's; else undefined. */
@@ -199,7 +213,7 @@ export function planLibraryUpgrade({
           ? undefined
           : to.description
         : upgradedText(deck.description, from.description, to.description),
-    keywords: upgradedList(deck.keywords, from.keywords, to.keywords),
+    keywords: upgradedKeywords(deck.keywords, from.keywords, to.keywords),
     themes: upgradedList(deck.themes, from.themes, to.themes),
   };
   const aboutChanged = Object.values(about).some((value) => value !== undefined);
@@ -246,16 +260,18 @@ export function upgradedCards(plan: LibraryUpgradePlan): (LibraryCard | Card)[] 
 /**
  * The deck as the upgrade writes it: from the newer release, in its
  * direction, with its title, description, keywords and themes, when
- * those change.
+ * those change (keywords left out when the release has none).
  */
 export function applyLibraryUpgrade(deck: Deck, plan: LibraryUpgradePlan): Deck {
+  const { keywords, ...rest } = deck;
+  const upgradedKeywords = plan.keywords ?? keywords;
   return {
-    ...deck,
+    ...rest,
+    ...(upgradedKeywords === undefined || noKeywords(upgradedKeywords) ? {} : { keywords: upgradedKeywords }),
     sourceUrl: plan.releaseUrl,
     ...(plan.direction === undefined ? {} : { direction: plan.direction }),
     ...(plan.title === undefined ? {} : { title: plan.title }),
     ...(plan.description === undefined ? {} : { description: plan.description }),
-    ...(plan.keywords === undefined ? {} : { keywords: plan.keywords }),
     ...(plan.themes === undefined ? {} : { themes: plan.themes }),
   };
 }

@@ -56,8 +56,16 @@ export function textOfDraft(draft: LangTextDraft): { text: LangText } | { missin
   return { text: Object.fromEntries(written.map(({ value, tag }) => [tag!, value.trim()])) };
 }
 
-/** Notes the languages a saved draft states as this device's latest choices, the main one last: the most recent. */
-export function rememberLanguages(kind: RecentLanguageKind, text: LangText, draft: LangTextDraft): void {
+/**
+ * Notes the languages a saved draft states as this device's latest
+ * choices, the main one last: the most recent. `text` is what is saved,
+ * by language: a text, or keywords.
+ */
+export function rememberLanguages(
+  kind: RecentLanguageKind,
+  text: Readonly<Record<string, unknown>>,
+  draft: LangTextDraft,
+): void {
   for (const entry of [...draft].reverse()) {
     if (entry.tag !== null && entry.tag in text) rememberLanguage(kind, entry.tag);
   }

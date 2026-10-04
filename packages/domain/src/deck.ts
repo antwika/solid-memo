@@ -1,4 +1,5 @@
 import { AppError } from "./appError";
+import type { LangTexts } from "./keywords";
 import { shown, tidiedSideText, tidiedTagged, type LangText } from "./langText";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { isHttpUrl } from "./webId";
@@ -41,6 +42,13 @@ import { isHttpUrl } from "./webId";
  * a card's notes and label, be in any language the user states: English
  * is no longer required. A format-4 reader would flag such text, and drop
  * a note with no English as it edits the card (see docs/migrations.md).
+ *
+ * Deck format 6 states a deck's keywords per language, several per
+ * language (`"capitals"@en`, `"huvudstäder"@sv`), so the app can show a
+ * reader the keywords in their language; untagged keywords from older
+ * formats are kept as they are, their language unknown. A format-5
+ * reader reads only untagged keywords and would drop the tagged ones as
+ * it saves the deck.
  */
 export const DECK_FORMAT_VERSION: number = LATEST_VERSION.deck;
 export const CARD_FORMAT_VERSION: number = LATEST_VERSION.card;
@@ -171,8 +179,11 @@ export interface Deck {
    * and the EU data themes. Absent when none is stated.
    */
   themes?: string[];
-  /** Free-text keywords (dcat:keyword). Absent when none is stated. */
-  keywords?: string[];
+  /**
+   * Free-text keywords (dcat:keyword), per language (see keywords.ts).
+   * Absent when none is stated.
+   */
+  keywords?: LangTexts;
   /**
    * The deck's own cap on new prompts per study day, in place of the
    * instance's preference; absent means the preference (see deckPace.ts).

@@ -13,6 +13,12 @@
       "sha256": "a9b902c792e43d1f1770d09052290f499a1110bd31c4f9b8e69983f81387282d"
     },
     {
+      "deck": "capitals-of-the-world",
+      "version": 3,
+      "issued": "2026-10-04T04:35:34Z",
+      "sha256": "98d1b2b2d4f17bf0f404225ee8fa703202a3c400dcdec82af6cd60075c8dfe99"
+    },
+    {
       "deck": "famous-paintings",
       "version": 1,
       "issued": "2026-09-28T21:25:02Z",
@@ -23,6 +29,12 @@
       "version": 2,
       "issued": "2026-10-02T21:11:25Z",
       "sha256": "bea61e8fbc6261f2794ad4d4c685c18d011f19d09c51cdf09c34930c2be1d9f8"
+    },
+    {
+      "deck": "famous-paintings",
+      "version": 3,
+      "issued": "2026-10-04T04:35:52Z",
+      "sha256": "09ce1ceaa65829dd11974e135222ff4b16ae0136955b752792e4625ff32028a0"
     },
     {
       "deck": "http-status-codes",
@@ -37,6 +49,12 @@
       "sha256": "a0ec2bf9e8ccac8131f2e912e6adfa9652a1be295ef59799c9d38ad1696d214b"
     },
     {
+      "deck": "http-status-codes",
+      "version": 3,
+      "issued": "2026-10-04T04:36:10Z",
+      "sha256": "9663ed9c35c7626101321d7d8c19ac79e966b967bd9ea49eb6f1587540ada712"
+    },
+    {
       "deck": "network-ports",
       "version": 1,
       "issued": "2026-09-28T21:25:01Z",
@@ -47,6 +65,12 @@
       "version": 2,
       "issued": "2026-10-02T21:54:58Z",
       "sha256": "e91fdd820b8bb069b7749f92bdbcb62869f544342fd42e1579fcfef820fdb612"
+    },
+    {
+      "deck": "network-ports",
+      "version": 3,
+      "issued": "2026-10-04T04:36:29Z",
+      "sha256": "3f860c39a3e7135a08dc121e54cfca31bb8242a9372ec6e92472f2d7322948d0"
     },
     {
       "deck": "periodic-table",
@@ -61,6 +85,12 @@
       "sha256": "095f7e205dd0504f481ce18566025df0f541932ad8a812f5d28e766c4afa00eb"
     },
     {
+      "deck": "periodic-table",
+      "version": 3,
+      "issued": "2026-10-04T04:36:50Z",
+      "sha256": "39d70a95e3a2f99c495a705b4ab06325ffe1ec73c1c277eb6b1f35734a9e9638"
+    },
+    {
       "deck": "swedish-adjectives",
       "version": 1,
       "issued": "2026-09-28T17:02:15Z",
@@ -73,6 +103,12 @@
       "sha256": "96a677e115c3db3f9e7f0e4892dee6b5ea19f42584e0afb9e8384c80640ba909"
     },
     {
+      "deck": "swedish-adjectives",
+      "version": 3,
+      "issued": "2026-10-04T04:37:10Z",
+      "sha256": "0db924cee6941298ef111ada806731bf2a42e3d9d54723f13d470e9cc80ed921"
+    },
+    {
       "deck": "swedish-labour-market-taxonomy-occupation-names",
       "version": 1,
       "issued": "2026-10-01T00:38:16Z",
@@ -83,6 +119,12 @@
       "version": 2,
       "issued": "2026-10-02T22:10:05Z",
       "sha256": "310f1dadb56c81ac70793f610c6807aad29e8db9cc2121b885c862669943c723"
+    },
+    {
+      "deck": "swedish-labour-market-taxonomy-occupation-names",
+      "version": 3,
+      "issued": "2026-10-04T04:37:31Z",
+      "sha256": "571ee4ecdcd073171574e2636d279c76bc9b9cc410e722277b59c9595e83b192"
     },
     {
       "deck": "swedish-nouns",
@@ -103,6 +145,12 @@
       "sha256": "6fc9a3ea74ecc8d5db70151c3f7ee1d4eafaff4186fc25819f4ce6d4589a88c1"
     },
     {
+      "deck": "swedish-nouns",
+      "version": 4,
+      "issued": "2026-10-04T04:38:08Z",
+      "sha256": "49de91b8b2e530e48d369d5c400cad8ddc2f3eddb617e753e8dc674603b43552"
+    },
+    {
       "deck": "swedish-verbs",
       "version": 1,
       "issued": "2026-09-28T17:02:16Z",
@@ -121,6 +169,12 @@
       "sha256": "b74a39ef4150b0ac3e23c728ac0bd63a69436dbe4b6de38f6a519e5cc3d25c55"
     },
     {
+      "deck": "swedish-verbs",
+      "version": 4,
+      "issued": "2026-10-04T04:38:38Z",
+      "sha256": "ddfa1cdb683441868e92a6be8292ddac19417d15be5fed21ed88fd3ba63cdc3b"
+    },
+    {
       "deck": "world-flags",
       "version": 1,
       "issued": "2026-09-28T17:02:14Z",
@@ -131,6 +185,12 @@
       "version": 2,
       "issued": "2026-10-02T22:01:58Z",
       "sha256": "ad5f4e028472bd026894d83caed4b84d5c13b212af76775122e725f17fe87e84"
+    },
+    {
+      "deck": "world-flags",
+      "version": 3,
+      "issued": "2026-10-04T04:39:10Z",
+      "sha256": "f161637896243d019c324586bd75de510e009c77837f67e968b7b0473072b1dd"
     }
   ]
 }

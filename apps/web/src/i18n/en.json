@@ -9,6 +9,7 @@
       "back": "Language of the back",
       "deckName": "Language of the deck's name",
       "description": "Language of the description",
+      "keywords": "Language of the keywords",
       "frontNote": "Language of the note under the front",
       "backLabel": "Language of the label",
       "backNote": "Language of the note under the back",
@@ -27,6 +28,7 @@
     "field": {
       "deckName": "the deck's name",
       "description": "the description",
+      "keywords": "the keywords",
       "front": "the front",
       "back": "the back",
       "frontNote": "the note under the front",
@@ -208,7 +210,7 @@
     "description": "Description",
     "topics": "Topics (optional)",
     "keywords": "Keywords (optional)",
-    "keywordsHint": "Separate keywords with commas.",
+    "keywordsHint": "Separate keywords with commas; add keywords in another language as a translation.",
     "saveButton": "Save description",
     "cancelLabel": "Cancel describing",
     "cancelButton": "Cancel"
@@ -602,7 +604,7 @@
     "instanceFormat": "instance format {version}",
     "catalogueFormat": "a catalogue of each instance's decks, which other apps read as a DCAT catalogue",
     "preferencesFormat": "preferences format {version}, which records the answer scale, developer mode, what to do with invalid data and the theme",
-    "deckFormat": "deck format {version}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title and description be in any language you state",
+    "deckFormat": "deck format {version}, which describes decks with the DCAT and SKOS standards, gives every deck a description and lets a deck's title, description and keywords be in any language you state",
     "cardFormat": "card format {version}, which adds pictures on cards, lets a library deck retire a card it no longer uses and lets a card's text be in any language you state",
     "reviewFormat": "review-state format {version}, which keeps each study direction's state and the day's undo snapshot",
     "itemInstanceRecord": "Instance record",

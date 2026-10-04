@@ -171,7 +171,7 @@ describe("parseShapes", () => {
        ${V1_VERSION} <#p> a sh:PropertyShape ; sh:path rdf:type ; ${property} .`;
     rejects("thing/v1.ttl", typed("sh:minCount 1"), "<https://solid-memo.com/shapes/thing/v1.ttl#p> constrains rdf:type without an sh:hasValue class.");
     rejects("thing/v1.ttl", typed('sh:hasValue "Dataset"'), "constrains rdf:type without an sh:hasValue class.");
-    rejects("thing/v1.ttl", shape("sh:datatype xsd:integer"), "<https://solid-memo.com/shapes/thing/v1.ttl#p> repeats a integer; only strings and IRIs may repeat.");
+    rejects("thing/v1.ttl", shape("sh:datatype xsd:integer"), "<https://solid-memo.com/shapes/thing/v1.ttl#p> repeats a integer; only strings, IRIs and texts may repeat.");
   });
 
   it("rejects duplicate field names and duplicate shape names", () => {
@@ -221,6 +221,32 @@ describe("parseShapes", () => {
     expect(renderDomainTypes([model])).toContain("  readonly front: LangText;\n  readonly back?: LangText;");
   });
 
+  it("reads text without sh:uniqueLang as several values per language: LangTexts", () => {
+    const LANG = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#langString>";
+    const [model] = parseShapes(
+      files([
+        "thing/v1.ttl",
+        `${HEAD} <#shape> a sh:NodeShape ; sh:name "ThingV1" ; sh:class sm:Thing ; sh:property <#formatVersion>, <#keywords>, <#labels> . ${V1_VERSION}
+<#keywords> a sh:PropertyShape ; sh:path dcat:keyword ; sh:or ( [ sh:datatype xsd:string ] [ sh:datatype ${LANG} ] ) .
+<#labels> a sh:PropertyShape ; sh:path sm:label ; sh:datatype ${LANG} ; sh:minCount 1 .`,
+      ]),
+    );
+    expect(model.fields).toEqual([
+      { name: "keyword", predicate: "http://www.w3.org/ns/dcat#keyword", kind: "anyText", cardinality: "many" },
+      { name: "label", predicate: "https://solid-memo.com/vocab/v1#label", kind: "text", cardinality: "many" },
+    ]);
+    expect(renderDomainTypes([model])).toContain("  readonly keyword: LangTexts;\n  readonly label: LangTexts;");
+  });
+
+  it("rejects a limit on text with several values per language", () => {
+    rejects(
+      "thing/v1.ttl",
+      `${HEAD} <#shape> a sh:NodeShape ; sh:name "ThingV1" ; sh:class sm:Thing ; sh:property <#formatVersion>, <#p> .
+       ${V1_VERSION} <#p> a sh:PropertyShape ; sh:path sm:p ; sh:datatype <http://www.w3.org/1999/02/22-rdf-syntax-ns#langString> ; sh:maxCount 3 .`,
+      "<https://solid-memo.com/shapes/thing/v1.ttl#p> limits a text with several values per language; drop sh:maxCount or add sh:uniqueLang true.",
+    );
+  });
+
   it("requires versions to run without gaps when rendering", () => {
     const models = parseShapes(files(["thing/v2.ttl", THING_V2]));
     expect(() => renderDomainTypes(models)).toThrow(
@@ -245,6 +271,14 @@ describe("renderers", () => {
  * ("") holds it.
  */
 export type LangText = Readonly<Record<string, string>>;
+
+/**
+ * Several texts per language (rdf:langString values without
+ * sh:uniqueLang, such as a deck's keywords): language tag, lower case, to
+ * the texts in that language, in stored order. Where a shape also allows
+ * untagged text, the empty tag ("") holds it; {} is none.
+ */
+export type LangTexts = Readonly<Record<string, readonly string[]>>;
 
 /** The record kinds the shapes describe (see docs/shapes.md). */
 export type ShapeName = "thing";

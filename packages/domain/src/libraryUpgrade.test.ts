@@ -19,7 +19,7 @@ function release(version: number, cards: LibraryCard[], direction: Deck["directi
     version: String(version),
     seriesUrl: `${DECKS}index.ttl#capitals`,
     themes: [],
-    keywords: [],
+    keywords: {},
     cards,
   };
 }
@@ -193,22 +193,22 @@ describe("the deck's texts in an upgrade", () => {
   const v2 = flags(2, {
     title: { en: "World flags", sv: "Världens flaggor" },
     description: { en: "Flags.", sv: "Flaggor." },
-    keywords: ["flags", "flaggor"],
+    keywords: { en: ["flags"], sv: ["flaggor"] },
     themes: ["https://solid-memo.com/vocab/topics#geography"],
   });
-  const copy: Deck = { ...deck, title: { en: "World flags" }, description: { en: "Flags." }, keywords: [], themes: [] };
+  const copy: Deck = { ...deck, title: { en: "World flags" }, description: { en: "Flags." }, themes: [] };
   const plan = (mine: Deck, to = v2) => planLibraryUpgrade({ deck: mine, cards: [], from: v1, to, releases });
 
   it("takes the release's title, description, keywords and themes where the user left the old ones, and offers that alone", () => {
     expect(plan(copy)).toMatchObject({
       title: { en: "World flags", sv: "Världens flaggor" },
       description: { en: "Flags.", sv: "Flaggor." },
-      keywords: ["flags", "flaggor"],
+      keywords: { en: ["flags"], sv: ["flaggor"] },
       themes: ["https://solid-memo.com/vocab/topics#geography"],
     });
     expect(applyLibraryUpgrade(copy, plan(copy)!)).toMatchObject({
       title: { en: "World flags", sv: "Världens flaggor" },
-      keywords: ["flags", "flaggor"],
+      keywords: { en: ["flags"], sv: ["flaggor"] },
     });
   });
 
@@ -233,13 +233,37 @@ describe("the deck's texts in an upgrade", () => {
   });
 
   it("keeps keywords and themes the user changed, a deck without a description, and what the release leaves out", () => {
-    const own = plan({ ...copy, keywords: ["mine"], themes: undefined, description: undefined })!;
+    const own = plan({ ...copy, keywords: { en: ["mine"] }, themes: undefined, description: undefined })!;
     expect(own).not.toHaveProperty("keywords");
     expect(own).not.toHaveProperty("description");
     expect(own.themes).toEqual(["https://solid-memo.com/vocab/topics#geography"]);
     const silent = plan(copy, { ...v2, description: undefined })!;
     expect(silent).not.toHaveProperty("description");
     expect(plan(copy, { ...v1, version: "2" })).toBeNull();
+  });
+
+  it("compares keywords language by language: a copy with the old release's untagged keywords takes the release's tagged ones", () => {
+    const old = flags(1, { keywords: { "": ["flags", "flaggor"] } });
+    const tagged = flags(2, { keywords: { en: ["flags", "countries"], sv: ["flaggor"] } });
+    const upgrade = (keywords: Deck["keywords"]) =>
+      planLibraryUpgrade({ deck: { ...copy, keywords }, cards: [], from: old, to: tagged, releases });
+    expect(upgrade({ "": ["flaggor", "flags"] })!.keywords).toEqual({ en: ["flags", "countries"], sv: ["flaggor"] });
+    expect(upgrade({ en: ["flags", "flaggor"] })).toBeNull();
+    expect(upgrade({ "": ["flags"] })).toBeNull();
+    expect(planLibraryUpgrade({ deck: { ...copy, keywords: { sv: ["flaggor"], en: ["countries", "flags"] } }, cards: [], from: tagged, to: { ...tagged, version: "3" }, releases })).toBeNull();
+  });
+
+  it("leaves a copy without keywords when the release drops them all, and keeps the copy's when the plan has none", () => {
+    const dropped = planLibraryUpgrade({
+      deck: { ...copy, keywords: { en: ["flags"] } },
+      cards: [],
+      from: flags(1, { keywords: { en: ["flags"] } }),
+      to: flags(2, {}),
+      releases,
+    })!;
+    expect(dropped.keywords).toEqual({});
+    expect(applyLibraryUpgrade({ ...copy, keywords: { en: ["flags"] } }, dropped)).not.toHaveProperty("keywords");
+    expect(applyLibraryUpgrade({ ...copy, keywords: { en: ["mine"] } }, { ...dropped, keywords: undefined }).keywords).toEqual({ en: ["mine"] });
   });
 });
 

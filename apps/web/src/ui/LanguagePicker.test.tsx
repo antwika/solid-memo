@@ -109,6 +109,7 @@ describe("LanguagePicker", () => {
     ["back", "Language of the back"],
     ["deckName", "Language of the deck's name"],
     ["description", "Language of the description"],
+    ["keywords", "Language of the keywords"],
     ["frontNote", "Language of the note under the front"],
     ["backLabel", "Language of the label"],
     ["backNote", "Language of the note under the back"],
@@ -157,20 +158,23 @@ describe("LanguagePicker", () => {
     expect(screen.getByRole("radio", { name: /^Swedish/ })).toBeChecked();
   });
 
-  it("offers a deck's own text the languages recently used for decks first, five at most", () => {
-    for (const tag of ["fr", "it", "es", "nl", "da"]) rememberLanguage("deck", tag);
-    rememberLanguage("own", "ja");
-    render(<Picker role="deckName" />);
-    open();
-    expect(radioNames().slice(0, 6)).toEqual([
-      "Danish — dansk (da)",
-      "Dutch — Nederlands (nl)",
-      "Spanish — español (es)",
-      "Italian — italiano (it)",
-      "French — français (fr)",
-      "English (en)",
-    ]);
-  });
+  it.each<LanguageRole>(["deckName", "description", "keywords"])(
+    "offers a deck's own text (%s) the languages recently used for decks first, five at most",
+    (role) => {
+      for (const tag of ["fr", "it", "es", "nl", "da"]) rememberLanguage("deck", tag);
+      rememberLanguage("own", "ja");
+      render(<Picker role={role} />);
+      open();
+      expect(radioNames().slice(0, 6)).toEqual([
+        "Danish — dansk (da)",
+        "Dutch — Nederlands (nl)",
+        "Spanish — español (es)",
+        "Italian — italiano (it)",
+        "French — français (fr)",
+        "English (en)",
+      ]);
+    },
+  );
 
   it("chooses a radio as the language, and closes on Done, focus back on the button", () => {
     const onChange = vi.fn();

@@ -441,11 +441,12 @@ def write_deck(path: Path, cards: list[tuple[Painting, str]], *, creator: str | 
         + aligned("dcat:theme", ["<http://publications.europa.eu/resource/authority/data-theme/EDUC>", "topic:art"])
         + " ;",
         "    dcat:keyword " + aligned(
-            "dcat:keyword", ['"art"', '"art history"', '"paintings"', '"konst"', '"konsthistoria"', '"målningar"']
+            "dcat:keyword",
+            ['"art"@en', '"art history"@en', '"paintings"@en', '"konst"@sv', '"konsthistoria"@sv', '"målningar"@sv'],
         ) + " ;",
         "    dcterms:language <http://publications.europa.eu/resource/authority/language/ENG> ;",
         "    solid-memo:studyDirection solid-memo:frontToBack ;",
-        "    solid-memo:formatVersion 4 .",
+        "    solid-memo:formatVersion 5 .",  # format 5: keywords tagged with their language
         "",
     ]
     if creator_name is not None:

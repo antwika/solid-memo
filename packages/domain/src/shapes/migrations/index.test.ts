@@ -48,7 +48,7 @@ describe("migrate", () => {
     expect(migrate("card", { version: 5, data }, CONTEXT)).toBe(data);
   });
 
-  it("restamps a format-4 deck and card, changing nothing: no language guessed, stand-ins and untagged sides kept", () => {
+  it("restamps a format-4 deck and card, changing nothing but the deck's keywords' form: no language guessed, stand-ins and untagged sides kept", () => {
     const card = { front: { "": "Sweden" }, back: { en: "Stockholm", sv: "Stockholm" }, backNote: { en: "Huvudstad.", sv: "Huvudstad." } };
     expect(migrate("card", { version: 4, data: card }, CONTEXT)).toEqual(card);
     const deck = {
@@ -62,12 +62,36 @@ describe("migrate", () => {
       cardsDocument: "d",
       reviewsDocument: "r",
     };
-    expect(migrate("deck", { version: 4, data: deck }, CONTEXT)).toEqual(deck);
+    expect(migrate("deck", { version: 4, data: deck }, CONTEXT)).toEqual({ ...deck, keyword: {} });
   });
 
-  it("leaves the library's kinds at their format: English first is the library's policy", () => {
-    expect(LATEST_VERSION.libraryDeck).toBe(4);
-    expect(LATEST_VERSION.libraryDeckSeries).toBe(2);
+  it("keeps a deck's, a release's and a series' keywords untagged, their language unknown: no language guessed", () => {
+    const keyword = ["capitals", "huvudstäder"];
+    const deck = { title: { sv: "Huvudstäder" }, description: { sv: "Kortlek." }, creator: [], studyDirection: `${SM}frontToBack` as const, theme: [], keyword, distribution: [], cardsDocument: "d", reviewsDocument: "r" };
+    expect(migrate("deck", { version: 5, data: deck }, CONTEXT)).toEqual({ ...deck, keyword: { "": keyword } });
+    const release = {
+      title: { en: "Capitals" },
+      description: { en: "Capitals." },
+      creator: [],
+      publisher: "p",
+      studyDirection: `${SM}frontToBack` as const,
+      theme: [EDUC],
+      keyword,
+      language: [],
+      version: "2",
+      inSeries: "s",
+      isVersionOf: "s",
+      distribution: [],
+      wasDerivedFrom: [],
+    };
+    expect(migrate("libraryDeck", { version: 4, data: release }, CONTEXT)).toEqual({ ...release, keyword: { "": keyword } });
+    const series = { title: { en: "L" }, description: { en: "C." }, publisher: "p", theme: [], keyword, first: "a", last: "b", hasVersion: ["a", "b"], hasCurrentVersion: "b" };
+    expect(migrate("libraryDeckSeries", { version: 2, data: series }, CONTEXT)).toEqual({ ...series, keyword: { "": keyword } });
+  });
+
+  it("brings the library's kinds to the formats whose keywords state their language", () => {
+    expect(LATEST_VERSION.libraryDeck).toBe(5);
+    expect(LATEST_VERSION.libraryDeckSeries).toBe(3);
   });
 
   it("walks a record up to the latest version", () => {
@@ -90,7 +114,7 @@ describe("migrate", () => {
       creator: ["https://pod.example/x.ttl#agent-anton"],
       studyDirection: `${SM}frontToBack`,
       theme: [],
-      keyword: [],
+      keyword: {},
       distribution: ["https://pod.example/x.ttl#it-cards"],
       cardsDocument: "d",
       reviewsDocument: "r",
@@ -120,7 +144,7 @@ describe("migrate", () => {
       publisher: "https://solid-memo.com/decks/index.ttl#solid-memo",
       studyDirection: `${SM}frontToBack`,
       theme: [EDUC],
-      keyword: [],
+      keyword: {},
       language: [],
       version: "1",
       inSeries: "https://solid-memo.com/decks/index.ttl#capitals",
@@ -136,6 +160,7 @@ describe("migrate", () => {
       ...series,
       title: { en: "L" },
       description: { en: "Capitals." },
+      keyword: {},
     });
     const review = {
       easeFactor: 2.5,
