@@ -39,6 +39,9 @@ jobs:
           cache-dependency-path: scripts/requirements-ci.txt
       - run: pip install -r scripts/requirements-ci.txt
       - run: python scripts/shacl_crosscheck.py
+      # Each authored deck and its provenance report are what its dossier
+      # builds to (docs/deck-library.md#authored-decks).
+      - run: python packages/deck-library/scripts/authored_decks.py sync --all
 
   # The app's use cases and Solid adapters against real Solid servers,
   # one job per server (e2e/pod/servers.ts): each pulls or builds only its

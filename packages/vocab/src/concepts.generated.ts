@@ -147,5 +147,76 @@ export const TOPICS = {
       label: { en: "Labour market", sv: "Arbetsmarknad" },
       definition: { en: "Occupations, work and the labour market.", sv: "Yrken, arbete och arbetsmarknaden." },
     },
+    {
+      iri: "https://solid-memo.com/vocab/topics#spanish",
+      label: { en: "Spanish", sv: "Spanska" },
+      definition: { en: "The Spanish language.", sv: "Det spanska språket." },
+      broader: "https://solid-memo.com/vocab/topics#languages",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#latin",
+      label: { en: "Latin", sv: "Latin" },
+      definition: { en: "The Latin language and its phrases.", sv: "Det latinska språket och dess uttryck." },
+      broader: "https://solid-memo.com/vocab/topics#languages",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#greek",
+      label: { en: "Greek", sv: "Grekiska" },
+      definition: { en: "The Greek language and its alphabet.", sv: "Det grekiska språket och dess alfabet." },
+      broader: "https://solid-memo.com/vocab/topics#languages",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#physics",
+      label: { en: "Physics", sv: "Fysik" },
+      definition: { en: "Matter, energy, forces and their units.", sv: "Materia, energi, krafter och deras enheter." },
+      broader: "https://solid-memo.com/vocab/topics#science",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#astronomy",
+      label: { en: "Astronomy", sv: "Astronomi" },
+      definition: { en: "Stars, planets, constellations and the universe.", sv: "Stjärnor, planeter, stjärnbilder och universum." },
+      broader: "https://solid-memo.com/vocab/topics#science",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#biology",
+      label: { en: "Biology", sv: "Biologi" },
+      definition: { en: "Living things: animals, plants and the human body.", sv: "Levande varelser: djur, växter och människokroppen." },
+      broader: "https://solid-memo.com/vocab/topics#science",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#history",
+      label: { en: "History", sv: "Historia" },
+      definition: { en: "Past events, eras and the people who shaped them.", sv: "Historiska händelser, epoker och människorna som formade dem." },
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#literature",
+      label: { en: "Literature", sv: "Litteratur" },
+      definition: { en: "Books, authors and literary prizes.", sv: "Böcker, författare och litterära priser." },
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#music",
+      label: { en: "Music", sv: "Musik" },
+      definition: { en: "Composers, works and the language of music.", sv: "Tonsättare, verk och musikens språk." },
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#mythology",
+      label: { en: "Mythology", sv: "Mytologi" },
+      definition: { en: "Gods, heroes and the myths of the world.", sv: "Gudar, hjältar och världens myter." },
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#mathematics",
+      label: { en: "Mathematics", sv: "Matematik" },
+      definition: { en: "Numbers, formulas and mathematical notation.", sv: "Tal, formler och matematisk notation." },
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#sports",
+      label: { en: "Sports", sv: "Sport" },
+      definition: { en: "Sports, games and their competitions.", sv: "Idrotter, spel och deras tävlingar." },
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#economics",
+      label: { en: "Economics", sv: "Ekonomi" },
+      definition: { en: "Money, currencies and the economy.", sv: "Pengar, valutor och ekonomin." },
+    },
   ],
 } as const satisfies ConceptScheme;

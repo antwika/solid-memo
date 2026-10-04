@@ -36,6 +36,30 @@
     skos:prefLabel "Swedish"@en ;
     skos:inScheme <http://publications.europa.eu/resource/authority/language> .
 
+<http://publications.europa.eu/resource/authority/language/SPA>
+    a skos:Concept ,
+      dcterms:LinguisticSystem ;
+    skos:prefLabel "Spanish"@en ;
+    skos:inScheme <http://publications.europa.eu/resource/authority/language> .
+
+<http://publications.europa.eu/resource/authority/language/LAT>
+    a skos:Concept ,
+      dcterms:LinguisticSystem ;
+    skos:prefLabel "Latin"@en ;
+    skos:inScheme <http://publications.europa.eu/resource/authority/language> .
+
+<http://publications.europa.eu/resource/authority/language/ITA>
+    a skos:Concept ,
+      dcterms:LinguisticSystem ;
+    skos:prefLabel "Italian"@en ;
+    skos:inScheme <http://publications.europa.eu/resource/authority/language> .
+
+<http://publications.europa.eu/resource/authority/language/ELL>
+    a skos:Concept ,
+      dcterms:LinguisticSystem ;
+    skos:prefLabel "Modern Greek"@en ;
+    skos:inScheme <http://publications.europa.eu/resource/authority/language> .
+
 <http://publications.europa.eu/resource/authority/file-type>
     a skos:ConceptScheme ;
     dcterms:title "File type"@en .

@@ -166,6 +166,65 @@ stand-in for another language.
   allow GitHub Actions to create pull requests (Settings → Actions →
   General → Workflow permissions).
 
+### Authored decks
+
+Most of the library is researched card by card rather than generated
+from one dataset. Such a deck is written as a **dossier**,
+[`packages/deck-library/authored/<name>.json`](../packages/deck-library/authored/),
+which holds everything known about how it was made, and
+[scripts/authored_decks.py](../packages/deck-library/scripts/authored_decks.py)
+(its docstring defines the format) builds the deck from it:
+
+```mermaid
+flowchart LR
+    dossier["authored/name.json<br/>dossier (edited)"] -->|authored_decks.py build| deck["decks/name.ttl<br/>source"]
+    dossier -->|authored_decks.py build| report["authored/name.md<br/>provenance report"]
+    deck -->|npm run deck:release| rel["releases/name/n.ttl"]
+```
+
+- **What a dossier records:** the deck's metadata; every source with
+  its licence, the licence's evidence (its terms page, quoted), its role
+  and when it was retrieved; the method, step by step; the selection
+  criteria; every query and command run, verbatim; why the deck's licence
+  complies; the quality-control rounds, each finding with its resolution;
+  and every card with its **evidence** — at least two distinct sources,
+  one of them a content source, each with where it says what — and
+  optional **Wikidata checks** (a label, or a statement's value).
+- **Licences.** A source is either **content** (information in the
+  cards, including which items were picked, came from it) or
+  **verification** (consulted to confirm facts, nothing taken). Content
+  may only come from sources whose licence allows it: CC0 and public
+  domain freely, CC BY makes the deck CC BY 4.0, CC BY-SA makes it
+  CC BY-SA 4.0; anything else (all rights reserved, non-commercial, GPL
+  documentation) can only verify. The script refuses a dossier that
+  breaks this. Content sources are the deck's `prov:wasDerivedFrom`, with
+  their creators and licences; every source is `prov:used` by the deck's
+  `<#compilation>` activity, whose `rdfs:seeAlso` is the report.
+- **Checks.** `authored_decks.py check <name>` (and `build`) validates the
+  dossier (fields, languages per side, one answer per front and per back
+  of a bidirectional deck, evidence, licences) and re-runs its Wikidata
+  checks against live Wikidata, so a later edit there that contradicts a
+  card is caught before the next release. `node
+  packages/deck-library/scripts/validate_sources.ts <name>` validates the
+  built deck with the library's shapes and DCAT-AP, as its next release.
+  CI runs `authored_decks.py sync --all`, which fails when a deck or
+  report differs from what its dossier builds to: edit the dossier,
+  rebuild, never the outputs. The build is offline and clock-free.
+- **The provenance report**, `authored/<name>.md`, is generated: sources
+  and licences, licence evidence, method, selection, queries, every
+  quality-control round, and a table of every card with its evidence.
+  The deck's description links to it.
+- **How the first authored decks were made** (2026-10-04): research
+  agents (Claude, Anthropic) at the maintainer's direction each wrote
+  one dossier from its sources; three independent reviewer agents per
+  deck then checked every card for facts, for language and translation,
+  and for licensing, attribution and documentation; a fixer verified
+  each finding, applied or rejected it, and logged it as a round in the
+  dossier; and fresh reviewers re-checked the changed cards and a third
+  of the rest until no errors remained. Each report says so. No human
+  subject expert has reviewed them yet: a correction is a change to the
+  dossier, logged as a new quality-control round, and a new release.
+
 Every hand-written Turtle file in the repository — `packages/deck-library/decks/`, `packages/vocab/shapes/`,
 `packages/vocab/vocab/` and `packages/vocab/fixtures/` — follows one layout: `@base` first,
 prefixes aligned in a block, each subject on a line of its own, one
