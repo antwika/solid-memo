@@ -114,9 +114,10 @@ stopping to skip, and the pin moves by hand once the change is
 understood.
 
 The Community Solid Server's in-memory store (the one these tests use)
-cuts a document short after a PATCH that adds characters outside ASCII
-(`å`, `ä`, `ö`): it stores as many bytes as there were characters. Its
-file store does not; keep test data that is patched ASCII, or measure on
+cuts a document short after a PATCH to it when the document holds
+characters outside ASCII (`å`, `ä`, `ö`), even when the patch itself is
+ASCII: it stores as many bytes as there were characters. Its file store
+does not; keep test data that is patched ASCII, or measure on
 `-c @css:config/file.json -f <dir>`.
 
 solid-server 6.0.0 is packaged with faults its image works around: it

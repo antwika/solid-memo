@@ -4,6 +4,7 @@ import type { LangText } from "@solid-memo/domain/langText";
 import type { ThemeChoice } from "@solid-memo/domain/theme";
 import type { Repair } from "@solid-memo/domain/repair";
 import type { Card, CardContent, Deck } from "@solid-memo/domain/deck";
+import type { StatedLanguages } from "@solid-memo/domain/deckLanguages";
 import type {
   Instance,
   InstanceMeta,
@@ -164,6 +165,15 @@ export interface DeckRepository {
    * longer exists is skipped.
    */
   saveCards(deck: Deck, cards: Card[]): Promise<void>;
+  /**
+   * State the language of the given cards' untagged fronts and backs
+   * (withStatedLanguages), in ONE write of the cards document, made only
+   * if the document is as it was read (If-Match): each card is re-keyed
+   * as it is in the pod then, so a side that states its language by then
+   * is left as it is. A card that no longer exists is skipped. How many
+   * cards changed; nothing is written when none did.
+   */
+  stateCardLanguages(deck: Deck, cardIds: readonly string[], languages: StatedLanguages): Promise<number>;
   /**
    * Write cards by fragment id, new or existing (an existing card keeps
    * its creation time and triples this app does not know), retired or

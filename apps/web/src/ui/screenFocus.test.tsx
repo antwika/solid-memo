@@ -65,6 +65,20 @@ describe("useScreenFocus", () => {
     expect(scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
+  it("focuses the heading of the part a link opens the screen at", () => {
+    vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+    const { rerender } = render(<Screen route={home} change="initial" />);
+    rerender(
+      <Screen route={other} change="pop">
+        <h2>Deck preferences</h2>
+        <h3 tabIndex={-1} data-arrival>
+          Languages
+        </h3>
+      </Screen>,
+    );
+    expect(screen.getByRole("heading", { name: "Languages" })).toHaveFocus();
+  });
+
   it("leaves the scroll to the browser on Back/Forward", () => {
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     const { rerender } = render(<Screen route={home} change="initial" />);

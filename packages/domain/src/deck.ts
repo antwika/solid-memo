@@ -1,5 +1,5 @@
 import { AppError } from "./appError";
-import { shown, tidied, tidiedSideText, tidiedTagged, type LangText } from "./langText";
+import { shown, tidiedSideText, tidiedTagged, type LangText } from "./langText";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { isHttpUrl } from "./webId";
 
@@ -36,6 +36,11 @@ import { isHttpUrl } from "./webId";
  * Card format 4 later gained a description of each side's picture
  * (`sm:frontImageDescription` / `sm:backImageDescription`) without a
  * version bump: an older reader ignores it and shows the picture as before.
+ *
+ * Deck format 5 and card format 5 let a deck's title and description, and
+ * a card's notes and label, be in any language the user states: English
+ * is no longer required. A format-4 reader would flag such text, and drop
+ * a note with no English as it edits the card (see docs/migrations.md).
  */
 export const DECK_FORMAT_VERSION: number = LATEST_VERSION.deck;
 export const CARD_FORMAT_VERSION: number = LATEST_VERSION.card;
@@ -182,7 +187,9 @@ export interface CardContent {
   /**
    * Text on the front, in every language it is in (card format 4), or
    * untagged under the empty tag ("") when its language is not known, as
-   * for text typed in the app; no language when the front is a picture only.
+   * for text an app typed before it asked the user for the language (the
+   * app keeps such text only untouched); no language when the front is a
+   * picture only.
    */
   front: LangText;
   /** Text on the back, likewise. */
@@ -198,7 +205,7 @@ export interface CardContent {
   /**
    * A short note under the front's text ("Out of use"), shown once the
    * answer is revealed, so it never gives it away. In every language it
-   * is stated in, one of them English. Card format 3.
+   * is stated in, English or not (card format 5). Card format 3.
    */
   frontNote?: LangText;
   /** URL of a picture shown on the back, above any text. */
@@ -209,14 +216,14 @@ export interface CardContent {
    * A short label above the back's text that says how the answer relates
    * to the front ("Replaced by", "Capital"), shown with the back,
    * smaller: the back's text stays the answer itself. In every language
-   * it is stated in, one of them English. Card format 3.
+   * it is stated in, English or not (card format 5). Card format 3.
    */
   backLabel?: LangText;
   /**
    * A short note under the back's text ("In version 30, 2026-05-08"),
    * shown once the answer is revealed: the back's text stays the answer
-   * itself. In every language it is stated in, one of them English.
-   * Card format 3.
+   * itself. In every language it is stated in, English or not (card
+   * format 5). Card format 3.
    */
   backNote?: LangText;
 }
@@ -242,36 +249,76 @@ export function activeCards<T extends { retired?: true }>(cards: readonly T[]): 
   return cards.filter((card) => card.retired !== true);
 }
 
-/** Outcome of validating card content as entered. */
+/** A text of a card: a side's, a note, the label or a picture's description. */
+export type CardTextPart =
+  | "front"
+  | "back"
+  | "frontImageDescription"
+  | "frontNote"
+  | "backImageDescription"
+  | "backLabel"
+  | "backNote";
+
+/** How an English error text names each text of a card ("Choose the language of {field}."). */
+const PART_NOUNS: Record<CardTextPart, string> = {
+  front: "the front",
+  back: "the back",
+  frontImageDescription: "the front picture's description",
+  frontNote: "the note under the front",
+  backImageDescription: "the back picture's description",
+  backLabel: "the label",
+  backNote: "the note under the back",
+};
+
+/**
+ * Outcome of validating card content as entered; an error about one of
+ * the card's texts names it (`part`), for the form to point at it.
+ */
 export type CardContentValidation =
   | { ok: true; content: CardContent }
-  | { ok: false; error: AppError };
+  | { ok: false; error: AppError; part?: CardTextPart };
 
 /**
  * Validate and normalize card content as entered: text is trimmed, an
- * empty image field is none, a label or note without English text is
- * none, as is a picture description with no text or no picture to
- * describe, and each side needs text or a picture.
+ * empty image field is none, an empty note or label is none, as is a
+ * picture description with no text or no picture to describe, and each
+ * side needs text or a picture.
  * A picture must be an http(s) URL — it is shown to whoever studies the
  * card, so nothing else may end up in an `<img>`.
+ *
+ * Text states its language (card format 5): the app never writes
+ * untagged text. A side saved before it did may keep its untagged text
+ * ("") while it is as `saved` (the card edited, if any) has it; edited,
+ * or given a translation (untagged and tagged text never mix), it needs
+ * its language (textNeedsLanguage, textMixesUnstated). A note, the label
+ * and a picture's description are always in a stated language, English
+ * or not.
  */
 export function validateCardContent(
   input: CardContent,
+  saved?: CardContent,
 ): CardContentValidation {
   const front = tidiedSideText(input.front);
   const back = tidiedSideText(input.back);
   const frontImageUrl = normalizeImageUrl(input.frontImageUrl);
   const backImageUrl = normalizeImageUrl(input.backImageUrl);
-  const frontImageDescription = frontImageUrl === undefined ? undefined : tidiedTagged(input.frontImageDescription);
-  const backImageDescription = backImageUrl === undefined ? undefined : tidiedTagged(input.backImageDescription);
-  const frontNote = tidied(input.frontNote);
-  const backLabel = tidied(input.backLabel);
-  const backNote = tidied(input.backNote);
+  const own = {
+    frontImageDescription: frontImageUrl === undefined ? undefined : tidiedTagged(input.frontImageDescription),
+    frontNote: tidiedTagged(input.frontNote),
+    backLabel: tidiedTagged(input.backLabel),
+    backImageDescription: backImageUrl === undefined ? undefined : tidiedTagged(input.backImageDescription),
+    backNote: tidiedTagged(input.backNote),
+  };
   if (frontImageUrl !== undefined && !isHttpUrl(frontImageUrl)) {
     return { ok: false, error: new AppError("cardFrontImageNotWebUrl") };
   }
   if (backImageUrl !== undefined && !isHttpUrl(backImageUrl)) {
     return { ok: false, error: new AppError("cardBackImageNotWebUrl") };
+  }
+  const unstated = unstatedSide("front", front, saved) ?? unstatedSide("back", back, saved);
+  if (unstated !== undefined) return unstated;
+  for (const part of ["frontImageDescription", "frontNote", "backLabel", "backImageDescription", "backNote"] as const) {
+    if (own[part] !== undefined && "" in own[part]) return needsLanguage(part);
   }
   if (isEmptyText(front) && frontImageUrl === undefined) {
     return { ok: false, error: new AppError("cardFrontEmpty") };
@@ -286,13 +333,32 @@ export function validateCardContent(
       back,
       ...(frontImageUrl === undefined ? {} : { frontImageUrl }),
       ...(backImageUrl === undefined ? {} : { backImageUrl }),
-      ...(frontImageDescription === undefined ? {} : { frontImageDescription }),
-      ...(backImageDescription === undefined ? {} : { backImageDescription }),
-      ...(frontNote === undefined ? {} : { frontNote }),
-      ...(backLabel === undefined ? {} : { backLabel }),
-      ...(backNote === undefined ? {} : { backNote }),
+      ...(own.frontImageDescription === undefined ? {} : { frontImageDescription: own.frontImageDescription }),
+      ...(own.backImageDescription === undefined ? {} : { backImageDescription: own.backImageDescription }),
+      ...(own.frontNote === undefined ? {} : { frontNote: own.frontNote }),
+      ...(own.backLabel === undefined ? {} : { backLabel: own.backLabel }),
+      ...(own.backNote === undefined ? {} : { backNote: own.backNote }),
     },
   };
+}
+
+function needsLanguage(part: CardTextPart): CardContentValidation {
+  return { ok: false, error: new AppError("textNeedsLanguage", { field: PART_NOUNS[part] }), part };
+}
+
+/**
+ * Why a side's untagged text ("") may not be saved: it has translations
+ * too, or it is not the untagged text the card has saved; undefined when
+ * it may (it is untouched) or the side has none.
+ */
+function unstatedSide(
+  part: "front" | "back",
+  text: LangText,
+  saved: CardContent | undefined,
+): CardContentValidation | undefined {
+  if (!("" in text)) return undefined;
+  if (Object.keys(text).length > 1) return { ok: false, error: new AppError("textMixesUnstated"), part };
+  return saved?.[part][""]?.trim() === text[""] ? undefined : needsLanguage(part);
 }
 
 function normalizeImageUrl(value: string | undefined): string | undefined {

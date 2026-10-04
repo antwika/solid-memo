@@ -15,9 +15,9 @@ export type ShapeName = "agent" | "answer" | "card" | "catalog" | "deck" | "deck
 export const LATEST_VERSION = {
   agent: 1,
   answer: 1,
-  card: 4,
+  card: 5,
   catalog: 1,
-  deck: 4,
+  deck: 5,
   deckSchedule: 1,
   distribution: 1,
   documentReceipt: 1,
@@ -90,6 +90,21 @@ export interface CardV4 {
   readonly deprecated?: boolean;
 }
 
+/** Card format 5: each side has text, a picture or both (a picture is always an IRI); a side's text is untagged, its language unknown, or language-tagged, one text per language; a side's picture may have a description, its text alternative, language-tagged text, one per language; each side may have a note under it, shown once the answer is revealed, and the back a label above it that says how the answer relates to the front, all three language-tagged text in any language, one per language; a retired card, which is kept but no longer studied, states owl:deprecated true. */
+export interface CardV5 {
+  readonly front?: LangText;
+  readonly back?: LangText;
+  readonly frontImage?: string;
+  readonly backImage?: string;
+  readonly frontImageDescription?: LangText;
+  readonly backImageDescription?: LangText;
+  readonly frontNote?: LangText;
+  readonly backLabel?: LangText;
+  readonly backNote?: LangText;
+  readonly created?: string;
+  readonly deprecated?: boolean;
+}
+
 /** A catalogue of decks: a dcat:Catalog. */
 export interface CatalogV1 {
   readonly title: string;
@@ -148,6 +163,25 @@ export interface DeckV3 {
 
 /** Deck format 4 as a catalog entry in a pod: a dcat:Dataset. */
 export interface DeckV4 {
+  readonly title: LangText;
+  readonly description: LangText;
+  readonly created?: string;
+  readonly modified?: string;
+  readonly creator: readonly string[];
+  readonly license?: string;
+  readonly studyDirection: "https://solid-memo.com/vocab/v1#frontToBack" | "https://solid-memo.com/vocab/v1#backToFront" | "https://solid-memo.com/vocab/v1#bidirectional";
+  readonly theme: readonly string[];
+  readonly keyword: readonly string[];
+  readonly distribution: readonly string[];
+  readonly cardsDocument: string;
+  readonly reviewsDocument: string;
+  readonly source?: string;
+  readonly newCardsPerDay?: number;
+  readonly maxReviewsPerDay?: number;
+}
+
+/** Deck format 5 as a catalog entry in a pod: a dcat:Dataset. */
+export interface DeckV5 {
   readonly title: LangText;
   readonly description: LangText;
   readonly created?: string;
@@ -376,9 +410,9 @@ export interface ReviewStateV2 {
 
 export type AgentRecord = { version: 1; data: AgentV1 };
 export type AnswerRecord = { version: 1; data: AnswerV1 };
-export type CardRecord = { version: 1; data: CardV1 } | { version: 2; data: CardV2 } | { version: 3; data: CardV3 } | { version: 4; data: CardV4 };
+export type CardRecord = { version: 1; data: CardV1 } | { version: 2; data: CardV2 } | { version: 3; data: CardV3 } | { version: 4; data: CardV4 } | { version: 5; data: CardV5 };
 export type CatalogRecord = { version: 1; data: CatalogV1 };
-export type DeckRecord = { version: 1; data: DeckV1 } | { version: 2; data: DeckV2 } | { version: 3; data: DeckV3 } | { version: 4; data: DeckV4 };
+export type DeckRecord = { version: 1; data: DeckV1 } | { version: 2; data: DeckV2 } | { version: 3; data: DeckV3 } | { version: 4; data: DeckV4 } | { version: 5; data: DeckV5 };
 export type DeckScheduleRecord = { version: 1; data: DeckScheduleV1 };
 export type DistributionRecord = { version: 1; data: DistributionV1 };
 export type DocumentReceiptRecord = { version: 1; data: DocumentReceiptV1 };
@@ -409,9 +443,9 @@ export type VersionedRecord = {
 export type LatestRecord = {
   agent: AgentV1;
   answer: AnswerV1;
-  card: CardV4;
+  card: CardV5;
   catalog: CatalogV1;
-  deck: DeckV4;
+  deck: DeckV5;
   deckSchedule: DeckScheduleV1;
   distribution: DistributionV1;
   documentReceipt: DocumentReceiptV1;

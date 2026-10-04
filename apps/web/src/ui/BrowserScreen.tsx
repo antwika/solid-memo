@@ -6,6 +6,7 @@ import {
   type DeckDirection,
 } from "@solid-memo/domain/deck";
 import type { DeckAbout } from "@solid-memo/domain/deckAbout";
+import { hasUnstatedSide } from "@solid-memo/domain/deckLanguages";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { CardRowBack, CardRowFront } from "./CardFace";
 import { DeckAboutSection } from "./DeckAboutSection";
@@ -15,17 +16,26 @@ import { Pager, paginate } from "./Pager";
 import { useI18n, type ErrorText } from "./i18n";
 import { RetiredTag, useRetiredCards } from "./RetiredCards";
 import { ReaderText } from "./ReaderText";
+import type { BrowserLanguageFilter } from "./router";
 
 /** Cards per Browser page: a short list, so paging is quick to scan. */
 export const CARDS_PER_PAGE = 10;
+
+/** Which cards the Browser lists: all, or only those of a language filter. */
+type LanguageFilter = "all" | BrowserLanguageFilter;
 
 /**
  * Management view for one deck: describe it (description, topics,
  * keywords), choose which way it is studied, add
  * cards, and open any card's own page (where it
  * is edited) through its front. Retired cards are listed only when asked.
- * Long decks are paged; the page is route state, so it survives a round
- * trip to a card's page.
+ * A card whose language is the user's to settle (`toSettle`: not one
+ * still as its library release has it, which a later release updates) is
+ * marked so: a side that does not say its language. While any is listed,
+ * the list can be narrowed down to them (radios: a change of filter goes
+ * back to the first page).
+ * Long decks are paged; the page and the filter are route state, so they
+ * survive a round trip to a card's page.
  *
  * Removing a card takes its row, and the button pressed, off the page:
  * the focus goes to the card now in that row (the last one, if it was
@@ -38,6 +48,8 @@ export function BrowserScreen({
   deckHref,
   cards,
   page,
+  languageFilter,
+  toSettle = [],
   busy,
   error,
   onDescribeDeck,
@@ -46,6 +58,7 @@ export function BrowserScreen({
   cardHref,
   onRemoveCard,
   onPageChange,
+  onLanguageFilterChange,
 }: {
   deck: Deck;
   /** URL of the deck's page; its name links there. */
@@ -53,6 +66,10 @@ export function BrowserScreen({
   cards: Card[];
   /** 1-based; out-of-range values show the nearest page. */
   page: number;
+  /** The cards to list by their languages; undefined lists all. */
+  languageFilter?: BrowserLanguageFilter;
+  /** The cards whose languages are the user's to settle (unlikeRelease); none while that is not known. */
+  toSettle?: readonly Card[];
   busy: boolean;
   error: ErrorText | null;
   /** Replace the deck's description, topics and keywords. */
@@ -65,9 +82,18 @@ export function BrowserScreen({
   cardHref: (card: Card) => string;
   onRemoveCard: (card: Card) => void;
   onPageChange: (page: number) => void;
+  /** List the cards of another language filter, from the first page. */
+  onLanguageFilterChange: (filter: BrowserLanguageFilter | undefined) => void;
 }) {
   const { t, tx, readerText, directionLabel } = useI18n();
-  const { listed, toggle } = useRetiredCards(cards);
+  const { listed: unfiltered, toggle } = useRetiredCards(cards);
+  const unstated = new Set(toSettle.filter(hasUnstatedSide).map((card) => card.url));
+  const unstatedCards = unfiltered.filter((card) => unstated.has(card.url));
+  const filters: BrowserLanguageFilter[] = unstatedCards.length > 0 ? ["unstated"] : [];
+  // With none of a kind left there is nothing to narrow down to: all are listed.
+  const filter: LanguageFilter =
+    languageFilter !== undefined && filters.includes(languageFilter) ? languageFilter : "all";
+  const listed = filter === "all" ? unfiltered : unstatedCards;
   const {
     pageCount,
     currentPage,
@@ -119,7 +145,11 @@ export function BrowserScreen({
         </a>
       </header>
       <p class="hint">{t("browser.intro")}</p>
-      <DeckAboutSection deck={deck} busy={busy} onSave={onDescribeDeck} />
+      <DeckAboutSection
+        deck={deck}
+        busy={busy}
+        onSave={onDescribeDeck}
+      />
       <fieldset aria-describedby="deck-direction-hint">
         <legend>{t("browser.directionLegend")}</legend>
         {DECK_DIRECTIONS.map((direction) => (
@@ -142,6 +172,23 @@ export function BrowserScreen({
         </span>
       </fieldset>
       {toggle}
+      {filters.length > 0 && (
+        <fieldset class="language-filter">
+          <legend>{t("browser.languageFilter.legend")}</legend>
+          {(["all", ...filters] as const).map((value) => (
+            <label key={value} class="radio-option">
+              <input
+                type="radio"
+                name="language-filter"
+                value={value}
+                checked={filter === value}
+                onChange={() => onLanguageFilterChange(value === "all" ? undefined : value)}
+              />
+              {t(`browser.languageFilter.${value}`)}
+            </label>
+          ))}
+        </fieldset>
+      )}
       {cards.length === 0 ? (
         <p>{t("browser.empty")}</p>
       ) : listed.length === 0 ? (
@@ -180,6 +227,12 @@ export function BrowserScreen({
                       />
                       {card.retired && <RetiredTag />}
                     </a>
+                    {/* Outside the link, which names the card alone. */}
+                    {unstated.has(card.url) && (
+                      <span class="card-tags">
+                        <span class="unstated-tag">{t("browser.unstatedTag")}</span>
+                      </span>
+                    )}
                   </td>
                   {/* The back stays readable to screen readers; only the
                       pointer target over it is hidden, since the front's

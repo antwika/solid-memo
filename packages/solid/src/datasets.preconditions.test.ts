@@ -123,6 +123,19 @@ describe("saving with preconditions", () => {
     await expect(saveDataset(DOC, large(read), changed.fetch)).rejects.toBeInstanceOf(PreconditionFailedError);
   });
 
+  it("writes even a small edit as one PUT of the whole document when asked (whole), still only if it is as it was read", async () => {
+    const server = pod();
+    await saveDataset(DOC, edited(await readDataset(DOC, server.fetch)), server.fetch, { whole: true });
+    expect(server.writes).toEqual([{ method: "PUT", url: DOC, ifMatch: '"v1"', ifNoneMatch: null }]);
+    expect(server.bodies[0].contentType).toBe("text/turtle");
+    expect(server.bodies[0].body).toContain('"2"');
+
+    const changed = pod();
+    const read = await readDataset(DOC, changed.fetch);
+    changed.changeElsewhere('"v2"');
+    await expect(saveDataset(DOC, edited(read), changed.fetch, { whole: true })).rejects.toBeInstanceOf(PreconditionFailedError);
+  });
+
   it("passes on other failures", async () => {
     const failing = (async () => new Response("", { status: 500 })) as unknown as typeof globalThis.fetch;
     await expect(saveDataset(NEW, edited(createSolidDataset()), failing)).rejects.not.toBeInstanceOf(PreconditionFailedError);

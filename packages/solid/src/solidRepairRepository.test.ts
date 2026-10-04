@@ -101,6 +101,33 @@ describe("applyRepairs", () => {
     expect(getStringWithLocale(two, DCTERMS.description, "sv")).toBe("Kortlek: a deck.");
   });
 
+  it("describes a format-5 deck from its title in whatever language it is in", async () => {
+    vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
+      documentOf(
+        CATALOG,
+        buildThing(createThing({ url: `${CATALOG}#deck-1` }))
+          .addIri(RDF.type, SM.Deck)
+          .addStringWithLocale(DCTERMS.title, "Huvudstäder", "sv")
+          .build(),
+        buildThing(createThing({ url: `${CATALOG}#deck-2` }))
+          .addIri(RDF.type, SM.Deck)
+          .addStringWithLocale(DCTERMS.title, "日本語の単語", "ja")
+          .build(),
+      ),
+    );
+    await repository().applyRepairs([
+      repair("describe-deck", `${CATALOG}#deck-1`, 5),
+      repair("describe-deck", `${CATALOG}#deck-2`, 5),
+    ]);
+    const one = getThing(saved(), `${CATALOG}#deck-1`)!;
+    expect(getStringWithLocale(one, DCTERMS.description, "en")).toBe("Flashcards: Huvudstäder.");
+    expect(getStringWithLocale(one, DCTERMS.description, "sv")).toBe("Kortlek: Huvudstäder.");
+    const two = getThing(saved(), `${CATALOG}#deck-2`)!;
+    expect(getStringWithLocale(two, DCTERMS.description, "en")).toBe("Flashcards: 日本語の単語.");
+    expect(getStringWithLocale(two, DCTERMS.description, "sv")).toBe("Kortlek: 日本語の単語.");
+    expect(getStringWithLocale(two, DCTERMS.title, "ja")).toBe("日本語の単語");
+  });
+
   it("drops a half-written snapshot and recomputes a due day, leaving a state without the facts as it is", async () => {
     vi.mocked(getSolidDatasetOrNull).mockResolvedValue(
       documentOf(

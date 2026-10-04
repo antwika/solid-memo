@@ -136,6 +136,7 @@ function makeDeps() {
     updateCard: vi.fn(async () => card),
     removeCard: vi.fn(async () => undefined),
     saveCards: vi.fn(async () => undefined),
+    stateCardLanguages: vi.fn(async (_deck, ids) => ids.length),
     applyCardChanges: vi.fn(async () => undefined),
     importDeck: vi.fn(async () => deck),
     readCardsSince: vi.fn(async (d) => ({ unchanged: false as const, value: await deckRepository.listCards(d), version: null })),
@@ -529,16 +530,81 @@ describe("createUseCases", () => {
     ).toHaveBeenCalledWith(session.webId);
   });
 
-  it("describeDeck saves the deck's description, topics and keywords, refusing an empty description", async () => {
+  it("describeDeck saves the deck's description in the languages given, topics and keywords, refusing an empty description", async () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
-    await useCases.describeDeck(deck, { description: " Kanji. ", topics: [], keywords: ["kanji"] }, "en");
+    await useCases.describeDeck(deck, { description: { en: " Kanji. " }, topics: [], keywords: ["kanji"] });
     expect(deps.deckRepository.saveDeck).toHaveBeenCalledWith({ ...deck, description: { en: "Kanji." }, keywords: ["kanji"] });
-    await useCases.describeDeck(deck, { description: "Kanji.", topics: [], keywords: [] }, "sv");
-    expect(deps.deckRepository.saveDeck).toHaveBeenLastCalledWith({ ...deck, description: { en: "Kanji.", sv: "Kanji." } });
-    await expect(useCases.describeDeck(deck, { description: "", topics: [], keywords: [] }, "en")).rejects.toThrow(
+    // Only the language the user stated: no English stands in for it.
+    await useCases.describeDeck(deck, { description: { sv: "Kanji." }, topics: [], keywords: [] });
+    expect(deps.deckRepository.saveDeck).toHaveBeenLastCalledWith({ ...deck, description: { sv: "Kanji." } });
+    await expect(useCases.describeDeck(deck, { description: { en: "" }, topics: [], keywords: [] })).rejects.toThrow(
       "A deck needs a description.",
     );
+  });
+
+  describe("stateCardLanguages", () => {
+    const cardOf = (id: string, content: Partial<Card>): Card => ({
+      ...card,
+      id,
+      url: `${deck.cardsDocumentUrl}#${id}`,
+      ...content,
+    });
+
+    it("re-keys only the untagged sides, leaving tagged sides and unchanged cards alone", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([
+        cardOf("both", {}),
+        cardOf("back-only", { front: { ja: "火" } }),
+        cardOf("tagged", { front: { ja: "木" }, back: { en: "tree" } }),
+      ]);
+      const useCases = createUseCases(deps);
+      await expect(useCases.stateCardLanguages(deck, { front: "JA", back: "en" })).resolves.toBe(2);
+      // The tag as the app stores it, lower-cased.
+      expect(deps.deckRepository.stateCardLanguages).toHaveBeenCalledWith(deck, ["both", "back-only"], {
+        front: "ja",
+        back: "en",
+      });
+      await expect(useCases.stateCardLanguages(deck, { front: "ja" })).resolves.toBe(1);
+      expect(deps.deckRepository.stateCardLanguages).toHaveBeenLastCalledWith(deck, ["both"], { front: "ja" });
+      expect(deps.deckLibrary.fetchLibraryDeck).not.toHaveBeenCalled();
+    });
+
+    it("skips the cards still as the deck's library release has them", async () => {
+      const deps = makeDeps();
+      const imported = { ...deck, sourceUrl: libraryContent.url };
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValue([
+        cardOf("sweden", { front: { "": "Sweden" }, back: { "": "Stockholm" } }),
+        cardOf("mine", { front: { "": "Norway" }, back: { "": "Oslo" } }),
+      ]);
+      const useCases = createUseCases(deps);
+      await expect(useCases.stateCardLanguages(imported, { front: "en", back: "en" })).resolves.toBe(1);
+      expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(libraryContent.url);
+      expect(deps.deckRepository.stateCardLanguages).toHaveBeenCalledWith(imported, ["mine"], { front: "en", back: "en" });
+    });
+
+    it("writes nothing when no side is to change, or the language is no language code", async () => {
+      const deps = makeDeps();
+      const useCases = createUseCases(deps);
+      await expect(useCases.stateCardLanguages(deck, {})).resolves.toBe(0);
+      expect(deps.deckRepository.listCards).not.toHaveBeenCalled();
+      vi.mocked(deps.deckRepository.listCards).mockResolvedValueOnce([{ ...card, front: { ja: "水" }, back: { en: "water" } }]);
+      await expect(useCases.stateCardLanguages(deck, { front: "ja" })).resolves.toBe(0);
+      await expect(useCases.stateCardLanguages(deck, { front: "en", back: "x-klingon" })).rejects.toThrow(
+        "“x-klingon” is not a language code.",
+      );
+      expect(deps.deckRepository.listCards).toHaveBeenCalledTimes(1);
+      expect(deps.deckRepository.stateCardLanguages).not.toHaveBeenCalled();
+    });
+
+    it("passes on the pod's refusal of a cards document changed since it was read", async () => {
+      const deps = makeDeps();
+      vi.mocked(deps.deckRepository.stateCardLanguages).mockRejectedValue(
+        new AppError("changedElsewhere", { url: deck.cardsDocumentUrl }),
+      );
+      const useCases = createUseCases(deps);
+      await expect(useCases.stateCardLanguages(deck, { front: "ja" })).rejects.toMatchObject({ code: "changedElsewhere" });
+    });
   });
 
   it("setDeckPace saves the deck's own daily limits, refusing one that is not a whole number", async () => {
@@ -604,14 +670,21 @@ describe("createUseCases", () => {
     await expect(useCases.listDecks(instance.url)).resolves.toEqual([deck]);
     expect(deps.deckRepository.listDecks).toHaveBeenCalledWith(instance.url);
 
-    await useCases.createDeck(instance.url, " Kanji N5 ", "en");
+    await useCases.createDeck(instance.url, { en: " Kanji N5 " });
     expect(deps.deckRepository.createDeck).toHaveBeenCalledWith(instance.url, { en: "Kanji N5" });
-    // A name typed on a Swedish page is Swedish, standing in for the English too.
-    await useCases.createDeck(instance.url, "Huvudstäder", "sv");
-    expect(deps.deckRepository.createDeck).toHaveBeenLastCalledWith(instance.url, { en: "Huvudstäder", sv: "Huvudstäder" });
+    // A name in the language the user stated, and only in it: no English stands in for it.
+    await useCases.createDeck(instance.url, { sv: "Huvudstäder", en: " " });
+    expect(deps.deckRepository.createDeck).toHaveBeenLastCalledWith(instance.url, { sv: "Huvudstäder" });
+    await expect(useCases.createDeck(instance.url, { sv: " " })).rejects.toThrow("A deck needs a name");
+    await expect(useCases.createDeck(instance.url, { "": "Kanji" })).rejects.toThrow("cannot be untagged");
+    // Tags as the pod reads them: lower case.
+    await useCases.createDeck(instance.url, { "pt-BR": "Capitais" });
+    expect(deps.deckRepository.createDeck).toHaveBeenLastCalledWith(instance.url, { "pt-br": "Capitais" });
 
-    await useCases.renameDeck(deck, " Kanji N4 ", "en");
-    expect(deps.deckRepository.renameDeck).toHaveBeenCalledWith(deck, { ...deck.title, en: "Kanji N4" });
+    // The name in every language it is to have: one left out is removed.
+    await useCases.renameDeck(deck, { ja: " 漢字 N4 ", en: "Kanji N4" });
+    expect(deps.deckRepository.renameDeck).toHaveBeenCalledWith(deck, { ja: "漢字 N4", en: "Kanji N4" });
+    await expect(useCases.renameDeck(deck, {})).rejects.toThrow("A deck needs a name");
 
     await expect(
       useCases.setDeckDirection(deck, "bidirectional"),
@@ -627,21 +700,22 @@ describe("createUseCases", () => {
     await expect(useCases.listCards(deck)).resolves.toEqual([card]);
     expect(deps.deckRepository.listCards).toHaveBeenCalledWith(deck);
 
-    await useCases.addCard(deck, { front: { "": " 火 " }, back: { "": " fire " } });
+    await useCases.addCard(deck, { front: { ja: " 火 " }, back: { en: " fire " } });
     expect(deps.deckRepository.addCard).toHaveBeenCalledWith(deck, {
-      front: { "": "火" },
-      back: { "": "fire" },
+      front: { ja: "火" },
+      back: { en: "fire" },
     });
 
+    // The front's untagged text, untouched, stays as it was saved.
     await useCases.updateCard(deck, card, {
       front: { "": " 水 " },
-      back: { "": " water (mizu) " },
+      back: { en: " water (mizu) " },
       frontImageUrl: " https://img.example/water.png ",
       backImageUrl: "",
     });
     expect(deps.deckRepository.updateCard).toHaveBeenCalledWith(deck, card, {
       front: { "": "水" },
-      back: { "": "water (mizu)" },
+      back: { en: "water (mizu)" },
       frontImageUrl: "https://img.example/water.png",
     });
 
@@ -653,15 +727,22 @@ describe("createUseCases", () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
     await expect(
-      useCases.addCard(deck, { front: {}, back: { "": "fire" } }),
+      useCases.addCard(deck, { front: {}, back: { en: "fire" } }),
     ).rejects.toThrow("The front needs text or an image.");
     await expect(
       useCases.updateCard(deck, card, {
-        front: { "": "f" },
-        back: { "": "b" },
+        front: { en: "f" },
+        back: { en: "b" },
         backImageUrl: "javascript:alert(1)",
       }),
     ).rejects.toThrow("The back image must be an http(s) URL.");
+    // Text in no stated language is never written anew.
+    await expect(useCases.addCard(deck, { front: { "": "火" }, back: { en: "fire" } })).rejects.toThrow(
+      "Choose the language of the front.",
+    );
+    await expect(useCases.updateCard(deck, card, { front: { "": "水" }, back: { "": "water!" } })).rejects.toThrow(
+      "Choose the language of the back.",
+    );
     expect(deps.deckRepository.addCard).not.toHaveBeenCalled();
     expect(deps.deckRepository.updateCard).not.toHaveBeenCalled();
   });
@@ -1222,6 +1303,15 @@ describe("createUseCases", () => {
     await expect(createUseCases(deps).addReleaseLanguages(copy)).resolves.toBeNull();
     await expect(createUseCases(deps).addReleaseLanguages({ ...deck, sourceUrl: undefined })).resolves.toBeNull();
     expect(deps.deckRepository.saveDeck).toHaveBeenCalledOnce();
+  });
+
+  it("deckRelease reads the release a copy came from; none for a home-made deck", async () => {
+    const deps = makeDeps();
+    const useCases = createUseCases(deps);
+    await expect(useCases.deckRelease({ ...deck, sourceUrl: libraryDeck.url })).resolves.toEqual(libraryContent);
+    expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(libraryDeck.url);
+    await expect(useCases.deckRelease({ ...deck, sourceUrl: undefined })).resolves.toBeNull();
+    expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledOnce();
   });
 
   it("importLibraryDeck fetches the deck's content and imports it", async () => {

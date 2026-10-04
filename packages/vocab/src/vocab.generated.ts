@@ -48,11 +48,11 @@ export const SM = {
   frontImageDescription: `${SM_NS}frontImageDescription`,
   /** What the back's picture shows, in words: its text alternative for whoever cannot see it. Language-tagged text, one per language. While the back is the question it should not give the answer away. (Added in 1.12, in card format 4 without a version bump: an older reader ignores it.) */
   backImageDescription: `${SM_NS}backImageDescription`,
-  /** A short note under the front's text, smaller, shown once the answer is revealed, so it never gives the answer away: what holds of the front ("Out of use"). (Added in 1.8 for card format 3.) */
+  /** A short note under the front's text, smaller, shown once the answer is revealed, so it never gives the answer away: what holds of the front ("Out of use"). Language-tagged text in any language, one per language. (Added in 1.8 for card format 3.) */
   frontNote: `${SM_NS}frontNote`,
-  /** A short caption above the back's text that says what kind of answer it is ("Out of use · replaced by", "Capital", "Past tense"), shown whenever the back is, smaller than it. The back's text stays the answer itself. (Added in 1.8 for card format 3.) */
+  /** A short caption above the back's text that says what kind of answer it is ("Out of use · replaced by", "Capital", "Past tense"), shown whenever the back is, smaller than it. The back's text stays the answer itself. Language-tagged text in any language, one per language. (Added in 1.8 for card format 3.) */
   backLabel: `${SM_NS}backLabel`,
-  /** A short note under the back's text, smaller, shown once the answer is revealed: when or why something changed, where it comes from. The back's text stays the answer itself. (Added in 1.8 for card format 3.) */
+  /** A short note under the back's text, smaller, shown once the answer is revealed: when or why something changed, where it comes from. The back's text stays the answer itself. Language-tagged text in any language, one per language. (Added in 1.8 for card format 3.) */
   backNote: `${SM_NS}backNote`,
   /** SM-2 easiness factor, never below 1.3. (Since 1.0.) */
   easeFactor: `${SM_NS}easeFactor`,

@@ -16,6 +16,8 @@ const deck: Deck = {
   authors: [],
 };
 
+const SETTLED = { unstatedCounts: { front: 0, back: 0 } };
+
 function renderScreen(overrides: Partial<Parameters<typeof DeckPreferencesScreen>[0]> = {}) {
   const props = {
     deck,
@@ -27,6 +29,8 @@ function renderScreen(overrides: Partial<Parameters<typeof DeckPreferencesScreen
     onSave: vi.fn(),
     onRename: vi.fn(),
     onRemove: vi.fn(),
+    languages: SETTLED,
+    onStateLanguages: vi.fn(),
     ...overrides,
   };
   render(<DeckPreferencesScreen {...props} />);
@@ -146,6 +150,8 @@ describe("DeckPreferencesScreen", () => {
       onSave: vi.fn(),
       onRename: vi.fn(),
       onRemove: vi.fn(),
+      languages: SETTLED,
+      onStateLanguages: vi.fn(),
     };
     const { rerender } = render(<DeckPreferencesScreen {...props} />);
     fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
@@ -163,8 +169,24 @@ describe("DeckPreferencesScreen", () => {
     expect(field).toHaveValue("Kanji N5");
     fireEvent.input(field, { target: { value: "  Kanji N4 " } });
     fireEvent.click(screen.getByRole("button", { name: "Save name" }));
-    expect(props.onRename).toHaveBeenCalledWith("Kanji N4");
+    expect(props.onRename).toHaveBeenCalledWith({ en: "Kanji N4" });
     expect(screen.queryByLabelText("Deck name")).toBeNull();
+  });
+
+  it("asks for the language of a translation of the name before renaming", () => {
+    const props = renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Rename deck" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add a translation" }));
+    fireEvent.input(screen.getByLabelText("Translation, its language not chosen"), { target: { value: "Kanji N5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+    expect(props.onRename).not.toHaveBeenCalled();
+    const picker = screen.getByRole("button", { name: "Language: not stated" });
+    expect(picker).toHaveFocus();
+    expect(picker).toHaveAccessibleDescription("Choose the language of the deck's name.");
+    fireEvent.click(picker);
+    fireEvent.click(screen.getByRole("radio", { name: "Swedish — svenska (sv)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+    expect(props.onRename).toHaveBeenCalledWith({ en: "Kanji N5", sv: "Kanji N5" });
   });
 
   it("cancels renaming without saving", () => {
@@ -203,6 +225,8 @@ describe("DeckPreferencesScreen", () => {
           onSave={vi.fn()}
           onRename={vi.fn()}
           onRemove={vi.fn()}
+          languages={SETTLED}
+          onStateLanguages={vi.fn()}
         />
       </I18nProvider>,
     );
@@ -212,7 +236,8 @@ describe("DeckPreferencesScreen", () => {
     expect(screen.getByText("Kanji N5")).toHaveAttribute("lang", "en");
   });
 
-  it("renames the deck in the page's language, the field marked with the language when that is not the page's", () => {
+  it("renames the deck in every language, the name the reader sees first", () => {
+    const onRename = vi.fn();
     render(
       <I18nProvider locale="sv" onChoose={() => undefined}>
         <DeckPreferencesScreen
@@ -223,8 +248,10 @@ describe("DeckPreferencesScreen", () => {
           busy={false}
           error={null}
           onSave={vi.fn()}
-          onRename={vi.fn()}
+          onRename={onRename}
           onRemove={vi.fn()}
+          languages={SETTLED}
+          onStateLanguages={vi.fn()}
         />
       </I18nProvider>,
     );
@@ -232,11 +259,14 @@ describe("DeckPreferencesScreen", () => {
     const name = screen.getByLabelText("Kortlekens namn");
     expect(name).toHaveValue("Huvudstäder");
     expect(name).not.toHaveAttribute("lang");
-    expect(name).not.toHaveAttribute("aria-describedby");
+    expect(name).toHaveAccessibleDescription("Språk: svenska");
+    fireEvent.input(screen.getByLabelText("Text på engelska"), { target: { value: "Capital cities" } });
+    fireEvent.click(screen.getByRole("button", { name: "Spara namn" }));
+    expect(onRename).toHaveBeenCalledWith({ sv: "Huvudstäder", en: "Capital cities" });
   });
 
-  it("says which language the name field edits when the reader sees another", () => {
-    // A reader who prefers German sees the German; a Swedish page edits the English.
+  it("edits first the name the reader sees, marked with its language", () => {
+    // A reader who prefers German sees the German, and edits it first.
     const languages = vi.spyOn(navigator, "languages", "get").mockReturnValue(["de"]);
     render(
       <I18nProvider locale="sv" onChoose={() => undefined}>
@@ -250,14 +280,16 @@ describe("DeckPreferencesScreen", () => {
           onSave={vi.fn()}
           onRename={vi.fn()}
           onRemove={vi.fn()}
+          languages={SETTLED}
+          onStateLanguages={vi.fn()}
         />
       </I18nProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Byt namn på kortleken" }));
     const name = screen.getByLabelText("Kortlekens namn");
-    expect(name).toHaveValue("Capitals");
-    expect(name).toHaveAttribute("lang", "en");
-    expect(name).toHaveAccessibleDescription("Du redigerar texten på engelska. Översättningarna ändras inte.");
+    expect(name).toHaveValue("Hauptstädte");
+    expect(name).toHaveAttribute("lang", "de");
+    expect(name).toHaveAccessibleDescription("Språk: tyska");
     languages.mockRestore();
   });
 });

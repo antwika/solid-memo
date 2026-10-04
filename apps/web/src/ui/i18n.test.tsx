@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/preact";
 import { AppError, ERROR_TEMPLATES } from "@solid-memo/domain/appError";
-import { typedIn } from "@solid-memo/domain/langText";
 import { createI18n, I18nProvider, useI18n, type MessageKey } from "./i18n";
 import en from "../i18n/en.json";
 import sv from "../i18n/sv.json";
@@ -106,35 +105,36 @@ describe("createI18n", () => {
     expect(sv.partLang("de")).toBe("de");
   });
 
-  it("says which language a field edits when the reader sees another", () => {
-    const sv = createI18n("sv");
-    expect(sv.editedPart(undefined)).toEqual({ lang: undefined, hint: null });
-    expect(sv.editedPart({ en: "Capitals", sv: "Huvudstäder" })).toEqual({
-      lang: "en",
-      hint: "Du redigerar texten på engelska. Översättningarna ändras inte.",
-    });
-    expect(sv.editedPart({ en: "Capitals" })).toEqual({ lang: "en", hint: null });
-    expect(createI18n("en").editedPart({ en: "Capitals", sv: "Huvudstäder" })).toEqual({ lang: undefined, hint: null });
-    expect(sv.editedPart({ "": "en bil", sv: "en bil" }).hint).toBe(
-      "Du redigerar texten utan angivet språk. Översättningarna ändras inte.",
-    );
-    expect(sv.editedPart({ "not a tag!": "x", sv: "y" }).hint).toBe(
-      "Du redigerar texten på not a tag!. Översättningarna ändras inte.",
-    );
+  it("marks text in no language with none, for the page's voice to speak it", () => {
+    expect(createI18n("sv").partLang("zxx")).toBeUndefined();
+    expect(createI18n("sv").readerLang({ zxx: "404" })).toBeUndefined();
   });
 
-  it("edits the user's own text in the page's language, saying so when the reader sees another", () => {
-    const sv = createI18n("sv");
-    expect(sv.typedPart(undefined)).toEqual({ lang: undefined, hint: null });
-    expect(sv.typedText(undefined)).toBe("");
-    expect(sv.typedPart({ en: "Capitals", sv: "Huvudstäder" })).toEqual({ lang: undefined, hint: null });
-    expect(sv.typedText({ en: "Capitals", sv: "Huvudstäder" })).toBe("Huvudstäder");
-    expect(sv.typedPart({ en: "Capitals" })).toEqual({ lang: "en", hint: null });
-    expect(createI18n("en").typedText({ en: "Capitals", sv: "Huvudstäder" })).toBe("Capitals");
+  it("names a language in the page's language, in itself, and by its code", () => {
+    const en = createI18n("en");
+    expect(en.languageLabel("sv")).toBe("Swedish — svenska (sv)");
+    expect(en.languageLabel("pt-br")).toBe("Brazilian Portuguese — português (Brasil) (pt-BR)");
+    expect(en.languageLabel("en")).toBe("English (en)");
+    expect(en.languageParts("ja")).toEqual({ name: "Japanese", autonym: "日本語", code: "ja" });
+    expect(createI18n("sv").languageLabel("sv")).toBe("svenska (sv)");
+    expect(createI18n("sv").languageLabel("en")).toBe("engelska — English (en)");
   });
 
-  it("does not mark a deck named on a Swedish page as English", () => {
-    const named = typedIn("Huvudstäder", "sv");
+  it("names a language Intl has no words in by its name only, and one it cannot name as its code", () => {
+    const en = createI18n("en");
+    expect(en.languageLabel("tlh")).toBe("Klingon (tlh)");
+    expect(en.languageParts("qaa")).toEqual({ name: "qaa" });
+    expect(en.languageLabel("qaa")).toBe("qaa");
+    expect(en.languageLabel("not a tag")).toBe("not a tag");
+  });
+
+  it("names no language as such, not by its code", () => {
+    expect(createI18n("en").languageLabel("zxx")).toBe("No language (codes, numbers, symbols)");
+    expect(createI18n("sv").languageParts("zxx")).toEqual({ name: "Inget språk (koder, siffror, symboler)" });
+  });
+
+  it("does not mark a Swedish name saved the same in English as English", () => {
+    const named = { en: "Huvudstäder", sv: "Huvudstäder" };
     expect(createI18n("sv").readerLang(named)).toBeUndefined();
     expect(createI18n("sv").readerText(named)).toBe("Huvudstäder");
   });

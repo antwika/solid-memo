@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/preact";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DeckCreatorContainer } from "./DeckCreatorContainer";
@@ -6,6 +6,7 @@ import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
 import { makeUseCasesFake } from "../test/useCasesFake";
+import { rememberLanguage } from "./remembered";
 
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
@@ -41,6 +42,12 @@ function renderContainer(useCases: UseCases) {
   return { onDone };
 }
 
+// The deck's name is in the language last chosen for a deck's text on this device.
+beforeEach(() => {
+  localStorage.clear();
+  rememberLanguage("deck", "en");
+});
+
 describe("DeckCreatorContainer", () => {
   it("creates the deck and returns to the deck list", async () => {
     const useCases = makeUseCasesFake({
@@ -58,7 +65,7 @@ describe("DeckCreatorContainer", () => {
     await waitFor(() => {
       expect(onDone).toHaveBeenCalledOnce();
     });
-    expect(useCases.createDeck).toHaveBeenCalledWith(instance.url, "Kana", "en");
+    expect(useCases.createDeck).toHaveBeenCalledWith(instance.url, { en: "Kana" });
   });
 
   it("shows a create error and stays on the creator", async () => {
@@ -77,7 +84,8 @@ describe("DeckCreatorContainer", () => {
     );
 
     // Said in the alert that was there, empty, all along, so screen readers hear it.
-    const alert = screen.getByRole("alert");
+    const alert = document.getElementById("deck-creator-error")!;
+    expect(alert).toHaveAttribute("role", "alert");
     expect(alert.textContent).toBe("");
     await waitFor(() => expect(alert).toHaveTextContent("save refused"));
     expect(onDone).not.toHaveBeenCalled();

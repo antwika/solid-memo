@@ -212,13 +212,24 @@ describe("the deck's texts in an upgrade", () => {
     });
   });
 
-  it("keeps a title the user changed, adding the release's languages only while its English is the release's", () => {
+  it("keeps a title the user changed, adding the release's languages only while it says what the release says", () => {
     const renamed = plan({ ...copy, title: { en: "My flags" } })!;
     expect(renamed).not.toHaveProperty("title");
     const german = plan({ ...copy, title: { en: "World flags", de: "Weltflaggen" } })!;
     expect(german.title).toEqual({ en: "World flags", de: "Weltflaggen", sv: "Världens flaggor" });
     const already = plan({ ...copy, title: { en: "World flags", sv: "Flaggor" } })!;
     expect(already).not.toHaveProperty("title");
+  });
+
+  it("adds the release's languages to a title the user moved away from English, as long as the rest agrees", () => {
+    // The Swedish name alone: the user removed the English the app once saved it under too.
+    const retagged = plan({ ...copy, title: { sv: "Världens flaggor" } })!;
+    expect(retagged.title).toEqual({ en: "World flags", sv: "Världens flaggor" });
+    const ownLanguage = plan({ ...copy, title: { ja: "世界の国旗" } })!;
+    expect(ownLanguage).not.toHaveProperty("title");
+    // Tags compare exactly: British English is not the release's plain English.
+    const regional = plan({ ...copy, title: { "en-gb": "World flags" } })!;
+    expect(regional).not.toHaveProperty("title");
   });
 
   it("keeps keywords and themes the user changed, a deck without a description, and what the release leaves out", () => {
@@ -251,6 +262,14 @@ describe("withReleaseLanguages", () => {
       description: { en: "Capitals.", sv: "Huvudstäder." },
     });
     expect(withReleaseLanguages(deck, { ...release2, title: { en: "Capitals" }, description: undefined })).toBeNull();
+  });
+
+  it("gives a copy retagged away from English the release's English, where every language both have agrees", () => {
+    expect(withReleaseLanguages({ ...deck, title: { sv: "Huvudstäder" } }, release2)).toMatchObject({
+      title: { en: "Capitals", sv: "Huvudstäder" },
+    });
+    expect(withReleaseLanguages({ ...deck, title: { sv: "Mina huvudstäder", fi: "Pääkaupungit" } }, release2)).toBeNull();
+    expect(withReleaseLanguages({ ...deck, title: { fi: "Pääkaupungit" } }, release2)).toBeNull();
   });
 });
 

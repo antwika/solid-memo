@@ -1,25 +1,41 @@
-import type { AppError } from "@solid-memo/domain/appError";
-import { useState } from "preact/hooks";
+import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { cardLabel, type Card, type CardContent } from "@solid-memo/domain/deck";
+import type { DeckLanguages } from "@solid-memo/domain/deckLanguages";
+import type { LangText } from "@solid-memo/domain/langText";
 import {
-  cardLabel,
-  validateCardContent,
-  type Card,
-  type CardContent,
-} from "@solid-memo/domain/deck";
-import { CARD_FIELDS_ERROR_ID, CardContentFields, contentOf, draftOf } from "./CardContentFields";
+  cardLanguageHints,
+  CardContentFields,
+  CardFieldsErrorMessage,
+  checkDraft,
+  draftOf,
+  rememberCardLanguages,
+  type CardDraft,
+  type CardFieldsError,
+} from "./CardContentFields";
 import { CardFace } from "./CardFace";
 import { ErrorMessage } from "./ErrorMessage";
 import { useI18n, type ErrorText } from "./i18n";
 import { CardIcon, TrashIcon } from "./icons";
 import { RetiredNotice } from "./RetiredCards";
 
+/** What a deck with no cards (yet read) says of its languages: nothing. */
+const NO_LANGUAGES: DeckLanguages = { unstatedCounts: { front: 0, back: 0 } };
+const NO_TITLE: LangText = {};
+
 /**
  * One card's own page: the card as it looks in study, and its editor.
  * While a change saves, its buttons keep the focus (aria-disabled), as
  * the page stays.
+ *
+ * The editor edits each text in the languages it is in, a text new to
+ * the card starting in the language the deck's cards usually have
+ * (`languages`). A side saved with no language keeps none until the user
+ * edits it or gives it a translation: then its language is asked for.
  */
 export function CardScreen({
   card,
+  deckTitle = NO_TITLE,
+  languages = NO_LANGUAGES,
   busy,
   saved,
   error,
@@ -27,6 +43,10 @@ export function CardScreen({
   onRemove,
 }: {
   card: Card;
+  /** The deck's name: its languages are suggested for the card's text. */
+  deckTitle?: LangText;
+  /** What the deck's cards say of their languages (deckLanguages). */
+  languages?: DeckLanguages;
   busy: boolean;
   /** The last save succeeded (and nothing was edited since). */
   saved: boolean;
@@ -34,20 +54,45 @@ export function CardScreen({
   onSave: (content: CardContent) => void;
   onRemove: () => void;
 }) {
-  const { t, locale, readerText, errorText } = useI18n();
-  const [draft, setDraft] = useState(() => draftOf(card, locale));
-  const [invalid, setInvalid] = useState<AppError | null>(null);
+  const { t, locale, readerText } = useI18n();
+  const hints = useMemo(() => cardLanguageHints(languages, deckTitle), [languages, deckTitle]);
+  const startDraft = () => draftOf(card, [locale, ...navigator.languages], { defaults: hints.defaults });
+  const [draft, setDraft] = useState(startDraft);
+  const [invalid, setInvalid] = useState<CardFieldsError | null>(null);
+
+  // What is known of the deck (its cards' languages) may come
+  // after the page opens: an editor not yet touched — no text, no
+  // picture's URL changed — starts again from it.
+  const started = useRef(false);
+  useLayoutEffect(() => {
+    const untouched =
+      draft.touched.length === 0 &&
+      draft.frontImageUrl === (card.frontImageUrl ?? "") &&
+      draft.backImageUrl === (card.backImageUrl ?? "");
+    if (started.current && untouched) setDraft(startDraft());
+    started.current = true;
+  }, [hints]);
+
+  // The languages of the user's own text a save states are this device's
+  // latest choices for it once the save succeeds, not before.
+  const submitted = useRef<{ content: CardContent; draft: CardDraft } | null>(null);
+  useLayoutEffect(() => {
+    if (!saved || submitted.current === null) return;
+    rememberCardLanguages(submitted.current.content, submitted.current.draft);
+    submitted.current = null;
+  }, [saved]);
 
   function handleSubmit(event: Event) {
     event.preventDefault();
     if (busy) return;
-    const validation = validateCardContent(contentOf(draft, locale, card));
-    if (!validation.ok) {
-      setInvalid(validation.error);
+    const check = checkDraft(draft, card);
+    if (!check.ok) {
+      setInvalid(check.invalid);
       return;
     }
     setInvalid(null);
-    onSave(validation.content);
+    submitted.current = { content: check.content, draft };
+    onSave(check.content);
   }
 
   function handleRemove() {
@@ -86,8 +131,18 @@ export function CardScreen({
       </div>
       {card.retired && <RetiredNotice />}
       <form onSubmit={handleSubmit} noValidate>
-        <CardContentFields draft={draft} card={card} busy={busy} invalid={invalid} onChange={setDraft} />
-        <ErrorMessage id={CARD_FIELDS_ERROR_ID} error={errorText(invalid)} />
+        <CardContentFields
+          draft={draft}
+          busy={busy}
+          invalid={invalid}
+          suggestions={hints.suggestions}
+          onChange={(next) => {
+            // A language asked for is answered as the user changes the card.
+            if (invalid?.entry !== undefined) setInvalid(null);
+            setDraft(next);
+          }}
+        />
+        <CardFieldsErrorMessage invalid={invalid} />
         <div class="edit-actions">
           <button type="submit" aria-disabled={busy}>
             {t("card.saveButton")}

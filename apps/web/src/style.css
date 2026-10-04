@@ -1610,7 +1610,9 @@ td.clickable a.cell-overlay {
   color: var(--text-muted);
 }
 
-.retired-tag {
+/* A card's mark in the Browser: retired, or with a side that does not say its language. */
+.retired-tag,
+.unstated-tag {
   display: inline-block;
   margin-left: 0.5rem;
   padding: 0 0.4rem;
@@ -1619,6 +1621,25 @@ td.clickable a.cell-overlay {
   color: var(--text-muted);
   font-size: 0.75rem;
   vertical-align: 0.1em;
+}
+
+/* A card's language marks, under its front: they wrap within the column
+   rather than size it by their full length (only by min-width), so at
+   320px the back keeps its share of the row; a mark wrapped onto two
+   lines stays a rounded box. */
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-width: 5rem;
+  /* In line with the front's text, over the bottom of its link's padding. */
+  margin: -0.35rem 0.8rem 0.6rem;
+  contain: inline-size;
+}
+
+.card-tags .unstated-tag {
+  margin-left: 0;
+  border-radius: 0.5rem;
 }
 
 .retired-toggle label {
@@ -1851,6 +1872,119 @@ form.card-edit {
 fieldset label.radio-option .hint {
   display: block;
   margin: 0.1rem 0 0.4rem 1.6rem;
+}
+
+/* A text's language: a button under its field, opening in place onto
+   radios. Each radio's row is a 24px target at least (WCAG 2.5.8), and a
+   long language name wraps rather than widening the page at 320px. */
+.language-picker {
+  margin: 0.35rem 0 0;
+}
+
+/* A language still to choose, as the form's message (perhaps far below,
+   under a card's last field) says: the button itself shows it too. */
+.language-picker > button[aria-invalid="true"] {
+  border-color: var(--danger);
+  border-width: 2px;
+}
+
+.language-picker > .hint {
+  margin: 0.25rem 0 0;
+}
+
+.language-choices label.radio-option {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  overflow-wrap: anywhere;
+}
+
+.language-choices label.radio-option input {
+  flex: none;
+}
+
+.language-other {
+  margin: 0.25rem 0 0.5rem 1.6rem;
+}
+
+.language-other label {
+  display: block;
+}
+
+.language-choices > button {
+  margin-top: 0.5rem;
+}
+
+/* Text in the languages the user states: a column as a form's, its
+   label over its text at any width; under the text its hint, then its
+   picker in a row with the Translations button (a translation's, with
+   its remove button), wrapping at 320px; an open picker, or one asking
+   for the language with its hint, takes the row's full width. Its
+   translations sit under a disclosure, each with its own. */
+.lang-text-field,
+.lang-text-field .translations:not([hidden]),
+.lang-text-field .translation {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.lang-text-field {
+  margin-bottom: 0.6rem;
+}
+
+.lang-text-field input,
+.lang-text-field textarea,
+.lang-text-field .field-hint {
+  margin-bottom: 0;
+}
+
+.lang-text-field .field-hint {
+  margin-top: 0;
+}
+
+.language-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.language-controls > .language-picker {
+  margin: 0;
+}
+
+.language-controls > .language-picker:has(> .language-choices, > .hint) {
+  flex-basis: 100%;
+}
+
+/* The deck preferences' Languages section: a side's picker under its
+   legend, with no box of its own, so the picker's own group has the
+   width at 320px; space before what follows the State button. */
+.deck-languages .language-side {
+  margin: 0.5rem 0;
+  padding: 0;
+  border: none;
+}
+
+.deck-languages .language-side > legend {
+  padding: 0;
+}
+
+.deck-languages > button {
+  margin-bottom: 0.75rem;
+}
+
+.lang-text-field .translations > button {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+.lang-text-field .translation {
+  margin: 0.5rem 0 0 1rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--border-strong);
 }
 
 details {

@@ -5,6 +5,7 @@ import { DeckDetailContainer } from "./DeckDetailContainer";
 import { routeToHash } from "./router";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Card, Deck, Prompt } from "@solid-memo/domain/deck";
+import type { LibraryDeckContent } from "@solid-memo/domain/library";
 import type { Instance } from "@solid-memo/domain/instance";
 import type { StudyQueue } from "@solid-memo/domain/scheduling";
 import { makeUseCasesFake } from "../test/useCasesFake";
@@ -36,7 +37,7 @@ const card: Card = {
 };
 const prompt: Prompt = { card, direction: "front-to-back" };
 
-function renderContainer(useCases: UseCases) {
+function renderContainer(useCases: UseCases, shown: Deck = deck) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -46,7 +47,7 @@ function renderContainer(useCases: UseCases) {
       <DeckDetailContainer
         useCases={useCases}
         instance={instance}
-        deck={deck}
+        deck={shown}
         onStudy={onStudy}
       />
     </QueryClientProvider>,
@@ -193,5 +194,99 @@ describe("DeckDetailContainer", () => {
       "href",
       routeToHash({ screen: "deckPreferences", instanceUrl: instance.url, deckUrl: deck.url }),
     );
+  });
+
+  describe("the notice of text that does not say its language", () => {
+    const tagged: Card = { ...card, id: "card-2", front: { ja: "火" }, back: { en: "fire" } };
+    const notice = () => screen.queryByRole("region", { name: "Languages of the deck's text" });
+
+    it("counts the untagged sides, linking to the Languages section of the deck's preferences", async () => {
+      renderContainer(makeUseCasesFake({ listCards: vi.fn(async () => [card, tagged]) }));
+      await screen.findByText(/2 cards in this deck/);
+      expect(notice()).toHaveTextContent("2 card sides state no language.");
+      expect(screen.getByRole("link", { name: "Set the languages" })).toHaveAttribute(
+        "href",
+        routeToHash({ screen: "deckPreferences", instanceUrl: instance.url, deckUrl: deck.url, section: "languages" }),
+      );
+    });
+
+    it("finds nothing to settle in text saved the same in English and another language", async () => {
+      const same = { ...tagged, backNote: { en: "Kun", sv: "Kun" } };
+      renderContainer(
+        makeUseCasesFake({ listCards: vi.fn(async () => [same]) }),
+        { ...deck, title: { en: "Kanji N5", sv: "Kanji N5" } },
+      );
+      await screen.findByText(/1 card in this deck/);
+      expect(notice()).toBeNull();
+    });
+
+    it("is not there once everything is settled", async () => {
+      renderContainer(makeUseCasesFake({ listCards: vi.fn(async () => [tagged]) }));
+      await screen.findByText(/1 card in this deck/);
+      expect(notice()).toBeNull();
+    });
+
+    it("leaves out what is still as the library release has it, saying nothing until the release is read", async () => {
+      const copy = { ...deck, sourceUrl: "https://library.example/kanji/1", title: { en: "Kanji N5", sv: "Kanji N5" } };
+      let read: (release: LibraryDeckContent) => void = () => undefined;
+      const useCases = makeUseCasesFake({
+        listCards: vi.fn(async () => [card, tagged]),
+        deckRelease: vi.fn(() => new Promise<LibraryDeckContent | null>((resolve) => (read = resolve))),
+      });
+      renderContainer(useCases, copy);
+      await screen.findByText(/2 cards in this deck/);
+      expect(notice()).toBeNull();
+      read({ title: copy.title, cards: [{ ...card, formatVersion: 4 }] } as unknown as LibraryDeckContent);
+      await waitFor(() => expect(useCases.deckRelease).toHaveBeenCalledWith(copy));
+      // Only the untouched card and name would be left: nothing is to settle.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(notice()).toBeNull();
+    });
+
+    it("says the check could not be made when the library release cannot be read", async () => {
+      const copy = { ...deck, sourceUrl: "https://library.example/kanji/1" };
+      const useCases = makeUseCasesFake({
+        listCards: vi.fn(async () => [card, tagged]),
+        deckRelease: vi.fn(async () => {
+          throw new Error("library unreachable");
+        }),
+      });
+      renderContainer(useCases, copy);
+      await waitFor(() =>
+        expect(notice()).toHaveTextContent(
+          "The library release it was copied from could not be read, so how much of it is yours to settle is not known.",
+        ),
+      );
+      expect(notice()).not.toHaveTextContent(/card side/);
+      expect(screen.getByRole("link", { name: "Set the languages" })).toHaveAttribute(
+        "href",
+        routeToHash({ screen: "deckPreferences", instanceUrl: instance.url, deckUrl: copy.url, section: "languages" }),
+      );
+    });
+
+    it("says nothing when the library release cannot be read but nothing would be to settle anyway", async () => {
+      const copy = { ...deck, sourceUrl: "https://library.example/kanji/1" };
+      const useCases = makeUseCasesFake({
+        listCards: vi.fn(async () => [tagged]),
+        deckRelease: vi.fn(async () => {
+          throw new Error("library unreachable");
+        }),
+      });
+      renderContainer(useCases, copy);
+      await screen.findByText(/1 card in this deck/);
+      await waitFor(() => expect(useCases.deckRelease).toHaveBeenCalledWith(copy));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(notice()).toBeNull();
+    });
+
+    it("still counts what the user changed since the release", async () => {
+      const copy = { ...deck, sourceUrl: "https://library.example/kanji/1" };
+      const useCases = makeUseCasesFake({
+        listCards: vi.fn(async () => [card]),
+        deckRelease: vi.fn(async () => ({ title: copy.title, cards: [{ ...card, back: { "": "a lake" } }] }) as never),
+      });
+      renderContainer(useCases, copy);
+      await waitFor(() => expect(notice()).toHaveTextContent("2 card sides state no language."));
+    });
   });
 });

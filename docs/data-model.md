@@ -131,12 +131,17 @@ graph LR
 ```
 
 - The **catalog** holds one subject per deck with its title and links to the
-  two documents — the deck list renders from a single fetch. Since deck
+  two documents — the deck list renders from a single fetch. A deck's
+  title and description are language-tagged text, one value per
+  language: since deck format 5 in any language the user states, no
+  English required (format 4 required one; see
+  [i18n.md](i18n.md#text-in-the-users-languages)). Since deck
   format 3 a deck is a DCAT dataset (`dcat:Dataset`, see
   [vocab.md](vocab.md) and [validation.md](validation.md)): it always has
   a description (`dcterms:description`: what it covers and where its
   content came from — shown on the deck page with its URLs as links; a
-  deck without one gets "Flashcards: <title>."), and may name its
+  deck without one gets "Flashcards: <title>."@en and
+  "Kortlek: <title>."@sv, app-written text for any title), and may name its
   authors (`dcterms:creator`, each a `foaf:Agent` node `#agent-<slug>`
   beside the deck, with `foaf:name` and a `mailto:` `foaf:mbox`; the app
   shows them as "Name <email>"), licence (`dcterms:license`, a URL),
@@ -150,7 +155,12 @@ graph LR
 - **Card sides**: each side is text (`sm:front` / `sm:back`, a literal),
   a picture (`sm:frontImage` / `sm:backImage`, always an IRI — a string in
   its place is ignored) or both; a side with neither makes the subject
-  not a card. Pictures are shown only when their URL is http(s); pod data
+  not a card. A side's text is language-tagged, one value per language
+  (`zxx` for codes, numbers and symbols), or, as saved before card
+  format 5, one untagged literal whose language is not known, never
+  both; the app keeps untagged text only while it is untouched. A note
+  under a side (`sm:frontNote` / `sm:backNote`) and the label above the
+  back (`sm:backLabel`) are language-tagged text in any language. Pictures are shown only when their URL is http(s); pod data
   is untrusted. A picture may have a description
   (`sm:frontImageDescription` / `sm:backImageDescription`,
   language-tagged), read to whoever cannot see it in its place; without
@@ -363,7 +373,10 @@ sequenceDiagram
     PATCH and fails past that, which an edit of every card of a large deck
     (a format update) exceeds. Without `If-Match` (no strong ETag, below),
     such a PUT would undo a change made elsewhere since the read, where a
-    PATCH keeps it;
+    PATCH keeps it. Stating the language of a deck's untagged card sides
+    (`stateCardLanguages`) is always one PUT (`saveDataset`'s `whole`):
+    Community Solid Server's in-memory store cuts a document short after
+    a PATCH holding text beyond ASCII, and such a bulk edit is all text;
   - a creation is sent with `If-None-Match: *` (by
     `@inrupt/solid-client` for datasets and containers, by the copier for
     files); had something appeared there meanwhile, 412;

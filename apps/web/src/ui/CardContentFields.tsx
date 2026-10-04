@@ -1,43 +1,107 @@
-import type { AppError } from "@solid-memo/domain/appError";
-import type { CardContent } from "@solid-memo/domain/deck";
+import { useLayoutEffect } from "preact/hooks";
+import { AppError } from "@solid-memo/domain/appError";
+import { validateCardContent, type CardContent, type CardTextPart } from "@solid-memo/domain/deck";
+import type { DeckLanguages } from "@solid-memo/domain/deckLanguages";
 import type { LangText } from "@solid-memo/domain/langText";
-import { editedText, typedText, withEditedText, withTyped, withTypedTagged } from "@solid-memo/domain/langText";
-import { useI18n } from "./i18n";
+import { ErrorMessage } from "./ErrorMessage";
+import { useI18n, type MessageKey } from "./i18n";
+import {
+  draftOf as textDraftOf,
+  LangTextField,
+  languageButtonId,
+  rememberLanguages,
+  textOfDraft,
+  type DraftEntry,
+  type LangTextDraft,
+} from "./LangTextField";
+import type { LanguageRole } from "./LanguagePicker";
+import { recentLanguages } from "./remembered";
 
 /**
- * The fields of a card as typed; all strings, empty when unset. A side's
- * text is the one the app edits (editedText: the English, else the
- * untagged or only text); a note, label or picture description is the
- * user's own, in the page's language when it has it (typedText).
+ * The fields of a card as typed: each text as LangTextField edits it, in
+ * the languages the user states, and each picture's URL (empty when
+ * unset). `touched` lists the texts the user changed, their words or
+ * their language.
  */
 export interface CardDraft {
-  front: string;
-  back: string;
+  front: LangTextDraft;
+  back: LangTextDraft;
   frontImageUrl: string;
-  frontImageDescription: string;
-  frontNote: string;
+  frontImageDescription: LangTextDraft;
+  frontNote: LangTextDraft;
   backImageUrl: string;
-  backImageDescription: string;
-  backLabel: string;
-  backNote: string;
+  backImageDescription: LangTextDraft;
+  backLabel: LangTextDraft;
+  backNote: LangTextDraft;
+  touched: readonly CardTextPart[];
 }
 
-export const EMPTY_DRAFT: CardDraft = {
-  front: "",
-  back: "",
-  frontImageUrl: "",
-  frontImageDescription: "",
-  frontNote: "",
-  backImageUrl: "",
-  backImageDescription: "",
-  backLabel: "",
-  backNote: "",
+/**
+ * Texts that take their language from the same evidence: the fronts, the
+ * backs, and the user's own text (notes, the label, the pictures'
+ * descriptions), which is in one language however many fields it fills.
+ */
+export type LanguageGroup = "front" | "back" | "own";
+
+/** The language each group's new text starts in, where there is evidence of one. */
+export type CardLanguageDefaults = Partial<Record<LanguageGroup, string>>;
+
+/** What the forms offer of a deck's languages: a default per group, and the languages its pickers suggest first. */
+export interface CardLanguageHints {
+  defaults: CardLanguageDefaults;
+  suggestions: Record<LanguageGroup, string[]>;
+}
+
+/** The card's texts, as the form shows them. */
+const TEXT_PARTS: readonly CardTextPart[] = [
+  "front",
+  "frontImageDescription",
+  "frontNote",
+  "backLabel",
+  "back",
+  "backImageDescription",
+  "backNote",
+];
+
+function groupOf(part: CardTextPart): LanguageGroup {
+  return part === "front" || part === "back" ? part : "own";
+}
+
+const FIELD_IDS: Record<CardTextPart, string> = {
+  front: "card-front",
+  back: "card-back",
+  frontImageDescription: "card-front-image-description",
+  frontNote: "card-front-note",
+  backImageDescription: "card-back-image-description",
+  backLabel: "card-back-label",
+  backNote: "card-back-note",
+};
+
+const ROLES: Record<CardTextPart, LanguageRole> = {
+  front: "front",
+  back: "back",
+  frontImageDescription: "pictureDescription",
+  frontNote: "frontNote",
+  backImageDescription: "pictureDescription",
+  backLabel: "backLabel",
+  backNote: "backNote",
+};
+
+/** How an error names each text ("Choose the language of {field}."). */
+const FIELD_NOUNS: Record<CardTextPart, MessageKey> = {
+  front: "language.field.front",
+  back: "language.field.back",
+  frontImageDescription: "language.field.frontImageDescription",
+  frontNote: "language.field.frontNote",
+  backImageDescription: "language.field.backImageDescription",
+  backLabel: "language.field.backLabel",
+  backNote: "language.field.backNote",
 };
 
 /** The id of the form's validation error, shown under the fields. */
 export const CARD_FIELDS_ERROR_ID = "card-fields-error";
 
-/** The field each of validateCardContent's errors is about. */
+/** The field each of validateCardContent's errors about no text of the card is about. */
 const FIELD_OF_ERROR: Partial<Record<string, string>> = {
   cardFrontImageNotWebUrl: "card-front-image",
   cardBackImageNotWebUrl: "card-back-image",
@@ -45,189 +109,296 @@ const FIELD_OF_ERROR: Partial<Record<string, string>> = {
   cardBackEmpty: "card-back",
 };
 
-/** The draft to start editing an existing card from, on a page in `locale`. */
-export function draftOf(content: CardContent, locale: string): CardDraft {
-  return {
-    front: editedText(content.front),
-    back: editedText(content.back),
-    frontImageUrl: content.frontImageUrl ?? "",
-    frontImageDescription: typedText(content.frontImageDescription, locale),
-    frontNote: typedText(content.frontNote, locale),
-    backImageUrl: content.backImageUrl ?? "",
-    backImageDescription: typedText(content.backImageDescription, locale),
-    backLabel: typedText(content.backLabel, locale),
-    backNote: typedText(content.backNote, locale),
-  };
+/**
+ * Why a card's draft is refused: the error, the text it is about, if
+ * any, and the entry of that text whose language is asked for, if it is.
+ */
+export interface CardFieldsError {
+  error: AppError;
+  part?: CardTextPart;
+  entry?: DraftEntry;
+}
+
+/** The field an error is about: the text it names, else the field its code is about. */
+function fieldOf(invalid: CardFieldsError): string | undefined {
+  return invalid.part === undefined ? FIELD_OF_ERROR[invalid.error.code] : FIELD_IDS[invalid.part];
 }
 
 /**
- * The card content a draft typed on a page in `locale` makes, to
- * validate: each text with the one the app edits replaced by what was
- * typed and every other language of `card` (the card edited, if any)
- * kept; a new card's sides untagged, its notes, label and picture
- * descriptions in the page's language (withTyped). Clearing the edited
- * text clears the whole text, other languages too, as validation leaves
- * it out.
+ * What a deck's cards say of their languages (deckLanguages), as the
+ * forms use it: the language new text of each group starts in — the one
+ * the deck's cards usually have, and for the user's own text, failing
+ * that, the one last chosen for it on this device — and the languages
+ * each group's pickers suggest first: that one, then the deck name's.
  */
-export function contentOf(draft: CardDraft, locale: string, card?: CardContent): CardContent {
-  return {
-    front: withEditedText(card?.front ?? {}, draft.front),
-    back: withEditedText(card?.back ?? {}, draft.back),
-    frontImageUrl: draft.frontImageUrl,
-    backImageUrl: draft.backImageUrl,
-    frontImageDescription: withTypedTagged(card?.frontImageDescription, draft.frontImageDescription, locale),
-    backImageDescription: withTypedTagged(card?.backImageDescription, draft.backImageDescription, locale),
-    frontNote: withTyped(card?.frontNote, draft.frontNote, locale),
-    backLabel: withTyped(card?.backLabel, draft.backLabel, locale),
-    backNote: withTyped(card?.backNote, draft.backNote, locale),
+export function cardLanguageHints(languages: DeckLanguages, title: LangText): CardLanguageHints {
+  const defaults: CardLanguageDefaults = {
+    front: languages.front,
+    back: languages.back,
+    own: languages.own ?? recentLanguages("own")[0],
   };
+  const suggest = (group: LanguageGroup) => [...(defaults[group] === undefined ? [] : [defaults[group]]), ...Object.keys(title)];
+  return { defaults, suggestions: { front: suggest("front"), back: suggest("back"), own: suggest("own") } };
+}
+
+/** An empty draft whose texts each start in the language `tagOf` gives, if any. */
+function emptyDraft(tagOf: (part: CardTextPart) => string | undefined): CardDraft {
+  const texts = Object.fromEntries(TEXT_PARTS.map((part) => [part, textDraftOf(undefined, [], { tag: tagOf(part) ?? null })]));
+  return { ...(texts as Record<CardTextPart, LangTextDraft>), frontImageUrl: "", backImageUrl: "", touched: [] };
+}
+
+/** A new card's draft: empty, each text in its group's default language, else in none yet. */
+export function newDraft(defaults: CardLanguageDefaults): CardDraft {
+  return emptyDraft((part) => defaults[groupOf(part)]);
+}
+
+/**
+ * The next card's draft once one is added: empty, each text in the
+ * language the added card's had (or was to have), so a run of cards
+ * takes no choosing; else in its group's default.
+ */
+export function nextDraft(draft: CardDraft, defaults: CardLanguageDefaults): CardDraft {
+  return emptyDraft((part) => {
+    const { tag } = draft[part][0]!;
+    return tag === null || tag === "" ? defaults[groupOf(part)] : tag;
+  });
+}
+
+/** Whether a text is empty and alone: no words, no translations. */
+function isBlank(text: LangTextDraft): boolean {
+  return text.length === 1 && text[0]!.value === "";
+}
+
+/**
+ * The draft with each text the user has not touched, empty and in no
+ * language yet or in its group's `previous` default, in its group's
+ * default: the defaults may come once the deck's cards are read, and
+ * what they say outranks the device's recent choice they stood on
+ * before. The same draft when nothing changes.
+ */
+export function withDefaults(
+  draft: CardDraft,
+  defaults: CardLanguageDefaults,
+  previous: CardLanguageDefaults = {},
+): CardDraft {
+  let next = draft;
+  for (const part of TEXT_PARTS) {
+    const group = groupOf(part);
+    const tag = defaults[group];
+    const current = draft[part][0]!.tag;
+    const replaceable = current === null || current === previous[group];
+    if (tag !== undefined && tag !== current && !draft.touched.includes(part) && isBlank(draft[part]) && replaceable) {
+      next = { ...next, [part]: textDraftOf(undefined, [], { tag }) };
+    }
+  }
+  return next;
+}
+
+/**
+ * The draft to start editing an existing card from, for a reader who
+ * prefers `readerLanguages`: each text as LangTextField shows it, an
+ * empty one in its group's default language.
+ */
+export function draftOf(
+  content: CardContent,
+  readerLanguages: readonly string[],
+  { defaults = {} }: { defaults?: CardLanguageDefaults } = {},
+): CardDraft {
+  const texts = Object.fromEntries(
+    TEXT_PARTS.map((part) => [
+      part,
+      textDraftOf(content[part], readerLanguages, { tag: defaults[groupOf(part)] ?? null }),
+    ]),
+  );
+  return {
+    ...(texts as Record<CardTextPart, LangTextDraft>),
+    frontImageUrl: content.frontImageUrl ?? "",
+    backImageUrl: content.backImageUrl ?? "",
+    touched: [],
+  };
+}
+
+/** Outcome of checking a card's draft: its content, validated, or why it is refused. */
+export type CardDraftCheck = { ok: true; content: CardContent } | { ok: false; invalid: CardFieldsError };
+
+/**
+ * The card content a draft says, validated (validateCardContent; `saved`
+ * the card edited, if any, whose untagged sides may stay untouched).
+ * Text with no language chosen is refused first, at the entry that needs
+ * one: the app asks rather than guess. A picture's description counts
+ * only with a picture to describe.
+ */
+export function checkDraft(draft: CardDraft, saved?: CardContent): CardDraftCheck {
+  const texts: Partial<Record<CardTextPart, LangText>> = {};
+  for (const part of TEXT_PARTS) {
+    if (part === "frontImageDescription" && draft.frontImageUrl.trim() === "") continue;
+    if (part === "backImageDescription" && draft.backImageUrl.trim() === "") continue;
+    const result = textOfDraft(draft[part]);
+    if ("missing" in result) {
+      return { ok: false, invalid: { error: new AppError("textNeedsLanguage", { field: part }), part, entry: result.missing } };
+    }
+    texts[part] = result.text;
+  }
+  const validation = validateCardContent(
+    { ...texts, front: texts.front!, back: texts.back!, frontImageUrl: draft.frontImageUrl, backImageUrl: draft.backImageUrl },
+    saved,
+  );
+  if (validation.ok) return validation;
+  const { error, part } = validation;
+  if (part === undefined) return { ok: false, invalid: { error } };
+  return { ok: false, invalid: { error, part, entry: draft[part].find((entry) => entry.tag === "") } };
+}
+
+/** Notes the languages of the user's own text a saved card states, as this device's latest choices for it. */
+export function rememberCardLanguages(content: CardContent, draft: CardDraft): void {
+  for (const part of TEXT_PARTS) {
+    if (groupOf(part) === "own") rememberLanguages("own", content[part] ?? {}, draft[part]);
+  }
+}
+
+/** The form's message for an error in its draft, under CARD_FIELDS_ERROR_ID; the text it names named in this language. */
+export function CardFieldsErrorMessage({ invalid }: { invalid: CardFieldsError | null }) {
+  const { t, errorText } = useI18n();
+  const error =
+    invalid?.part !== undefined && invalid.error.code === "textNeedsLanguage"
+      ? new AppError("textNeedsLanguage", { field: t(FIELD_NOUNS[invalid.part]) })
+      : invalid?.error;
+  return <ErrorMessage id={CARD_FIELDS_ERROR_ID} error={errorText(error)} />;
 }
 
 /**
  * Text, picture, picture description and note fields for both sides of
- * a card and the back's label, shared by the card creator and the card page. Nothing is
- * `required`: a side may be a picture only, so a hint ahead of the fields
- * says what a side needs, and it is checked on submit by
- * validateCardContent, its message shown by the form under
- * CARD_FIELDS_ERROR_ID, which describes the field it is about.
+ * a card and the back's label, shared by the card creator and the card
+ * page, each text in the languages the user states (LangTextField).
+ * Nothing is `required`: a side may be a picture only, so a hint ahead of
+ * the fields says what a side needs, and it is checked on submit
+ * (checkDraft), its message shown by the form under CARD_FIELDS_ERROR_ID,
+ * which describes the field it is about; for a language still to choose,
+ * that text's picker, which takes the focus.
+ *
+ * Choosing the language of an empty text chooses it for the empty texts
+ * of its group the user has not touched: a card's notes and label are
+ * mostly in one language.
  */
 export function CardContentFields({
   draft,
-  card,
   busy,
   invalid = null,
+  suggestions,
   onChange,
 }: {
   draft: CardDraft;
-  /** The card edited, if any: its texts' languages mark the fields. */
-  card?: CardContent;
   busy: boolean;
-  /** The form's validation error, if any: its field is marked invalid and described by it. */
-  invalid?: AppError | null;
+  /** Why the draft was refused, if it was: its field is marked invalid and described by it. */
+  invalid?: CardFieldsError | null;
+  suggestions: Record<LanguageGroup, string[]>;
   onChange: (draft: CardDraft) => void;
 }) {
-  const { t, editedPart, typedPart } = useI18n();
-  const field = (key: keyof CardDraft) => ({
-    value: draft[key],
-    onInput: (e: { currentTarget: { value: string } }) =>
-      onChange({ ...draft, [key]: e.currentTarget.value }),
-    disabled: busy,
-  });
-  const invalidField = invalid === null ? undefined : FIELD_OF_ERROR[invalid.code];
-  /** A field's validity, and the error as its description when it is the one in error. */
-  const validity = (id: string) =>
-    id === invalidField ? { invalid: true, errorId: CARD_FIELDS_ERROR_ID } : { invalid: false, errorId: undefined };
+  const { t } = useI18n();
+  const invalidField = invalid === null ? undefined : fieldOf(invalid);
+  const languageError = invalid?.entry !== undefined;
+
+  // A language asked for: its picker takes the focus, saying so.
+  useLayoutEffect(() => {
+    if (invalid?.part === undefined || invalid.entry === undefined) return;
+    document.getElementById(languageButtonId(FIELD_IDS[invalid.part], invalid.entry))?.focus();
+  }, [invalid]);
+
+  function changeText(part: CardTextPart, text: LangTextDraft) {
+    const touched = draft.touched.includes(part) ? draft.touched : [...draft.touched, part];
+    let next: CardDraft = { ...draft, [part]: text, touched };
+    const { tag } = text[0]!;
+    if (isBlank(draft[part]) && isBlank(text) && tag !== null && tag !== draft[part][0]!.tag) {
+      for (const other of TEXT_PARTS) {
+        if (other !== part && groupOf(other) === groupOf(part) && !touched.includes(other) && isBlank(next[other])) {
+          next = { ...next, [other]: textDraftOf(undefined, [], { tag }) };
+        }
+      }
+    }
+    onChange(next);
+  }
+
   /**
-   * A text field's language: the field marked with the language edited
-   * (`part`: editedPart for a side, typedPart for the user's own text),
-   * described by its own hints (`hintIds`) and by one saying which
-   * language is edited when the reader sees the text in another.
+   * A text's field, described by its hints, and by the form's message
+   * when that is about its text; `hint` (its id and text) is shown under
+   * its text.
    */
-  const languageOf = (part: typeof editedPart) => (id: string, stored: LangText | undefined, ...hintIds: (string | undefined)[]) => {
-    const { lang, hint } = part(stored);
-    const languageId = `${id}-language`;
-    const describedBy = [...hintIds, hint === null ? undefined : languageId].filter((x) => x !== undefined).join(" ");
-    return {
-      props: {
-        id,
-        lang,
-        "aria-invalid": validity(id).invalid,
-        "aria-describedby": describedBy,
-      },
-      hint: hint !== null && (
-        <p id={languageId} class="hint field-hint">
-          {hint}
-        </p>
-      ),
-    };
+  const textField = (part: CardTextPart, label: string, hintIds: string[], hint?: { id: string; text: string }) => {
+    const id = FIELD_IDS[part];
+    const textInvalid = id === invalidField && !languageError;
+    return (
+      <LangTextField
+        id={id}
+        label={label}
+        role={ROLES[part]}
+        draft={draft[part]}
+        suggestions={suggestions[groupOf(part)]}
+        placeholder={
+          part === "front"
+            ? t("cardContentFields.frontPlaceholder")
+            : part === "back"
+              ? t("cardContentFields.backPlaceholder")
+              : undefined
+        }
+        disabled={busy}
+        invalid={textInvalid}
+        describedBy={[...(textInvalid ? [CARD_FIELDS_ERROR_ID] : []), ...hintIds, ...(hint ? [hint.id] : [])].join(
+          " ",
+        )}
+        hint={
+          hint && (
+            <p id={hint.id} class="hint field-hint">
+              {hint.text}
+            </p>
+          )
+        }
+        missing={invalid?.part === part ? invalid.entry : undefined}
+        errorId={CARD_FIELDS_ERROR_ID}
+        onChange={(text) => changeText(part, text)}
+      />
+    );
   };
-  const text = languageOf(editedPart);
-  const own = languageOf(typedPart);
-  const image = (id: string) => ({
+  const image = (id: string, key: "frontImageUrl" | "backImageUrl") => ({
     id,
-    "aria-invalid": validity(id).invalid,
-    "aria-describedby": validity(id).errorId,
+    type: "url" as const,
+    placeholder: t("cardContentFields.imagePlaceholder"),
+    value: draft[key],
+    onInput: (e: { currentTarget: { value: string } }) => onChange({ ...draft, [key]: e.currentTarget.value }),
+    disabled: busy,
+    "aria-invalid": id === invalidField,
+    "aria-describedby": id === invalidField ? CARD_FIELDS_ERROR_ID : undefined,
   });
-  const front = text("card-front", card?.front, validity("card-front").errorId, "card-sides-hint");
-  const frontImageDescription = own(
-    "card-front-image-description",
-    card?.frontImageDescription,
-    "card-front-image-description-hint",
-  );
-  const frontNote = own("card-front-note", card?.frontNote, "card-front-note-hint");
-  const backLabel = own("card-back-label", card?.backLabel, "card-back-label-hint");
-  const back = text("card-back", card?.back, validity("card-back").errorId, "card-sides-hint");
-  const backImageDescription = own(
-    "card-back-image-description",
-    card?.backImageDescription,
-    "card-back-image-description-hint",
-  );
-  const backNote = own("card-back-note", card?.backNote, "card-back-note-hint");
   return (
     <>
       <p id="card-sides-hint" class="hint">
         {t("cardContentFields.sidesHint")}
       </p>
-      <label for="card-front">{t("cardContentFields.front")}</label>
-      <input
-        {...front.props}
-        type="text"
-        placeholder={t("cardContentFields.frontPlaceholder")}
-        {...field("front")}
-      />
-      {front.hint}
+      {textField("front", t("cardContentFields.front"), ["card-sides-hint"])}
       <label for="card-front-image">{t("cardContentFields.frontImage")}</label>
-      <input
-        {...image("card-front-image")}
-        type="url"
-        placeholder={t("cardContentFields.imagePlaceholder")}
-        {...field("frontImageUrl")}
-      />
-      <label for="card-front-image-description">{t("cardContentFields.frontImageDescription")}</label>
-      <input {...frontImageDescription.props} type="text" {...field("frontImageDescription")} />
-      <p id="card-front-image-description-hint" class="hint field-hint">
-        {t("cardContentFields.imageDescriptionHint")}
-      </p>
-      {frontImageDescription.hint}
-      <label for="card-front-note">{t("cardContentFields.frontNote")}</label>
-      <input {...frontNote.props} type="text" {...field("frontNote")} />
-      <p id="card-front-note-hint" class="hint field-hint">
-        {t("cardContentFields.frontNoteHint")}
-      </p>
-      {frontNote.hint}
-      <label for="card-back-label">{t("cardContentFields.backLabel")}</label>
-      <input {...backLabel.props} type="text" {...field("backLabel")} />
-      <p id="card-back-label-hint" class="hint field-hint">
-        {t("cardContentFields.backLabelHint")}
-      </p>
-      {backLabel.hint}
-      <label for="card-back">{t("cardContentFields.back")}</label>
-      <input
-        {...back.props}
-        type="text"
-        placeholder={t("cardContentFields.backPlaceholder")}
-        {...field("back")}
-      />
-      {back.hint}
+      <input {...image("card-front-image", "frontImageUrl")} />
+      {textField("frontImageDescription", t("cardContentFields.frontImageDescription"), [], {
+        id: "card-front-image-description-hint",
+        text: t("cardContentFields.imageDescriptionHint"),
+      })}
+      {textField("frontNote", t("cardContentFields.frontNote"), [], {
+        id: "card-front-note-hint",
+        text: t("cardContentFields.frontNoteHint"),
+      })}
+      {textField("backLabel", t("cardContentFields.backLabel"), [], {
+        id: "card-back-label-hint",
+        text: t("cardContentFields.backLabelHint"),
+      })}
+      {textField("back", t("cardContentFields.back"), ["card-sides-hint"])}
       <label for="card-back-image">{t("cardContentFields.backImage")}</label>
-      <input
-        {...image("card-back-image")}
-        type="url"
-        placeholder={t("cardContentFields.imagePlaceholder")}
-        {...field("backImageUrl")}
-      />
-      <label for="card-back-image-description">{t("cardContentFields.backImageDescription")}</label>
-      <input {...backImageDescription.props} type="text" {...field("backImageDescription")} />
-      <p id="card-back-image-description-hint" class="hint field-hint">
-        {t("cardContentFields.imageDescriptionHint")}
-      </p>
-      {backImageDescription.hint}
-      <label for="card-back-note">{t("cardContentFields.backNote")}</label>
-      <input {...backNote.props} type="text" {...field("backNote")} />
-      <p id="card-back-note-hint" class="hint field-hint">
-        {t("cardContentFields.backNoteHint")}
-      </p>
-      {backNote.hint}
+      <input {...image("card-back-image", "backImageUrl")} />
+      {textField("backImageDescription", t("cardContentFields.backImageDescription"), [], {
+        id: "card-back-image-description-hint",
+        text: t("cardContentFields.imageDescriptionHint"),
+      })}
+      {textField("backNote", t("cardContentFields.backNote"), [], {
+        id: "card-back-note-hint",
+        text: t("cardContentFields.backNoteHint"),
+      })}
     </>
   );
 }

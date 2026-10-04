@@ -124,8 +124,8 @@ describe.each(SERVERS)("a guest's study on $name", ({ url: server }) => {
     const { useCases, guestStore } = app();
     await useCases.startGuest("My study");
     const [guestInstance] = await useCases.listInstances(GUEST_SESSION);
-    const deck = await useCases.createDeck(guestInstance!.url, "Capitals", "en");
-    await useCases.addCard(deck, { front: { "": "Sweden" }, back: { "": "Stockholm" } });
+    const deck = await useCases.createDeck(guestInstance!.url, { en: "Capitals" });
+    await useCases.addCard(deck, { front: { en: "Sweden" }, back: { en: "Stockholm" } });
     const now = new Date();
     const queue = await useCases.getStudyQueue(guestInstance!.url, deck, now);
     await useCases.recordReview(guestInstance!.url, deck, queue.newPrompts[0]!, 4, now);
@@ -141,7 +141,7 @@ describe.each(SERVERS)("a guest's study on $name", ({ url: server }) => {
     expect(outcome).toEqual({ ok: true, instance: { url: target, name: "My study" }, tidied: true });
     expect(await useCases.listInstances(session)).toEqual([{ url: target, name: "My study" }]);
     const [moved] = await useCases.listDecks(target);
-    expect((await useCases.listCards(moved!)).map((card) => card.front)).toEqual([{ "": "Sweden" }]);
+    expect((await useCases.listCards(moved!)).map((card) => card.front)).toEqual([{ en: "Sweden" }]);
     expect((await useCases.getStudyQueue(target, moved!, now)).newPrompts).toEqual([]);
     expect((await useCases.getStatistics(target, now)).totals.answers).toBe(1);
     expect((await useCases.validateInstance(target)).conforms).toBe(true);

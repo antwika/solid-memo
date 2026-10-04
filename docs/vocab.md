@@ -81,6 +81,29 @@ string, so other applications can look up what it means:
 - The [shapes](shapes.md) say which terms a subject of a given class and
   format version uses; the vocabulary only says what each term means.
 
+## The language of text
+
+Solid Memo's text properties (`sm:front`, `sm:back`, `sm:frontNote`,
+`sm:backLabel`, `sm:backNote`, `sm:frontImageDescription`,
+`sm:backImageDescription`, and `dcterms:title` and
+`dcterms:description` on a deck) say their language with the literal's
+own language tag (`"Huvudstäder"@sv`), one value per language, not
+with a term of ours. Tags are BCP 47, stored in lower case. Text in no
+language — codes, numbers, symbols ("404", "Fe") — is tagged `zxx`,
+BCP 47's "no linguistic content", rather than with a language it is
+not in; a page shows it with no `lang`. A card side saved untagged
+(`xsd:string`) says nothing about its language: it is not known, not
+none. Which formats require which tags is the [shapes](shapes.md)'
+business.
+
+There is no term for a deck's languages: the app works out which
+languages to offer from the tags the deck's text already uses (see
+[i18n.md](i18n.md#text-in-the-users-languages)). Optional
+`sm:frontLanguage` / `sm:backLanguage` defaults could join without a
+format bump, as above, should that prove too weak. `dcterms:language`
+is used only on library releases, for DCAT-AP: it names EU
+authority-table languages and cannot tell a card's front from its back.
+
 ## What dereferences
 
 | IRI | What is served |

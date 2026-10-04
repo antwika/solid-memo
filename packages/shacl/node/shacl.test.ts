@@ -37,6 +37,9 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "card/v4/invalid/untagged-image-description.ttl": { path: `${SM}frontImageDescription`, message: "A picture's description is language-tagged text" },
   "card/v4/invalid/two-english-image-descriptions.ttl": { path: `${SM}backImageDescription`, message: 'Language "en" has been used by 2 values' },
   "card/v4/invalid/back-as-iri.ttl": { path: `${SM}back`, message: "A side's text is one untagged text" },
+  "card/v5/invalid/tagged-and-untagged-front.ttl": { message: "Each side of a card needs text or a picture, its text either untagged or language-tagged, never both." },
+  "card/v5/invalid/untagged-note.ttl": { path: `${SM}backNote`, message: "A note under the back is language-tagged text in any language, one per language" },
+  "card/v5/invalid/two-swedish-labels.ttl": { path: `${SM}backLabel`, message: 'Language "sv" has been used by 2 values' },
   "deck/v1/invalid/missing-title.ttl": { path: `${DC}title`, message: "Less than 1 values" },
   "deck/v2/invalid/bad-direction.ttl": { path: `${SM}direction`, message: "A format-2 deck states its direction" },
   "deck/v2/invalid/missing-direction.ttl": { path: `${SM}direction`, message: "A format-2 deck states its direction" },
@@ -68,6 +71,9 @@ const EXPECTED: Record<string, { path?: string; message: string }> = {
   "deck/v4/invalid/pod-with-two-titles-in-one-language.ttl": { path: `${DC}title`, message: 'Language "sv" has been used by 2 values' },
   "deck/v4/invalid/pod-with-two-english-titles.ttl": { path: `${DC}title`, message: "A title is language-tagged text, one per language, and one of them English" },
   "deck/v4/invalid/library-without-english-description.ttl": { path: `${DC}description`, message: "A description is language-tagged text, one per language, and one of them English" },
+  "deck/v5/invalid/pod-with-untagged-title.ttl": { path: `${DC}title`, message: "A deck's title is language-tagged text in any language, one per language" },
+  "deck/v5/invalid/pod-with-two-titles-in-one-language.ttl": { path: `${DC}title`, message: 'Language "sv" has been used by 2 values' },
+  "deck/v5/invalid/pod-without-description.ttl": { path: `${DC}description`, message: "A deck's description is language-tagged text in any language, one per language" },
   "deck-series/v2/invalid/library-with-untagged-description.ttl": { path: `${DC}description`, message: "A description is language-tagged text, one per language, and one of them English" },
   "deck-series/v1/invalid/library-without-current-version.ttl": { path: "http://www.w3.org/ns/dcat#hasCurrentVersion", message: "A deck series names its current release." },
   "catalog/v1/invalid/without-publisher.ttl": { path: `${DC}publisher`, message: "A catalogue names its publisher" },
@@ -118,7 +124,7 @@ describe("the shapes over the fixtures", async () => {
     await expect(
       validateTurtleDocument("x.ttl", parseTurtle(turtle, base("x.ttl")), engine, "pod"),
     ).rejects.toThrow(
-      "x.ttl:\n  <https://pod.example/x.ttl#se> is card format 5; this app knows formats 1–4.",
+      "x.ttl:\n  <https://pod.example/x.ttl#se> is card format 6; this app knows formats 1–5.",
     );
   });
 
@@ -240,7 +246,7 @@ describe("the vendored profiles over their fixtures", async () => {
     );
   });
 
-  it("accept the valid format-3 decks, catalogue and series, which Solid Memo writes", async () => {
+  it("accept the valid decks, catalogue and series, which Solid Memo writes, whatever the title's language", async () => {
     const fixture = async (path: string) => {
       const { turtle } = (await readTurtleTree(`${ROOT}fixtures`)).find((f) => f.path === path)!;
       return parseTurtle(turtle, `https://pod.example/${path}`);
@@ -249,6 +255,9 @@ describe("the vendored profiles over their fixtures", async () => {
     await expect(
       validateProfile("pod", await fixture("deck/v4/valid/pod.ttl"), engines["dcat-ap"], reference),
     ).resolves.toBeUndefined();
+    for (const path of ["deck/v5/valid/pod-titled-in-swedish.ttl", "deck/v5/valid/pod-titled-in-japanese-and-english.ttl", "deck/v5/valid/pod-with-stand-in.ttl"]) {
+      await expect(validateProfile(path, await fixture(path), engines["dcat-ap"], reference), path).resolves.toBeUndefined();
+    }
     await expect(
       validateProfile("release", await fixture("deck/v4/valid/library-release.ttl"), engines["dcat-ap"], [...reference, ...index]),
     ).resolves.toBeUndefined();

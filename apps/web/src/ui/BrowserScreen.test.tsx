@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/preact";
+import { fireEvent, render, screen, within } from "@testing-library/preact";
 import { BrowserScreen, CARDS_PER_PAGE } from "./BrowserScreen";
 import type { Card, Deck } from "@solid-memo/domain/deck";
 import { I18nProvider } from "./i18n";
 import { statusTexts } from "../test/liveRegions";
+import { rememberLanguage } from "./remembered";
 
 const deck: Deck = {
   id: "deck-1",
@@ -42,7 +43,10 @@ function renderScreen(
     cardHref: (c: Card) => `#/card?card=${c.id}`,
     onRemoveCard: vi.fn(),
     onPageChange: vi.fn(),
+    onLanguageFilterChange: vi.fn(),
     ...overrides,
+    // Every card listed is the user's to settle, unless a test says otherwise.
+    toSettle: overrides.toSettle ?? overrides.cards ?? [card],
   };
   const view = render(<BrowserScreen {...props} />);
   return { ...view, props };
@@ -65,7 +69,7 @@ describe("BrowserScreen deck editing", () => {
     fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
     expect(screen.getByLabelText("Description")).toHaveValue("Kanji of the N5 level.");
     expect(screen.getByLabelText("Description")).not.toHaveAttribute("lang");
-    expect(screen.getByLabelText("Description")).not.toHaveAttribute("aria-describedby");
+    expect(screen.getByLabelText("Description")).toHaveAccessibleDescription("Language: English");
     expect(screen.getByLabelText("Keywords (optional)")).toHaveValue("kanji, JLPT");
     expect(screen.getByLabelText("Keywords (optional)")).toHaveAccessibleDescription("Separate keywords with commas.");
     expect(screen.getByRole("checkbox", { name: "Languages" })).toBeChecked();
@@ -76,7 +80,7 @@ describe("BrowserScreen deck editing", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save description" }));
 
     expect(props.onDescribeDeck).toHaveBeenCalledWith({
-      description: "The N5 kanji.",
+      description: { en: "The N5 kanji." },
       topics: ["https://solid-memo.com/vocab/topics#science"],
       keywords: ["kanji", "N5"],
     });
@@ -93,6 +97,52 @@ describe("BrowserScreen deck editing", () => {
     expect(screen.queryByLabelText("Description")).toBeNull();
   });
 
+  it("asks for the language of a translation of the description before saving it", () => {
+    const { props } = renderScreen({ deck: { ...deck, description: { en: "Kanji of the N5 level." } } });
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add a translation" }));
+    fireEvent.input(screen.getByLabelText("Translation, its language not chosen"), { target: { value: "Kanji på nivå N5." } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(props.onDescribeDeck).not.toHaveBeenCalled();
+    const picker = screen.getByRole("button", { name: "Language: not stated" });
+    expect(picker).toHaveFocus();
+    expect(picker).toHaveAccessibleDescription("Choose the language of the description.");
+    fireEvent.click(picker);
+    fireEvent.click(screen.getByRole("radio", { name: "Swedish — svenska (sv)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(props.onDescribeDeck).toHaveBeenCalledWith({
+      description: { en: "Kanji of the N5 level.", sv: "Kanji på nivå N5." },
+      topics: [],
+      keywords: [],
+    });
+  });
+
+  it("starts a description in the language of the deck's name, and forgets a question on Cancel", () => {
+    renderScreen({ deck: { ...deck, title: { ja: "漢字" } } });
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(screen.getByLabelText("Description")).toHaveAttribute("lang", "ja");
+    fireEvent.click(screen.getByRole("button", { name: "Add a translation" }));
+    fireEvent.input(screen.getByLabelText("Description"), { target: { value: "N5" } });
+    fireEvent.input(screen.getByLabelText("Translation, its language not chosen"), { target: { value: "N5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save description" }));
+    expect(document.getElementById("deck-description-error")).toHaveTextContent("Choose the language of the description.");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel describing" }));
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(document.getElementById("deck-description-error")).toHaveTextContent("");
+  });
+
+  it("starts a description for a deck with no name in the language last chosen on this device, else none", () => {
+    localStorage.clear();
+    renderScreen({ deck: { ...deck, title: {} } });
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(screen.getByRole("button", { name: "Language: not stated" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel describing" }));
+    rememberLanguage("deck", "fi");
+    fireEvent.click(screen.getByRole("button", { name: "Describe deck" }));
+    expect(screen.getByLabelText("Description")).toHaveAttribute("lang", "fi");
+    localStorage.clear();
+  });
+
   it("shows topics alone, and nothing more for a deck that says nothing", () => {
     renderScreen({ deck: { ...deck, themes: ["https://solid-memo.com/vocab/topics#geography"] } });
     expect(screen.getByRole("region", { name: "About this deck" })).toHaveTextContent(/^Topics: GeographyDescribe deck$/);
@@ -104,7 +154,9 @@ describe("BrowserScreen deck editing", () => {
       screen.getByRole("group", { name: "Study direction" }),
     ).toBeInTheDocument();
     expect(
-      screen.getAllByRole("radio").map((radio) => radio.getAttribute("value")),
+      within(screen.getByRole("group", { name: "Study direction" }))
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("value")),
     ).toEqual(["front-to-back", "back-to-front", "bidirectional"]);
     expect(screen.getByRole("radio", { name: "Front → back" })).toBeChecked();
     expect(screen.getByRole("group", { name: "Study direction" })).toHaveAccessibleDescription(
@@ -180,6 +232,79 @@ describe("BrowserScreen", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Show retired cards" }));
     expect(screen.getByText("火")).toBeInTheDocument();
     expect(container.querySelector("tr.retired")).toHaveTextContent("火Retired");
+  });
+
+  it("marks a card with a side that does not say its language, outside its link", () => {
+    const tagged: Card = { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, front: { ja: "火" }, back: { en: "fire" } };
+    const backOnly: Card = { ...tagged, id: "card-3", url: `${deck.cardsDocumentUrl}#card-3`, front: { ja: "木" }, back: { "": "tree" } };
+    renderScreen({ cards: [card, tagged, backOnly] });
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(rows.map((row) => within(row).queryByText("No language stated") !== null)).toEqual([true, false, true]);
+    expect(within(rows[0]!).getByRole("link", { name: "水" })).toBeInTheDocument();
+  });
+
+  it("marks no card for notes or a label saved the same in English and another language", () => {
+    const same: Card = {
+      ...card,
+      id: "card-2",
+      url: `${deck.cardsDocumentUrl}#card-2`,
+      front: { ja: "火" },
+      back: { en: "fire" },
+      frontNote: { en: "Kanji", sv: "Kanji" },
+    };
+    renderScreen({ cards: [same], toSettle: [same] });
+    expect(screen.queryByText("No language stated")).toBeNull();
+    expect(screen.queryByRole("group", { name: "Cards to list" })).toBeNull();
+  });
+
+  it("neither marks nor offers to list a card still as its library release has it", () => {
+    const released: Card = { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, front: { "": "火" } };
+    const { props, rerender } = renderScreen({ cards: [card, released], toSettle: [card] });
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(rows.map((row) => within(row).queryByText("No language stated") !== null)).toEqual([true, false]);
+    rerender(<BrowserScreen {...props} languageFilter="unstated" />);
+    expect(screen.getAllByRole("row").slice(1).map((row) => row.querySelector("a")!.textContent)).toEqual(["水"]);
+    // With none the user's to settle, there is nothing to mark or narrow down to.
+    rerender(<BrowserScreen {...props} languageFilter="unstated" toSettle={[]} />);
+    expect(screen.queryByText("No language stated")).toBeNull();
+    expect(screen.queryByRole("group", { name: "Cards to list" })).toBeNull();
+    expect(screen.getAllByRole("row")).toHaveLength(3);
+  });
+
+  it("lists the cards of the route's language filter, and asks for another", () => {
+    const tagged = Array.from({ length: CARDS_PER_PAGE }, (_, i): Card => ({
+      ...card,
+      id: `tagged-${i}`,
+      url: `${deck.cardsDocumentUrl}#tagged-${i}`,
+      front: { ja: `${i}` },
+      back: { en: `Tagged ${i}` },
+    }));
+    const same: Card = { ...tagged[0]!, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, front: { ja: "火" }, backLabel: { en: "x", sv: "x" } };
+    const cards = [...tagged, card, same];
+    const { props, rerender } = renderScreen({ cards });
+    const filter = screen.getByRole("group", { name: "Cards to list" });
+    expect(within(filter).getByRole("radio", { name: "All cards" })).toBeChecked();
+    expect(screen.getByText("Cards 1–10 of 12. Open a card to edit it.")).toBeInTheDocument();
+    fireEvent.click(within(filter).getByRole("radio", { name: "No language stated" }));
+    expect(props.onLanguageFilterChange).toHaveBeenCalledWith("unstated");
+
+    rerender(<BrowserScreen {...props} languageFilter="unstated" />);
+    expect(screen.getByRole("radio", { name: "No language stated" })).toBeChecked();
+    expect(screen.getAllByRole("row").slice(1).map((row) => row.querySelector("a")!.textContent)).toEqual(["水"]);
+    expect(screen.getByText("Open a card to edit it.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: "All cards" }));
+    expect(props.onLanguageFilterChange).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it("offers no language filter when every card's language is settled, listing all of them", () => {
+    const tagged: Card = { ...card, front: { ja: "水" }, back: { en: "water" } };
+    const { rerender, props } = renderScreen({ cards: [card], languageFilter: "unstated" });
+    // Once the last such card says its language, the list is whole again.
+    rerender(<BrowserScreen {...props} cards={[tagged]} toSettle={[tagged]} />);
+    expect(screen.queryByRole("group", { name: "Cards to list" })).toBeNull();
+    expect(screen.getByRole("link", { name: "水" })).toBeInTheDocument();
+    expect(screen.queryByText("No language stated")).toBeNull();
   });
 
   it("offers no retired cards to show when there are none, and says so when every card is retired", () => {
@@ -402,12 +527,14 @@ describe("BrowserScreen pagination", () => {
 describe("BrowserScreen in Swedish", () => {
   it("speaks Swedish, the retired cards and their toggle too", () => {
     const retired: Card = { ...card, id: "card-2", url: `${deck.cardsDocumentUrl}#card-2`, retired: true };
+    const same: Card = { ...card, id: "card-3", url: `${deck.cardsDocumentUrl}#card-3`, front: { ja: "火" }, back: { en: "fire" }, frontNote: { en: "Kanji", sv: "Kanji" } };
     render(
       <I18nProvider locale="sv" onChoose={() => undefined}>
         <BrowserScreen
           deck={deck}
           deckHref="#/deck?deck=d"
-          cards={[card, retired]}
+          cards={[card, retired, same]}
+          toSettle={[card, retired, same]}
           page={1}
           busy={false}
           error={null}
@@ -417,6 +544,7 @@ describe("BrowserScreen in Swedish", () => {
           cardHref={(c) => `#/card?card=${c.id}`}
           onRemoveCard={vi.fn()}
           onPageChange={vi.fn()}
+          onLanguageFilterChange={vi.fn()}
         />
       </I18nProvider>,
     );
@@ -425,6 +553,11 @@ describe("BrowserScreen in Swedish", () => {
     expect(screen.getByText("Framsida → baksida")).toBeInTheDocument();
     expect(screen.getByText(/1 kort är ur bruk: det sparas/)).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Framsida" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Kort som visas" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Alla kort" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Inget språk angivet" })).not.toBeChecked();
+    expect(screen.getByRole("row", { name: /水/ })).toHaveTextContent("Inget språk angivet");
+    expect(screen.getByRole("row", { name: /火/ })).not.toHaveTextContent("Inget språk angivet");
   });
 
   it("marks deck and card text in another language than Swedish with its language", () => {
@@ -445,6 +578,7 @@ describe("BrowserScreen in Swedish", () => {
           cardHref={(c) => `#/card?card=${c.id}`}
           onRemoveCard={vi.fn()}
           onPageChange={vi.fn()}
+          onLanguageFilterChange={vi.fn()}
         />
       </I18nProvider>,
     );
@@ -456,14 +590,16 @@ describe("BrowserScreen in Swedish", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Beskriv kortleken" }));
     const description = screen.getByLabelText("Beskrivning");
-    // The user's own text is edited in the page's language.
+    // The text the reader sees is the one edited first; the others are its translations.
     expect(description).toHaveValue("Kanji på nivå N5.");
     expect(description).not.toHaveAttribute("lang");
-    expect(description).not.toHaveAttribute("aria-describedby");
+    expect(description).toHaveAccessibleDescription("Språk: svenska");
+    expect(screen.getByLabelText("Text på engelska")).toHaveValue("Kanji of the N5 level.");
+    expect(screen.getByLabelText("Text på engelska")).toHaveAttribute("lang", "en");
   });
 
-  it("says which language the description field edits when the reader sees another", () => {
-    // A reader who prefers German sees the German; a Swedish page edits the English.
+  it("edits first the description the reader sees, marked with its language", () => {
+    // A reader who prefers German sees the German, and edits it first.
     const languages = vi.spyOn(navigator, "languages", "get").mockReturnValue(["de"]);
     render(
       <I18nProvider locale="sv" onChoose={() => undefined}>
@@ -480,14 +616,16 @@ describe("BrowserScreen in Swedish", () => {
           cardHref={(c) => `#/card?card=${c.id}`}
           onRemoveCard={vi.fn()}
           onPageChange={vi.fn()}
+          onLanguageFilterChange={vi.fn()}
         />
       </I18nProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Beskriv kortleken" }));
     const description = screen.getByLabelText("Beskrivning");
-    expect(description).toHaveValue("Kanji of the N5 level.");
-    expect(description).toHaveAttribute("lang", "en");
-    expect(description).toHaveAccessibleDescription("Du redigerar texten på engelska. Översättningarna ändras inte.");
+    expect(description).toHaveValue("Kanji der Stufe N5.");
+    expect(description).toHaveAttribute("lang", "de");
+    expect(description).toHaveAccessibleDescription("Språk: tyska");
+    expect(screen.getByLabelText("Text på engelska")).toHaveValue("Kanji of the N5 level.");
     languages.mockRestore();
   });
 });

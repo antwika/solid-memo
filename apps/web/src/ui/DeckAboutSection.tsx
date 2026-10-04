@@ -1,9 +1,21 @@
 import { useState } from "preact/hooks";
+import { AppError } from "@solid-memo/domain/appError";
 import { TOPICS } from "@solid-memo/vocab/concepts.generated";
 import type { Deck } from "@solid-memo/domain/deck";
 import { parseKeywords, topicsOfDeck, type DeckAbout } from "@solid-memo/domain/deckAbout";
 import { topicLabels } from "@solid-memo/domain/library";
+import { shownTag } from "@solid-memo/domain/langText";
+import { ErrorMessage } from "./ErrorMessage";
+import {
+  draftOf,
+  LangTextField,
+  rememberLanguages,
+  textOfDraft,
+  useMissingLanguage,
+  type LangTextDraft,
+} from "./LangTextField";
 import { linkify } from "./linkify";
+import { recentLanguages } from "./remembered";
 import { useI18n } from "./i18n";
 import { ReaderText, ReaderTexts } from "./ReaderText";
 
@@ -11,7 +23,10 @@ import { ReaderText, ReaderTexts } from "./ReaderText";
  * What a deck says about itself — its description, its topics (from
  * Solid Memo's topics scheme) and its keywords — with a form to change
  * them. The description is required: every deck has one, as DCAT-AP asks
- * of every dataset (see docs/data-model.md).
+ * of every dataset (see docs/data-model.md). It is edited in every
+ * language it has, each the user's to state (LangTextField); a deck with
+ * none yet starts it in the language of the name the reader sees, else
+ * the one last chosen for a deck's text on this device.
  */
 export function DeckAboutSection({
   deck,
@@ -22,17 +37,20 @@ export function DeckAboutSection({
   busy: boolean;
   onSave: (about: DeckAbout) => void;
 }) {
-  const { t, tx, readerText, readerLang, typedPart, typedText } = useI18n();
+  const { t, tx, locale, readerText, readerLang, errorText } = useI18n();
   /** The drafts while editing; null otherwise. */
-  const [draft, setDraft] = useState<{ description: string; topics: string[]; keywords: string } | null>(
+  const [draft, setDraft] = useState<{ description: LangTextDraft; topics: string[]; keywords: string } | null>(
     null,
   );
+  const { missing, ask, clear } = useMissingLanguage("deck-description");
   const topics = topicLabels(deck.themes ?? []);
   const keywords = deck.keywords ?? [];
 
   function edit() {
     setDraft({
-      description: typedText(deck.description),
+      description: draftOf(deck.description, [locale, ...navigator.languages], {
+        tag: shownTag(deck.title, [locale, ...navigator.languages]) ?? recentLanguages("deck")[0] ?? null,
+      }),
       topics: topicsOfDeck(deck),
       keywords: keywords.join(", "),
     });
@@ -48,8 +66,14 @@ export function DeckAboutSection({
 
   function handleSubmit(event: Event) {
     event.preventDefault();
+    const result = textOfDraft(draft!.description);
+    if ("missing" in result) {
+      ask(result.missing);
+      return;
+    }
+    rememberLanguages("deck", result.text, draft!.description);
     onSave({
-      description: draft!.description,
+      description: result.text,
       topics: draft!.topics,
       keywords: parseKeywords(draft!.keywords),
     });
@@ -78,24 +102,33 @@ export function DeckAboutSection({
     );
   }
 
-  const edited = typedPart(deck.description);
   return (
     <form class="card-edit deck-about" aria-label={t("deckAbout.label")} onSubmit={handleSubmit}>
-      <label for="deck-description">{t("deckAbout.description")}</label>
-      <textarea
+      <LangTextField
         id="deck-description"
-        lang={edited.lang}
-        aria-describedby={edited.hint === null ? undefined : "deck-description-language"}
-        value={draft.description}
-        onInput={(e) => setDraft({ ...draft, description: e.currentTarget.value })}
+        label={t("deckAbout.description")}
+        role="description"
+        draft={draft.description}
+        suggestions={Object.keys({ ...deck.description, ...deck.title })}
+        multiline
+        translationsOpen
         required
         disabled={busy}
+        missing={missing}
+        errorId="deck-description-error"
+        onChange={(description) => {
+          clear();
+          setDraft({ ...draft, description });
+        }}
       />
-      {edited.hint !== null && (
-        <p id="deck-description-language" class="hint field-hint">
-          {edited.hint}
-        </p>
-      )}
+      <ErrorMessage
+        id="deck-description-error"
+        error={
+          missing === undefined
+            ? null
+            : errorText(new AppError("textNeedsLanguage", { field: t("language.field.description") }))
+        }
+      />
       <fieldset class="library-topics">
         <legend>{t("deckAbout.topics")}</legend>
         {TOPICS.concepts.map((topic) => (
@@ -126,7 +159,15 @@ export function DeckAboutSection({
         <button type="submit" disabled={busy}>
           {t("deckAbout.saveButton")}
         </button>
-        <button type="button" aria-label={t("deckAbout.cancelLabel")} onClick={() => setDraft(null)} disabled={busy}>
+        <button
+          type="button"
+          aria-label={t("deckAbout.cancelLabel")}
+          onClick={() => {
+            clear();
+            setDraft(null);
+          }}
+          disabled={busy}
+        >
           {t("deckAbout.cancelButton")}
         </button>
       </div>

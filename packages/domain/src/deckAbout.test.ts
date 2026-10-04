@@ -36,41 +36,33 @@ describe("parseKeywords", () => {
 describe("withAbout", () => {
   it("replaces the description, the topics and the keywords, keeping other themes", () => {
     expect(
-      withAbout(deck, { description: "  Every capital. ", topics: [`${TOPIC}languages`], keywords: ["new"] }, "en"),
+      withAbout(deck, { description: { en: "  Every capital. " }, topics: [`${TOPIC}languages`], keywords: ["new"] }),
     ).toEqual({ ...deck, description: { en: "Every capital." }, themes: [EDUC, `${TOPIC}languages`], keywords: ["new"] });
   });
 
-  it("changes the description in the page's language, keeping its translations", () => {
-    const swedish = { ...deck, description: { en: "Old.", sv: "Gammal." } };
-    expect(withAbout(swedish, { description: "Ny.", topics: [], keywords: [] }, "sv").description).toEqual({
-      en: "Old.",
+  it("saves the description in the languages given, in any language, leaving out a cleared one", () => {
+    expect(withAbout(deck, { description: { sv: "Ny.", ja: "新しい", en: " " }, topics: [], keywords: [] }).description).toEqual({
       sv: "Ny.",
-    });
-  });
-
-  it("changes only the English description on an English page, keeping its translations", () => {
-    const swedish = { ...deck, description: { "en-gb": "Old.", sv: "Gammal." } };
-    expect(withAbout(swedish, { description: "New.", topics: [], keywords: [] }, "en").description).toEqual({
-      "en-gb": "New.",
-      sv: "Gammal.",
+      ja: "新しい",
     });
   });
 
   it("gives a deck without themes the topics it names", () => {
-    expect(withAbout({ ...deck, themes: undefined }, { description: "x", topics: [`${TOPIC}languages`], keywords: [] }, "en").themes).toEqual([
+    expect(withAbout({ ...deck, themes: undefined }, { description: { en: "x" }, topics: [`${TOPIC}languages`], keywords: [] }).themes).toEqual([
       `${TOPIC}languages`,
     ]);
   });
 
   it("leaves out themes and keywords when there are none", () => {
-    const bare = withAbout({ ...deck, themes: [`${TOPIC}geography`] }, { description: "x", topics: [], keywords: [] }, "en");
+    const bare = withAbout({ ...deck, themes: [`${TOPIC}geography`] }, { description: { en: "x" }, topics: [], keywords: [] });
     expect(bare).not.toHaveProperty("themes");
     expect(bare).not.toHaveProperty("keywords");
   });
 
   it("refuses an empty description", () => {
-    expect(() => withAbout(deck, { description: "  ", topics: [], keywords: [] }, "en")).toThrow(
+    expect(() => withAbout(deck, { description: { en: "  ", sv: "" }, topics: [], keywords: [] })).toThrow(
       "A deck needs a description.",
     );
+    expect(() => withAbout(deck, { description: {}, topics: [], keywords: [] })).toThrow("A deck needs a description.");
   });
 });

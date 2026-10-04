@@ -222,19 +222,23 @@ export async function getSolidDatasetOrNull(
 /**
  * Save a dataset: an edit of the document it was read from only if that
  * is unchanged (If-Match), a new dataset only if nothing is there yet
- * (If-None-Match: *, sent by @inrupt/solid-client).
+ * (If-None-Match: *, sent by @inrupt/solid-client). `whole` writes an
+ * edit as one PUT of the whole document (with the same If-Match) however
+ * small it is: for a bulk edit of text, which Community Solid Server's
+ * in-memory store cuts short when a PATCH holds characters beyond ASCII.
  */
 export async function saveDataset<T extends SolidDataset>(
   url: string,
   dataset: T,
   fetch: typeof globalThis.fetch,
+  { whole = false }: { whole?: boolean } = {},
 ): Promise<void> {
   const info = resourceInfoOf(dataset);
   const isEdit = info !== undefined && info.sourceIri === url;
   const etag = isEdit ? strong(ETAGS.get(info)) : undefined;
   forgetRead(url, fetch);
   try {
-    await saveSolidDatasetAt(url, dataset, { fetch: ownPatches(withIfMatch(fetch, etag), dataset) });
+    await saveSolidDatasetAt(url, dataset, { fetch: ownPatches(withIfMatch(fetch, etag), dataset, whole) });
   } catch (error) {
     if (statusOf(error) === 412) throw new PreconditionFailedError(url, isEdit ? "unchanged" : "absent");
     throw error;
@@ -273,14 +277,15 @@ function withIfMatch(fetch: typeof globalThis.fetch, etag: string | undefined): 
 /**
  * The fetch, with the PATCH @inrupt/solid-client sends given our body
  * (patchBody), or sent as a PUT of the whole dataset (its every triple,
- * the edit applied) when that body is larger than MAX_PATCH_BYTES; other
- * headers kept. @inrupt/solid-client takes the answer as its PATCH's.
+ * the edit applied) when that body is larger than MAX_PATCH_BYTES, or
+ * always (`whole`); other headers kept. @inrupt/solid-client takes the
+ * answer as its PATCH's.
  */
-function ownPatches(fetch: typeof globalThis.fetch, dataset: SolidDataset): typeof globalThis.fetch {
+function ownPatches(fetch: typeof globalThis.fetch, dataset: SolidDataset, whole: boolean): typeof globalThis.fetch {
   return async (input, init) => {
     if (init?.method !== "PATCH") return fetch(input, init);
     const body = patchBody(dataset) ?? init.body;
-    if (typeof body !== "string" || new TextEncoder().encode(body).length <= MAX_PATCH_BYTES) {
+    if (!whole && (typeof body !== "string" || new TextEncoder().encode(body).length <= MAX_PATCH_BYTES)) {
       return fetch(input, { ...init, body });
     }
     const headers = new Headers(init.headers);

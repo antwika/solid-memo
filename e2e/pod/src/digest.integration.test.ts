@@ -90,9 +90,9 @@ async function seed(server: string): Promise<{ instanceUrl: string; deck: Deck }
   await put(typeIndex, `<> a <http://www.w3.org/ns/solid/terms#TypeIndex>, <http://www.w3.org/ns/solid/terms#UnlistedDocument> .`);
   const { useCases } = page();
   const instance = await useCases.createInstance({ webId }, { containerUrl: `${base}solid-memo/`, name: "Main", registrationTarget: "private" });
-  const deck = await useCases.createDeck(instance.url, "Capitals", "en");
+  const deck = await useCases.createDeck(instance.url, { en: "Capitals" });
   for (const [front, back] of [["Sweden", "Stockholm"], ["Norway", "Oslo"], ["Finland", "Helsinki"]]) {
-    await useCases.addCard(deck, { front: { "": front }, back: { "": back } });
+    await useCases.addCard(deck, { front: { en: front }, back: { en: back } });
   }
   return { instanceUrl: instance.url, deck };
 }
@@ -175,7 +175,7 @@ describe.each(SERVERS)("the instance digest on $name", ({ url: server }) => {
     if (await versioned(deck.cardsDocumentUrl)) {
       await vi.waitFor(async () => expect(await digestOf(instanceUrl)).toContain("DeckSchedule"), LEARNING);
     }
-    await first.useCases.addCard(deck, { front: { "": "Denmark" }, back: { "": "Copenhagen" } });
+    await first.useCases.addCard(deck, { front: { en: "Denmark" }, back: { en: "Copenhagen" } });
     expect(await page().useCases.getStudyCounts(instanceUrl, deck, now)).toEqual({ dueCount: 0, newCount: 4 });
   });
 

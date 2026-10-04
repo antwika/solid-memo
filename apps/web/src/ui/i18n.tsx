@@ -3,7 +3,8 @@ import { useContext } from "preact/hooks";
 import type { DeckDirection } from "@solid-memo/domain/deck";
 import type { Violation } from "@solid-memo/domain/validation";
 import { AppError, type ErrorVars } from "@solid-memo/domain/appError";
-import { editedTag, shown, shownTag, typedTag, typedText as typedTextIn, type LangText } from "@solid-memo/domain/langText";
+import { shown, shownTag, type LangText } from "@solid-memo/domain/langText";
+import { NO_LANGUAGE } from "@solid-memo/domain/languageTag";
 import { DEFAULT_LOCALE, type Locale } from "@solid-memo/domain/locale";
 import en from "../i18n/en.json";
 import sv from "../i18n/sv.json";
@@ -77,22 +78,21 @@ export interface I18n {
    * or unknown (untagged card text).
    */
   readerLang(text: LangText): string | undefined;
-  /** The language to mark text tagged `tag` with: as `readerLang`, for a tag already known. */
+  /**
+   * The language to mark text tagged `tag` with: as `readerLang`, for a
+   * tag already known; undefined, too, for text in no language ("zxx"),
+   * which a screen reader speaks in the page's voice.
+   */
   partLang(tag: string | undefined): string | undefined;
   /**
-   * For a field that edits `text` (editedText, the English): the language
-   * to mark the field with, as `partLang`; and, when the reader is shown
-   * the text in another language than the one edited, a hint saying which
-   * one is (the others are kept). Null for text not yet written.
+   * How a language tag is named: its name in this language ("Swedish"),
+   * its name in itself when that differs ("svenska"), and the tag as
+   * written ("sv", "pt-BR"). A tag Intl cannot name is its own name, with
+   * no code beside it; text in no language ("zxx") is named as such.
    */
-  editedPart(text: LangText | undefined): { lang: string | undefined; hint: string | null };
-  /**
-   * As `editedPart`, for a field where the user types text of their own
-   * in this language (typedText: a deck's name or description, a note).
-   */
-  typedPart(text: LangText | undefined): { lang: string | undefined; hint: string | null };
-  /** The text such a field starts from: typedText in this language. */
-  typedText(text: LangText | undefined): string;
+  languageParts(tag: string): LanguageParts;
+  /** A language tag named in full: "Swedish — svenska (sv)", as `languageParts`. */
+  languageLabel(tag: string): string;
   /** A day, written out ("September 22, 2026" / "22 september 2026"). */
   formatDate(iso: string): string;
   /** How a study direction is named. */
@@ -117,6 +117,28 @@ export interface I18n {
   violationLang(violation: Violation): string | undefined;
   /** A result's severity: "violation", "warning", "info". */
   severityLabel(severity: Violation["severity"]): string;
+}
+
+/** A language tag's names: see `I18n.languageParts`. */
+export interface LanguageParts {
+  name: string;
+  autonym?: string;
+  code?: string;
+}
+
+/*
+ * For a tag Intl named (so a well-formed one, which neither of these
+ * refuses): a language's name in itself ("svenska"), undefined when Intl
+ * has no data in that language; and the tag as BCP 47 writes it
+ * ("pt-BR"), where the app keeps it lower case.
+ */
+function autonymOf(tag: string): string | undefined {
+  if (Intl.DisplayNames.supportedLocalesOf([tag]).length === 0) return undefined;
+  return new Intl.DisplayNames([tag], { type: "language" }).of(tag);
+}
+
+function writtenTag(tag: string): string {
+  return Intl.getCanonicalLocales(tag)[0]!;
 }
 
 export function createI18n(locale: Locale): I18n {
@@ -153,23 +175,22 @@ export function createI18n(locale: Locale): I18n {
 
   // A regional tag ("en-gb") on an English page is in the page's language.
   const partLang: I18n["partLang"] = (tag) =>
-    tag === undefined || tag === "" || tag.split("-")[0] === locale ? undefined : tag;
+    tag === undefined || tag === "" || tag === NO_LANGUAGE || tag.split("-")[0] === locale ? undefined : tag;
+
+  const languageParts: I18n["languageParts"] = (tag) => {
+    if (tag === NO_LANGUAGE) return { name: t("language.none") };
+    const name = languageName(tag);
+    if (name.toLowerCase() === tag.toLowerCase()) return { name };
+    const autonym = autonymOf(tag);
+    const same = autonym === undefined || autonym.toLocaleLowerCase(tag) === name.toLocaleLowerCase(locale);
+    return same ? { name, code: writtenTag(tag) } : { name, autonym, code: writtenTag(tag) };
+  };
 
   /** A message whose values are English text, each in its own span, marked as English on another page. */
   function markedEnglish(key: MessageKey, vars: Vars): ErrorText {
     const lang = partLang("en");
     const marked = Object.fromEntries(Object.entries(vars).map(([name, value]) => [name, <span lang={lang}>{value}</span>]));
     return <>{tx(key, marked)}</>;
-  }
-
-  /** A field's language and hint, for a field that edits `text` under `tag`; as `editedPart`. */
-  function fieldPart(text: LangText | undefined, tag: string | undefined): { lang: string | undefined; hint: string | null } {
-    if (tag === undefined || shownTag(text!, [locale, ...navigator.languages]) === tag) {
-      return { lang: partLang(tag), hint: null };
-    }
-    const hint =
-      tag === "" ? t("common.editingUntagged") : t("common.editingLanguage", { language: languageName(tag) });
-    return { lang: partLang(tag), hint };
   }
 
   /**
@@ -206,14 +227,10 @@ export function createI18n(locale: Locale): I18n {
       return partLang(shownTag(text, [locale, ...navigator.languages]));
     },
     partLang,
-    editedPart(text) {
-      return fieldPart(text, text === undefined ? undefined : editedTag(text));
-    },
-    typedPart(text) {
-      return fieldPart(text, text === undefined ? undefined : typedTag(text, locale));
-    },
-    typedText(text) {
-      return typedTextIn(text, locale);
+    languageParts,
+    languageLabel(tag) {
+      const { name, autonym, code } = languageParts(tag);
+      return `${name}${autonym === undefined ? "" : ` — ${autonym}`}${code === undefined ? "" : ` (${code})`}`;
     },
     formatDate(iso) {
       return new Date(iso).toLocaleDateString(locale, { dateStyle: "long", timeZone: "UTC" });

@@ -12,7 +12,7 @@
  */
 import { readFile } from "node:fs/promises";
 import { beforeAll, describe, expect, inject, it } from "vitest";
-import { Parser, Writer } from "n3";
+import { Parser, Writer, type Quad } from "n3";
 import { VOCAB_ROOT } from "@solid-memo/vocab/tooling/root";
 import { createUseCases, type UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
@@ -116,6 +116,124 @@ async function seedPod(server: string): Promise<Pod> {
   await put(await aclOf(source), `${PREFIXES}${everyone(source, true)}`);
   await put(await aclOf(`${source}decks/deck-1.ttl`), `${PREFIXES}${everyone(`${source}decks/deck-1.ttl`, false)}`);
   return { base, webId, typeIndex, source, instance: { url: source, name: "Main" } };
+}
+
+/** The library release the copied deck of seedFormat4Pod came from. */
+const RELEASE = "https://solid-memo.com/decks/capitals-of-the-world/2.ttl";
+
+/**
+ * A pod as a format-4 app left it (deck format 4, card format 4): every
+ * record at the latest format but decks and cards, one deck of the user's
+ * own and one copied from the library, with the text that format left
+ * behind — a deck title and a note saved the same in English and Swedish
+ * (the stand-ins a format-4 app wrote for English), Swedish text tagged
+ * English, and card sides that do not say their language. Its text is
+ * ASCII: the Community Solid Server's in-memory store cuts a document with
+ * other characters short when it is patched (docs/testing.md).
+ */
+async function seedFormat4Pod(server: string): Promise<Pod> {
+  const pod = await seedPod(server);
+  const { source, webId } = pod;
+  const put = async (url: string, body: string) => {
+    const response = await fetch(url, { method: "PUT", headers: { "content-type": "text/turtle" }, body });
+    if (!response.ok) throw new Error(`Seeding ${url}: ${response.status}`);
+  };
+  const prefixes = `${PREFIXES}@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+`;
+  const deck = (id: string, text: string) => `<#${id}> a sm:Deck, dcat:Dataset ; sm:formatVersion 4 ;
+    ${text} ;
+    sm:studyDirection sm:frontToBack ;
+    dcat:distribution <#${id}-cards> ;
+    sm:cardsDocument <${source}decks/${id}.ttl> ;
+    sm:reviewsDocument <${source}reviews/${id}.ttl> .
+<#${id}-cards> a dcat:Distribution ; dcat:accessURL <${source}decks/${id}.ttl> ;
+    dcat:mediaType <https://www.iana.org/assignments/media-types/text/turtle> .`;
+  await put(
+    `${source}meta.ttl`,
+    `${PREFIXES}<#it> a sm:Instance ; dcterms:title "Main" ; sm:formatVersion 2 ;
+    dcterms:created "2026-09-21T10:00:00Z"^^xsd:dateTime .`,
+  );
+  await put(
+    `${source}preferences.ttl`,
+    `${PREFIXES}<#it> a sm:Preferences ; sm:formatVersion 4 ; sm:newCardsPerDay 20 ; sm:maxReviewsPerDay 200 ;
+    sm:dayBoundaryHour 4 ; sm:answerScale "sm2" ; sm:developerMode false ;
+    sm:invalidDataPolicy sm:warnOnly ; sm:theme sm:darkTheme .`,
+  );
+  await put(
+    `${source}catalog.ttl`,
+    `${prefixes}<#catalog> a dcat:Catalog ; dcterms:title "Main" ; dcterms:description "My decks." ;
+    dcterms:publisher <${webId}> ; dcat:themeTaxonomy <https://solid-memo.com/vocab/topics> ;
+    dcat:dataset <#deck-1>, <#deck-2> .
+<${webId}> a foaf:Agent ; foaf:name "Alice" .
+${deck("deck-1", `dcterms:title "Spanska glosor"@en, "Spanska glosor"@sv ;
+    dcterms:description "Flashcards: Spanska glosor."@en, "Kortlek: Spanska glosor."@sv`)}
+${deck("deck-2", `dcterms:title "Huvudstader i Europa"@en ;
+    dcterms:description "Capitals of Europe."@en, "Europas huvudstader."@sv ;
+    dcterms:creator <#agent-anton> ;
+    dcat:theme <https://solid-memo.com/vocab/topics#geography> ;
+    prov:wasDerivedFrom <${RELEASE}>`)}
+<#agent-anton> a foaf:Agent ; foaf:name "Anton" .`,
+  );
+  await put(
+    `${source}decks/deck-1.ttl`,
+    `${PREFIXES}<#sol> a sm:Card ; sm:formatVersion 4 ; sm:front "el sol"@es ; sm:back "the sun"@en, "solen"@sv ;
+    sm:frontNote "Masculine."@en, "Masculine."@sv ;
+    dcterms:created "2026-09-21T10:00:00Z"^^xsd:dateTime .
+<#luna> a sm:Card ; sm:formatVersion 4 ; sm:front "la luna" ; sm:back "the moon" .`,
+  );
+  await put(
+    `${source}decks/deck-2.ttl`,
+    `${PREFIXES}<#se> a sm:Card ; sm:formatVersion 4 ; sm:front "Sweden"@en, "Sverige"@sv ;
+    sm:backLabel "Capital"@en, "Capital"@sv ; sm:back "Stockholm"@en, "Stockholm"@sv .
+<#no> a sm:Card ; sm:formatVersion 4 ; sm:front "Norway" ; sm:back "Oslo" ;
+    sm:backNote "Since 1299."@en .`,
+  );
+  await put(
+    `${source}reviews/deck-1.ttl`,
+    `${PREFIXES}<#sol> a sm:ReviewState ; sm:formatVersion 2 ; sm:easeFactor 2.5 ; sm:intervalDays 6 ; sm:repetitions 2 ;
+    sm:due "2026-09-28" ; sm:firstReviewedAt "2026-09-20T10:00:00Z"^^xsd:dateTime ;
+    sm:lastReviewedAt "2026-09-22T10:00:00Z"^^xsd:dateTime .`,
+  );
+  return pod;
+}
+
+const TEXT = new Set(
+  ["http://purl.org/dc/terms/title", "http://purl.org/dc/terms/description"].concat(
+    ["front", "back", "frontNote", "backLabel", "backNote", "frontImageDescription", "backImageDescription"].map(
+      (name) => `https://solid-memo.com/vocab/v1#${name}`,
+    ),
+  ),
+);
+
+/** The documents' quads, as the server serves them. */
+async function quadsOf(urls: string[]) {
+  const quads: Quad[] = [];
+  for (const url of urls) {
+    const turtle = await fetch(url, { headers: { accept: "text/turtle" } }).then((response) => response.text());
+    quads.push(...new Parser({ baseIRI: url }).parse(turtle));
+  }
+  return quads;
+}
+
+/** The documents' text, each value with its language (or none) and the subject it is about, under `container`'s URL as `<instance>/`. */
+async function textOf(container: string, urls: string[]): Promise<string[]> {
+  return (await quadsOf(urls))
+    .filter((quad) => quad.object.termType === "Literal" && TEXT.has(quad.predicate.value))
+    .map((quad) => {
+      const literal = quad.object as { value: string; language: string };
+      return `${quad.subject.value.replace(container, "<instance>/")} ${quad.predicate.value} ${JSON.stringify(literal.value)}@${literal.language}`;
+    })
+    .sort();
+}
+
+/** The format each Solid Memo subject of the documents states. */
+async function statedFormats(container: string, urls: string[]): Promise<Record<string, string>> {
+  return Object.fromEntries(
+    (await quadsOf(urls))
+      .filter((quad) => quad.predicate.value === "https://solid-memo.com/vocab/v1#formatVersion")
+      .map((quad) => [quad.subject.value.replace(container, "<instance>/"), quad.object.value]),
+  );
 }
 
 /** The app as main.tsx wires it, over a fetch that records every request, with the shapes read from this repository. */
@@ -295,6 +413,64 @@ describe.each(SERVERS)("the format update on $name", ({ url: server }) => {
     await expect(useCases.restoreBackup(session, { url: target, name: "Main" })).resolves.toEqual(pod.instance);
     expect(await registeredContainers(pod)).toContain(pod.source);
     expect(await fetch(target).then((r) => r.status)).toBe(404);
+    expect(await snapshot(pod.source)).toEqual(before);
+  }, 60_000);
+
+  it("moves format-4 decks and cards to format 5 with their text unchanged: stand-ins, English-tagged Swedish and unstated sides kept", async () => {
+    const pod = await seedFormat4Pod(server);
+    const documents = (container: string) =>
+      ["catalog.ttl", "decks/deck-1.ttl", "decks/deck-2.ttl"].map((path) => `${container}${path}`);
+    const before = await snapshot(pod.source);
+    const textBefore = await textOf(pod.source, documents(pod.source));
+    expect(textBefore.length).toBeGreaterThan(20);
+    const { useCases, session } = app(pod);
+
+    expect(await useCases.planMigration(pod.source)).toMatchObject({
+      deckCount: 2,
+      cardCount: 4,
+      reviewCount: 0,
+      preferencesOutdated: false,
+      instanceOutdated: false,
+    });
+    expect((await useCases.validateInstance(pod.source)).conforms).toBe(true);
+    const outcome = await useCases.updateInstance(session, pod.instance);
+    expect(outcome, JSON.stringify(outcome)).toMatchObject({ ok: true, backupUrl: pod.source });
+    const target = (outcome as { instanceUrl: string }).instanceUrl;
+
+    // Every deck and card is at format 5 (the creator and distributions,
+    // unstamped before, at their first), conforming, with nothing left to update…
+    expect(await statedFormats(target, documents(target))).toEqual({
+      "<instance>/catalog.ttl#agent-anton": "1",
+      "<instance>/catalog.ttl#deck-1": "5",
+      "<instance>/catalog.ttl#deck-1-cards": "1",
+      "<instance>/catalog.ttl#deck-2": "5",
+      "<instance>/catalog.ttl#deck-2-cards": "1",
+      "<instance>/decks/deck-1.ttl#sol": "5",
+      "<instance>/decks/deck-1.ttl#luna": "5",
+      "<instance>/decks/deck-2.ttl#se": "5",
+      "<instance>/decks/deck-2.ttl#no": "5",
+    });
+    expect((await useCases.validateInstance(target)).conforms).toBe(true);
+    expect(await useCases.planMigration(target)).toMatchObject({ deckCount: 0, cardCount: 0, reviewCount: 0 });
+    // …and its text is what it was, value for value and language for
+    // language: nothing guessed, nothing dropped (identical English copies
+    // stay, as text in each language; the user states unstated languages in
+    // the app).
+    expect(await textOf(target, documents(target))).toEqual(textBefore);
+    expect(textBefore).toEqual(
+      expect.arrayContaining([
+        '<instance>/catalog.ttl#deck-1 http://purl.org/dc/terms/title "Spanska glosor"@en',
+        '<instance>/catalog.ttl#deck-1 http://purl.org/dc/terms/title "Spanska glosor"@sv',
+        '<instance>/catalog.ttl#deck-2 http://purl.org/dc/terms/title "Huvudstader i Europa"@en',
+        '<instance>/decks/deck-1.ttl#sol https://solid-memo.com/vocab/v1#frontNote "Masculine."@en',
+        '<instance>/decks/deck-1.ttl#sol https://solid-memo.com/vocab/v1#frontNote "Masculine."@sv',
+        '<instance>/decks/deck-1.ttl#luna https://solid-memo.com/vocab/v1#front "la luna"@',
+        '<instance>/decks/deck-2.ttl#no https://solid-memo.com/vocab/v1#back "Oslo"@',
+      ]),
+    );
+    // The library copy still names its release, which later releases are compared with.
+    expect(await triples(`${target}catalog.ttl`)).toContain(`<http://www.w3.org/ns/prov#wasDerivedFrom> <${RELEASE}>`);
+    // The original is the untouched backup.
     expect(await snapshot(pod.source)).toEqual(before);
   }, 60_000);
 
