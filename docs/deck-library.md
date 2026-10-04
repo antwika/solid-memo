@@ -210,6 +210,12 @@ flowchart LR
   CI runs `authored_decks.py sync --all`, which fails when a deck or
   report differs from what its dossier builds to: edit the dossier,
   rebuild, never the outputs. The build is offline and clock-free.
+- **Languages.** Every text in a dossier states its language: `zxx` for
+  text in no language (numbers, years, codes, formulas, commands), `la`
+  for scientific names, and names in each language they are written in
+  (`"Henry VIII"@en`, `"Henrik VIII"@sv`). The first authored decks wrote
+  language-neutral text untagged (`""`), which the builder still reads;
+  a new dossier does not.
 - **The provenance report**, `authored/<name>.md`, is generated: sources
   and licences, licence evidence, method, selection, queries, every
   quality-control round, and a table of every card with its evidence.
@@ -221,7 +227,9 @@ flowchart LR
   and for licensing, attribution and documentation; a fixer verified
   each finding, applied or rejected it, and logged it as a round in the
   dossier; and fresh reviewers re-checked the changed cards and a third
-  of the rest until no errors remained. Each report says so. No human
+  of the rest until no errors remained. Each report says so. The second
+  twenty were made the same way the same day; in both, a fresh reviewer
+  finally checked every card before release. No human
   subject expert has reviewed them yet: a correction is a change to the
   dossier, logged as a new quality-control round, and a new release.
 

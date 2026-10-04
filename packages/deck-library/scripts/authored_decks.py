@@ -35,9 +35,12 @@ THE DOSSIER (authored/<name>.json)
   topics            Solid Memo topic ids (vocab/topics.ttl), e.g. ["history"].
   studyDirection    "frontToBack" | "backToFront" | "bidirectional".
   sides             the languages of the cards' text: {"front": ["en", "sv"],
-                    "back": ["en", "sv"]}. [""] means untagged text (codes,
-                    formulas, numbers: no language). A card may give one side
-                    as untagged ({"": "H₂O"}) when its text has no language.
+                    "back": ["en", "sv"]}. ["zxx"] means text in no language
+                    (codes, formulas, numbers, symbols). A card may give one
+                    side as {"zxx": "H₂O"} when its text has no language.
+                    [""] (untagged, its language not stated) is how the
+                    first authored decks wrote such text; a new dossier
+                    states every text's language, zxx included.
   license           the deck's licence: CC0-1.0, CC-BY-4.0 or CC-BY-SA-4.0.
   created           the deck's creation time, "YYYY-MM-DDTHH:MM:SS.000Z".
   creator           {"name": ..., "email": ...}: who compiled the deck.
@@ -125,10 +128,12 @@ TOPICS = {
     "languages", "swedish", "spanish", "latin", "greek",
     "geography", "computing", "science", "chemistry", "physics", "astronomy", "biology",
     "art", "music", "literature", "history", "mythology", "mathematics", "sports",
-    "economics", "labour-market",
+    "economics", "labour-market", "french", "german",
 }
 # BCP 47 tag -> EU authority-table language (vocab/external.ttl).
-LANGUAGES = {"en": "ENG", "sv": "SWE", "es": "SPA", "la": "LAT", "it": "ITA", "el": "ELL"}
+LANGUAGES = {"en": "ENG", "sv": "SWE", "es": "SPA", "la": "LAT", "it": "ITA", "el": "ELL", "fr": "FRA", "de": "DEU"}
+# Text in no language (BCP 47): a tag, but not a language the deck is in.
+NO_LANGUAGE = "zxx"
 DIRECTIONS = {"frontToBack", "backToFront", "bidirectional"}
 TEXT_FIELDS = ("front", "back", "frontNote", "backLabel", "backNote")
 ID = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -172,12 +177,14 @@ def lang_text_problems(where: str, value: object, langs: list[str] | None, *, en
         return [f"{where}: expected {{lang: text}}"]
     problems = []
     for lang, text in value.items():
-        if lang and lang not in LANGUAGES:
+        if lang and lang not in LANGUAGES and lang != NO_LANGUAGE:
             problems.append(f"{where}: language {lang!r} unknown (add it to LANGUAGES and vocab/external.ttl)")
         problems += text_problems(f"{where}@{lang or 'untagged'}", text)
     keys = set(value)
     if "" in keys and len(keys) > 1:
         problems.append(f"{where}: untagged text and tagged text together")
+    elif NO_LANGUAGE in keys and len(keys) > 1:
+        problems.append(f"{where}: text in no language ({NO_LANGUAGE}) and in a language together")
     elif keys == {""}:
         if english:
             problems.append(f"{where}: must be language-tagged, with English")
@@ -221,8 +228,9 @@ def check_dossier(d: dict, name: str) -> list[str]:
         p.append('sides: {"front": [...], "back": [...]}')
         return p
     for side, langs in sides.items():
-        if not langs or (("" in langs) and len(langs) > 1) or any(l and l not in LANGUAGES for l in langs):
-            p.append(f"sides.{side}: languages from LANGUAGES, or [\"\"] for untagged")
+        lone = ("" in langs or NO_LANGUAGE in langs) and len(langs) > 1
+        if not langs or lone or any(l and l not in LANGUAGES and l != NO_LANGUAGE for l in langs):
+            p.append(f"sides.{side}: languages from LANGUAGES, or [\"{NO_LANGUAGE}\"] for no language")
     if d["license"] not in DECK_LICENCES:
         p.append(f"license: one of {sorted(DECK_LICENCES)}")
     if not DATE_TIME.match(str(d["created"])):
@@ -306,8 +314,8 @@ def check_dossier(d: dict, name: str) -> list[str]:
                 continue
             value = c[side]
             langs = sides[side]
-            if isinstance(value, dict) and set(value) == {""} and langs != [""]:
-                p += lang_text_problems(f"{where}.{side}", value, None, english=False)  # untagged by exception
+            if isinstance(value, dict) and set(value) in ({""}, {NO_LANGUAGE}) and langs != list(value):
+                p += lang_text_problems(f"{where}.{side}", value, None, english=False)  # no language by exception
             else:
                 p += lang_text_problems(f"{where}.{side}", value, langs, english=False)
             if isinstance(value, dict):
@@ -458,10 +466,10 @@ def slug(s: str) -> str:
 
 
 def deck_languages(d: dict) -> list[str]:
-    langs = {l for side in d["sides"].values() for l in side if l}
+    langs = {l for side in d["sides"].values() for l in side if l in LANGUAGES}
     for c in d["cards"]:
         for f in ("front", "back"):
-            langs |= {l for l in c[f] if l}
+            langs |= {l for l in c[f] if l in LANGUAGES}
     order = {"en": 0, "sv": 1}
     return sorted(langs, key=lambda l: (order.get(l, 2), l))
 

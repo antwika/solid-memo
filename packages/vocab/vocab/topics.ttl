@@ -42,7 +42,9 @@ topic:languages
     skos:narrower topic:swedish ,
                   topic:spanish ,
                   topic:latin ,
-                  topic:greek .
+                  topic:greek ,
+                  topic:french ,
+                  topic:german .
 
 topic:swedish
     a skos:Concept ;
@@ -135,6 +137,24 @@ topic:greek
                    "Grekiska"@sv ;
     skos:definition "The Greek language and its alphabet."@en ,
                     "Det grekiska språket och dess alfabet."@sv ;
+    skos:inScheme <> ;
+    skos:broader topic:languages .
+
+topic:french
+    a skos:Concept ;
+    skos:prefLabel "French"@en ,
+                   "Franska"@sv ;
+    skos:definition "The French language."@en ,
+                    "Det franska språket."@sv ;
+    skos:inScheme <> ;
+    skos:broader topic:languages .
+
+topic:german
+    a skos:Concept ;
+    skos:prefLabel "German"@en ,
+                   "Tyska"@sv ;
+    skos:definition "The German language."@en ,
+                    "Det tyska språket."@sv ;
     skos:inScheme <> ;
     skos:broader topic:languages .
 

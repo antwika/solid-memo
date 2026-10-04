@@ -166,6 +166,18 @@ export const TOPICS = {
       broader: "https://solid-memo.com/vocab/topics#languages",
     },
     {
+      iri: "https://solid-memo.com/vocab/topics#french",
+      label: { en: "French", sv: "Franska" },
+      definition: { en: "The French language.", sv: "Det franska språket." },
+      broader: "https://solid-memo.com/vocab/topics#languages",
+    },
+    {
+      iri: "https://solid-memo.com/vocab/topics#german",
+      label: { en: "German", sv: "Tyska" },
+      definition: { en: "The German language.", sv: "Det tyska språket." },
+      broader: "https://solid-memo.com/vocab/topics#languages",
+    },
+    {
       iri: "https://solid-memo.com/vocab/topics#physics",
       label: { en: "Physics", sv: "Fysik" },
       definition: { en: "Matter, energy, forces and their units.", sv: "Materia, energi, krafter och deras enheter." },
