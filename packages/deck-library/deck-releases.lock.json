@@ -13,6 +13,36 @@
       "sha256": "a9b902c792e43d1f1770d09052290f499a1110bd31c4f9b8e69983f81387282d"
     },
     {
+      "deck": "chemical-compounds",
+      "version": 1,
+      "issued": "2026-10-04T00:31:37Z",
+      "sha256": "adcd01edcffb24526054eb6b5080d580f5e9197a5b3e5e87377bcdb5484c31a6"
+    },
+    {
+      "deck": "classic-novels",
+      "version": 1,
+      "issued": "2026-10-04T00:31:53Z",
+      "sha256": "3fc8257011a0709d79b1a2deb3874c65e82be96d97ea8808ee82c17f75514525"
+    },
+    {
+      "deck": "classical-music-composers",
+      "version": 1,
+      "issued": "2026-10-04T00:32:09Z",
+      "sha256": "6709a893b83cb28fa0549176edf0b11c4724ee6b94ca83a1ee043b3f9f52c620"
+    },
+    {
+      "deck": "constellations",
+      "version": 1,
+      "issued": "2026-10-04T00:32:25Z",
+      "sha256": "229988768d4ed88ad08448b5a757223f563a5d2df003fc319ec10ff6bebd3413"
+    },
+    {
+      "deck": "derivatives",
+      "version": 1,
+      "issued": "2026-10-04T00:32:41Z",
+      "sha256": "0213bec91055e056126e73a34c1c69f2a76ca052560f734816209863801348db"
+    },
+    {
       "deck": "famous-paintings",
       "version": 1,
       "issued": "2026-09-28T21:25:02Z",
@@ -23,6 +53,24 @@
       "version": 2,
       "issued": "2026-10-02T21:11:25Z",
       "sha256": "bea61e8fbc6261f2794ad4d4c685c18d011f19d09c51cdf09c34930c2be1d9f8"
+    },
+    {
+      "deck": "git-commands",
+      "version": 1,
+      "issued": "2026-10-04T00:32:58Z",
+      "sha256": "bf7c5ea1390b765d0116b4817ffc684446babdde72286470a0726dddbbc33017"
+    },
+    {
+      "deck": "greek-alphabet",
+      "version": 1,
+      "issued": "2026-10-04T00:33:14Z",
+      "sha256": "402fe538f63cbb4eae8c13b3a0926cf36115ea0e15e61d3a50996c5154d5eb3f"
+    },
+    {
+      "deck": "greek-and-roman-gods",
+      "version": 1,
+      "issued": "2026-10-04T00:33:30Z",
+      "sha256": "2e85171ad11e31eaa56bc5f752433893020c0dfaaf18d6f6811e069aaa09e820"
     },
     {
       "deck": "http-status-codes",
@@ -37,6 +85,24 @@
       "sha256": "a0ec2bf9e8ccac8131f2e912e6adfa9652a1be295ef59799c9d38ad1696d214b"
     },
     {
+      "deck": "human-skeleton",
+      "version": 1,
+      "issued": "2026-10-04T00:33:46Z",
+      "sha256": "3d736bcd93de2603a6735cf046a2f43b70782a01e2f7aaf3919998eddcd95535"
+    },
+    {
+      "deck": "latin-phrases",
+      "version": 1,
+      "issued": "2026-10-04T00:34:03Z",
+      "sha256": "6eb6e99c430a5685f385fef4f29e479e3998a71bc3c66a15e2dcb360ac3cc8eb"
+    },
+    {
+      "deck": "musical-terms",
+      "version": 1,
+      "issued": "2026-10-04T00:34:19Z",
+      "sha256": "f1b538f99fa475ff561bfa4d16d560814540f257e41bcd45940609387779bb86"
+    },
+    {
       "deck": "network-ports",
       "version": 1,
       "issued": "2026-09-28T21:25:01Z",
@@ -49,6 +115,24 @@
       "sha256": "e91fdd820b8bb069b7749f92bdbcb62869f544342fd42e1579fcfef820fdb612"
     },
     {
+      "deck": "nobel-prize-in-literature",
+      "version": 1,
+      "issued": "2026-10-04T00:34:37Z",
+      "sha256": "5b1f64e244cbaef92da453afb5c666b841483a0c0546e1f6a8bdd051e62b727b"
+    },
+    {
+      "deck": "nordic-birds",
+      "version": 1,
+      "issued": "2026-10-04T00:34:54Z",
+      "sha256": "73a52de06e57900bc8a50f85cfdeef0b8399ac0a5c326c346acd10c12eee0356"
+    },
+    {
+      "deck": "olympic-games",
+      "version": 1,
+      "issued": "2026-10-04T00:35:12Z",
+      "sha256": "defe0e598870c47fda108180ee67d44559efc2b3212497a485a1b27092349d21"
+    },
+    {
       "deck": "periodic-table",
       "version": 1,
       "issued": "2026-09-28T17:02:14Z",
@@ -59,6 +143,24 @@
       "version": 2,
       "issued": "2026-10-02T21:59:12Z",
       "sha256": "095f7e205dd0504f481ce18566025df0f541932ad8a812f5d28e766c4afa00eb"
+    },
+    {
+      "deck": "si-units",
+      "version": 1,
+      "issued": "2026-10-04T00:35:30Z",
+      "sha256": "a1e0272718ad37f61e26ca3730a6641a0793fb6dc31cf35de4b21ace00931a50"
+    },
+    {
+      "deck": "spanish-basics",
+      "version": 1,
+      "issued": "2026-10-04T00:35:48Z",
+      "sha256": "7a5c59067bbf6dd4400c0902461de2bef0676ecdd46e712322755c581afd2665"
+    },
+    {
+      "deck": "sweden-counties-and-provinces",
+      "version": 1,
+      "issued": "2026-10-04T00:36:13Z",
+      "sha256": "3a569a73481185ef4aa897bb187e15760c8fe14046ff7a058f5c314a204d08c4"
     },
     {
       "deck": "swedish-adjectives",
@@ -83,6 +185,12 @@
       "version": 2,
       "issued": "2026-10-02T22:10:05Z",
       "sha256": "310f1dadb56c81ac70793f610c6807aad29e8db9cc2121b885c862669943c723"
+    },
+    {
+      "deck": "swedish-monarchs",
+      "version": 1,
+      "issued": "2026-10-04T00:36:34Z",
+      "sha256": "501caf9d5706f19b5fe524cead8c03a2d8f4758529da8f393d35d1559d8a7c8a"
     },
     {
       "deck": "swedish-nouns",
@@ -121,6 +229,12 @@
       "sha256": "b74a39ef4150b0ac3e23c728ac0bd63a69436dbe4b6de38f6a519e5cc3d25c55"
     },
     {
+      "deck": "world-currencies",
+      "version": 1,
+      "issued": "2026-10-04T00:36:52Z",
+      "sha256": "9a98fd65f29ab759e3279ae2c9bc2744abfadfab21f623c7c6dc9b678a537f00"
+    },
+    {
       "deck": "world-flags",
       "version": 1,
       "issued": "2026-09-28T17:02:14Z",
@@ -131,6 +245,12 @@
       "version": 2,
       "issued": "2026-10-02T22:01:58Z",
       "sha256": "ad5f4e028472bd026894d83caed4b84d5c13b212af76775122e725f17fe87e84"
+    },
+    {
+      "deck": "world-history-dates",
+      "version": 1,
+      "issued": "2026-10-04T00:37:12Z",
+      "sha256": "dbe89361285467cecb73139fc98564ba522e2036864440c546c26ed6151f2a80"
     }
   ]
 }
