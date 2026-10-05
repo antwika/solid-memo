@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { Readable } from "node:stream";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -368,21 +369,31 @@ describe("deckLibraryPlugin", () => {
     root = await libraryRoot({ capitals: NORWAY, rivers: RIVERS });
   });
 
-  type Handler = (
-    req: { url?: string },
-    res: { setHeader: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> },
-    next: ReturnType<typeof vi.fn>,
-  ) => Promise<void>;
+  type Res = { statusCode: number; setHeader: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> };
+  type Handler = (req: unknown, res: Res, next: ReturnType<typeof vi.fn>) => Promise<void>;
+
+  /** The plugin on a dev server: its middleware, and word to its watcher that a file changed. */
+  function serve(options: Parameters<typeof deckLibraryPlugin>[0] = {}) {
+    const plugin = deckLibraryPlugin({ root, warn: vi.fn(), validators: async () => validators, ...options });
+    let handler: Handler | undefined;
+    const listeners: ((event: string, file: string) => void)[] = [];
+    const watcher = { add: vi.fn(), on: (_event: string, listener: (event: string, file: string) => void) => listeners.push(listener) };
+    (plugin.configureServer as (s: unknown) => void)({ middlewares: { use: (h: Handler) => (handler = h) }, watcher });
+    return {
+      watcher,
+      changed: (file: string) => listeners.forEach((listener) => listener("change", file)),
+      async request(url: string | undefined, { method = "GET", headers = {}, body = "" }: { method?: string; headers?: Record<string, string>; body?: string } = {}) {
+        const req = Object.assign(Readable.from([Buffer.from(body)]), { url, method, headers: { host: "localhost:5173", ...headers } });
+        const res: Res = { statusCode: 200, setHeader: vi.fn(), end: vi.fn() };
+        const next = vi.fn();
+        await handler!(req, res, next);
+        return { res, next };
+      },
+    };
+  }
 
   async function request(url: string | undefined, warn = vi.fn()) {
-    const plugin = deckLibraryPlugin({ root, warn, validators: async () => validators });
-    let handler: Handler | undefined;
-    const server = { middlewares: { use: (h: Handler) => (handler = h) } };
-    (plugin.configureServer as (s: unknown) => void)(server);
-    const res = { setHeader: vi.fn(), end: vi.fn() };
-    const next = vi.fn();
-    await handler!({ url }, res, next);
-    return { res, next };
+    return serve({ warn }).request(url);
   }
 
   it("serves the index, the releases and the old addresses in dev, as Turtle, warning of unreleased sources", async () => {
@@ -409,6 +420,79 @@ describe("deckLibraryPlugin", () => {
     root = await libraryRoot();
     const index = (await request("/decks/index.ttl")).res.end.mock.calls[0][0] as string;
     expect(index).toBe(buildIndex(CAPITALS));
+  });
+
+  it("reads the library once in dev, and again only when a file of it changes", async () => {
+    const server = serve();
+    expect(server.watcher.add).toHaveBeenCalledWith(root);
+    const index = async () => (await server.request("/decks/index.ttl")).res.end.mock.calls[0][0] as string;
+    expect(await index()).toContain("<#rivers>");
+    await rm(join(root, "decks/rivers.ttl"));
+    expect(await index()).toContain("<#rivers>");
+    server.changed(join(tmpdir(), "elsewhere.ttl"));
+    expect(await index()).toContain("<#rivers>");
+    server.changed(join(root, "decks/rivers.ttl"));
+    expect(await index()).not.toContain("<#rivers>");
+  });
+
+  describe("with the stand-in for the library's pod", () => {
+    const ORIGIN = "http://localhost:5173";
+    const like = (deck: string) => `@prefix as: <https://www.w3.org/ns/activitystreams#>. @prefix sm: <https://solid-memo.com/vocab/v1#>.
+<#notice> a as:Like; sm:formatVersion 1; as:actor <https://alice.example/profile/card#me>; as:object <${deck}>;
+  as:published "2026-10-05T10:00:00.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>.`;
+    let server: ReturnType<typeof serve>;
+    const warn = vi.fn();
+    beforeEach(async () => {
+      vi.stubGlobal("fetch", async () => new Response("", { status: 200 }));
+      warn.mockClear();
+      const devInbox = await mkdtemp(join(tmpdir(), "solid-memo-dev-inbox-"));
+      server = serve({ devInbox, warn, inboxUrl: "https://library.example/inbox/", now: () => new Date("2026-10-05T12:00:00.000Z") });
+      return () => vi.unstubAllGlobals();
+    });
+
+    it("names it in the index, on the dev server's origin, in place of the real inbox", async () => {
+      const index = (await server.request("/decks/index.ttl")).res.end.mock.calls[0][0] as string;
+      expect(index).toContain("<http://www.w3.org/ns/ldp#inbox> <dev/inbox/>");
+      expect(index).toContain("sm:libraryStats <dev/stats.ttl>");
+      expect(index).not.toContain("library.example");
+    });
+
+    it("takes notices with a login, POSTed only, and counts those about the index's decks", async () => {
+      const post = (body: string, headers: Record<string, string> = { authorization: "DPoP token" }) =>
+        server.request("/decks/dev/inbox/", { method: "POST", headers, body });
+      expect((await post(like(`${ORIGIN}/decks/index.ttl#capitals`), {})).res.statusCode).toBe(401);
+      const taken = await post(like(`${ORIGIN}/decks/index.ttl#capitals`));
+      expect(taken.res.statusCode).toBe(201);
+      expect(taken.res.setHeader).toHaveBeenCalledWith("Location", expect.stringMatching(`^${ORIGIN}/decks/dev/inbox/`));
+      await post(like(`${ORIGIN}/decks/index.ttl#rivers`));
+      await post(like(`${ORIGIN}/decks/index.ttl#nope`));
+      await post(like(`${ORIGIN}/elsewhere.ttl#capitals`));
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("is no deck of the library's index"));
+      const read = await server.request("/decks/dev/inbox/");
+      expect(read.res.statusCode).toBe(405);
+      expect(read.res.setHeader).toHaveBeenCalledWith("Allow", "POST");
+
+      const stats = await server.request("/decks/dev/stats.ttl");
+      expect(stats.res.setHeader).toHaveBeenCalledWith("Content-Type", "text/turtle; charset=utf-8");
+      const quads = parseTurtle(stats.res.end.mock.calls[0][0] as string, `${ORIGIN}/decks/dev/stats.ttl`);
+      const counts = quads
+        .filter((q) => q.predicate.value === "https://schema.org/userInteractionCount")
+        .map((q) => `${q.subject.value.split("#")[1]} ${q.object.value}`);
+      expect(counts.sort()).toEqual(["capitals-downloads 0", "capitals-likes 1", "rivers-downloads 0", "rivers-likes 1"]);
+      expect(quads.find((q) => q.predicate.value === "http://purl.org/dc/terms/modified")!.object.value).toBe("2026-10-05T12:00:00.000Z");
+    });
+
+    it("dates the statistics when they are read, by default", async () => {
+      const before = new Date().toISOString();
+      const devInbox = await mkdtemp(join(tmpdir(), "solid-memo-dev-inbox-"));
+      const stats = (await serve({ devInbox }).request("/decks/dev/stats.ttl")).res.end.mock.calls[0][0] as string;
+      const modified = /"([^"]+)"\^\^xsd:dateTime/.exec(stats)![1]!;
+      expect(modified >= before).toBe(true);
+    });
+
+    it("leaves the library's other files as they are", async () => {
+      expect((await server.request("/decks/capitals/1.ttl")).res.end).toHaveBeenCalledWith(CAPITALS[0].turtle);
+    });
   });
 
   it("passes other requests on", async () => {

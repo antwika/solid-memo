@@ -57,6 +57,7 @@ build step between packages, and Vite bundles the app from source.
 npm run check     # every package: typecheck, tests (100% coverage), drift, formatting; then boundaries
 npm run build     # the site, into apps/web/dist/
 npm run dev       # the site, from source
+npm run dev:library  # the same, with a stand-in for the library's pod, to try likes and downloads (library-stats.md)
 npm start         # the site as deployed: built, then served at http://localhost:4173
 npm run test:pod  # e2e/pod against `npm run pod` (a local Community Solid Server)
 ```

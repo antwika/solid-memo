@@ -138,6 +138,29 @@ screen shows "7 downloads · 2 likes" under each deck and an order
 (library, most downloaded, most liked). The deck page shows both counts
 "as of" when they were counted, plus a like toggle.
 
+## Trying it locally
+
+```sh
+npm run dev:library
+```
+
+starts the dev server with a stand-in for the library's pod
+([devInbox.ts](../packages/deck-library/src/devInbox.ts)), so likes and
+downloads can be tried without pod.solid-memo.com. Log in with any real
+pod: your likes are kept in your instance as usual. The dev server's
+index names the stand-in instead of the real inbox and statistics, at
+`decks/dev/inbox/` and `decks/dev/stats.ttl` on the dev server's own
+address. The inbox takes a POST that comes with a login and keeps it to
+the processor's contract: it drops a notice that does not fit its shape,
+is about a deck that is not in the index, or comes from an actor whose
+profile cannot be read without a login, and says why on the terminal.
+The statistics are counted from the notices kept whenever they are read,
+so a like or an import shows after the library is opened again, not
+six hours later. The notices are kept in
+`apps/web/node_modules/.cache/dev-library/` (`inbox/`, and `dropped/`
+for the ones left out); delete it to start over. Neither the stand-in
+nor its addresses are ever part of the build.
+
 ## Setting it up
 
 The library's pod, its inbox (`acl:Append` for `acl:AuthenticatedAgent`,

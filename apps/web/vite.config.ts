@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { defineConfig } from "vitest/config";
 import preact from "@preact/preset-vite";
 import { deckLibraryPlugin } from "@solid-memo/deck-library/deckLibrary";
@@ -43,7 +43,16 @@ function shapesRuleset(): string {
   return hash.digest("hex").slice(0, 16);
 }
 
-export default defineConfig({
+/**
+ * `npm run dev:library` (mode "library"): the dev server with a stand-in
+ * for the library's pod, its inbox and statistics, so likes and
+ * downloads can be tried while logged in with any real pod
+ * (docs/library-stats.md). Its notices are kept here; delete the folder
+ * to start over.
+ */
+const DEV_LIBRARY_DIR = resolve(import.meta.dirname, "node_modules/.cache/dev-library");
+
+export default defineConfig(({ mode }) => ({
   define: {
     __COMMIT_SHA__: JSON.stringify(commitSha()),
     __SHAPES_RULESET__: JSON.stringify(shapesRuleset()),
@@ -53,7 +62,11 @@ export default defineConfig({
     preact(),
     // The library's inbox for likes and imports, and its statistics (docs/library-stats.md);
     // without them, none are sent and none shown.
-    deckLibraryPlugin({ inboxUrl: process.env.LIBRARY_INBOX_URL, statsUrl: process.env.LIBRARY_STATS_URL }),
+    deckLibraryPlugin({
+      inboxUrl: process.env.LIBRARY_INBOX_URL,
+      statsUrl: process.env.LIBRARY_STATS_URL,
+      devInbox: mode === "library" ? DEV_LIBRARY_DIR : undefined,
+    }),
     turtleDirectoryPlugin({ dir: `${VOCAB_ROOT}vocab`, publicPath: "vocab", pages: [vocabPage(), topicsPage()] }),
     turtleDirectoryPlugin({ dir: `${VOCAB_ROOT}shapes`, publicPath: "shapes" }),
     turtleDirectoryPlugin({ dir: `${VOCAB_ROOT}vendor`, publicPath: "vendor" }),
@@ -85,4 +98,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

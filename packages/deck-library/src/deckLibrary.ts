@@ -30,6 +30,7 @@ import { SM_NS } from "@solid-memo/vocab/tooling/vocab";
 import { LATEST_VERSION } from "@solid-memo/vocab/types.generated";
 import { VOCAB_ROOT } from "@solid-memo/vocab/tooling/root";
 import { DECK_LIBRARY_ROOT } from "./root.ts";
+import { answerDevRequest, createDevInbox, type DevInbox } from "./devInbox.ts";
 
 /**
  * The deck library (see docs/deck-library.md), published next to the app
@@ -481,6 +482,8 @@ export function deckLibraryPlugin({
   validators: loadLibraryValidators = () => loadValidators(),
   inboxUrl,
   statsUrl,
+  devInbox,
+  now = () => new Date(),
 }: {
   publicPath?: string;
   root?: string;
@@ -490,6 +493,13 @@ export function deckLibraryPlugin({
   inboxUrl?: string;
   /** The library's statistics, named in the published index; none when not given (no counts are shown). */
   statsUrl?: string;
+  /**
+   * Where the dev server keeps the notices of a stand-in for the
+   * library's pod (devInbox.ts), which its index then names instead of
+   * `inboxUrl` and `statsUrl`; none when not given. Never in the build.
+   */
+  devInbox?: string;
+  now?: () => Date;
 } = {}): Plugin {
   // An unset build variable comes as "" as often as not: neither is named.
   const links: LibraryLinks = {
@@ -498,24 +508,52 @@ export function deckLibraryPlugin({
   };
   let validators: Promise<LibraryValidators> | undefined;
   /** The published files; with previews (the dev server), each unreleased source as its next release too. */
-  const library = async ({ previews }: { previews: boolean }) => {
+  const library = async ({ previews, links }: { previews: boolean; links: LibraryLinks }) => {
     const read = await readDeckLibrary(root, await (validators ??= loadLibraryValidators()));
     for (const warning of read.warnings) warn(warning);
     const all = previews ? sorted([...read.releases, ...read.previews]) : read.releases;
-    return publishedFiles(all, buildIndex(all, links));
+    return { files: publishedFiles(all, buildIndex(all, links)), decks: new Set(all.map((r) => r.deck)) };
   };
+  // The stand-in's addresses, under the library so the index names them relative to itself: on the dev server's origin.
+  const devLinks: LibraryLinks = { inboxUrl: `${LIBRARY_BASE}dev/inbox/`, statsUrl: `${LIBRARY_BASE}dev/stats.ttl` };
   return {
     name: "solid-memo:deck-library",
 
     configureServer(server) {
+      let inbox: DevInbox | undefined;
+      // Read once, and again only when a file of the library changes: a read validates every release.
+      let cached: ReturnType<typeof library> | undefined;
+      server.watcher.add(root);
+      server.watcher.on("all", (_event, file) => {
+        if (file.startsWith(root)) cached = undefined;
+      });
       server.middlewares.use(async (req, res, next) => {
         const path = (req.url ?? "").split("?")[0];
         const prefix = `/${publicPath}/`;
         if (!path.startsWith(prefix)) return next();
         try {
-          const body = (await library({ previews: true })).get(path.slice(prefix.length));
-          if (body === undefined) return next();
-          res.setHeader("Content-Type", TURTLE);
+          const read = await (cached ??= library({ previews: true, links: devInbox === undefined ? links : devLinks }));
+          const answer =
+            devInbox === undefined
+              ? null
+              : await answerDevRequest((inbox ??= createDevInbox({ dir: devInbox, shapes: (await validators!).shapes, warn })), {
+                  path,
+                  prefix,
+                  method: req.method,
+                  origin: `http://${req.headers.host}`,
+                  loggedIn: req.headers.authorization !== undefined,
+                  body: async () => {
+                    const chunks: Buffer[] = [];
+                    for await (const chunk of req) chunks.push(chunk as Buffer);
+                    return Buffer.concat(chunks).toString("utf8");
+                  },
+                  decks: read.decks,
+                  now,
+                });
+          const body = answer === null ? read.files.get(path.slice(prefix.length)) : answer.body;
+          if (body === undefined && answer === null) return next();
+          res.statusCode = answer?.status ?? 200;
+          for (const [name, value] of Object.entries(answer?.headers ?? { "Content-Type": TURTLE })) res.setHeader(name, value);
           res.end(body);
         } catch (error) {
           next(error);
@@ -524,7 +562,7 @@ export function deckLibraryPlugin({
     },
 
     async generateBundle() {
-      for (const [path, source] of await library({ previews: false })) {
+      for (const [path, source] of (await library({ previews: false, links })).files) {
         this.emitFile({ type: "asset", fileName: `${publicPath}/${path}`, source });
       }
     },

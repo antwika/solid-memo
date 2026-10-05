@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:library": "vite --mode library",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p .",
