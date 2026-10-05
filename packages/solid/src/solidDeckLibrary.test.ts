@@ -86,9 +86,14 @@ describe("fetchLibraryDeck", () => {
 });
 
 describe("libraryStats", () => {
-  const STATS = "https://solid-memo.com/decks/stats.ttl";
+  const STATS = "https://pod.solid-memo.com/library/stats.ttl";
+  /** The index as the build writes it: the catalogue is the index document itself. */
+  const indexNaming = (statsUrl?: string) => {
+    const catalog = buildThing(createThing({ url: INDEX })).addIri(RDF.type, "http://www.w3.org/ns/dcat#Catalog");
+    return setThing(mockSolidDatasetFrom(INDEX), (statsUrl === undefined ? catalog : catalog.addIri(SM.libraryStats, statsUrl)).build());
+  };
 
-  it("reads the statistics published beside the index", async () => {
+  it("reads the statistics document the index's catalogue names", async () => {
     const things = [
       buildThing(createThing({ url: STATS })).addDatetime(DCTERMS.modified, new Date("2026-10-05T06:00:00.000Z")).build(),
       buildThing(createThing({ url: `${INDEX}#capitals` }))
@@ -104,30 +109,43 @@ describe("libraryStats", () => {
         .addInteger(SCHEMA.userInteractionCount, 12)
         .build(),
     ];
-    vi.mocked(getSolidDataset).mockResolvedValue(things.reduce((dataset, thing) => setThing(dataset, thing), mockSolidDatasetFrom(STATS)));
+    vi.mocked(getSolidDataset)
+      .mockResolvedValueOnce(indexNaming(STATS))
+      .mockResolvedValueOnce(things.reduce((dataset, thing) => setThing(dataset, thing), mockSolidDatasetFrom(STATS)));
     await expect(makeLibrary().libraryStats()).resolves.toEqual({
       countedAt: "2026-10-05T06:00:00.000Z",
       decks: { [`${INDEX}#capitals`]: { likes: 3, downloads: 12 } },
     });
-    expect(getSolidDataset).toHaveBeenCalledWith(STATS, { fetch });
+    expect(vi.mocked(getSolidDataset).mock.calls).toEqual([
+      [INDEX, { fetch }],
+      [STATS, { fetch }],
+    ]);
   });
 
-  it("has none when they cannot be read", async () => {
-    vi.mocked(getSolidDataset).mockRejectedValue(new Error("404"));
+  it("has none when the index names no statistics, without looking for any", async () => {
+    vi.mocked(getSolidDataset).mockResolvedValueOnce(indexNaming());
+    await expect(makeLibrary().libraryStats()).resolves.toEqual({ decks: {} });
+    vi.mocked(getSolidDataset).mockResolvedValueOnce(mockSolidDatasetFrom(INDEX));
+    await expect(makeLibrary().libraryStats()).resolves.toEqual({ decks: {} });
+    expect(getSolidDataset).toHaveBeenCalledTimes(2);
+  });
+
+  it("has none when they or the index cannot be read", async () => {
+    vi.mocked(getSolidDataset).mockResolvedValueOnce(indexNaming(STATS)).mockRejectedValueOnce(new Error("404"));
+    await expect(makeLibrary().libraryStats()).resolves.toEqual({ decks: {} });
+    vi.mocked(getSolidDataset).mockRejectedValueOnce(new Error("offline"));
     await expect(makeLibrary().libraryStats()).resolves.toEqual({ decks: {} });
   });
 });
 
 describe("inboxUrl", () => {
   it("is the inbox the index's catalogue names; null when it names none", async () => {
-    const catalog = buildThing(createThing({ url: `${INDEX}#catalog` })).addIri(RDF.type, "http://www.w3.org/ns/dcat#Catalog");
+    const catalog = () => buildThing(createThing({ url: INDEX })).addIri(RDF.type, "http://www.w3.org/ns/dcat#Catalog");
     vi.mocked(getSolidDataset).mockResolvedValueOnce(
-      setThing(mockSolidDatasetFrom(INDEX), catalog.addIri(LDP.inbox, "https://library.example/inbox/").build()),
+      setThing(mockSolidDatasetFrom(INDEX), catalog().addIri(LDP.inbox, "https://library.example/inbox/").build()),
     );
     await expect(makeLibrary().inboxUrl()).resolves.toBe("https://library.example/inbox/");
-    vi.mocked(getSolidDataset).mockResolvedValueOnce(
-      setThing(mockSolidDatasetFrom(INDEX), buildThing(createThing({ url: `${INDEX}#catalog` })).addIri(RDF.type, "http://www.w3.org/ns/dcat#Catalog").build()),
-    );
+    vi.mocked(getSolidDataset).mockResolvedValueOnce(setThing(mockSolidDatasetFrom(INDEX), catalog().build()));
     await expect(makeLibrary().inboxUrl()).resolves.toBeNull();
     vi.mocked(getSolidDataset).mockResolvedValueOnce(mockSolidDatasetFrom(INDEX));
     await expect(makeLibrary().inboxUrl()).resolves.toBeNull();

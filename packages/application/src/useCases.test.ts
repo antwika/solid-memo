@@ -2758,10 +2758,11 @@ describe("library deck upgrade", () => {
       ]);
     });
 
-    it("transferGuestStudy tells the library of the library decks the guest imported, each once, as the user", async () => {
+    it("transferGuestStudy tells the library of the library decks the guest imported, each once, as the user, without waiting", async () => {
       const { deps } = guestDeps();
       const notify = vi.fn(async () => undefined);
-      vi.mocked(deps.deckLibrary.inboxUrl).mockResolvedValue("https://library.example/inbox/");
+      let inboxFound = (_url: string) => undefined as void;
+      vi.mocked(deps.deckLibrary.inboxUrl).mockReturnValue(new Promise((resolve) => (inboxFound = resolve)));
       vi.mocked(deps.deckRepository.listDecks).mockImplementation(async (url) =>
         url === TARGET
           ? [
@@ -2776,13 +2777,18 @@ describe("library deck upgrade", () => {
         containerUrl: TARGET,
         registrationTarget: "private",
       });
+      // Done while the library's inbox is still being looked up.
       expect(outcome.ok).toBe(true);
-      expect(notify).toHaveBeenCalledExactlyOnceWith("https://library.example/inbox/", {
-        action: "import",
-        by: session.webId,
-        deckUrl: libraryDeck.seriesUrl,
-        at: "2026-09-28T10:00:00.000Z",
-      });
+      expect(notify).not.toHaveBeenCalled();
+      inboxFound("https://library.example/inbox/");
+      await vi.waitFor(() =>
+        expect(notify).toHaveBeenCalledExactlyOnceWith("https://library.example/inbox/", {
+          action: "import",
+          by: session.webId,
+          deckUrl: libraryDeck.seriesUrl,
+          at: "2026-09-28T10:00:00.000Z",
+        }),
+      );
     });
 
     it("transferGuestStudy deletes the whole guest pod with its last instance", async () => {

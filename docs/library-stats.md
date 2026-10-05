@@ -2,18 +2,21 @@
 
 The deck library shows how many people like each deck and how many have
 imported it, and can be listed in order of either. The site is static
-files ([deployment.md](deployment.md)), so the counts are kept on a pod
-of solid-memo.com's own and published beside the library's index each
-time the site is deployed.
+files ([deployment.md](deployment.md)) and counts nothing itself: the
+app sends word of each like, unlike and import to the library's inbox
+on solid-memo.com's pod, the **inbox processor** (the separate
+`solid-memo/inbox` repository) counts it, and publishes the totals in a
+statistics document on the same pod. The library's index names both.
 
 ```mermaid
 flowchart LR
     like["like / unlike<br/>(deck page)"] --> likes["likes.ttl<br/>(user's instance)"]
-    like -->|notice| inbox["inbox/<br/>(solid-memo.com's pod)"]
+    like -->|notice| inbox["library/inbox/<br/>(solid-memo.com's pod)"]
     import["import<br/>(library, guest transfer)"] -->|notice| inbox
-    inbox --> counter["counter<br/>(deploy workflow)"]
-    counter <--> state["private state.ttl<br/>(same pod)"]
-    counter --> stats["decks/stats.ttl<br/>(the site)"]
+    inbox --> processor["inbox processor<br/>(solid-memo/inbox, every 6 h)"]
+    processor --> stats["library/stats.ttl<br/>(same pod, public)"]
+    index["decks/index.ttl<br/>(the site)"] -.->|ldp:inbox| inbox
+    index -.->|sm:libraryStats| stats
     stats --> app["library screens"]
 ```
 
@@ -22,9 +25,9 @@ are [ActivityStreams 2.0](https://www.w3.org/TR/activitystreams-vocabulary/)
 activities (`as:Like`, `as:Undo`, `as:Add`), the inbox is a
 [Linked Data Notifications](https://www.w3.org/TR/ldn/) inbox
 (`ldp:inbox`), and the counts are schema.org interaction counters. The
-only Solid Memo terms are `sm:announced`, which nothing standard says,
-and `sm:formatVersion`, which every shape asks of its subjects
-([shapes.md](shapes.md)).
+only Solid Memo terms are `sm:announced` and `sm:libraryStats`, which
+nothing standard says, and `sm:formatVersion`, which every shape asks of
+its subjects ([shapes.md](shapes.md)).
 
 ## In the user's pod
 
@@ -51,7 +54,8 @@ or 0 and a PATCH deleting `"false"^^xsd:boolean` finds nothing there.
 
 The app sends a notice for each like, unlike and import, as the
 logged-in user (authenticated fetch), with a POST of a Turtle document
-to the inbox the index's catalogue names (`ldp:inbox`). A like is an
+to the inbox the index's catalogue names (`ldp:inbox`). Any Solid login
+may append to the inbox; no sender can read or list it. A like is an
 `as:Like` with its `as:actor`, `as:object` (the deck's series, which
 stays the same from release to release) and `as:published`; an import
 an `as:Add` of the deck, its `as:target` (the user's pod) left out; an
@@ -74,49 +78,42 @@ same document:
 ```
 
 The shapes are `like-activity`, `undo-activity` and `add-activity`
-([shapes.md](shapes.md)). An import's notice is sent in the
-background: the import never waits for it or fails with it. When the
-index names no inbox, no notice is sent.
+([shapes.md](shapes.md)), each with `sm:formatVersion 1`. An import's
+notice is sent in the background, and so are those of a guest's imports
+when their study moves into a real pod: the import or the move never
+waits for it or fails with it. When the index names no inbox, no notice
+is sent.
 
 ## Counting
 
-`countLibraryNotices` ([libraryCounter.ts](../packages/application/src/libraryCounter.ts))
-runs in the deploy workflow as `npm run count -w @solid-memo/library-stats -- <stats.ttl>`:
-
-1. Read the tally kept from earlier runs; everyone in it was found to
-   have a WebID when first counted.
-2. Read every notice in the inbox. Leave out those that are no notice,
-   are about a deck that is not in this library's index, or are not from
-   an https WebID whose profile can be read (asked once per person).
-3. Count the notices into the tally (`tallyNotices` in
-   [libraryStats.ts](../packages/domain/src/libraryStats.ts)): a person
-   counts once per deck however often they import it, and their latest
-   like or unlike wins, whatever order the notices come in.
-4. Save the tally, then delete every notice read. A run cut short
-   counts the notices left again next time, which changes nothing.
-5. Write `decks/stats.ttl`.
-
-People are counted by a salted SHA-256 hash of their WebID, never the
-WebID itself. The salt is a secret, so the tally cannot be checked
-against a list of known WebIDs. The tally is kept privately on the
-library's pod, as Turtle of the same activities the notices are, each
-person an IRI of their key (`<#person-<key>>`): per person and deck,
-their latest `as:Like` or `as:Undo` and an `as:Add` of their first
-import. Only totals are published.
+The inbox processor, in the `solid-memo/inbox` repository, does the
+counting; nothing in this repository does. It runs every six hours in
+GitHub Actions, logged in as the library's WebID
+(`https://pod.solid-memo.com/library/profile/card#me`), reads the
+inbox, and keeps what it has counted on the library's pod. It drops a
+notice that does not fit its shape, names a deck that is not in the
+live index, or comes from an actor whose profile cannot be read (so an
+actor must be an https WebID with a public profile), and keeps any
+notice no handler accepts. Its records and how it counts are its own;
+what this app depends on is the notices above and the document below.
 
 The counts are approximate. Anyone with a Solid login can send a notice
 naming any https WebID whose profile exists.
 
 ## Published statistics
 
-`decks/stats.ttl` sits beside the index, its IRIs relative to it: each
-deck's `schema:interactionStatistic` is a `schema:InteractionCounter`
-of `schema:LikeAction` and one of `schema:DownloadAction`:
+The processor publishes the totals in a public Turtle document (readable
+cross-origin) that the index's catalogue names with `sm:libraryStats`,
+next to its `ldp:inbox`. Each deck series, named absolutely as in the
+live index, has a `schema:interactionStatistic`: a
+`schema:InteractionCounter` of `schema:LikeAction` and one of
+`schema:DownloadAction`, at fragments `#<name>-likes` and
+`#<name>-downloads`. A deck the document leaves out has neither:
 
 ```turtle
 <> dcterms:modified "2026-10-05T06:00:00.000Z"^^xsd:dateTime .
 
-<index.ttl#world-flags>
+<https://solid-memo.com/decks/index.ttl#world-flags>
     schema:interactionStatistic <#world-flags-likes> ,
                                 <#world-flags-downloads> .
 
@@ -131,28 +128,30 @@ of `schema:LikeAction` and one of `schema:DownloadAction`:
     schema:userInteractionCount 7 .
 ```
 
-`DeckLibrary.libraryStats` reads it. When it is missing or cannot be
+`DeckLibrary.libraryStats` reads the index, then the document it names.
+When the index names none, or the document is missing or cannot be
 read, the library shows no counts and no order to choose, and works as
-before. The library screen shows "7 downloads · 2 likes" under each deck
-and an order (library, most downloaded, most liked). The deck page shows
-both counts "as of" when they were counted, plus a like toggle.
+before. Because the decks are named absolutely, the counts match only
+the index at `https://solid-memo.com/decks/index.ttl`: a dev server's
+index names its decks under its own address and finds none. The library
+screen shows "7 downloads · 2 likes" under each deck and an order
+(library, most downloaded, most liked). The deck page shows both counts
+"as of" when they were counted, plus a like toggle.
 
 ## Setting it up
 
-The library's pod is solid-memo.com's own, not a user's:
+The library's pod, its inbox (`acl:Append` for `acl:AuthenticatedAgent`,
+nothing for the public) and the statistics document are set up with the
+inbox processor, in its repository. Here, the build names them in the
+index from two variables of the GitHub repository, which the deploy
+workflow passes to `npm run build`:
 
-1. Create an account and pod on a Solid server with client credentials
-   (Community Solid Server: the account page's "Credential tokens").
-2. Create the inbox container. Its ACL grants `acl:Append` to
-   `acl:AuthenticatedAgent`, nothing to the public, and full control to
-   the counter's WebID.
-3. Choose a place for the tally (e.g. `private/state.ttl`), readable
-   and writable by the counter's WebID only.
-4. In the GitHub repository, set the variables `LIBRARY_INBOX_URL`,
-   `LIBRARY_STATE_URL` and `SOLID_OIDC_ISSUER`, and the secrets
-   `SOLID_CLIENT_ID`, `SOLID_CLIENT_SECRET` and `LIBRARY_STATS_SALT` (a
-   long random string, never changed: a new salt counts everyone again
-   as new people).
+| Variable | Value |
+|---|---|
+| `LIBRARY_INBOX_URL` | `https://pod.solid-memo.com/library/inbox/` |
+| `LIBRARY_STATS_URL` | `https://pod.solid-memo.com/library/stats.ttl` |
 
-Until `LIBRARY_INBOX_URL` is set, the index names no inbox, so the app
-sends no notices and the deploy publishes no statistics.
+They are plain variables, not secrets: the site holds no pod
+credentials. Each works alone. Without `LIBRARY_INBOX_URL`, the index
+names no inbox and the app sends no notices; without
+`LIBRARY_STATS_URL`, it names no statistics and the app shows no counts.

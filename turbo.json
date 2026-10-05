@@ -37,7 +37,8 @@
       ],
       "env": [
         "GITHUB_SHA",
-        "LIBRARY_INBOX_URL"
+        "LIBRARY_INBOX_URL",
+        "LIBRARY_STATS_URL"
       ]
     },
     "generate:check": {

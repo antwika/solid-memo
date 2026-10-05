@@ -5,16 +5,13 @@ import {
   toLibraryLike,
   toLibraryLikeThing,
   toLibraryStats,
-  toLibraryStatsTurtle,
   toNotices,
   toNoticeThings,
-  toTally,
-  toTallyThings,
 } from "./libraryStatsMapper";
 import { AS, RDF, SCHEMA, SM } from "../vocab";
 
 const INDEX = "https://solid-memo.com/decks/index.ttl";
-const STATS = "https://solid-memo.com/decks/stats.ttl";
+const STATS = "https://pod.solid-memo.com/library/stats.ttl";
 const FLAGS = `${INDEX}#world-flags`;
 const ALICE = "https://alice.example/profile/card#me";
 const AT = "2026-10-05T10:00:00.000Z";
@@ -61,55 +58,31 @@ describe("notices", () => {
   });
 });
 
-describe("the counter's tally", () => {
-  const STATE = "https://library.example/private/state.ttl";
-
-  it("is kept as activities by people named by their key, and read back as kept", () => {
-    const tally = [
-      { person: "p1", deckUrl: FLAGS, like: { liked: true, at: AT }, importedAt: AT },
-      { person: "p2", deckUrl: FLAGS, like: { liked: false, at: AT } },
-      { person: "p3", deckUrl: FLAGS, importedAt: AT },
-    ];
-    const things = toTallyThings(STATE, tally);
-    expect(things.map((thing) => thing.predicates[RDF.type]!.namedNodes![0])).toEqual([AS.Like, AS.Add, AS.Undo, AS.Like, AS.Add]);
-    expect(JSON.stringify(things)).not.toContain("alice");
-    expect(toTally(datasetOf(STATE, things), STATE)).toEqual(tally);
-  });
-
-  it("leaves out activities by anyone not named by a key", () => {
-    const things = toNoticeThings(`${STATE}#x`, `${STATE}#y`, notice("like"));
-    expect(toTally(datasetOf(STATE, things), STATE)).toEqual([]);
-  });
-});
-
 describe("the library's statistics", () => {
-  it("are written as schema.org interaction counters relative to the library, and read back", async () => {
-    const stats = {
-      countedAt: "2026-10-05T06:00:00.000Z",
-      decks: {
-        [FLAGS]: { likes: 2, downloads: 7 },
-        [`${INDEX}#capitals`]: { likes: 0, downloads: 1 },
-        "https://elsewhere.example/decks/index.ttl#x": { likes: 9, downloads: 9 },
-      },
-    };
-    const turtle = toLibraryStatsTurtle(stats, INDEX);
-    expect(turtle).toContain(`<index.ttl#world-flags> <${SCHEMA.interactionStatistic}> <stats.ttl#world-flags-likes> .`);
-    expect(turtle).toContain(`<stats.ttl#world-flags-likes> <${SCHEMA.interactionType}> <${SCHEMA.LikeAction}> .`);
-    const elsewhere = "https://mirror.example/decks/stats.ttl";
-    const dataset = await getSolidDataset(elsewhere, {
-      fetch: async () => Object.defineProperty(new Response(turtle, { headers: { "Content-Type": "text/turtle" } }), "url", { value: elsewhere }),
+  const PUBLISHED = "https://pod.solid-memo.com/library/stats.ttl";
+  const read = (url: string, turtle: string) =>
+    getSolidDataset(url, {
+      fetch: async () => Object.defineProperty(new Response(turtle, { headers: { "Content-Type": "text/turtle" } }), "url", { value: url }),
     });
-    expect(toLibraryStats(dataset, elsewhere)).toEqual({
-      countedAt: stats.countedAt,
-      decks: {
-        "https://mirror.example/decks/index.ttl#world-flags": { likes: 2, downloads: 7 },
-        "https://mirror.example/decks/index.ttl#capitals": { likes: 0, downloads: 1 },
-      },
+
+  it("are read from the document the library's inbox processor publishes, its decks named absolutely", async () => {
+    const turtle = `
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix schema: <https://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+<> dcterms:modified "2026-10-05T06:00:00.000Z"^^xsd:dateTime.
+<https://solid-memo.com/decks/index.ttl#world-flags> schema:interactionStatistic <#world-flags-likes>, <#world-flags-downloads>.
+<#world-flags-likes> a schema:InteractionCounter; schema:interactionType schema:LikeAction; schema:userInteractionCount 2.
+<#world-flags-downloads> a schema:InteractionCounter; schema:interactionType schema:DownloadAction; schema:userInteractionCount 7.
+`;
+    expect(toLibraryStats(await read(PUBLISHED, turtle), PUBLISHED)).toEqual({
+      countedAt: "2026-10-05T06:00:00.000Z",
+      decks: { [FLAGS]: { likes: 2, downloads: 7 } },
     });
   });
 
-  it("leave out when they were counted when it is not known", () => {
-    expect(toLibraryStatsTurtle({ decks: {} }, INDEX)).not.toContain("modified");
+  it("leave out when they were counted when it is not said", async () => {
+    expect(toLibraryStats(await read(PUBLISHED, ""), PUBLISHED)).toEqual({ decks: {} });
   });
 
   it("count a missing, negative or unknown counter as nought", () => {

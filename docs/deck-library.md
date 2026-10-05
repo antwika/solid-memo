@@ -300,12 +300,13 @@ into `dist/decks/` by the build:
 | `decks/<name>/<n>.ttl` | Every release, byte for byte. |
 | `decks/<name>.ttl` | A copy of the deck's current release, at the address decks had before releases, so copies imported then still resolve. |
 | `decks/index.ttl` | The generated catalogue. |
-| `decks/stats.ttl` | How many like and have imported each deck, written by the deploy workflow, not the plugin ([library-stats.md](library-stats.md)). |
 
 The **index** is a `dcat:Catalog` (title, description, publisher
 `<#solid-memo>`, the EU data themes and the topics as its theme
-taxonomies, `dcat:dataset` per deck, and `ldp:inbox` when the build is given
-`LIBRARY_INBOX_URL`: where the app sends word of likes and imports).
+taxonomies, `dcat:dataset` per deck, `ldp:inbox` when the build is given
+`LIBRARY_INBOX_URL`: where the app sends word of likes and imports, and
+`sm:libraryStats` when it is given `LIBRARY_STATS_URL`: where their counts
+are published, [library-stats.md](library-stats.md)).
 Each deck is its series,
 `<#<name>>`, a `dcat:DatasetSeries` and `dcat:Dataset` with the current
 release's title, description, themes and keywords (with their tags), `dcat:first`,

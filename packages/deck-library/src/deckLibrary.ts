@@ -59,6 +59,16 @@ const DATA_THEMES = "http://publications.europa.eu/resource/authority/data-theme
 const TOPICS = "https://solid-memo.com/vocab/topics";
 const OWL_DEPRECATED = "http://www.w3.org/2002/07/owl#deprecated";
 
+/**
+ * Where the library takes word of likes and imports, and where it
+ * publishes what it counts of them (docs/library-stats.md): both kept
+ * outside the site, so the index names them.
+ */
+export interface LibraryLinks {
+  inboxUrl?: string;
+  statsUrl?: string;
+}
+
 /** One frozen release of a deck, as the build reads it. */
 export interface DeckRelease {
   deck: string;
@@ -205,10 +215,11 @@ function textOf(quads: readonly Quad[], subject: string, predicate: string): Qua
  * IRIs under the library are written relative to the index, so the
  * library works wherever the site is hosted. With an `inboxUrl`, the
  * catalogue names it as its ldp:inbox: where the app sends word of likes
- * and imports, which the library's statistics are counted from
- * (docs/library-stats.md).
+ * and imports, which the library's statistics are counted from; with a
+ * `statsUrl`, as its sm:libraryStats: where those statistics are
+ * published (docs/library-stats.md).
  */
-export function buildIndex(releases: readonly DeckRelease[], { inboxUrl }: { inboxUrl?: string } = {}): string {
+export function buildIndex(releases: readonly DeckRelease[], { inboxUrl, statsUrl }: LibraryLinks = {}): string {
   const { namedNode, literal, quad } = DataFactory;
   const out: Quad[] = [];
   const add = (s: string, p: string, o: Quad_Object) => out.push(quad(namedNode(s), namedNode(p), o));
@@ -229,6 +240,7 @@ export function buildIndex(releases: readonly DeckRelease[], { inboxUrl }: { inb
   add(INDEX_URL, `${DCAT}themeTaxonomy`, iri(DATA_THEMES));
   add(INDEX_URL, `${DCAT}themeTaxonomy`, iri(TOPICS));
   if (inboxUrl !== undefined) add(INDEX_URL, "http://www.w3.org/ns/ldp#inbox", iri(inboxUrl));
+  if (statsUrl !== undefined) add(INDEX_URL, `${SM_NS}libraryStats`, iri(statsUrl));
   for (const deck of decks) add(INDEX_URL, `${DCAT}dataset`, iri(seriesUrlOf(deck)));
   add(PUBLISHER_URL, RDF_TYPE, iri(`${FOAF}Agent`));
   add(PUBLISHER_URL, `${FOAF}name`, literal("Solid Memo"));
@@ -468,6 +480,7 @@ export function deckLibraryPlugin({
   warn = (message: string) => console.warn(message),
   validators: loadLibraryValidators = () => loadValidators(),
   inboxUrl,
+  statsUrl,
 }: {
   publicPath?: string;
   root?: string;
@@ -475,15 +488,21 @@ export function deckLibraryPlugin({
   validators?: () => Promise<LibraryValidators>;
   /** The library's inbox, named in the published index; none when not given (no likes or imports are counted). */
   inboxUrl?: string;
+  /** The library's statistics, named in the published index; none when not given (no counts are shown). */
+  statsUrl?: string;
 } = {}): Plugin {
+  // An unset build variable comes as "" as often as not: neither is named.
+  const links: LibraryLinks = {
+    ...(inboxUrl === undefined || inboxUrl === "" ? {} : { inboxUrl }),
+    ...(statsUrl === undefined || statsUrl === "" ? {} : { statsUrl }),
+  };
   let validators: Promise<LibraryValidators> | undefined;
   /** The published files; with previews (the dev server), each unreleased source as its next release too. */
   const library = async ({ previews }: { previews: boolean }) => {
     const read = await readDeckLibrary(root, await (validators ??= loadLibraryValidators()));
     for (const warning of read.warnings) warn(warning);
-    const options = inboxUrl === undefined || inboxUrl === "" ? {} : { inboxUrl };
     const all = previews ? sorted([...read.releases, ...read.previews]) : read.releases;
-    return publishedFiles(all, buildIndex(all, options));
+    return publishedFiles(all, buildIndex(all, links));
   };
   return {
     name: "solid-memo:deck-library",

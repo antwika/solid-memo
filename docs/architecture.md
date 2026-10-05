@@ -19,7 +19,6 @@ where the layers meet.
 | `@solid-memo/shacl` | `packages/shacl/` | The SHACL engine (rdf-validate-shacl, loaded lazily), profiles and shape loading (`src/`); build-time validation of Turtle files (`node/`). |
 | `@solid-memo/browser` | `packages/browser/` | Adapters for browser storage: the update journal, the language, the guest's pod's store (IndexedDB). |
 | `@solid-memo/deck-library` | `packages/deck-library/` | The public deck library: sources (`decks/`), frozen releases (`releases/`), the lockfile, the release tool and the Vite plugin that publishes the library. |
-| `@solid-memo/library-stats` | `packages/library-stats/` | The library's counter: a command, run by the deploy workflow, that counts likes and imports into `decks/stats.ttl` ([library-stats.md](library-stats.md)). |
 | `@solid-memo/turtle` | `packages/turtle/` | Node-only Turtle tooling (n3): parsing and the house-style formatter. |
 | `@solid-memo/e2e-pod` | `e2e/pod/` | End-to-end tests of the app's use cases and Solid adapters against a real Community Solid Server. |
 
@@ -42,7 +41,6 @@ graph TD
     shacl -. node/ only .-> turtle
     library --> shacl & vocab & turtle
     vocab -. tooling/ only .-> turtle
-    stats["library-stats<br/>the counter"] --> application & domain & solid
     e2e["e2e/pod"] --> application & solid
 ```
 

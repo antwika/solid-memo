@@ -136,6 +136,8 @@ export const SM = {
   nextIntervalDays: `${SM_NS}nextIntervalDays`,
   /** On a user's like of a library deck (an as:Like in the instance's likes document): whether the library's inbox has been told of it; until it has, the app tries again. (Added in 1.13.) */
   announced: `${SM_NS}announced`,
+  /** On the deck library's catalogue (a dcat:Catalog), next to its ldp:inbox: the document its likes and downloads are published in, as schema.org interaction counters of each deck series. It is counted from the inbox's notices, outside the site, so the index names where it is; a library that names none publishes none. (Added in 1.13.) */
+  libraryStats: `${SM_NS}libraryStats`,
   /** The ways a deck can be studied. (Added in 1.6.) */
   StudyDirections: `${SM_NS}StudyDirections`,
   /** Each card is shown by its front and answered with its back. (Added in 1.6.) */

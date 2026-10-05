@@ -29,7 +29,6 @@ const LAYERS: Record<string, string[]> = {
   browser: ["application", "domain"],
   "deck-library": ["vocab", "shacl", "turtle"],
   web: ["application", "domain", "vocab", "solid", "browser", "deck-library"],
-  "library-stats": ["application", "domain", "solid"],
   "e2e-pod": ["application", "domain", "vocab", "solid"],
 };
 

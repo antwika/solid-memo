@@ -1,7 +1,5 @@
 import {
   asUrl,
-  buildThing,
-  createThing,
   getDatetime,
   getInteger,
   getThing,
@@ -13,14 +11,7 @@ import {
   type ThingPersisted,
 } from "@inrupt/solid-client";
 import { migrate } from "@solid-memo/domain/shapes/migrations";
-import {
-  tallyNotices,
-  type DeckStats,
-  type LibraryLike,
-  type LibraryNotice,
-  type LibraryStats,
-  type Tally,
-} from "@solid-memo/domain/libraryStats";
+import type { DeckStats, LibraryLike, LibraryNotice, LibraryStats } from "@solid-memo/domain/libraryStats";
 import {
   libraryLikeFromRecord,
   libraryLikeToRecord,
@@ -28,14 +19,13 @@ import {
   noticeToRecords,
 } from "@solid-memo/domain/libraryStatsRecord";
 import { ADD_ACTIVITY_V1, LIKE_ACTIVITY_V1, UNDO_ACTIVITY_V1 } from "@solid-memo/vocab/descriptors.generated";
-import { turtleOfThings } from "../datasets";
 import { readVersioned, recordThing } from "../records";
-import { DCAT, DCTERMS, LDP, RDF, SCHEMA } from "../vocab";
+import { DCAT, DCTERMS, LDP, RDF, SCHEMA, SM } from "../vocab";
 
 /**
- * Likes, notices, the counter's tally and the library's statistics in
- * standard vocabularies (docs/library-stats.md): ActivityStreams
- * activities, and schema.org interaction counters.
+ * Likes, notices and the library's statistics in standard vocabularies
+ * (docs/library-stats.md): ActivityStreams activities, and schema.org
+ * interaction counters.
  */
 
 /** A like in the instance's likes document; null when it is not an as:Like this app can use. */
@@ -67,7 +57,8 @@ export function toNoticeThings(url: string, likeUrl: string, notice: LibraryNoti
  * Every notice a document's activities say: each as:Undo of an as:Like
  * in the document, each as:Add, and each as:Like that says who gave it
  * and when (a like an undo names says neither). An activity that does
- * not fit its shape is left out.
+ * not fit its shape is left out. The inbox's notices as its owner reads
+ * them back (the library's own counter is another repository).
  */
 export function toNotices(dataset: SolidDataset): LibraryNotice[] {
   const notices: LibraryNotice[] = [];
@@ -95,47 +86,21 @@ export function toNotices(dataset: SolidDataset): LibraryNotice[] {
   return notices;
 }
 
+/** The library's catalogue in its index: the subject typed dcat:Catalog, which the build writes as the index itself. */
+function catalogOf(index: SolidDataset): Thing | undefined {
+  return getThingAll(index).find((thing) => getUrlAll(thing, RDF.type).includes(DCAT.Catalog));
+}
+
 /** The inbox the library's index names on its catalogue; null when it names none. */
 export function toLibraryInboxUrl(index: SolidDataset): string | null {
-  const catalog = getThingAll(index).find((thing) => getUrlAll(thing, RDF.type).includes(DCAT.Catalog));
+  const catalog = catalogOf(index);
   return catalog === undefined ? null : getUrl(catalog, LDP.inbox);
 }
 
-/** Where the counter names a person in its tally: by their key, a fragment of the tally's document. */
-function personUrl(stateUrl: string, person: string): string {
-  return `${stateUrl}#person-${person}`;
-}
-
-/**
- * The counter's tally as activities: for each person and deck, their
- * latest as:Like or as:Undo of one, and an as:Add of their first import,
- * each by the person's key, never their WebID.
- */
-export function toTallyThings(stateUrl: string, tally: Tally): ThingPersisted[] {
-  return tally.flatMap((entry, n) => {
-    const by = personUrl(stateUrl, entry.person);
-    const things: ThingPersisted[] = [];
-    if (entry.like !== undefined) {
-      const notice: LibraryNotice = { action: entry.like.liked ? "like" : "unlike", by, deckUrl: entry.deckUrl, at: entry.like.at };
-      things.push(...toNoticeThings(`${stateUrl}#e${n}-like`, `${stateUrl}#e${n}-undone`, notice));
-    }
-    if (entry.importedAt !== undefined) {
-      const notice: LibraryNotice = { action: "import", by, deckUrl: entry.deckUrl, at: entry.importedAt };
-      things.push(...toNoticeThings(`${stateUrl}#e${n}-add`, `${stateUrl}#e${n}-add`, notice));
-    }
-    return things;
-  });
-}
-
-/** The tally the counter kept: its activities counted again, by people named by their key. */
-export function toTally(dataset: SolidDataset, stateUrl: string): Tally {
-  const prefix = personUrl(stateUrl, "");
-  return tallyNotices(
-    [],
-    toNotices(dataset)
-      .filter((notice) => notice.by.startsWith(prefix))
-      .map((notice) => ({ person: notice.by.slice(prefix.length), notice })),
-  );
+/** The statistics document the library's index names on its catalogue, beside its inbox; null when it names none. */
+export function toLibraryStatsUrl(index: SolidDataset): string | null {
+  const catalog = catalogOf(index);
+  return catalog === undefined ? null : getUrl(catalog, SM.libraryStats);
 }
 
 /**
@@ -165,49 +130,4 @@ export function toLibraryStats(dataset: SolidDataset, url: string): LibraryStats
   const document = getThing(dataset, url);
   const countedAt = document === null ? null : getDatetime(document, DCTERMS.modified);
   return countedAt === null ? { decks } : { countedAt: countedAt.toISOString(), decks };
-}
-
-/**
- * The statistics as the subjects of the document published beside the
- * index, stats.ttl at `statsUrl`: each deck of the index (others are
- * left out) with its two counters, `#<name>-likes` and
- * `#<name>-downloads`.
- */
-export function toLibraryStatsThings(stats: LibraryStats, indexUrl: string, statsUrl: string): ThingPersisted[] {
-  const things: ThingPersisted[] = [];
-  if (stats.countedAt !== undefined) {
-    things.push(buildThing(createThing({ url: statsUrl })).addDatetime(DCTERMS.modified, new Date(stats.countedAt)).build());
-  }
-  for (const deckUrl of Object.keys(stats.decks).sort()) {
-    if (!deckUrl.startsWith(`${indexUrl}#`)) continue;
-    const name = deckUrl.slice(indexUrl.length + 1).replace(/[^A-Za-z0-9._-]/g, "-");
-    const counters = [
-      { url: `${statsUrl}#${name}-likes`, type: SCHEMA.LikeAction, count: stats.decks[deckUrl]!.likes },
-      { url: `${statsUrl}#${name}-downloads`, type: SCHEMA.DownloadAction, count: stats.decks[deckUrl]!.downloads },
-    ];
-    const deck = buildThing(createThing({ url: deckUrl }));
-    for (const counter of counters) {
-      deck.addIri(SCHEMA.interactionStatistic, counter.url);
-      things.push(
-        buildThing(createThing({ url: counter.url }))
-          .addIri(RDF.type, SCHEMA.InteractionCounter)
-          .addIri(SCHEMA.interactionType, counter.type)
-          .addInteger(SCHEMA.userInteractionCount, counter.count)
-          .build(),
-      );
-    }
-    things.push(deck.build());
-  }
-  return things;
-}
-
-/**
- * The statistics as the Turtle file published beside the index,
- * stats.ttl, every IRI of the site's library written relative to it
- * (`<index.ttl#name>`, `<stats.ttl#name-likes>`), so the same file
- * serves wherever the site is.
- */
-export function toLibraryStatsTurtle(stats: LibraryStats, indexUrl: string): string {
-  const folder = new URL("./", indexUrl).href;
-  return turtleOfThings(toLibraryStatsThings(stats, indexUrl, `${folder}stats.ttl`), folder);
 }

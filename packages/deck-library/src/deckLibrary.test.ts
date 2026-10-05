@@ -437,19 +437,28 @@ describe("deckLibraryPlugin", () => {
     ]);
   });
 
-  it("names the library's inbox in the index it publishes, when given one", async () => {
-    const indexOf = async (inboxUrl: string | undefined) => {
-      const plugin = deckLibraryPlugin({ root, warn: vi.fn(), validators: async () => validators, inboxUrl });
+  it("names the library's inbox and statistics on its catalogue in the index it publishes, when given them", async () => {
+    const indexOf = async (links: { inboxUrl?: string; statsUrl?: string }) => {
+      const plugin = deckLibraryPlugin({ root, warn: vi.fn(), validators: async () => validators, ...links });
       const emitFile = vi.fn();
       await (plugin.generateBundle as unknown as (this: { emitFile: typeof emitFile }) => Promise<void>).call({ emitFile });
       return emitFile.mock.calls.find((c) => c[0].fileName === "decks/index.ttl")![0].source as string;
     };
-    const quads = parseTurtle(await indexOf("https://library.example/inbox/"), INDEX);
-    expect(quads.filter((q) => q.subject.value === INDEX && q.predicate.value === "http://www.w3.org/ns/ldp#inbox").map((q) => q.object.value)).toEqual([
-      "https://library.example/inbox/",
-    ]);
-    expect(await indexOf("")).not.toContain("ldp#inbox");
-    expect(await indexOf(undefined)).not.toContain("ldp#inbox");
+    const quads = parseTurtle(
+      await indexOf({ inboxUrl: "https://library.example/inbox/", statsUrl: "https://library.example/stats.ttl" }),
+      INDEX,
+    );
+    // The same subject the app finds the catalogue by: the one typed dcat:Catalog.
+    const catalog = quads.find((q) => q.predicate.value === RDF_TYPE && q.object.value === "http://www.w3.org/ns/dcat#Catalog")!.subject.value;
+    expect(catalog).toBe(INDEX);
+    const objectsOn = (predicate: string) => quads.filter((q) => q.subject.value === catalog && q.predicate.value === predicate).map((q) => q.object.value);
+    expect(objectsOn("http://www.w3.org/ns/ldp#inbox")).toEqual(["https://library.example/inbox/"]);
+    expect(objectsOn("https://solid-memo.com/vocab/v1#libraryStats")).toEqual(["https://library.example/stats.ttl"]);
+    for (const links of [{ inboxUrl: "", statsUrl: "" }, {}]) {
+      const index = await indexOf(links);
+      expect(index).not.toContain("ldp#inbox");
+      expect(index).not.toContain("libraryStats");
+    }
   });
 
   it("warns on the console and loads the validators from the vocab package by default", async () => {

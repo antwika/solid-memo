@@ -18,7 +18,7 @@
     dcterms:description "Terms for spaced-repetition flashcards stored in a Solid pod: instances, decks, cards, SM-2 review state and study preferences." ;
     owl:versionInfo "1.13" ;
     rdfs:seeAlso <https://solid-memo.com/vocab/v1.ttl> ;
-    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed. 1.10: Answer, the answer log the study statistics are computed from. 1.11: the Themes concept scheme and theme (preferences format 4). 1.12: frontImageDescription, backImageDescription (card format 4, without a version bump). 1.13: announced (a like of a library deck, an as:Like, told to the library's inbox)." .
+    skos:changeNote "1.0: Instance, Deck, Card, ReviewState, Preferences, formatVersion, cardsDocument, reviewsDocument, front, back, the SM-2 fields and the study caps. 1.1: developerMode. 1.2: the previous* snapshot. 1.3: frontImage, backImage (card format 2). 1.4: cardCount (library index). 1.5: direction (deck format 2). 1.6: the StudyDirections and InvalidDataPolicies concept schemes, studyDirection (deck format 3) and invalidDataPolicy (preferences format 3); direction deprecated. 1.7: deckNewCardsPerDay, deckMaxReviewsPerDay (a deck's own study caps). 1.8: frontNote, backLabel, backNote (card format 3). 1.9: DocumentReceipt and DeckSchedule, the instance digest that lets a visit skip documents that have not changed. 1.10: Answer, the answer log the study statistics are computed from. 1.11: the Themes concept scheme and theme (preferences format 4). 1.12: frontImageDescription, backImageDescription (card format 4, without a version bump). 1.13: announced (a like of a library deck, an as:Like, told to the library's inbox) and libraryStats (where the deck library publishes its likes and downloads)." .
 
 #################### Classes ####################
 
@@ -614,6 +614,15 @@ solid-memo:announced
     rdfs:comment "On a user's like of a library deck (an as:Like in the instance's likes document): whether the library's inbox has been told of it; until it has, the app tries again." ;
     rdfs:domain <https://www.w3.org/ns/activitystreams#Like> ;
     rdfs:range xsd:boolean ;
+    rdfs:isDefinedBy <> ;
+    skos:historyNote "Added in 1.13." .
+
+solid-memo:libraryStats
+    a owl:ObjectProperty ;
+    rdfs:label "library statistics" ;
+    rdfs:comment "On the deck library's catalogue (a dcat:Catalog), next to its ldp:inbox: the document its likes and downloads are published in, as schema.org interaction counters of each deck series. It is counted from the inbox's notices, outside the site, so the index names where it is; a library that names none publishes none." ;
+    rdfs:domain <http://www.w3.org/ns/dcat#Catalog> ;
+    rdfs:range rdfs:Resource ;
     rdfs:isDefinedBy <> ;
     skos:historyNote "Added in 1.13." .
 

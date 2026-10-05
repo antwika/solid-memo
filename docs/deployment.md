@@ -6,21 +6,18 @@ deployed automatically by CI.
 
 ## GitHub Pages (automatic)
 
-`.github/workflows/deploy.yml` runs on every push to `main`, and every
-six hours to publish freshly counted
-[library statistics](library-stats.md):
+`.github/workflows/deploy.yml` runs on every push to `main`:
 
 ```mermaid
 flowchart LR
     push["push to main"] --> test["npm test"] --> build["npm run build"] --> pages["deploy apps/web/dist/ to GitHub Pages"]
 ```
 
-A red test run or build never deploys. After the build, the workflow
-counts the library's likes and downloads into `decks/stats.ttl`; a
-failed count only warns, and the statistics published last are kept.
-It needs the variables and secrets listed in
-[library-stats.md](library-stats.md#setting-it-up); without them,
-nothing is counted. The workflow enables Pages for
+A red test run or build never deploys. The build names the deck
+library's inbox and statistics in its index from the repository
+variables `LIBRARY_INBOX_URL` and `LIBRARY_STATS_URL`
+([library-stats.md](library-stats.md#setting-it-up)); without them, it
+names neither. The workflow enables Pages for
 the repository on its first run; no manual settings are required. The
 site lands at `https://<user>.github.io/solid-memo/`.
 

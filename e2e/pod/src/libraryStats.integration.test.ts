@@ -2,16 +2,18 @@
 /**
  * Library likes and downloads against a real Solid server
  * (docs/library-stats.md): a like kept in the instance's likes document
- * with conditional writes, notices POSTed into an inbox container, and
- * the counter reading, counting and deleting them, keeping its tally as
- * Turtle (ActivityStreams activities). Runs against each server globalSetup.ts starts.
+ * with conditional writes, and notices POSTed into an inbox container,
+ * each a document of its own that its owner reads back as sent, as the
+ * library's inbox processor (the solid-memo/inbox repository) reads
+ * them. Runs against each server globalSetup.ts starts.
  */
 import { readFile } from "node:fs/promises";
 import { describe, expect, inject, it } from "vitest";
-import { countLibraryNotices } from "@solid-memo/application/libraryCounter";
 import { VOCAB_ROOT } from "@solid-memo/vocab/tooling/root";
 import { createShaclShapeValidator } from "@solid-memo/solid/shaclShapeValidator";
-import { createSolidLibraryCounterStore } from "@solid-memo/solid/solidLibraryCounterStore";
+import { getSolidDatasetOrNull } from "@solid-memo/solid/datasets";
+import { toNotices } from "@solid-memo/solid/mappers/libraryStatsMapper";
+import { createSolidInstanceCopier } from "@solid-memo/solid/solidInstanceCopier";
 import { createSolidLibraryInbox } from "@solid-memo/solid/solidLibraryInbox";
 import { createSolidLibraryLikeRepository } from "@solid-memo/solid/solidLibraryLikeRepository";
 
@@ -46,46 +48,33 @@ describe.each(SERVERS)("library likes and downloads on $name", ({ url: server })
     await expect(likes.listLikes(instanceUrl)).resolves.toEqual([{ ...flags, announced: true }]);
   });
 
-  it("takes notices into an inbox, which the counter counts once each and then empties", async () => {
-    const base = new URL(`run-${crypto.randomUUID()}/library/`, server).href;
-    const inboxUrl = `${base}inbox/`;
-    const stateUrl = `${base}private/state.ttl`;
+  it("takes each notice into the inbox as a document of its own, read back as it was sent", async () => {
+    const inboxUrl = new URL(`run-${crypto.randomUUID()}/library/inbox/`, server).href;
     // An inbox is a container that exists before notices come: here made by a document in it, which is no notice.
-    const made = await fetch(`${inboxUrl}readme.ttl`, {
+    const readme = `${inboxUrl}readme.ttl`;
+    const made = await fetch(readme, {
       method: "PUT",
       headers: { "Content-Type": "text/turtle" },
       body: '<#it> <http://purl.org/dc/terms/title> "The library\'s inbox" .',
     });
     expect(made.ok).toBe(true);
     const inbox = createSolidLibraryInbox({ fetch });
-    // The counter counts https WebIDs only; whether these are ones is not asked here.
     const alice = "https://alice.example/profile/card#me";
-    const bob = "https://bob.example/profile/card#me";
-    await inbox.notify(inboxUrl, { action: "import", by: alice, deckUrl: FLAGS, at: "2026-10-05T10:00:00.000Z" });
-    await inbox.notify(inboxUrl, { action: "import", by: alice, deckUrl: FLAGS, at: "2026-10-05T10:05:00.000Z" });
-    await inbox.notify(inboxUrl, { action: "like", by: alice, deckUrl: FLAGS, at: "2026-10-05T10:10:00.000Z" });
-    await inbox.notify(inboxUrl, { action: "like", by: bob, deckUrl: FLAGS, at: "2026-10-05T10:11:00.000Z" });
-    await inbox.notify(inboxUrl, { action: "unlike", by: bob, deckUrl: FLAGS, at: "2026-10-05T10:12:00.000Z" });
+    const sent = [
+      { action: "import" as const, by: alice, deckUrl: FLAGS, at: "2026-10-05T10:00:00.000Z" },
+      { action: "like" as const, by: alice, deckUrl: FLAGS, at: "2026-10-05T10:10:00.000Z" },
+      { action: "unlike" as const, by: alice, deckUrl: CAPITALS, at: "2026-10-05T10:12:00.000Z" },
+    ];
+    for (const notice of sent) await inbox.notify(inboxUrl, notice);
 
-    const store = createSolidLibraryCounterStore({ fetch });
-    const count = () =>
-      countLibraryNotices({
-        store,
-        inboxUrl,
-        stateUrl,
-        indexUrl: INDEX,
-        personKey: (webId) => `key-${webId.length}-${webId.slice(-12)}`,
-        isWebId: async () => true,
-        now: () => new Date("2026-10-05T12:00:00.000Z"),
-      });
-    const first = await count();
-    expect(first).toEqual({
-      stats: { countedAt: "2026-10-05T12:00:00.000Z", decks: { [FLAGS]: { likes: 1, downloads: 1 } } },
-      counted: 5,
-      dropped: 1,
-    });
-    await expect(store.listNotices(inboxUrl)).resolves.toEqual([]);
-    // Counting again, with nothing new, comes to the same.
-    await expect(count()).resolves.toEqual({ ...first, counted: 0, dropped: 0 });
+    const documents = (await createSolidInstanceCopier({ fetch }).listResources(inboxUrl)).filter((url) => url !== readme);
+    expect(documents).toHaveLength(sent.length);
+    const received = [];
+    for (const url of documents) {
+      const notices = toNotices((await getSolidDatasetOrNull(url, fetch))!);
+      expect(notices).toHaveLength(1);
+      received.push(...notices);
+    }
+    expect(received).toEqual(expect.arrayContaining(sent));
   });
 });

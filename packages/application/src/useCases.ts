@@ -1115,8 +1115,9 @@ export function createUseCases({
         () => true,
         () => false,
       );
-      // The library counts the decks the guest imported, now that there is a WebID to count them by.
-      await notifyLibraryLater(session, "import", async () => {
+      // The library counts the decks the guest imported, now that there is a WebID to count them by;
+      // as with any import, the transfer does not wait on that.
+      void notifyLibraryLater(session, "import", async () => {
         const library = new Set((await deckLibrary.listLibraryDecks()).map((deck) => deck.seriesUrl));
         return (await deckRepository.listDecks(target))
           .flatMap((deck) => (deck.sourceUrl === undefined ? [] : [librarySeriesUrlOf(deck.sourceUrl)]))

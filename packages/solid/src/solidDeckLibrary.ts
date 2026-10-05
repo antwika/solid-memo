@@ -3,13 +3,13 @@ import type { DeckLibrary } from "@solid-memo/application/ports";
 import type { LibraryDeck } from "@solid-memo/domain/library";
 import { NO_LIBRARY_STATS } from "@solid-memo/domain/libraryStats";
 import { toLibraryDeckContent, toLibraryDecks } from "./mappers/libraryMapper";
-import { toLibraryInboxUrl, toLibraryStats } from "./mappers/libraryStatsMapper";
+import { toLibraryInboxUrl, toLibraryStats, toLibraryStatsUrl } from "./mappers/libraryStatsMapper";
 
 export interface SolidDeckLibraryDeps {
   /**
    * Plain fetch: the library is static, public Turtle published next to
-   * the app (docs/deck-library.md), not a Solid resource, so no
-   * authentication is involved.
+   * the app (docs/deck-library.md), not a Solid resource, and its
+   * statistics are public: no authentication is involved.
    */
   fetch: typeof globalThis.fetch;
   /** URL of the library's index document. */
@@ -20,8 +20,8 @@ export interface SolidDeckLibraryDeps {
  * Reads the deck library through its index. The build always publishes
  * an index (empty when there are no decks), so a failed read is an error
  * worth showing, not an empty library. Its statistics are published
- * beside the index, stats.ttl, when they have been counted
- * (docs/library-stats.md): without them the library still works.
+ * wherever the index's catalogue says (sm:libraryStats), outside the
+ * site (docs/library-stats.md): without them the library still works.
  */
 export function createSolidDeckLibrary({
   fetch,
@@ -37,9 +37,9 @@ export function createSolidDeckLibrary({
     },
 
     async libraryStats() {
-      const url = new URL("stats.ttl", indexUrl).href;
       try {
-        return toLibraryStats(await getSolidDataset(url, { fetch }), url);
+        const url = toLibraryStatsUrl(await getSolidDataset(indexUrl, { fetch }));
+        return url === null ? NO_LIBRARY_STATS : toLibraryStats(await getSolidDataset(url, { fetch }), url);
       } catch {
         return NO_LIBRARY_STATS;
       }

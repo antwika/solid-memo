@@ -12,7 +12,7 @@ import type {
   RegistrationTarget,
 } from "@solid-memo/domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "@solid-memo/domain/library";
-import type { LibraryLike, LibraryNotice, LibraryStats, Tally } from "@solid-memo/domain/libraryStats";
+import type { LibraryLike, LibraryNotice, LibraryStats } from "@solid-memo/domain/libraryStats";
 import type { StoredPreferences, StudyPreferences } from "@solid-memo/domain/preferences";
 import type { ReviewKey, ReviewState } from "@solid-memo/domain/review";
 import type { Answer } from "@solid-memo/domain/answer";
@@ -232,23 +232,6 @@ export interface LibraryLikeRepository {
   saveLike(instanceUrl: string, like: LibraryLike): Promise<void>;
   /** Remove the like of the deck; none there is nothing to do. */
   removeLike(instanceUrl: string, deckUrl: string): Promise<void>;
-}
-
-/**
- * Driven port of the library's counter (libraryCounter.ts), not the app:
- * the inbox it reads notices from and the tally it keeps between runs.
- */
-export interface LibraryCounterStore {
-  /** Every document in the inbox. */
-  listNotices(inboxUrl: string): Promise<string[]>;
-  /** The notice a document holds; null when it holds none that fits its shape, or is gone. */
-  readNotice(url: string): Promise<LibraryNotice | null>;
-  /** Delete a document of the inbox; one that is gone counts as deleted. */
-  deleteNotice(url: string): Promise<void>;
-  /** The tally kept; empty when none is kept yet. */
-  readTally(url: string): Promise<Tally>;
-  /** Keep the tally, in place of the one kept. */
-  saveTally(url: string, tally: Tally): Promise<void>;
 }
 
 /** Driven port: the deck library's inbox, which counts its likes and downloads from notices. */
