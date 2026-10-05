@@ -17,10 +17,11 @@ export type LangText = Readonly<Record<string, string>>;
 export type LangTexts = Readonly<Record<string, readonly string[]>>;
 
 /** The record kinds the shapes describe (see docs/shapes.md). */
-export type ShapeName = "agent" | "answer" | "card" | "catalog" | "deck" | "deckSchedule" | "distribution" | "documentReceipt" | "instance" | "libraryDeck" | "libraryDeckSeries" | "preferences" | "reviewState";
+export type ShapeName = "addActivity" | "agent" | "answer" | "card" | "catalog" | "deck" | "deckSchedule" | "distribution" | "documentReceipt" | "instance" | "libraryDeck" | "libraryDeckSeries" | "likeActivity" | "preferences" | "reviewState" | "undoActivity";
 
 /** The shape version this app writes for each kind. */
 export const LATEST_VERSION = {
+  addActivity: 1,
   agent: 1,
   answer: 1,
   card: 5,
@@ -32,9 +33,18 @@ export const LATEST_VERSION = {
   instance: 2,
   libraryDeck: 5,
   libraryDeckSeries: 3,
+  likeActivity: 1,
   preferences: 4,
   reviewState: 2,
+  undoActivity: 1,
 } as const;
+
+/** Add activity format 1: who (as:actor, a WebID) imported which library deck (as:object, its series) and when (as:published). */
+export interface AddActivityV1 {
+  readonly actor: string;
+  readonly deck: string;
+  readonly published: string;
+}
 
 /** A creator or publisher: a foaf:Agent with a name. */
 export interface AgentV1 {
@@ -403,6 +413,14 @@ export interface LibraryDeckSeriesV3 {
   readonly hasCurrentVersion: string;
 }
 
+/** Like activity format 1: the library deck liked (as:object, its series), and optionally who liked it (as:actor, a WebID), when (as:published) and whether the library's inbox has been told (solid-memo:announced). */
+export interface LikeActivityV1 {
+  readonly actor?: string;
+  readonly deck: string;
+  readonly published?: string;
+  readonly announced?: boolean;
+}
+
 /** Preferences format 1: every field optional. */
 export interface PreferencesV1 {
   readonly newCardsPerDay?: number;
@@ -472,6 +490,14 @@ export interface ReviewStateV2 {
   readonly previousLastReviewedAt?: string;
 }
 
+/** Undo activity format 1: who (as:actor, a WebID) undid which like (as:object, an as:Like) and when (as:published). */
+export interface UndoActivityV1 {
+  readonly actor: string;
+  readonly like: string;
+  readonly published: string;
+}
+
+export type AddActivityRecord = { version: 1; data: AddActivityV1 };
 export type AgentRecord = { version: 1; data: AgentV1 };
 export type AnswerRecord = { version: 1; data: AnswerV1 };
 export type CardRecord = { version: 1; data: CardV1 } | { version: 2; data: CardV2 } | { version: 3; data: CardV3 } | { version: 4; data: CardV4 } | { version: 5; data: CardV5 };
@@ -483,11 +509,14 @@ export type DocumentReceiptRecord = { version: 1; data: DocumentReceiptV1 };
 export type InstanceRecord = { version: 1; data: InstanceV1 } | { version: 2; data: InstanceV2 };
 export type LibraryDeckRecord = { version: 1; data: LibraryDeckV1 } | { version: 2; data: LibraryDeckV2 } | { version: 3; data: LibraryDeckV3 } | { version: 4; data: LibraryDeckV4 } | { version: 5; data: LibraryDeckV5 };
 export type LibraryDeckSeriesRecord = { version: 1; data: LibraryDeckSeriesV1 } | { version: 2; data: LibraryDeckSeriesV2 } | { version: 3; data: LibraryDeckSeriesV3 };
+export type LikeActivityRecord = { version: 1; data: LikeActivityV1 };
 export type PreferencesRecord = { version: 1; data: PreferencesV1 } | { version: 2; data: PreferencesV2 } | { version: 3; data: PreferencesV3 } | { version: 4; data: PreferencesV4 };
 export type ReviewStateRecord = { version: 1; data: ReviewStateV1 } | { version: 2; data: ReviewStateV2 };
+export type UndoActivityRecord = { version: 1; data: UndoActivityV1 };
 
 /** A record of any version, by kind. */
 export type VersionedRecord = {
+  addActivity: AddActivityRecord;
   agent: AgentRecord;
   answer: AnswerRecord;
   card: CardRecord;
@@ -499,12 +528,15 @@ export type VersionedRecord = {
   instance: InstanceRecord;
   libraryDeck: LibraryDeckRecord;
   libraryDeckSeries: LibraryDeckSeriesRecord;
+  likeActivity: LikeActivityRecord;
   preferences: PreferencesRecord;
   reviewState: ReviewStateRecord;
+  undoActivity: UndoActivityRecord;
 };
 
 /** The latest record of each kind: what this app writes. */
 export type LatestRecord = {
+  addActivity: AddActivityV1;
   agent: AgentV1;
   answer: AnswerV1;
   card: CardV5;
@@ -516,6 +548,8 @@ export type LatestRecord = {
   instance: InstanceV2;
   libraryDeck: LibraryDeckV5;
   libraryDeckSeries: LibraryDeckSeriesV3;
+  likeActivity: LikeActivityV1;
   preferences: PreferencesV4;
   reviewState: ReviewStateV2;
+  undoActivity: UndoActivityV1;
 };

@@ -437,6 +437,21 @@ describe("deckLibraryPlugin", () => {
     ]);
   });
 
+  it("names the library's inbox in the index it publishes, when given one", async () => {
+    const indexOf = async (inboxUrl: string | undefined) => {
+      const plugin = deckLibraryPlugin({ root, warn: vi.fn(), validators: async () => validators, inboxUrl });
+      const emitFile = vi.fn();
+      await (plugin.generateBundle as unknown as (this: { emitFile: typeof emitFile }) => Promise<void>).call({ emitFile });
+      return emitFile.mock.calls.find((c) => c[0].fileName === "decks/index.ttl")![0].source as string;
+    };
+    const quads = parseTurtle(await indexOf("https://library.example/inbox/"), INDEX);
+    expect(quads.filter((q) => q.subject.value === INDEX && q.predicate.value === "http://www.w3.org/ns/ldp#inbox").map((q) => q.object.value)).toEqual([
+      "https://library.example/inbox/",
+    ]);
+    expect(await indexOf("")).not.toContain("ldp#inbox");
+    expect(await indexOf(undefined)).not.toContain("ldp#inbox");
+  });
+
   it("warns on the console and loads the validators from the vocab package by default", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const plugin = deckLibraryPlugin({ root });

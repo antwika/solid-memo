@@ -29,6 +29,8 @@ import type {
   RegistrationTarget,
 } from "@solid-memo/domain/instance";
 import type { LibraryCard, LibraryDeck, LibraryDeckContent } from "@solid-memo/domain/library";
+import { librarySeriesUrlOf } from "@solid-memo/domain/libraryLayout";
+import type { LibraryAction, LibraryLike, LibraryStats } from "@solid-memo/domain/libraryStats";
 import {
   applyLibraryUpgrade,
   planLibraryUpgrade,
@@ -142,6 +144,8 @@ import type {
   UpdateJournal,
   WriteFence,
   Since,
+  LibraryInbox,
+  LibraryLikeRepository,
 } from "./ports";
 import { AppError } from "@solid-memo/domain/appError";
 
@@ -273,8 +277,30 @@ export interface UseCases {
   removeDeck(deck: Deck): Promise<void>;
   /** The ready-made decks the app offers for import. */
   listLibraryDecks(): Promise<LibraryDeck[]>;
-  /** Copy a library deck, cards included, into an instance as a new deck. */
-  importLibraryDeck(instanceUrl: string, deck: LibraryDeck): Promise<Deck>;
+  /**
+   * Copy a library deck, cards included, into an instance as a new deck,
+   * and tell the library it was imported (docs/library-stats.md), unless
+   * by a guest; the import does not wait on that, nor fail with it.
+   */
+  importLibraryDeck(session: Session, instanceUrl: string, deck: LibraryDeck): Promise<Deck>;
+  /** How many like and have imported each library deck, as last counted; none when they cannot be read. */
+  libraryStats(): Promise<LibraryStats>;
+  /** The library decks the user likes, kept in the instance. */
+  listLibraryLikes(instanceUrl: string): Promise<LibraryLike[]>;
+  /**
+   * Like a library deck: the like is kept in the instance at once, and
+   * the library told of it when it can be; else later, by
+   * announceLibraryLikes. Not for guests, who have no WebID to like as.
+   */
+  likeLibraryDeck(session: Session, instanceUrl: string, deck: LibraryDeck): Promise<void>;
+  /**
+   * No longer like a library deck: the library is told first, and the
+   * like removed only once it has been (or when the library takes no
+   * notices), so it cannot go on counting a like the user took back.
+   */
+  unlikeLibraryDeck(session: Session, instanceUrl: string, deck: LibraryDeck): Promise<void>;
+  /** Tell the library of likes it has not been told of yet; how many it was told of now. */
+  announceLibraryLikes(session: Session, instanceUrl: string): Promise<number>;
   /** A library deck's cards, to look through before importing it. */
   listLibraryCards(deck: LibraryDeck): Promise<LibraryCard[]>;
   /**
@@ -453,6 +479,10 @@ export interface Dependencies {
   ruleset?: string;
   /** The pod a guest studies in on this device; by default there is none. */
   guestPod?: GuestPod;
+  /** Where the user's likes of library decks are kept; by default none are. */
+  libraryLikes?: LibraryLikeRepository;
+  /** Where notices to the library's inbox are sent from; by default none are sent. */
+  libraryInbox?: LibraryInbox;
 }
 
 /** A read made without a known version, which always comes with the contents. */
@@ -470,6 +500,8 @@ const NO_DIGESTS: DigestRepository = { readDigest: async () => null, updateDiges
 const nothing = async () => undefined;
 const none = async (): Promise<never[]> => [];
 const NO_ANSWER_LOG: AnswerLog = { append: nothing, months: none, readMonth: none, removeDay: nothing };
+const NO_LIBRARY_LIKES: LibraryLikeRepository = { listLikes: none, saveLike: nothing, removeLike: nothing };
+const NO_LIBRARY_INBOX: LibraryInbox = { notify: nothing };
 const NO_GUEST_POD: GuestPod = {
   exists: async () => false,
   start: async () => {
@@ -577,6 +609,8 @@ export function createUseCases({
   answerLog = NO_ANSWER_LOG,
   ruleset = "",
   guestPod = NO_GUEST_POD,
+  libraryLikes = NO_LIBRARY_LIKES,
+  libraryInbox = NO_LIBRARY_INBOX,
 }: Dependencies): UseCases {
   /**
    * Normalized card content, or a throw naming what is missing; `saved`
@@ -940,6 +974,31 @@ export function createUseCases({
     return instance;
   }
 
+  /**
+   * Tell the library's inbox the user did `action` to each deck (series
+   * URLs); nothing when the library takes no notices. Throws when a
+   * notice cannot be sent.
+   */
+  async function notifyLibrary(session: Session, action: LibraryAction, deckUrls: readonly string[]): Promise<void> {
+    if (session.guest === true || deckUrls.length === 0) return;
+    const inboxUrl = await deckLibrary.inboxUrl();
+    if (inboxUrl === null) return;
+    for (const deckUrl of deckUrls) {
+      await libraryInbox.notify(inboxUrl, { action, by: session.webId, deckUrl, at: now().toISOString() });
+    }
+  }
+
+  /** As notifyLibrary, for word the user is not to wait on or hear the failure of: an import's. */
+  function notifyLibraryLater(session: Session, action: LibraryAction, deckUrls: () => Promise<readonly string[]>): Promise<void> {
+    return deckUrls()
+      .then((urls) => notifyLibrary(session, action, urls))
+      .catch(() => undefined);
+  }
+
+  function refuseGuest(session: Session): void {
+    if (session.guest === true) throw new Error("A guest has no WebID to like library decks as.");
+  }
+
   async function catalogOf(session: Session, title: string): Promise<Catalog> {
     const name = await webIdDocumentRepository
       .fetchWebIdDocument(session.webId)
@@ -1056,6 +1115,13 @@ export function createUseCases({
         () => true,
         () => false,
       );
+      // The library counts the decks the guest imported, now that there is a WebID to count them by.
+      await notifyLibraryLater(session, "import", async () => {
+        const library = new Set((await deckLibrary.listLibraryDecks()).map((deck) => deck.seriesUrl));
+        return (await deckRepository.listDecks(target))
+          .flatMap((deck) => (deck.sourceUrl === undefined ? [] : [librarySeriesUrlOf(deck.sourceUrl)]))
+          .filter((seriesUrl, index, all) => library.has(seriesUrl) && all.indexOf(seriesUrl) === index);
+      });
       progress.finished();
       return { ok: true, instance, tidied };
     },
@@ -1182,9 +1248,45 @@ export function createUseCases({
     listLibraryDecks() {
       return deckLibrary.listLibraryDecks();
     },
-    async importLibraryDeck(instanceUrl, deck) {
+    async importLibraryDeck(session, instanceUrl, deck) {
       const content = await deckLibrary.fetchLibraryDeck(deck.url);
-      return deckRepository.importDeck(instanceUrl, content);
+      const imported = await deckRepository.importDeck(instanceUrl, content);
+      void notifyLibraryLater(session, "import", async () => [deck.seriesUrl]);
+      return imported;
+    },
+    libraryStats() {
+      return deckLibrary.libraryStats();
+    },
+    listLibraryLikes(instanceUrl) {
+      return libraryLikes.listLikes(instanceUrl);
+    },
+    async likeLibraryDeck(session, instanceUrl, deck) {
+      refuseGuest(session);
+      const like: LibraryLike = { deckUrl: deck.seriesUrl, likedAt: now().toISOString(), announced: false };
+      await libraryLikes.saveLike(instanceUrl, like);
+      try {
+        await notifyLibrary(session, "like", [deck.seriesUrl]);
+      } catch {
+        return;
+      }
+      await libraryLikes.saveLike(instanceUrl, { ...like, announced: true });
+    },
+    async unlikeLibraryDeck(session, instanceUrl, deck) {
+      refuseGuest(session);
+      await notifyLibrary(session, "unlike", [deck.seriesUrl]);
+      await libraryLikes.removeLike(instanceUrl, deck.seriesUrl);
+    },
+    async announceLibraryLikes(session, instanceUrl) {
+      if (session.guest === true) return 0;
+      const pending = (await libraryLikes.listLikes(instanceUrl)).filter((like) => !like.announced);
+      if (pending.length === 0 || (await deckLibrary.inboxUrl()) === null) return 0;
+      let announced = 0;
+      for (const like of pending) {
+        await notifyLibrary(session, "like", [like.deckUrl]);
+        await libraryLikes.saveLike(instanceUrl, { ...like, announced: true });
+        announced += 1;
+      }
+      return announced;
     },
     async listLibraryCards(deck) {
       return (await deckLibrary.fetchLibraryDeck(deck.url)).cards;

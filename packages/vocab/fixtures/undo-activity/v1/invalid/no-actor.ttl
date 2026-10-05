@@ -1,0 +1,9 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix as:         <https://www.w3.org/ns/activitystreams#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<#notice>
+    a as:Undo ;
+    solid-memo:formatVersion 1 ;
+    as:object <#like> ;
+    as:published "2026-10-05T09:14:00.000Z"^^xsd:dateTime .

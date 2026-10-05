@@ -1327,6 +1327,17 @@ dl.facts .sources {
   gap: 0.6rem;
 }
 
+/* The like toggle: its heart filled in the danger red once liked. */
+.library-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.library-like[aria-pressed="true"] .icon {
+  color: var(--danger);
+}
+
 /* The search and topics, outside the import form so Enter never imports;
    laid out as the form is. */
 .library-filters {

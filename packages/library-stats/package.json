@@ -1,0 +1,22 @@
+{
+  "name": "@solid-memo/library-stats",
+  "private": true,
+  "license": "MIT",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run --coverage",
+    "count": "node bin/countLibrary.ts"
+  },
+  "dependencies": {
+    "@inrupt/solid-client-authn-node": "^5.0.1",
+    "@solid-memo/application": "*",
+    "@solid-memo/domain": "*",
+    "@solid-memo/solid": "*",
+    "vite": "^8.3.0"
+  }
+}

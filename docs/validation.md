@@ -28,7 +28,7 @@ flowchart LR
 ```
 
 - `validateInstance` (application) lists the decks, names every document
-  the instance may hold, the [answer log](data-model.md#the-answer-log)'s
+  the instance may hold (its likes of library decks among them), the [answer log](data-model.md#the-answer-log)'s
   month documents included, and asks the `ShapeValidator` port about
   each; `summarize` (domain) counts the violations. It reads only.
 - **Opening an instance** runs `checkInstance` instead: the same check,

@@ -5,6 +5,10 @@ on:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  # The library's likes and downloads are counted on every deploy, and
+  # every six hours besides (docs/library-stats.md).
+  schedule:
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -18,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -30,6 +34,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          # Named in the library's index as where likes and imports are sent; none, none are.
+          LIBRARY_INBOX_URL: ${{ vars.LIBRARY_INBOX_URL }}
+      - name: Count the library's likes and downloads
+        env:
+          LIBRARY_INBOX_URL: ${{ vars.LIBRARY_INBOX_URL }}
+          LIBRARY_STATE_URL: ${{ vars.LIBRARY_STATE_URL }}
+          SOLID_OIDC_ISSUER: ${{ vars.SOLID_OIDC_ISSUER }}
+          SOLID_CLIENT_ID: ${{ secrets.SOLID_CLIENT_ID }}
+          SOLID_CLIENT_SECRET: ${{ secrets.SOLID_CLIENT_SECRET }}
+          LIBRARY_STATS_SALT: ${{ secrets.LIBRARY_STATS_SALT }}
+        # A failed count never stops the deploy: the statistics published last are kept, else none.
+        run: |
+          out="$PWD/apps/web/dist/decks/stats.ttl"
+          if [ -n "$LIBRARY_INBOX_URL" ] && npm run count -w @solid-memo/library-stats -- "$out"; then exit 0; fi
+          echo "::warning::The library's likes and downloads were not counted; keeping the statistics published last."
+          curl -fsSL https://solid-memo.com/decks/stats.ttl -o "$out" || rm -f "$out"
       - uses: actions/configure-pages@v6
         with:
           enablement: true

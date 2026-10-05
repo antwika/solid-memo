@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/preact";
 import { LibraryScreen } from "./LibraryScreen";
 import { I18nProvider } from "./i18n";
 import type { LibraryDeck } from "@solid-memo/domain/library";
+import { NO_LIBRARY_STATS } from "@solid-memo/domain/libraryStats";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
 import { statusTexts } from "../test/liveRegions";
 
@@ -36,6 +37,7 @@ function renderScreen(
 ) {
   const props = {
     decks: [capitals, rivers],
+    stats: NO_LIBRARY_STATS,
     memoryKey: `library-test-${++renders}`,
     deckHref: (deck: LibraryDeck) => `#/library-deck?deck=${deck.url}`,
     previewHref: (deck: LibraryDeck) => `#/library-preview?deck=${deck.url}`,
@@ -276,5 +278,29 @@ describe("LibraryScreen", () => {
   it("shows an import error", () => {
     renderScreen({ error: "pod refused" });
     expect(screen.getByText("pod refused")).toHaveClass("error");
+  });
+
+  it("says how the counts are made, and shows neither counts nor an order to choose before any are counted", () => {
+    renderScreen();
+    expect(screen.getByText(/Importing or liking a deck sends your WebID to solid-memo.com/)).toBeInTheDocument();
+    expect(screen.queryByText(/downloads?\b/)).toBeNull();
+    expect(screen.queryByRole("group", { name: "Order" })).toBeNull();
+  });
+
+  it("counts each deck's downloads and likes, and puts the list in order of either", () => {
+    const stats = {
+      countedAt: "2026-10-05T06:00:00.000Z",
+      decks: { [rivers.seriesUrl]: { likes: 1, downloads: 12 }, [capitals.seriesUrl]: { likes: 4, downloads: 3 } },
+    };
+    renderScreen({ stats });
+    expect(screen.getByText("12 downloads · 1 like")).toBeInTheDocument();
+    expect(screen.getByText("3 downloads · 4 likes")).toBeInTheDocument();
+    const names = () => screen.getAllByRole("checkbox").map((box) => box.getAttribute("aria-label"));
+    expect(names()).toEqual(["Capitals of the world", "Rivers"]);
+    expect(screen.getByRole("radio", { name: "Library order" })).toBeChecked();
+    fireEvent.click(screen.getByRole("radio", { name: "Most downloaded" }));
+    expect(names()).toEqual(["Rivers", "Capitals of the world"]);
+    fireEvent.click(screen.getByRole("radio", { name: "Most liked" }));
+    expect(names()).toEqual(["Capitals of the world", "Rivers"]);
   });
 });

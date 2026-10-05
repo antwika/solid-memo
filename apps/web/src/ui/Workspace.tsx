@@ -474,6 +474,7 @@ export function Workspace({
         return (
           <LibraryContainer
             useCases={useCases}
+            session={session}
             instance={activeInstance!}
             onDone={() =>
               navigate({ screen: "home", instanceUrl: instanceUrl! })
@@ -484,6 +485,7 @@ export function Workspace({
         return (
           <LibraryDeckContainer
             useCases={useCases}
+            session={session}
             instance={activeInstance!}
             deck={activeLibraryDeck!}
             onDone={() =>

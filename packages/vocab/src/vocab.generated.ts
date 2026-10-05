@@ -1,6 +1,6 @@
 /* Generated from vocab/v1.ttl by `npm run generate`. Do not edit: change the source and regenerate. */
 
-/** Solid Memo's own vocabulary, version 1.12 (see docs/vocab.md). */
+/** Solid Memo's own vocabulary, version 1.13 (see docs/vocab.md). */
 export const SM_NS = "https://solid-memo.com/vocab/v1#";
 
 export const SM = {
@@ -134,6 +134,8 @@ export const SM = {
   priorIntervalDays: `${SM_NS}priorIntervalDays`,
   /** The prompt's interval after the answer: the days until it is due again. (Added in 1.10.) */
   nextIntervalDays: `${SM_NS}nextIntervalDays`,
+  /** On a user's like of a library deck (an as:Like in the instance's likes document): whether the library's inbox has been told of it; until it has, the app tries again. (Added in 1.13.) */
+  announced: `${SM_NS}announced`,
   /** The ways a deck can be studied. (Added in 1.6.) */
   StudyDirections: `${SM_NS}StudyDirections`,
   /** Each card is shown by its front and answered with its back. (Added in 1.6.) */

@@ -35,6 +35,7 @@ configs may also use the shared test tooling of the root `package.json`.
 | `browser` | `application`, `domain` | |
 | `deck-library` | `vocab`, `shacl`, `turtle` | |
 | `web` | `application`, `domain`, `vocab`, `solid`, `browser`, `deck-library` | `solid`, `browser`: `src/main.tsx` only; `deck-library`: `vite.config.ts` only |
+| `library-stats` | `application`, `domain`, `solid` | |
 | `e2e-pod` | `application`, `domain`, `vocab`, `solid` | |
 
 Browser code: `src/` of `domain`, `application`, `shacl`, `solid`,
@@ -53,6 +54,7 @@ nowhere else):
 | `rdf-validate-shacl` | `shacl` | `src/engine.ts` only, loaded lazily |
 | `n3` | `turtle`, and the node tooling of `shacl` and `deck-library` | never in the browser |
 | `@solid/community-server` | `e2e-pod` | the local pod the end-to-end tests run against |
+| `@inrupt/solid-client-authn-node` | `library-stats` | `bin/` only: the counter's login as its own agent |
 | `fake-indexeddb` | `browser` | tests only: IndexedDB in node, for the guest's pod's store |
 
 ## Further rules

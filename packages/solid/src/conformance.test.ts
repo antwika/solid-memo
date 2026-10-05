@@ -77,6 +77,15 @@ const FIXTURES: Record<ShapeName, Record<number, object>> = {
   answer: {
     1: { deck: "https://pod.example/c.ttl#deck-1", card: "https://pod.example/d.ttl#se", direction: `${SM_NS}backToFront`, grade: 4, answeredAt: "2026-10-03T08:15:30.123Z", studyDay: "2026-10-03", priorIntervalDays: 6, nextIntervalDays: 15 },
   },
+  likeActivity: {
+    1: { actor: "https://alice.pod.example/profile/card#me", deck: "https://solid-memo.com/decks/index.ttl#world-flags", published: "2026-10-05T09:13:00.000Z", announced: false },
+  },
+  undoActivity: {
+    1: { actor: "https://alice.pod.example/profile/card#me", like: "https://library.example/inbox/n1#like", published: "2026-10-05T09:13:00.000Z" },
+  },
+  addActivity: {
+    1: { actor: "https://alice.pod.example/profile/card#me", deck: "https://solid-memo.com/decks/index.ttl#world-flags", published: "2026-10-05T09:13:00.000Z" },
+  },
   card: {
     1: { front: "Sweden", back: "Stockholm" },
     2: { frontImage: "https://flagcdn.com/se.svg", back: "Sweden" },

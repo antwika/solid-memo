@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { filterLibraryDecks, topicsOf, type LibraryDeck } from "@solid-memo/domain/library";
+import {
+  LIBRARY_SORTS,
+  sortLibraryDecks,
+  statsOf,
+  type LibrarySort,
+  type LibraryStats,
+} from "@solid-memo/domain/libraryStats";
 import { ErrorMessage } from "./ErrorMessage";
 import { LibraryIcon } from "./icons";
 import { useI18n, type I18n, type ErrorText } from "./i18n";
@@ -37,11 +44,16 @@ export function forgetLibrarySelection(memoryKey: string): void {
  * never imports, and only the ticked decks still shown are imported. A
  * hidden status line says the result count once the filters settle.
  *
- * The ticks and filters are remembered under `memoryKey`, so a look at a
- * deck's page or preview and back finds the list as it was left.
+ * Once the library has counted them (docs/library-stats.md), a row also
+ * says how many have imported and like the deck, and the list can be put
+ * in order of either.
+ *
+ * The ticks, filters and order are remembered under `memoryKey`, so a
+ * look at a deck's page or preview and back finds the list as it was left.
  */
 export function LibraryScreen({
   decks,
+  stats,
   memoryKey,
   deckHref,
   previewHref,
@@ -51,6 +63,8 @@ export function LibraryScreen({
   onImport,
 }: {
   decks: LibraryDeck[];
+  /** How many have imported and like each deck; without countedAt, none are shown. */
+  stats: LibraryStats;
   /** Where the ticks and filters are kept between visits. */
   memoryKey: string;
   /** URL of a library deck's page; its name links there. */
@@ -68,7 +82,9 @@ export function LibraryScreen({
   const [selectedUrls, setSelectedUrls] = useRemembered<string[]>(`${memoryKey}:selected`, []);
   const [topics, setTopics] = useRemembered<string[]>(`${memoryKey}:topics`, []);
   const [query, setQuery] = useRemembered(`${memoryKey}:query`, "");
-  const shown = filterLibraryDecks(decks, { topics, query });
+  const [sort, setSort] = useRemembered<LibrarySort>(`${memoryKey}:sort`, "library");
+  const counted = stats.countedAt !== undefined;
+  const shown = sortLibraryDecks(filterLibraryDecks(decks, { topics, query }), stats, counted ? sort : "library");
   // A deck the filters hide stays ticked for when it shows again, but is
   // not imported: the import never includes what the user cannot see.
   const selected = shown.filter((deck) => selectedUrls.includes(deck.url));
@@ -118,6 +134,7 @@ export function LibraryScreen({
         <span class="hint">{count}</span>
       </header>
       <p>{t("library.intro")}</p>
+      <p class="hint">{t("library.statsNote")}</p>
       {decks.length === 0 ? (
         <p>{t("library.empty")}</p>
       ) : (
@@ -134,6 +151,22 @@ export function LibraryScreen({
                       onChange={(e) => toggleTopic(topic.iri, e.currentTarget.checked)}
                     />
                     <ReaderText text={topic.label} />
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            {counted && (
+              <fieldset class="library-topics library-sort">
+                <legend>{t("library.sort")}</legend>
+                {LIBRARY_SORTS.map((option) => (
+                  <label key={option} class="checkbox-option">
+                    <input
+                      type="radio"
+                      name="library-sort"
+                      checked={sort === option}
+                      onChange={() => setSort(() => option)}
+                    />
+                    {t(`library.sortBy.${option}`)}
                   </label>
                 ))}
               </fieldset>
@@ -175,6 +208,13 @@ export function LibraryScreen({
                   </a>
                   <span class="library-deck-meta">
                     <span class="hint">{t("common.cardCount", { count: deck.cardCount })}</span>
+                    {counted && (
+                      <span class="hint">
+                        {t("library.downloadCount", { count: statsOf(stats, deck.seriesUrl).downloads })}
+                        {" · "}
+                        {t("library.likeCount", { count: statsOf(stats, deck.seriesUrl).likes })}
+                      </span>
+                    )}
                     {isImported(deck) && (
                       <span class="hint library-imported">{t("library.alreadyImported")}</span>
                     )}

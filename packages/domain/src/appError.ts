@@ -105,6 +105,7 @@ export const ERROR_TEMPLATES = {
   guestStorageAborted:
     "This browser refused to save a change to the guest study. Check that it has room to keep data, then try again.",
   addFailed: "Solid Memo could not save to your Pod. Check your connection and try again.",
+  libraryNoticeFailed: "Solid Memo could not tell the deck library. It will try again later.",
 } as const satisfies Record<string, ErrorTemplate>;
 
 export type ErrorCode = keyof typeof ERROR_TEMPLATES;

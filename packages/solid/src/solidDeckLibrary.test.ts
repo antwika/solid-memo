@@ -7,7 +7,7 @@ import {
   setThing,
 } from "@inrupt/solid-client";
 import { createSolidDeckLibrary } from "./solidDeckLibrary";
-import { DCTERMS, RDF, SM } from "./vocab";
+import { DCTERMS, LDP, RDF, SCHEMA, SM } from "./vocab";
 
 vi.mock("@inrupt/solid-client", async (importOriginal) => {
   const actual =
@@ -82,5 +82,54 @@ describe("fetchLibraryDeck", () => {
       ],
     });
     expect(getSolidDataset).toHaveBeenCalledWith(DOC, { fetch });
+  });
+});
+
+describe("libraryStats", () => {
+  const STATS = "https://solid-memo.com/decks/stats.ttl";
+
+  it("reads the statistics published beside the index", async () => {
+    const things = [
+      buildThing(createThing({ url: STATS })).addDatetime(DCTERMS.modified, new Date("2026-10-05T06:00:00.000Z")).build(),
+      buildThing(createThing({ url: `${INDEX}#capitals` }))
+        .addIri(SCHEMA.interactionStatistic, `${STATS}#capitals-likes`)
+        .addIri(SCHEMA.interactionStatistic, `${STATS}#capitals-downloads`)
+        .build(),
+      buildThing(createThing({ url: `${STATS}#capitals-likes` }))
+        .addIri(SCHEMA.interactionType, SCHEMA.LikeAction)
+        .addInteger(SCHEMA.userInteractionCount, 3)
+        .build(),
+      buildThing(createThing({ url: `${STATS}#capitals-downloads` }))
+        .addIri(SCHEMA.interactionType, SCHEMA.DownloadAction)
+        .addInteger(SCHEMA.userInteractionCount, 12)
+        .build(),
+    ];
+    vi.mocked(getSolidDataset).mockResolvedValue(things.reduce((dataset, thing) => setThing(dataset, thing), mockSolidDatasetFrom(STATS)));
+    await expect(makeLibrary().libraryStats()).resolves.toEqual({
+      countedAt: "2026-10-05T06:00:00.000Z",
+      decks: { [`${INDEX}#capitals`]: { likes: 3, downloads: 12 } },
+    });
+    expect(getSolidDataset).toHaveBeenCalledWith(STATS, { fetch });
+  });
+
+  it("has none when they cannot be read", async () => {
+    vi.mocked(getSolidDataset).mockRejectedValue(new Error("404"));
+    await expect(makeLibrary().libraryStats()).resolves.toEqual({ decks: {} });
+  });
+});
+
+describe("inboxUrl", () => {
+  it("is the inbox the index's catalogue names; null when it names none", async () => {
+    const catalog = buildThing(createThing({ url: `${INDEX}#catalog` })).addIri(RDF.type, "http://www.w3.org/ns/dcat#Catalog");
+    vi.mocked(getSolidDataset).mockResolvedValueOnce(
+      setThing(mockSolidDatasetFrom(INDEX), catalog.addIri(LDP.inbox, "https://library.example/inbox/").build()),
+    );
+    await expect(makeLibrary().inboxUrl()).resolves.toBe("https://library.example/inbox/");
+    vi.mocked(getSolidDataset).mockResolvedValueOnce(
+      setThing(mockSolidDatasetFrom(INDEX), buildThing(createThing({ url: `${INDEX}#catalog` })).addIri(RDF.type, "http://www.w3.org/ns/dcat#Catalog").build()),
+    );
+    await expect(makeLibrary().inboxUrl()).resolves.toBeNull();
+    vi.mocked(getSolidDataset).mockResolvedValueOnce(mockSolidDatasetFrom(INDEX));
+    await expect(makeLibrary().inboxUrl()).resolves.toBeNull();
   });
 });

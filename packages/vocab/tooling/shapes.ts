@@ -26,12 +26,14 @@ const RDFS_COMMENT = "http://www.w3.org/2000/01/rdf-schema#comment";
 /**
  * The vocabularies a shape's sh:class may come from: Solid Memo's own,
  * and the standard ones whose classes it writes (DCAT catalogues,
- * datasets and distributions; FOAF agents).
+ * datasets and distributions; FOAF agents; ActivityStreams activities:
+ * likes, undoing them and adding a library deck to a pod).
  */
 export const CLASS_NAMESPACES = [
   SM_NS,
   "http://www.w3.org/ns/dcat#",
   "http://xmlns.com/foaf/0.1/",
+  "https://www.w3.org/ns/activitystreams#",
 ];
 
 export type TermKind =
@@ -131,7 +133,7 @@ function parseShapeFile(file: TurtleFile): ShapeModel[] {
         targetClass === undefined ||
         !CLASS_NAMESPACES.some((ns) => targetClass.value.startsWith(ns))
       ) {
-        fail(`"${name}" needs an sh:class in the Solid Memo, DCAT or FOAF vocabulary.`);
+        fail(`"${name}" needs an sh:class in the Solid Memo, DCAT, FOAF or ActivityStreams vocabulary.`);
       }
       const fragment = localName(iri);
       const context: ShapeContext =

@@ -97,6 +97,10 @@ flowchart LR
 │                        sm:previous* snapshot = state before the day's
 │                        first review (restored by "reset the day");
 │                        sm:formatVersion 2
+├── likes.ttl       the library decks the user likes: one as:Like per
+│                        deck (#like-<name>), as:object (its series),
+│                        as:published, sm:announced; written whole
+│                        (library-stats.md); sm:formatVersion 1
 ├── history/<YYYY-MM>.ttl  the answer log (below): one sm:Answer per grade
 │                        given in study that month, appended, never
 │                        edited; sm:formatVersion 1

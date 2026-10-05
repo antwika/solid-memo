@@ -45,6 +45,7 @@ function renderScreen(
     busy: false,
     error: null,
     onImport: vi.fn(),
+    like: { liked: false, busy: false, error: null, onToggle: vi.fn() },
     ...overrides,
   };
   const view = render(<LibraryDeckScreen {...props} />);
@@ -98,6 +99,7 @@ describe("LibraryDeckScreen", () => {
           busy={false}
           error={null}
           onImport={vi.fn()}
+          like="guest"
         />
       </I18nProvider>,
     );
@@ -257,5 +259,44 @@ describe("LibraryDeckScreen", () => {
   it("shows an import error", () => {
     renderScreen({ error: "pod refused" });
     expect(screen.getByText("pod refused")).toHaveClass("error");
+  });
+
+  it("counts its downloads and likes as of when they were counted, once there are counts", () => {
+    renderScreen();
+    expect(screen.queryByText("Downloads", { selector: "dt" })).toBeNull();
+    cleanup();
+    renderScreen({ stats: { likes: 2, downloads: 9, countedAt: "2026-10-05T06:00:00.000Z" } });
+    expect(fact("Downloads")).toHaveTextContent(/^9, as of /);
+    expect(fact("Likes")).toHaveTextContent(/^2, as of /);
+  });
+
+  it("likes and unlikes it with a toggle button", () => {
+    const onToggle = vi.fn();
+    renderScreen({ like: { liked: false, busy: false, error: null, onToggle } });
+    const button = screen.getByRole("button", { name: "Like" });
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByText(/You like this deck/)).toBeNull();
+    fireEvent.click(button);
+    expect(onToggle).toHaveBeenCalledOnce();
+    cleanup();
+    renderScreen({ like: { liked: true, busy: false, error: "Could not tell", onToggle } });
+    expect(screen.getByRole("button", { name: "Like" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/You like this deck/)).toBeInTheDocument();
+    expect(screen.getByText("Could not tell")).toBeInTheDocument();
+  });
+
+  it("does nothing more while a like is saved", () => {
+    const onToggle = vi.fn();
+    renderScreen({ like: { liked: false, busy: true, error: null, onToggle } });
+    const button = screen.getByRole("button", { name: "Saving…" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(button);
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it("asks a guest to log in to like it", () => {
+    renderScreen({ like: "guest" });
+    expect(screen.queryByRole("button", { name: "Like" })).toBeNull();
+    expect(screen.getByText("Log in with your Pod to like decks.")).toBeInTheDocument();
   });
 });

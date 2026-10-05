@@ -1,7 +1,10 @@
+import { useEffect } from "preact/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Instance } from "@solid-memo/domain/instance";
 import { isCopyOf, type LibraryDeck } from "@solid-memo/domain/library";
+import { NO_LIBRARY_STATS } from "@solid-memo/domain/libraryStats";
+import type { Session } from "@solid-memo/domain/session";
 import { ErrorMessage } from "./ErrorMessage";
 import { useI18n } from "./i18n";
 import { forgetLibrarySelection, LibraryScreen } from "./LibraryScreen";
@@ -10,14 +13,17 @@ import { libraryDeckHref, libraryPreviewHref } from "./router";
 
 /**
  * Owns the library listing and the import mutation for one instance;
- * returns to the deck list once every selected deck is in.
+ * returns to the deck list once every selected deck is in. Opening it
+ * also tells the library of likes it was not told of before.
  */
 export function LibraryContainer({
   useCases,
+  session,
   instance,
   onDone,
 }: {
   useCases: UseCases;
+  session: Session;
   instance: Instance;
   /** Called after a successful import. */
   onDone: () => void;
@@ -32,6 +38,16 @@ export function LibraryContainer({
     queryFn: () => useCases.listLibraryDecks(),
   });
 
+  const statsQuery = useQuery({
+    queryKey: ["libraryStats"],
+    queryFn: () => useCases.libraryStats(),
+  });
+
+  useEffect(() => {
+    // Best effort: what is not told now is tried again next time.
+    useCases.announceLibraryLikes(session, instance.url).catch(() => undefined);
+  }, [useCases, session, instance.url]);
+
   const decksQuery = useQuery({
     queryKey: ["decks", instance.url],
     queryFn: () => useCases.listDecks(instance.url),
@@ -41,7 +57,7 @@ export function LibraryContainer({
   const importMutation = useMutation({
     mutationFn: async (decks: LibraryDeck[]) => {
       for (const deck of decks) {
-        await useCases.importLibraryDeck(instance.url, deck);
+        await useCases.importLibraryDeck(session, instance.url, deck);
       }
     },
     onSuccess: async () => {
@@ -68,6 +84,7 @@ export function LibraryContainer({
       key={memoryKey}
       memoryKey={memoryKey}
       decks={libraryQuery.data}
+      stats={statsQuery.data ?? NO_LIBRARY_STATS}
       deckHref={(deck) => libraryDeckHref(instance.url, deck.seriesUrl)}
       previewHref={(deck) => libraryPreviewHref(instance.url, deck.seriesUrl)}
       isImported={(deck) => podDecks.some((podDeck) => isCopyOf(podDeck, deck))}

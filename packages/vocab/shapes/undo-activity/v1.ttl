@@ -1,0 +1,57 @@
+@base <https://solid-memo.com/shapes/undo-activity/v1.ttl> .
+
+@prefix sh:         <http://www.w3.org/ns/shacl#> .
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix as:         <https://www.w3.org/ns/activitystreams#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Undoing a like, format 1: an ActivityStreams as:Undo sent to the library's
+# inbox, whose object is the as:Like undone, a subject of the same notice.
+<#shape>
+    a sh:NodeShape ;
+    sh:name "UndoActivityV1" ;
+    rdfs:comment "Undo activity format 1: who (as:actor, a WebID) undid which like (as:object, an as:Like) and when (as:published)." ;
+    sh:nodeKind sh:IRI ;
+    sh:class as:Undo ;
+    sh:property <#formatVersion> ,
+                <#actor> ,
+                <#like> ,
+                <#published> .
+
+<#formatVersion>
+    a sh:PropertyShape ;
+    sh:path solid-memo:formatVersion ;
+    sh:datatype xsd:integer ;
+    sh:maxCount 1 ;
+    sh:in ( 1 ) .
+
+<#actor>
+    a sh:PropertyShape ;
+    sh:path as:actor ;
+    sh:name "actor" ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An undo names who did it, an IRI."@en ,
+               "En ångring anger vem som gjorde det, en IRI."@sv .
+
+<#like>
+    a sh:PropertyShape ;
+    sh:path as:object ;
+    sh:name "like" ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An undo names the like it undoes, an IRI."@en ,
+               "En ångring anger gillningen den ångrar, en IRI."@sv .
+
+<#published>
+    a sh:PropertyShape ;
+    sh:path as:published ;
+    sh:name "published" ;
+    sh:datatype xsd:dateTime ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An undo states when it was done, one xsd:dateTime."@en ,
+               "En ångring anger när det gjordes, ett xsd:dateTime."@sv .

@@ -312,6 +312,21 @@ export async function appendToDocument(url: string, thing: Thing, fetch: typeof 
   if (!response.ok) throw new AppError("addFailed", { url, status: response.status });
 }
 
+/**
+ * Subjects' triples as a Turtle document of their own (N-Triples lines),
+ * every IRI that starts with `base` written relative (`<base#x>` as
+ * `<#x>`, `<base/a.ttl>` as `<a.ttl>` for a folder's `base/`), so they
+ * resolve wherever the document ends up: the body of a POST, whose URL
+ * the server picks, or a file published with the site.
+ */
+export function turtleOfThings(things: readonly Thing[], base: string): string {
+  const dataset = things.reduce(setThing, createSolidDataset());
+  return [...toRdfJsDataset(dataset)]
+    .map((quad) => tripleLine(quad)!.replaceAll(`<${base}`, "<"))
+    .join("\n")
+    .concat("\n");
+}
+
 /** Where @inrupt/solid-client names a Thing that has no URL yet: `<#name>` in the document. */
 const LOCAL_NODE = "https://inrupt.com/.well-known/sdk-local-node/";
 const XSD_STRING = "http://www.w3.org/2001/XMLSchema#string";

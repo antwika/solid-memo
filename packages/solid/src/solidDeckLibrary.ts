@@ -1,7 +1,9 @@
 import { getSolidDataset } from "@inrupt/solid-client";
 import type { DeckLibrary } from "@solid-memo/application/ports";
 import type { LibraryDeck } from "@solid-memo/domain/library";
+import { NO_LIBRARY_STATS } from "@solid-memo/domain/libraryStats";
 import { toLibraryDeckContent, toLibraryDecks } from "./mappers/libraryMapper";
+import { toLibraryInboxUrl, toLibraryStats } from "./mappers/libraryStatsMapper";
 
 export interface SolidDeckLibraryDeps {
   /**
@@ -17,7 +19,9 @@ export interface SolidDeckLibraryDeps {
 /**
  * Reads the deck library through its index. The build always publishes
  * an index (empty when there are no decks), so a failed read is an error
- * worth showing, not an empty library.
+ * worth showing, not an empty library. Its statistics are published
+ * beside the index, stats.ttl, when they have been counted
+ * (docs/library-stats.md): without them the library still works.
  */
 export function createSolidDeckLibrary({
   fetch,
@@ -30,6 +34,19 @@ export function createSolidDeckLibrary({
 
     async fetchLibraryDeck(url) {
       return toLibraryDeckContent(url, await getSolidDataset(url, { fetch }));
+    },
+
+    async libraryStats() {
+      const url = new URL("stats.ttl", indexUrl).href;
+      try {
+        return toLibraryStats(await getSolidDataset(url, { fetch }), url);
+      } catch {
+        return NO_LIBRARY_STATS;
+      }
+    },
+
+    async inboxUrl() {
+      return toLibraryInboxUrl(await getSolidDataset(indexUrl, { fetch }));
     },
   };
 }

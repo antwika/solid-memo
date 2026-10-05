@@ -1,0 +1,65 @@
+@base <https://solid-memo.com/shapes/like-activity/v1.ttl> .
+
+@prefix sh:         <http://www.w3.org/ns/shacl#> .
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix as:         <https://www.w3.org/ns/activitystreams#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
+
+# A like of a library deck, format 1: an ActivityStreams as:Like. In the
+# user's instance (likes.ttl), one per liked deck, saying whether the
+# library has been told; in a notice to the library's inbox, by whom.
+<#shape>
+    a sh:NodeShape ;
+    sh:name "LikeActivityV1" ;
+    rdfs:comment "Like activity format 1: the library deck liked (as:object, its series), and optionally who liked it (as:actor, a WebID), when (as:published) and whether the library's inbox has been told (solid-memo:announced)." ;
+    sh:nodeKind sh:IRI ;
+    sh:class as:Like ;
+    sh:property <#formatVersion> ,
+                <#actor> ,
+                <#deck> ,
+                <#published> ,
+                <#announced> .
+
+<#formatVersion>
+    a sh:PropertyShape ;
+    sh:path solid-memo:formatVersion ;
+    sh:datatype xsd:integer ;
+    sh:maxCount 1 ;
+    sh:in ( 1 ) .
+
+<#actor>
+    a sh:PropertyShape ;
+    sh:path as:actor ;
+    sh:name "actor" ;
+    sh:nodeKind sh:IRI ;
+    sh:maxCount 1 ;
+    sh:message "A like names at most one actor, an IRI."@en ,
+               "En gillning anger högst en aktör, en IRI."@sv .
+
+<#deck>
+    a sh:PropertyShape ;
+    sh:path as:object ;
+    sh:name "deck" ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "A like names the library deck liked, an IRI."@en ,
+               "En gillning anger biblioteksleken som gillas, en IRI."@sv .
+
+<#published>
+    a sh:PropertyShape ;
+    sh:path as:published ;
+    sh:name "published" ;
+    sh:datatype xsd:dateTime ;
+    sh:maxCount 1 ;
+    sh:message "A like states when it was given in at most one xsd:dateTime."@en ,
+               "En gillning anger när den gavs i högst ett xsd:dateTime."@sv .
+
+<#announced>
+    a sh:PropertyShape ;
+    sh:path solid-memo:announced ;
+    sh:datatype xsd:boolean ;
+    sh:maxCount 1 ;
+    sh:message "A like states whether the library has been told of it in at most one xsd:boolean."@en ,
+               "En gillning anger om biblioteket har fått veta om den i högst ett xsd:boolean."@sv .

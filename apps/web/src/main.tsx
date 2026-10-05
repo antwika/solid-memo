@@ -9,6 +9,8 @@ import { createSolidDeckLibrary } from "@solid-memo/solid/solidDeckLibrary";
 import { createSolidDeckRepository } from "@solid-memo/solid/solidDeckRepository";
 import { createSolidDigestRepository } from "@solid-memo/solid/solidDigestRepository";
 import { createSolidAnswerLog } from "@solid-memo/solid/solidAnswerLog";
+import { createSolidLibraryInbox } from "@solid-memo/solid/solidLibraryInbox";
+import { createSolidLibraryLikeRepository } from "@solid-memo/solid/solidLibraryLikeRepository";
 import { createSolidInstanceRepository } from "@solid-memo/solid/solidInstanceRepository";
 import { createSolidPreferencesRepository } from "@solid-memo/solid/solidPreferencesRepository";
 import { createLocalStorageLanguagePreference } from "@solid-memo/browser/localStorageLanguagePreference";
@@ -96,6 +98,9 @@ const useCases = createUseCases({
   answerLog: createSolidAnswerLog({ fetch: podFetch, checkWrite }),
   ruleset: __SHAPES_RULESET__,
   guestPod: createLocalGuestPod({ fetch: guestFetch, store: guestStore }),
+  libraryLikes: createSolidLibraryLikeRepository({ fetch: podFetch, checkWrite }),
+  // Notices are sent as the logged-in user, so the library's inbox takes them from Solid logins only.
+  libraryInbox: createSolidLibraryInbox({ fetch: podFetch }),
 });
 
 const queryClient = new QueryClient();

@@ -12,6 +12,7 @@ import type {
   RegistrationTarget,
 } from "@solid-memo/domain/instance";
 import type { LibraryDeck, LibraryDeckContent } from "@solid-memo/domain/library";
+import type { LibraryLike, LibraryNotice, LibraryStats, Tally } from "@solid-memo/domain/libraryStats";
 import type { StoredPreferences, StudyPreferences } from "@solid-memo/domain/preferences";
 import type { ReviewKey, ReviewState } from "@solid-memo/domain/review";
 import type { Answer } from "@solid-memo/domain/answer";
@@ -213,6 +214,47 @@ export interface DeckLibrary {
   listLibraryDecks(): Promise<LibraryDeck[]>;
   /** The deck document with its cards. */
   fetchLibraryDeck(url: string): Promise<LibraryDeckContent>;
+  /**
+   * How many like and have imported each deck, as last counted
+   * (docs/library-stats.md); none when the library publishes none or
+   * they cannot be read: never an error.
+   */
+  libraryStats(): Promise<LibraryStats>;
+  /** The inbox the library takes notices in, as its index names it; null when it names none. */
+  inboxUrl(): Promise<string | null>;
+}
+
+/** Driven port: the user's likes of library decks, one per deck, kept in the instance. */
+export interface LibraryLikeRepository {
+  /** Every like; a like that does not fit its shape is left out. */
+  listLikes(instanceUrl: string): Promise<LibraryLike[]>;
+  /** Write the like of its deck, a new one or over the one there is. */
+  saveLike(instanceUrl: string, like: LibraryLike): Promise<void>;
+  /** Remove the like of the deck; none there is nothing to do. */
+  removeLike(instanceUrl: string, deckUrl: string): Promise<void>;
+}
+
+/**
+ * Driven port of the library's counter (libraryCounter.ts), not the app:
+ * the inbox it reads notices from and the tally it keeps between runs.
+ */
+export interface LibraryCounterStore {
+  /** Every document in the inbox. */
+  listNotices(inboxUrl: string): Promise<string[]>;
+  /** The notice a document holds; null when it holds none that fits its shape, or is gone. */
+  readNotice(url: string): Promise<LibraryNotice | null>;
+  /** Delete a document of the inbox; one that is gone counts as deleted. */
+  deleteNotice(url: string): Promise<void>;
+  /** The tally kept; empty when none is kept yet. */
+  readTally(url: string): Promise<Tally>;
+  /** Keep the tally, in place of the one kept. */
+  saveTally(url: string, tally: Tally): Promise<void>;
+}
+
+/** Driven port: the deck library's inbox, which counts its likes and downloads from notices. */
+export interface LibraryInbox {
+  /** Send the notice, as the logged-in user. */
+  notify(inboxUrl: string, notice: LibraryNotice): Promise<void>;
 }
 
 /** Driven port: SM-2 review state, stored separately from card content. */

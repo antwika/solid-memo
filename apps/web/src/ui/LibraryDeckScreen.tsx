@@ -1,11 +1,12 @@
 import { licenseLabel } from "@solid-memo/domain/license";
 import { keywordsIn } from "@solid-memo/domain/keywords";
 import { topicLabels, type LibraryDeck, type LibrarySource } from "@solid-memo/domain/library";
+import type { DeckStats } from "@solid-memo/domain/libraryStats";
 import { AuthorNames } from "./AuthorName";
 import { ErrorMessage } from "./ErrorMessage";
 import { ExternalLink } from "./ExternalLink";
 import { useI18n, type ErrorText } from "./i18n";
-import { LibraryIcon } from "./icons";
+import { HeartIcon, LibraryIcon } from "./icons";
 import { linkify } from "./linkify";
 import { ReaderText, ReaderTexts } from "./ReaderText";
 
@@ -14,7 +15,9 @@ import { ReaderText, ReaderTexts } from "./ReaderText";
  * only those in the reader's language), who made it
  * and under what terms, when it was made and last changed, which
  * release it is and what changed in it, and what it was compiled from —
- * with a look at its cards and an import button for this deck alone.
+ * with a look at its cards and an import button for this deck alone;
+ * how many have imported and like it, once the library has counted
+ * them; and a like button, for a user logged in with a pod.
  * Everything shown comes from the library index, so any link in it goes
  * through ExternalLink.
  */
@@ -26,6 +29,8 @@ export function LibraryDeckScreen({
   busy,
   error,
   onImport,
+  stats,
+  like,
 }: {
   deck: LibraryDeck;
   /** URL of the deck's card list. */
@@ -38,6 +43,15 @@ export function LibraryDeckScreen({
   busy: boolean;
   error: ErrorText | null;
   onImport: () => void;
+  /** The deck's counts and when they were counted; absent until the library has counted any. */
+  stats?: DeckStats & { countedAt: string };
+  /**
+   * Whether the user likes the deck, and the toggle; "guest" for a guest,
+   * who has no WebID to like as.
+   */
+  like:
+    | "guest"
+    | { liked: boolean; busy: boolean; error: ErrorText | null; onToggle: () => void };
 }) {
   const { t, locale, readerText, readerLang, formatDate, directionLabel } = useI18n();
   const topics = topicLabels(deck.themes);
@@ -81,6 +95,14 @@ export function LibraryDeckScreen({
           <>
             <dt>{t("libraryDeck.keywords")}</dt>
             <dd>{keywords.join(", ")}</dd>
+          </>
+        )}
+        {stats !== undefined && (
+          <>
+            <dt>{t("libraryDeck.downloads")}</dt>
+            <dd>{t("libraryDeck.countAsOf", { count: stats.downloads, date: formatDate(stats.countedAt) })}</dd>
+            <dt>{t("libraryDeck.likes")}</dt>
+            <dd>{t("libraryDeck.countAsOf", { count: stats.likes, date: formatDate(stats.countedAt) })}</dd>
           </>
         )}
         <dt>{t("libraryDeck.release")}</dt>
@@ -150,11 +172,31 @@ export function LibraryDeckScreen({
         <a class="button" href={previewHref}>
           {t("libraryDeck.preview")}
         </a>
+        {like !== "guest" && (
+          // Only aria-disabled while it saves, so it keeps the focus.
+          <button
+            class="library-like"
+            aria-pressed={like.liked}
+            aria-disabled={like.busy}
+            onClick={() => {
+              if (!like.busy) like.onToggle();
+            }}
+          >
+            <HeartIcon filled={like.liked} />
+            {like.busy ? t("libraryDeck.liking") : t("libraryDeck.like")}
+          </button>
+        )}
         {imported && (
           <span class="hint library-imported">{t("libraryDeck.alreadyImported")}</span>
         )}
       </div>
+      {like === "guest" ? (
+        <p class="hint">{t("libraryDeck.likeGuest")}</p>
+      ) : (
+        like.liked && <p class="hint">{t("libraryDeck.likedNote")}</p>
+      )}
       <ErrorMessage error={error} />
+      {like !== "guest" && <ErrorMessage error={like.error} />}
     </section>
   );
 }

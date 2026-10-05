@@ -121,12 +121,12 @@ describe("parseShapes", () => {
     rejects(
       "thing/v1.ttl",
       `${HEAD} <#shape> a sh:NodeShape ; sh:name "ThingV1" ; sh:property <#formatVersion> . ${V1_VERSION}`,
-      '"ThingV1" needs an sh:class in the Solid Memo, DCAT or FOAF vocabulary.',
+      '"ThingV1" needs an sh:class in the Solid Memo, DCAT, FOAF or ActivityStreams vocabulary.',
     );
     rejects(
       "thing/v1.ttl",
       `${HEAD} <#shape> a sh:NodeShape ; sh:name "ThingV1" ; sh:class <https://other.example/#Thing> ; sh:property <#formatVersion> . ${V1_VERSION}`,
-      '"ThingV1" needs an sh:class in the Solid Memo, DCAT or FOAF vocabulary.',
+      '"ThingV1" needs an sh:class in the Solid Memo, DCAT, FOAF or ActivityStreams vocabulary.',
     );
     rejects(
       "thing/v1.ttl",

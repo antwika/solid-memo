@@ -440,7 +440,22 @@
       "other": "Import {count} decks"
     },
     "importing": "Importing…",
-    "loading": "Loading the deck library…"
+    "loading": "Loading the deck library…",
+    "statsNote": "Download and like counts are updated every few hours. Importing or liking a deck sends your WebID to solid-memo.com, which keeps only a code made from it and publishes only the totals.",
+    "sort": "Order",
+    "sortBy": {
+      "library": "Library order",
+      "downloads": "Most downloaded",
+      "likes": "Most liked"
+    },
+    "downloadCount": {
+      "one": "{count} download",
+      "other": "{count} downloads"
+    },
+    "likeCount": {
+      "one": "{count} like",
+      "other": "{count} likes"
+    }
   },
   "libraryBrowser": {
     "heading": "Cards: {deck}",
@@ -487,7 +502,14 @@
     "import": "Import this deck",
     "importing": "Importing…",
     "preview": "Preview",
-    "alreadyImported": "Already imported"
+    "alreadyImported": "Already imported",
+    "downloads": "Downloads",
+    "likes": "Likes",
+    "countAsOf": "{count}, as of {date}",
+    "like": "Like",
+    "liking": "Saving…",
+    "likedNote": "You like this deck. Your like is kept in your Pod; the count above updates within a few hours.",
+    "likeGuest": "Log in with your Pod to like decks."
   },
   "libraryPreview": {
     "heading": "Preview: {deck}",
@@ -971,7 +993,8 @@
     "noGuestPod": "There is no guest study on this device.",
     "guestPodStartFailed": "The guest study on this device could not be opened. Reload the page and try again.",
     "guestStorageAborted": "This browser refused to save a change to the guest study. Check that it has room to keep data, then try again.",
-    "addFailed": "Solid Memo could not save to your Pod. Check your connection and try again."
+    "addFailed": "Solid Memo could not save to your Pod. Check your connection and try again.",
+    "libraryNoticeFailed": "Solid Memo could not tell the deck library. It will try again later."
   },
   "statistics": {
     "heading": "Statistics",

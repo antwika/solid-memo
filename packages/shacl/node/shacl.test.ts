@@ -15,12 +15,17 @@ import { parseTurtle, readTurtleTree } from "@solid-memo/turtle/rdf";
 const ROOT = VOCAB_ROOT;
 const SM = "https://solid-memo.com/vocab/v1#";
 const DC = "http://purl.org/dc/terms/";
+const AS = "https://www.w3.org/ns/activitystreams#";
 
 /** What each invalid fixture must be rejected for. */
 const EXPECTED: Record<string, { path?: string; message: string }> = {
   "answer/v1/invalid/grade-out-of-range.ttl": { path: `${SM}grade`, message: "An answer's grade is one whole number, 0 to 5." },
   "answer/v1/invalid/both-ways.ttl": { path: `${SM}answeredDirection`, message: "An answer states the way the card was asked" },
   "answer/v1/invalid/study-day-as-date.ttl": { path: `${SM}answeredOn`, message: "The study day an answer counts towards" },
+  "like-activity/v1/invalid/deck-as-literal.ttl": { path: `${AS}object`, message: "A like names the library deck liked, an IRI." },
+  "like-activity/v1/invalid/announced-as-string.ttl": { path: `${SM}announced`, message: "A like states whether the library has been told of it" },
+  "undo-activity/v1/invalid/no-actor.ttl": { path: `${AS}actor`, message: "An undo names who did it, an IRI." },
+  "add-activity/v1/invalid/two-decks.ttl": { path: `${AS}object`, message: "An add names the library deck added, an IRI." },
   "card/v1/invalid/missing-back.ttl": { path: `${SM}back`, message: "A format-1 card has text on its back." },
   "card/v2/invalid/image-as-literal.ttl": { path: `${SM}frontImage`, message: "A picture is an IRI" },
   "card/v2/invalid/side-without-content.ttl": { message: "Each side of a card needs text or a picture." },

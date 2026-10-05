@@ -93,6 +93,9 @@ version must match its file's.
 | Distribution 1 | A `dcat:Distribution`: `dcat:accessURL` 1..1; `dcat:downloadURL`, `dcat:mediaType`, `dcterms:format` 0..1 |
 | Document receipt 1 | In an instance's [digest](data-model.md#the-digest): `sm:receiptOf` (the document) and `sm:documentVersion` (its ETag) 1..1; `sm:conformedTo` (the rules it conformed to) and `sm:latestFormat` 0..1 |
 | Answer 1 | In an instance's [answer log](data-model.md#the-answer-log): `sm:answeredDeck` and `sm:answeredCard` (IRIs), `sm:answeredDirection` (`sm:frontToBack` or `sm:backToFront`), `sm:grade` (0–5), `sm:answeredAt` (xsd:dateTime), `sm:answeredOn` (`YYYY-MM-DD`), `sm:nextIntervalDays` 1..1; `sm:priorIntervalDays` 0..1, absent on a prompt's first answer |
+| Like activity 1 | An ActivityStreams `as:Like` of a library deck ([library-stats.md](library-stats.md)): `as:object` (the deck's series, an IRI) 1..1; `as:actor` (a WebID), `as:published` (xsd:dateTime) and `sm:announced` (xsd:boolean) 0..1. In an instance's `likes.ttl` without an actor; in a notice to the library's inbox with one |
+| Undo activity 1 | An `as:Undo` in a notice to the library's inbox: `as:actor`, `as:object` (the `as:Like` undone, a subject of the same notice) and `as:published` 1..1 |
+| Add activity 1 | An `as:Add` in a notice to the library's inbox, for an import: `as:actor`, `as:object` (the deck's series) and `as:published` 1..1 |
 | Deck schedule 1 | In an instance's digest: `sm:scheduleOf` (the deck), `sm:cardsVersion`, `sm:reviewsVersion` (`"absent"` for none), `sm:scheduledDirection` (a concept of `sm:StudyDirections`), `sm:scheduledDayBoundaryHour` (0–23), `sm:scheduledOn` (`YYYY-MM-DD`), `sm:unreviewedCount`, `sm:reviewedOnDayCount`, `sm:introducedOnDayCount` 1..1; `sm:dueOnDay` 0..n, `"YYYY-MM-DD count"` |
 
 The DCAT and FOAF classes' values (an agent is a `foaf:Agent`, a theme a

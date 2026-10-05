@@ -14,6 +14,7 @@ import type { DeckLibrary } from "@solid-memo/application/ports";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { LibraryCard, LibraryDeckContent } from "@solid-memo/domain/library";
 import { librarySeriesUrlOf } from "@solid-memo/domain/libraryLayout";
+import { NO_LIBRARY_STATS } from "@solid-memo/domain/libraryStats";
 import type { ReviewState } from "@solid-memo/domain/review";
 import { createShaclShapeValidator } from "@solid-memo/solid/shaclShapeValidator";
 import { createSolidDeckRepository } from "@solid-memo/solid/solidDeckRepository";
@@ -83,6 +84,8 @@ const library: DeckLibrary = {
     },
   ],
   fetchLibraryDeck: async (url) => (url === V2.url ? V2 : V1),
+  libraryStats: async () => NO_LIBRARY_STATS,
+  inboxUrl: async () => null,
 };
 
 const review = (cardId: string, intervalDays: number): ReviewState => ({

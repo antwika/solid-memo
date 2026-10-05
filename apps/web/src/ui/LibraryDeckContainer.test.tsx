@@ -5,10 +5,12 @@ import { LibraryDeckContainer } from "./LibraryDeckContainer";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
+import type { Session } from "@solid-memo/domain/session";
 import type { LibraryDeck } from "@solid-memo/domain/library";
 import { makeUseCasesFake } from "../test/useCasesFake";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
 
+const session: Session = { webId: "https://alice.example/profile/card#me" };
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
   name: "Geography",
@@ -46,6 +48,7 @@ function renderContainer(useCases: UseCases) {
     <QueryClientProvider client={queryClient}>
       <LibraryDeckContainer
         useCases={useCases}
+        session={session}
         instance={instance}
         deck={capitals}
         onDone={onDone}
@@ -90,7 +93,7 @@ describe("LibraryDeckContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Import this deck" }));
 
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
-    expect(importLibraryDeck).toHaveBeenCalledWith(instance.url, capitals);
+    expect(importLibraryDeck).toHaveBeenCalledWith(session, instance.url, capitals);
     await waitFor(() => expect(useCases.listDecks).toHaveBeenCalledTimes(2));
   });
 
@@ -105,5 +108,70 @@ describe("LibraryDeckContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Import this deck" }));
     expect((await screen.findByText("pod refused")).closest(".error")).toBeInTheDocument();
     expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it("shows the deck's counts once the library has counted them", async () => {
+    renderContainer(
+      makeUseCasesFake({
+        libraryStats: vi.fn(async () => ({
+          countedAt: "2026-10-05T06:00:00.000Z",
+          decks: { [capitals.seriesUrl]: { likes: 2, downloads: 5 } },
+        })),
+      }),
+    );
+    expect(await screen.findByText("Downloads")).toBeInTheDocument();
+    expect(screen.getByText(/^5, as of /)).toBeInTheDocument();
+  });
+
+  it("likes the deck, then unlikes it, showing whether the user likes it", async () => {
+    let likes: { deckUrl: string; likedAt: string; announced: boolean }[] = [];
+    const useCases = makeUseCasesFake({
+      listLibraryLikes: vi.fn(async () => likes),
+      likeLibraryDeck: vi.fn(async () => {
+        likes = [{ deckUrl: capitals.seriesUrl, likedAt: "2026-10-05T10:00:00.000Z", announced: true }];
+      }),
+      unlikeLibraryDeck: vi.fn(async () => {
+        likes = [];
+      }),
+    });
+    renderContainer(useCases);
+    const button = await screen.findByRole("button", { name: "Like", pressed: false });
+    fireEvent.click(button);
+    expect(await screen.findByRole("button", { name: "Like", pressed: true })).toBeInTheDocument();
+    expect(useCases.likeLibraryDeck).toHaveBeenCalledWith(session, instance.url, capitals);
+    fireEvent.click(screen.getByRole("button", { name: "Like" }));
+    expect(await screen.findByRole("button", { name: "Like", pressed: false })).toBeInTheDocument();
+    expect(useCases.unlikeLibraryDeck).toHaveBeenCalledWith(session, instance.url, capitals);
+  });
+
+  it("shows why an unlike failed", async () => {
+    renderContainer(
+      makeUseCasesFake({
+        listLibraryLikes: vi.fn(async () => [{ deckUrl: capitals.seriesUrl, likedAt: "2026-10-05T10:00:00.000Z", announced: true }]),
+        unlikeLibraryDeck: vi.fn(async () => {
+          throw new Error("library unreachable");
+        }),
+      }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Like", pressed: true }));
+    expect(await screen.findByText("library unreachable")).toBeInTheDocument();
+  });
+
+  it("asks a guest to log in to like, and reads no likes", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const useCases = makeUseCasesFake();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LibraryDeckContainer
+          useCases={useCases}
+          session={{ webId: "https://guest.solid-memo.invalid/profile/card#me", guest: true }}
+          instance={instance}
+          deck={capitals}
+          onDone={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("Log in with your Pod to like decks.")).toBeInTheDocument();
+    expect(useCases.listLibraryLikes).not.toHaveBeenCalled();
   });
 });

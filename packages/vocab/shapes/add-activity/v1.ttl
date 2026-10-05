@@ -1,0 +1,58 @@
+@base <https://solid-memo.com/shapes/add-activity/v1.ttl> .
+
+@prefix sh:         <http://www.w3.org/ns/shacl#> .
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix as:         <https://www.w3.org/ns/activitystreams#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Adding a library deck to a pod, format 1: an ActivityStreams as:Add sent
+# to the library's inbox when a user imports a deck. Where to (as:target)
+# is left out, so the user's pod is not named.
+<#shape>
+    a sh:NodeShape ;
+    sh:name "AddActivityV1" ;
+    rdfs:comment "Add activity format 1: who (as:actor, a WebID) imported which library deck (as:object, its series) and when (as:published)." ;
+    sh:nodeKind sh:IRI ;
+    sh:class as:Add ;
+    sh:property <#formatVersion> ,
+                <#actor> ,
+                <#deck> ,
+                <#published> .
+
+<#formatVersion>
+    a sh:PropertyShape ;
+    sh:path solid-memo:formatVersion ;
+    sh:datatype xsd:integer ;
+    sh:maxCount 1 ;
+    sh:in ( 1 ) .
+
+<#actor>
+    a sh:PropertyShape ;
+    sh:path as:actor ;
+    sh:name "actor" ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An add names who did it, an IRI."@en ,
+               "Ett tillägg anger vem som gjorde det, en IRI."@sv .
+
+<#deck>
+    a sh:PropertyShape ;
+    sh:path as:object ;
+    sh:name "deck" ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An add names the library deck added, an IRI."@en ,
+               "Ett tillägg anger biblioteksleken som lades till, en IRI."@sv .
+
+<#published>
+    a sh:PropertyShape ;
+    sh:path as:published ;
+    sh:name "published" ;
+    sh:datatype xsd:dateTime ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An add states when it was done, one xsd:dateTime."@en ,
+               "Ett tillägg anger när det gjordes, ett xsd:dateTime."@sv .

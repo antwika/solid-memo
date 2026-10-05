@@ -36,7 +36,8 @@
         "dist/**"
       ],
       "env": [
-        "GITHUB_SHA"
+        "GITHUB_SHA",
+        "LIBRARY_INBOX_URL"
       ]
     },
     "generate:check": {

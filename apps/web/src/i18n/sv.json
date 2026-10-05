@@ -437,7 +437,22 @@
       "other": "Importera {count} kortlekar"
     },
     "importing": "Importerar…",
-    "loading": "Läser in kortleksbiblioteket…"
+    "loading": "Läser in kortleksbiblioteket…",
+    "statsNote": "Antalet nedladdningar och gillningar uppdateras med några timmars mellanrum. När du importerar eller gillar en kortlek skickas ditt WebID till solid-memo.com, som bara sparar en kod gjord av det och bara publicerar summorna.",
+    "sort": "Ordning",
+    "sortBy": {
+      "library": "Bibliotekets ordning",
+      "downloads": "Mest nedladdade",
+      "likes": "Mest gillade"
+    },
+    "downloadCount": {
+      "one": "{count} nedladdning",
+      "other": "{count} nedladdningar"
+    },
+    "likeCount": {
+      "one": "{count} gillning",
+      "other": "{count} gillningar"
+    }
   },
   "libraryBrowser": {
     "heading": "Kort: {deck}",
@@ -484,7 +499,14 @@
     "import": "Importera kortleken",
     "importing": "Importerar…",
     "preview": "Förhandsvisa",
-    "alreadyImported": "Redan importerad"
+    "alreadyImported": "Redan importerad",
+    "downloads": "Nedladdningar",
+    "likes": "Gillningar",
+    "countAsOf": "{count}, per {date}",
+    "like": "Gilla",
+    "liking": "Sparar…",
+    "likedNote": "Du gillar den här kortleken. Din gillning sparas i din Pod; antalet ovan uppdateras inom några timmar.",
+    "likeGuest": "Logga in med din Pod för att gilla kortlekar."
   },
   "libraryPreview": {
     "heading": "Förhandsvisning: {deck}",
@@ -968,7 +990,8 @@
     "noGuestPod": "Det finns inga gäststudier på den här enheten.",
     "guestPodStartFailed": "Gäststudierna på den här enheten gick inte att öppna. Läs in sidan igen och försök på nytt.",
     "guestStorageAborted": "Webbläsaren vägrade spara en ändring i gäststudierna. Kontrollera att den har plats att spara data och försök sedan igen.",
-    "addFailed": "Solid Memo kunde inte spara i din Pod. Kontrollera anslutningen och försök igen."
+    "addFailed": "Solid Memo kunde inte spara i din Pod. Kontrollera anslutningen och försök igen.",
+    "libraryNoticeFailed": "Solid Memo kunde inte meddela kortleksbiblioteket. Det försöker igen senare."
   },
   "statistics": {
     "heading": "Statistik",

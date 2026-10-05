@@ -203,9 +203,12 @@ function textOf(quads: readonly Quad[], subject: string, predicate: string): Qua
  * sm:cardCount, the cards it has in use (retired ones not counted) — so
  * the library can be listed from the index alone.
  * IRIs under the library are written relative to the index, so the
- * library works wherever the site is hosted.
+ * library works wherever the site is hosted. With an `inboxUrl`, the
+ * catalogue names it as its ldp:inbox: where the app sends word of likes
+ * and imports, which the library's statistics are counted from
+ * (docs/library-stats.md).
  */
-export function buildIndex(releases: readonly DeckRelease[]): string {
+export function buildIndex(releases: readonly DeckRelease[], { inboxUrl }: { inboxUrl?: string } = {}): string {
   const { namedNode, literal, quad } = DataFactory;
   const out: Quad[] = [];
   const add = (s: string, p: string, o: Quad_Object) => out.push(quad(namedNode(s), namedNode(p), o));
@@ -225,6 +228,7 @@ export function buildIndex(releases: readonly DeckRelease[]): string {
   }
   add(INDEX_URL, `${DCAT}themeTaxonomy`, iri(DATA_THEMES));
   add(INDEX_URL, `${DCAT}themeTaxonomy`, iri(TOPICS));
+  if (inboxUrl !== undefined) add(INDEX_URL, "http://www.w3.org/ns/ldp#inbox", iri(inboxUrl));
   for (const deck of decks) add(INDEX_URL, `${DCAT}dataset`, iri(seriesUrlOf(deck)));
   add(PUBLISHER_URL, RDF_TYPE, iri(`${FOAF}Agent`));
   add(PUBLISHER_URL, `${FOAF}name`, literal("Solid Memo"));
@@ -463,20 +467,23 @@ export function deckLibraryPlugin({
   root = DECK_LIBRARY_ROOT,
   warn = (message: string) => console.warn(message),
   validators: loadLibraryValidators = () => loadValidators(),
+  inboxUrl,
 }: {
   publicPath?: string;
   root?: string;
   warn?: (message: string) => void;
   validators?: () => Promise<LibraryValidators>;
+  /** The library's inbox, named in the published index; none when not given (no likes or imports are counted). */
+  inboxUrl?: string;
 } = {}): Plugin {
   let validators: Promise<LibraryValidators> | undefined;
   /** The published files; with previews (the dev server), each unreleased source as its next release too. */
   const library = async ({ previews }: { previews: boolean }) => {
     const read = await readDeckLibrary(root, await (validators ??= loadLibraryValidators()));
     for (const warning of read.warnings) warn(warning);
-    if (!previews || read.previews.length === 0) return publishedFiles(read.releases, read.index);
-    const all = sorted([...read.releases, ...read.previews]);
-    return publishedFiles(all, buildIndex(all));
+    const options = inboxUrl === undefined || inboxUrl === "" ? {} : { inboxUrl };
+    const all = previews ? sorted([...read.releases, ...read.previews]) : read.releases;
+    return publishedFiles(all, buildIndex(all, options));
   };
   return {
     name: "solid-memo:deck-library",

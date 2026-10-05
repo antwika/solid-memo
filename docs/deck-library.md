@@ -300,10 +300,13 @@ into `dist/decks/` by the build:
 | `decks/<name>/<n>.ttl` | Every release, byte for byte. |
 | `decks/<name>.ttl` | A copy of the deck's current release, at the address decks had before releases, so copies imported then still resolve. |
 | `decks/index.ttl` | The generated catalogue. |
+| `decks/stats.ttl` | How many like and have imported each deck, written by the deploy workflow, not the plugin ([library-stats.md](library-stats.md)). |
 
 The **index** is a `dcat:Catalog` (title, description, publisher
 `<#solid-memo>`, the EU data themes and the topics as its theme
-taxonomies, `dcat:dataset` per deck). Each deck is its series,
+taxonomies, `dcat:dataset` per deck, and `ldp:inbox` when the build is given
+`LIBRARY_INBOX_URL`: where the app sends word of likes and imports).
+Each deck is its series,
 `<#<name>>`, a `dcat:DatasetSeries` and `dcat:Dataset` with the current
 release's title, description, themes and keywords (with their tags), `dcat:first`,
 `dcat:last`, `dcat:hasVersion` (every release) and
@@ -393,6 +396,10 @@ flowchart LR
   direction. The copy says which release it came from with
   `prov:wasDerivedFrom <…/decks/name/n.ttl>` (`Deck.sourceUrl`). Cards
   keep their library fragment ids (`#sweden`).
+- With the [statistics](library-stats.md), each row also says how many
+  have imported and like the deck, and the list can be ordered by
+  either. The deck's page shows both counts and a like toggle for users
+  logged in with a pod.
 - A pod deck is a copy of a library deck when its source is any release
   of the deck's series — or, for a deck imported before releases, the
   deck's old address (`isCopyOf`); the library marks such decks

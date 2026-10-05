@@ -1,0 +1,10 @@
+@prefix solid-memo: <https://solid-memo.com/vocab/v1#> .
+@prefix as:         <https://www.w3.org/ns/activitystreams#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+<#notice>
+    a as:Add ;
+    solid-memo:formatVersion 1 ;
+    as:actor <https://alice.pod.example/profile/card#me> ;
+    as:object <https://solid-memo.com/decks/index.ttl#world-flags> ;
+    as:published "2026-10-05T09:13:00.000Z"^^xsd:dateTime .

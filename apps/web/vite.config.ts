@@ -51,7 +51,8 @@ export default defineConfig({
   base: "./",
   plugins: [
     preact(),
-    deckLibraryPlugin(),
+    // The library's inbox for likes and imports (docs/library-stats.md); without it, none are sent.
+    deckLibraryPlugin({ inboxUrl: process.env.LIBRARY_INBOX_URL }),
     turtleDirectoryPlugin({ dir: `${VOCAB_ROOT}vocab`, publicPath: "vocab", pages: [vocabPage(), topicsPage()] }),
     turtleDirectoryPlugin({ dir: `${VOCAB_ROOT}shapes`, publicPath: "shapes" }),
     turtleDirectoryPlugin({ dir: `${VOCAB_ROOT}vendor`, publicPath: "vendor" }),

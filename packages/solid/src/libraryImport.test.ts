@@ -131,7 +131,7 @@ describe("a deck imported from the library", () => {
     const { useCases, store } = await app();
     const instance = await useCases.createInstance(ALICE, { containerUrl: `${POD}solid-memo/`, name: "Main", registrationTarget: "private" });
 
-    const deck = await useCases.importLibraryDeck(instance.url, { url: RELEASE } as LibraryDeck);
+    const deck = await useCases.importLibraryDeck(ALICE, instance.url, { url: RELEASE } as LibraryDeck);
 
     expect(deck).toMatchObject({ formatVersion: 6, sourceUrl: RELEASE, title: { en: "Capitals", sv: "Huvudstäder" }, keywords: { "": ["capitals"] } });
     const [listed] = await useCases.listDecks(instance.url);
@@ -191,7 +191,7 @@ describe("a deck imported from the library", () => {
     const { useCases, store } = await app();
     const instance = await useCases.createInstance(ALICE, { containerUrl: `${POD}solid-memo/`, name: "Main", registrationTarget: "private" });
 
-    const deck = await useCases.importLibraryDeck(instance.url, { url: TAGGED_RELEASE } as LibraryDeck);
+    const deck = await useCases.importLibraryDeck(ALICE, instance.url, { url: TAGGED_RELEASE } as LibraryDeck);
 
     expect(deck.keywords).toEqual({ en: ["capitals", "countries"], sv: ["huvudstäder", "länder"] });
     const [listed] = await useCases.listDecks(instance.url);

@@ -11,6 +11,7 @@ import {
   historyContainerOf,
   historyUrlOf,
   instanceDocumentUrls,
+  likesUrlOf,
   monthOfHistoryUrl,
   metaUrlOf,
   preferencesUrlOf,
@@ -25,6 +26,7 @@ describe("instance layout", () => {
     expect(metaUrlOf(INSTANCE)).toBe(`${INSTANCE}/meta.ttl`);
     expect(preferencesUrlOf(`${INSTANCE}/`)).toBe(`${INSTANCE}/preferences.ttl`);
     expect(catalogUrlOf(INSTANCE)).toBe(`${INSTANCE}/catalog.ttl`);
+    expect(likesUrlOf(INSTANCE)).toBe(`${INSTANCE}/likes.ttl`);
   });
 
   it("lists every document of an instance, fixed ones first", () => {
@@ -36,6 +38,7 @@ describe("instance layout", () => {
       `${INSTANCE}/meta.ttl`,
       `${INSTANCE}/preferences.ttl`,
       `${INSTANCE}/catalog.ttl`,
+      `${INSTANCE}/likes.ttl`,
       `${INSTANCE}/decks/deck-1.ttl`,
       `${INSTANCE}/reviews/deck-1.ttl`,
     ]);

@@ -78,3 +78,29 @@ export const ADMS = {
   /** What changed in a release. */
   versionNotes: "http://www.w3.org/ns/adms#versionNotes",
 } as const;
+
+export const LDP = {
+  /** Where notices to a resource go (Linked Data Notifications): on the library's catalogue, its inbox. */
+  inbox: "http://www.w3.org/ns/ldp#inbox",
+} as const;
+
+export const AS = {
+  /** Likes of library decks, in a pod and in notices to the library's inbox. */
+  Like: "https://www.w3.org/ns/activitystreams#Like",
+  /** A notice that someone no longer likes a deck: the undoing of their as:Like. */
+  Undo: "https://www.w3.org/ns/activitystreams#Undo",
+  /** A notice that someone imported a deck: they added it (to their pod). */
+  Add: "https://www.w3.org/ns/activitystreams#Add",
+  actor: "https://www.w3.org/ns/activitystreams#actor",
+  object: "https://www.w3.org/ns/activitystreams#object",
+} as const;
+
+export const SCHEMA = {
+  /** On a deck series in the library's statistics: its counters. */
+  interactionStatistic: "https://schema.org/interactionStatistic",
+  InteractionCounter: "https://schema.org/InteractionCounter",
+  interactionType: "https://schema.org/interactionType",
+  userInteractionCount: "https://schema.org/userInteractionCount",
+  LikeAction: "https://schema.org/LikeAction",
+  DownloadAction: "https://schema.org/DownloadAction",
+} as const;

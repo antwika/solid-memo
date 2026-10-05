@@ -23,6 +23,14 @@ export function catalogUrlOf(instanceUrl: string): string {
   return `${ensureTrailingSlash(instanceUrl)}catalog.ttl`;
 }
 
+/**
+ * The user's likes of library decks (domain/libraryStats.ts): one
+ * subject per liked deck, kept private like the rest of the instance.
+ */
+export function likesUrlOf(instanceUrl: string): string {
+  return `${ensureTrailingSlash(instanceUrl)}likes.ttl`;
+}
+
 /** The instance a deck is in: the container of its catalog entry's document. */
 export function instanceUrlOfDeck(deckUrl: string): string {
   const catalog = deckUrl.split("#")[0];
@@ -85,6 +93,7 @@ export function instanceDocumentUrls(instanceUrl: string, decks: readonly Deck[]
     metaUrlOf(instanceUrl),
     preferencesUrlOf(instanceUrl),
     catalogUrlOf(instanceUrl),
+    likesUrlOf(instanceUrl),
     ...decks.flatMap((deck) => [deck.cardsDocumentUrl, deck.reviewsDocumentUrl]),
   ];
 }

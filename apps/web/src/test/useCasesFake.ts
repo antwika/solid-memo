@@ -2,6 +2,7 @@ import { vi } from "vitest";
 import type { UseCases } from "@solid-memo/application/useCases";
 import { withAbout } from "@solid-memo/domain/deckAbout";
 import { DEFAULT_PREFERENCES } from "@solid-memo/domain/preferences";
+import { NO_LIBRARY_STATS } from "@solid-memo/domain/libraryStats";
 import { statisticsOf } from "@solid-memo/domain/statistics";
 
 /** A complete UseCases fake; override the methods a test cares about. */
@@ -71,6 +72,11 @@ export function makeUseCasesFake(overrides: Partial<UseCases> = {}): UseCases {
       throw new Error("importLibraryDeck fake not configured");
     }),
     listLibraryCards: vi.fn(async () => []),
+    libraryStats: vi.fn(async () => NO_LIBRARY_STATS),
+    listLibraryLikes: vi.fn(async () => []),
+    likeLibraryDeck: vi.fn(async () => undefined),
+    unlikeLibraryDeck: vi.fn(async () => undefined),
+    announceLibraryLikes: vi.fn(async () => 0),
     planLibraryUpgrade: vi.fn(async () => null),
     getStatistics: vi.fn(async () => statisticsOf([], "2026-09-21")),
     addReleaseLanguages: vi.fn(async () => null),

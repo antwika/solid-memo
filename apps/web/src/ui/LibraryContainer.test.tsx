@@ -5,11 +5,13 @@ import { LibraryContainer } from "./LibraryContainer";
 import type { UseCases } from "@solid-memo/application/useCases";
 import type { Deck } from "@solid-memo/domain/deck";
 import type { Instance } from "@solid-memo/domain/instance";
+import type { Session } from "@solid-memo/domain/session";
 import type { LibraryDeck } from "@solid-memo/domain/library";
 import { makeUseCasesFake } from "../test/useCasesFake";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
 import { forget } from "./remembered";
 
+const session: Session = { webId: "https://alice.example/profile/card#me" };
 const instance: Instance = {
   url: "https://pod.example/solid-memo/a/",
   name: "Geography",
@@ -57,6 +59,7 @@ function renderContainer(useCases: UseCases) {
     <QueryClientProvider client={queryClient}>
       <LibraryContainer
         useCases={useCases}
+        session={session}
         instance={instance}
         onDone={onDone}
       />
@@ -68,7 +71,7 @@ function renderContainer(useCases: UseCases) {
 describe("LibraryContainer", () => {
   // The library remembers its ticks and filters per instance; each test starts afresh.
   afterEach(() => {
-    for (const part of ["selected", "topics", "query"]) forget(`library:${instance.url}:${part}`);
+    for (const part of ["selected", "topics", "query", "sort"]) forget(`library:${instance.url}:${part}`);
   });
 
   it("shows a loading state, then the library", async () => {
@@ -134,8 +137,8 @@ describe("LibraryContainer", () => {
 
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     expect(importLibraryDeck.mock.calls).toEqual([
-      [instance.url, capitals],
-      [instance.url, rivers],
+      [session, instance.url, capitals],
+      [session, instance.url, rivers],
     ]);
     await waitFor(() =>
       expect(useCases.listDecks).toHaveBeenCalledTimes(2),
@@ -191,5 +194,21 @@ describe("LibraryContainer", () => {
     expect((await screen.findByText("pod refused")).closest(".error")).toBeInTheDocument();
     expect(onDone).not.toHaveBeenCalled();
     expect(await screen.findByText("Already imported")).toBeInTheDocument();
+  });
+
+  it("tells the library of likes not told yet, and shows the counts", async () => {
+    const useCases = makeUseCasesFake({
+      listLibraryDecks: vi.fn(async () => [capitals, rivers]),
+      libraryStats: vi.fn(async () => ({
+        countedAt: "2026-10-05T06:00:00.000Z",
+        decks: { [capitals.seriesUrl]: { likes: 1, downloads: 7 } },
+      })),
+      announceLibraryLikes: vi.fn(async () => {
+        throw new Error("offline");
+      }),
+    });
+    renderContainer(useCases);
+    expect(await screen.findByText("7 downloads · 1 like")).toBeInTheDocument();
+    expect(useCases.announceLibraryLikes).toHaveBeenCalledWith(session, instance.url);
   });
 });

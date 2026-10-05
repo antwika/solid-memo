@@ -15,6 +15,8 @@ import type {
   RepairRepository,
   InstanceCopier,
   GuestPod,
+  LibraryInbox,
+  LibraryLikeRepository,
 } from "./ports";
 import { GUEST_INSTANCE_URL, GUEST_ORIGIN, GUEST_SESSION, GUEST_WEBID } from "@solid-memo/domain/guest";
 import { createUseCases } from "./useCases";
@@ -32,6 +34,7 @@ import type { Storage } from "@solid-memo/domain/storage";
 import type { WebIdDocument } from "@solid-memo/domain/webIdDocument";
 import { firstRelease } from "@solid-memo/domain/testing/libraryDeck";
 import { librarySeriesUrlOf } from "@solid-memo/domain/libraryLayout";
+import { NO_LIBRARY_STATS, type LibraryLike } from "@solid-memo/domain/libraryStats";
 import { sameDeckState, withDeckChanges, type DeckUpgradeProgress } from "@solid-memo/domain/deckUpgrade";
 import type { LibraryCard } from "@solid-memo/domain/library";
 
@@ -148,6 +151,8 @@ function makeDeps() {
   const deckLibrary: DeckLibrary = {
     listLibraryDecks: vi.fn(async () => [libraryDeck]),
     fetchLibraryDeck: vi.fn(async () => libraryContent),
+    libraryStats: vi.fn(async () => NO_LIBRARY_STATS),
+    inboxUrl: vi.fn(async (): Promise<string | null> => null),
   };
   const preferencesRepository: PreferencesRepository = {
     getPreferences: vi.fn(async () => null),
@@ -909,11 +914,12 @@ describe("createUseCases", () => {
         "upgrade 3/7 (4 of 6)",
         "upgrade 3/7 (5 of 6)",
         "validate 4/7",
-        "validate 4/7 (0 of 5)",
-        "validate 4/7 (1 of 5)",
-        "validate 4/7 (2 of 5)",
-        "validate 4/7 (3 of 5)",
-        "validate 4/7 (4 of 5)",
+        "validate 4/7 (0 of 6)",
+        "validate 4/7 (1 of 6)",
+        "validate 4/7 (2 of 6)",
+        "validate 4/7 (3 of 6)",
+        "validate 4/7 (4 of 6)",
+        "validate 4/7 (5 of 6)",
         "verify 5/7 (0 of 3)",
         "verify 5/7 (1 of 3)",
         "verify 5/7 (2 of 3)",
@@ -1283,6 +1289,7 @@ describe("createUseCases", () => {
       `${instance.url}meta.ttl`,
       `${instance.url}preferences.ttl`,
       `${instance.url}catalog.ttl`,
+      `${instance.url}likes.ttl`,
       deck.cardsDocumentUrl,
       deck.reviewsDocumentUrl,
     ]);
@@ -1363,7 +1370,7 @@ describe("createUseCases", () => {
     const deps = makeDeps();
     const useCases = createUseCases(deps);
     await expect(
-      useCases.importLibraryDeck(instance.url, libraryDeck),
+      useCases.importLibraryDeck(session, instance.url, libraryDeck),
     ).resolves.toEqual(deck);
     expect(deps.deckLibrary.fetchLibraryDeck).toHaveBeenCalledWith(
       libraryDeck.url,
@@ -1888,7 +1895,7 @@ describe("the instance digest", () => {
   });
 
   it("checks only documents changed since they conformed, by these rules", async () => {
-    const urls = [`${instance.url}meta.ttl`, `${instance.url}preferences.ttl`, `${instance.url}catalog.ttl`, deck.cardsDocumentUrl, deck.reviewsDocumentUrl];
+    const urls = [`${instance.url}meta.ttl`, `${instance.url}preferences.ttl`, `${instance.url}catalog.ttl`, `${instance.url}likes.ttl`, deck.cardsDocumentUrl, deck.reviewsDocumentUrl];
     const first = setup();
     await expect(first.useCases.checkInstance(instance.url)).resolves.toMatchObject({ conforms: true });
     await vi.waitFor(() => expect(Object.keys(first.stored()!.receipts)).toHaveLength(urls.length));
@@ -1897,7 +1904,7 @@ describe("the instance digest", () => {
     const digest = first.stored()!;
     const again = setup({ ...digest, receipts: { ...digest.receipts, [urls[0]!]: { ...digest.receipts[urls[0]!]!, conformedTo: "older-rules" } } });
     const report = await again.useCases.checkInstance(instance.url);
-    expect(report.documents.map((d) => d.subjects.length)).toEqual([0, 0, 0, 0, 0]);
+    expect(report.documents.map((d) => d.subjects.length)).toEqual([0, 0, 0, 0, 0, 0]);
     expect(again.deps.shapeValidator.validateDocumentSince).toHaveBeenCalledWith(urls[0], undefined);
     expect(again.deps.shapeValidator.validateDocumentSince).toHaveBeenCalledWith(urls[1], `v-${urls[1]}`);
   });
@@ -1921,6 +1928,121 @@ describe("the instance digest", () => {
     expect(deps.deckRepository.readCardsSince).toHaveBeenCalledWith(deck, "c1");
     expect(deps.reviewStateRepository.readReviewStatesSince).toHaveBeenCalledWith(deck, "r1");
     expect(digestRepository.updateDigest).not.toHaveBeenCalled();
+  });
+});
+
+describe("library likes and downloads", () => {
+  const INBOX = "https://library.example/inbox/";
+  const SERIES = libraryDeck.seriesUrl;
+  const NOW = "2026-09-28T10:00:00.000Z";
+
+  function likeDeps({ inbox = INBOX as string | null, likes = [] as LibraryLike[] } = {}) {
+    const deps = makeDeps();
+    vi.mocked(deps.deckLibrary.inboxUrl).mockResolvedValue(inbox);
+    const stored = [...likes];
+    const libraryLikes: LibraryLikeRepository = {
+      listLikes: vi.fn(async () => [...stored]),
+      saveLike: vi.fn(async (_instanceUrl: string, like: LibraryLike) => {
+        const at = stored.findIndex((one) => one.deckUrl === like.deckUrl);
+        if (at === -1) stored.push(like);
+        else stored[at] = like;
+      }),
+      removeLike: vi.fn(async (_instanceUrl: string, deckUrl: string) => {
+        const at = stored.findIndex((one) => one.deckUrl === deckUrl);
+        if (at !== -1) stored.splice(at, 1);
+      }),
+    };
+    const libraryInbox: LibraryInbox = { notify: vi.fn(async () => undefined) };
+    return { deps: { ...deps, libraryLikes, libraryInbox }, stored, libraryLikes, libraryInbox };
+  }
+
+  it("reads the library's statistics and the instance's likes", async () => {
+    const { deps } = likeDeps({ likes: [{ deckUrl: SERIES, likedAt: NOW, announced: true }] });
+    const useCases = createUseCases(deps);
+    await expect(useCases.libraryStats()).resolves.toBe(NO_LIBRARY_STATS);
+    await expect(useCases.listLibraryLikes(instance.url)).resolves.toEqual([{ deckUrl: SERIES, likedAt: NOW, announced: true }]);
+  });
+
+  it("keeps none and tells nobody by default", async () => {
+    const useCases = createUseCases(makeDeps());
+    await expect(useCases.listLibraryLikes(instance.url)).resolves.toEqual([]);
+    await useCases.likeLibraryDeck(session, instance.url, libraryDeck);
+    await useCases.unlikeLibraryDeck(session, instance.url, libraryDeck);
+  });
+
+  it("tells the library of an import, as the user, without holding it up", async () => {
+    const { deps, libraryInbox } = likeDeps();
+    await createUseCases(deps).importLibraryDeck(session, instance.url, libraryDeck);
+    await vi.waitFor(() =>
+      expect(libraryInbox.notify).toHaveBeenCalledWith(INBOX, { action: "import", by: session.webId, deckUrl: SERIES, at: NOW }),
+    );
+  });
+
+  it("imports all the same when the library cannot be told, takes no notices, or the importer is a guest", async () => {
+    const failing = likeDeps();
+    vi.mocked(failing.libraryInbox.notify).mockRejectedValue(new Error("offline"));
+    await expect(createUseCases(failing.deps).importLibraryDeck(session, instance.url, libraryDeck)).resolves.toEqual(deck);
+    await vi.waitFor(() => expect(failing.libraryInbox.notify).toHaveBeenCalledOnce());
+
+    const closed = likeDeps({ inbox: null });
+    await createUseCases(closed.deps).importLibraryDeck(session, instance.url, libraryDeck);
+    await vi.waitFor(() => expect(closed.deps.deckLibrary.inboxUrl).toHaveBeenCalledOnce());
+    expect(closed.libraryInbox.notify).not.toHaveBeenCalled();
+
+    const guest = likeDeps();
+    await createUseCases(guest.deps).importLibraryDeck(GUEST_SESSION, instance.url, libraryDeck);
+    await Promise.resolve();
+    expect(guest.deps.deckLibrary.inboxUrl).not.toHaveBeenCalled();
+  });
+
+  it("keeps a like in the instance and marks it announced once the library is told", async () => {
+    const { deps, stored, libraryInbox } = likeDeps();
+    await createUseCases(deps).likeLibraryDeck(session, instance.url, libraryDeck);
+    expect(libraryInbox.notify).toHaveBeenCalledWith(INBOX, { action: "like", by: session.webId, deckUrl: SERIES, at: NOW });
+    expect(stored).toEqual([{ deckUrl: SERIES, likedAt: NOW, announced: true }]);
+  });
+
+  it("keeps a like the library could not be told of, to tell it later", async () => {
+    const { deps, stored, libraryInbox } = likeDeps();
+    vi.mocked(libraryInbox.notify).mockRejectedValueOnce(new Error("offline"));
+    const useCases = createUseCases(deps);
+    await useCases.likeLibraryDeck(session, instance.url, libraryDeck);
+    expect(stored).toEqual([{ deckUrl: SERIES, likedAt: NOW, announced: false }]);
+
+    await expect(useCases.announceLibraryLikes(session, instance.url)).resolves.toBe(1);
+    expect(libraryInbox.notify).toHaveBeenLastCalledWith(INBOX, { action: "like", by: session.webId, deckUrl: SERIES, at: NOW });
+    expect(stored).toEqual([{ deckUrl: SERIES, likedAt: NOW, announced: true }]);
+    await expect(useCases.announceLibraryLikes(session, instance.url)).resolves.toBe(0);
+    expect(libraryInbox.notify).toHaveBeenCalledTimes(2);
+  });
+
+  it("announces nothing for a guest, or when the library takes no notices", async () => {
+    const pending = [{ deckUrl: SERIES, likedAt: NOW, announced: false }];
+    const closed = likeDeps({ inbox: null, likes: pending });
+    await expect(createUseCases(closed.deps).announceLibraryLikes(session, instance.url)).resolves.toBe(0);
+    expect(closed.stored).toEqual(pending);
+    const guest = likeDeps({ likes: pending });
+    await expect(createUseCases(guest.deps).announceLibraryLikes(GUEST_SESSION, instance.url)).resolves.toBe(0);
+    expect(guest.libraryLikes.listLikes).not.toHaveBeenCalled();
+  });
+
+  it("removes a like only once the library has been told", async () => {
+    const liked = [{ deckUrl: SERIES, likedAt: NOW, announced: true }];
+    const { deps, stored, libraryInbox } = likeDeps({ likes: liked });
+    vi.mocked(libraryInbox.notify).mockRejectedValueOnce(new Error("offline"));
+    const useCases = createUseCases(deps);
+    await expect(useCases.unlikeLibraryDeck(session, instance.url, libraryDeck)).rejects.toThrow("offline");
+    expect(stored).toEqual(liked);
+    await useCases.unlikeLibraryDeck(session, instance.url, libraryDeck);
+    expect(libraryInbox.notify).toHaveBeenLastCalledWith(INBOX, { action: "unlike", by: session.webId, deckUrl: SERIES, at: NOW });
+    expect(stored).toEqual([]);
+  });
+
+  it("refuses a guest's like or unlike", async () => {
+    const { deps } = likeDeps();
+    const useCases = createUseCases(deps);
+    await expect(useCases.likeLibraryDeck(GUEST_SESSION, instance.url, libraryDeck)).rejects.toThrow("A guest has no WebID");
+    await expect(useCases.unlikeLibraryDeck(GUEST_SESSION, instance.url, libraryDeck)).rejects.toThrow("A guest has no WebID");
   });
 });
 
@@ -2620,11 +2742,12 @@ describe("library deck upgrade", () => {
         "adopt 2/7 (1 of 3)",
         "adopt 2/7 (2 of 3)",
         "validate 3/7",
-        "validate 3/7 (0 of 5)",
-        "validate 3/7 (1 of 5)",
-        "validate 3/7 (2 of 5)",
-        "validate 3/7 (3 of 5)",
-        "validate 3/7 (4 of 5)",
+        "validate 3/7 (0 of 6)",
+        "validate 3/7 (1 of 6)",
+        "validate 3/7 (2 of 6)",
+        "validate 3/7 (3 of 6)",
+        "validate 3/7 (4 of 6)",
+        "validate 3/7 (5 of 6)",
         "verify 4/7 (0 of 4)",
         "verify 4/7 (1 of 4)",
         "verify 4/7 (2 of 4)",
@@ -2633,6 +2756,33 @@ describe("library deck upgrade", () => {
         "tidy 6/7",
         "tidy 7/7",
       ]);
+    });
+
+    it("transferGuestStudy tells the library of the library decks the guest imported, each once, as the user", async () => {
+      const { deps } = guestDeps();
+      const notify = vi.fn(async () => undefined);
+      vi.mocked(deps.deckLibrary.inboxUrl).mockResolvedValue("https://library.example/inbox/");
+      vi.mocked(deps.deckRepository.listDecks).mockImplementation(async (url) =>
+        url === TARGET
+          ? [
+              { ...deck, sourceUrl: libraryDeck.url },
+              { ...deck, id: "deck-2", sourceUrl: libraryDeck.url },
+              { ...deck, id: "deck-3", sourceUrl: "https://elsewhere.example/decks/other/1.ttl" },
+              { ...deck, id: "deck-4", sourceUrl: undefined },
+            ]
+          : [deck],
+      );
+      const outcome = await createUseCases({ ...deps, libraryInbox: { notify } }).transferGuestStudy(session, guestInstance, {
+        containerUrl: TARGET,
+        registrationTarget: "private",
+      });
+      expect(outcome.ok).toBe(true);
+      expect(notify).toHaveBeenCalledExactlyOnceWith("https://library.example/inbox/", {
+        action: "import",
+        by: session.webId,
+        deckUrl: libraryDeck.seriesUrl,
+        at: "2026-09-28T10:00:00.000Z",
+      });
     });
 
     it("transferGuestStudy deletes the whole guest pod with its last instance", async () => {

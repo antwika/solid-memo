@@ -2,6 +2,7 @@
 
 import type { ShapeDescriptor } from "./shapeDescriptor.ts";
 import type {
+  AddActivityV1,
   AgentV1,
   AnswerV1,
   CardV1,
@@ -29,13 +30,31 @@ import type {
   LibraryDeckSeriesV1,
   LibraryDeckSeriesV2,
   LibraryDeckSeriesV3,
+  LikeActivityV1,
   PreferencesV1,
   PreferencesV2,
   PreferencesV3,
   PreferencesV4,
   ReviewStateV1,
   ReviewStateV2,
+  UndoActivityV1,
 } from "./types.generated.ts";
+
+export const ADD_ACTIVITY_V1: ShapeDescriptor<AddActivityV1> = {
+  shape: "addActivity",
+  version: 1,
+  targetClass: "https://www.w3.org/ns/activitystreams#Add",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/add-activity/v1.ttl#shape",
+  shapeDocument: "add-activity/v1.ttl",
+  context: "any",
+  fields: [
+    { name: "actor", predicate: "https://www.w3.org/ns/activitystreams#actor", kind: "iri", cardinality: "one" },
+    { name: "deck", predicate: "https://www.w3.org/ns/activitystreams#object", kind: "iri", cardinality: "one" },
+    { name: "published", predicate: "https://www.w3.org/ns/activitystreams#published", kind: "dateTime", cardinality: "one" },
+  ],
+};
 
 export const AGENT_V1: ShapeDescriptor<AgentV1> = {
   shape: "agent",
@@ -647,6 +666,23 @@ export const LIBRARY_DECK_SERIES_V3: ShapeDescriptor<LibraryDeckSeriesV3> = {
   ],
 };
 
+export const LIKE_ACTIVITY_V1: ShapeDescriptor<LikeActivityV1> = {
+  shape: "likeActivity",
+  version: 1,
+  targetClass: "https://www.w3.org/ns/activitystreams#Like",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/like-activity/v1.ttl#shape",
+  shapeDocument: "like-activity/v1.ttl",
+  context: "any",
+  fields: [
+    { name: "actor", predicate: "https://www.w3.org/ns/activitystreams#actor", kind: "iri", cardinality: "optional" },
+    { name: "deck", predicate: "https://www.w3.org/ns/activitystreams#object", kind: "iri", cardinality: "one" },
+    { name: "published", predicate: "https://www.w3.org/ns/activitystreams#published", kind: "dateTime", cardinality: "optional" },
+    { name: "announced", predicate: "https://solid-memo.com/vocab/v1#announced", kind: "boolean", cardinality: "optional" },
+  ],
+};
+
 export const PREFERENCES_V1: ShapeDescriptor<PreferencesV1> = {
   shape: "preferences",
   version: 1,
@@ -770,8 +806,25 @@ export const REVIEW_STATE_V2: ShapeDescriptor<ReviewStateV2> = {
   ],
 };
 
+export const UNDO_ACTIVITY_V1: ShapeDescriptor<UndoActivityV1> = {
+  shape: "undoActivity",
+  version: 1,
+  targetClass: "https://www.w3.org/ns/activitystreams#Undo",
+  additionalTypes: [],
+  absent: [],
+  shapeIri: "https://solid-memo.com/shapes/undo-activity/v1.ttl#shape",
+  shapeDocument: "undo-activity/v1.ttl",
+  context: "any",
+  fields: [
+    { name: "actor", predicate: "https://www.w3.org/ns/activitystreams#actor", kind: "iri", cardinality: "one" },
+    { name: "like", predicate: "https://www.w3.org/ns/activitystreams#object", kind: "iri", cardinality: "one" },
+    { name: "published", predicate: "https://www.w3.org/ns/activitystreams#published", kind: "dateTime", cardinality: "one" },
+  ],
+};
+
 /** Every descriptor by kind and version. */
 export const SHAPES = {
+  addActivity: { 1: ADD_ACTIVITY_V1 },
   agent: { 1: AGENT_V1 },
   answer: { 1: ANSWER_V1 },
   card: { 1: CARD_V1, 2: CARD_V2, 3: CARD_V3, 4: CARD_V4, 5: CARD_V5 },
@@ -783,12 +836,15 @@ export const SHAPES = {
   instance: { 1: INSTANCE_V1, 2: INSTANCE_V2 },
   libraryDeck: { 1: LIBRARY_DECK_V1, 2: LIBRARY_DECK_V2, 3: LIBRARY_DECK_V3, 4: LIBRARY_DECK_V4, 5: LIBRARY_DECK_V5 },
   libraryDeckSeries: { 1: LIBRARY_DECK_SERIES_V1, 2: LIBRARY_DECK_SERIES_V2, 3: LIBRARY_DECK_SERIES_V3 },
+  likeActivity: { 1: LIKE_ACTIVITY_V1 },
   preferences: { 1: PREFERENCES_V1, 2: PREFERENCES_V2, 3: PREFERENCES_V3, 4: PREFERENCES_V4 },
   reviewState: { 1: REVIEW_STATE_V1, 2: REVIEW_STATE_V2 },
+  undoActivity: { 1: UNDO_ACTIVITY_V1 },
 } as const;
 
 /** Every descriptor, for selection by class, version and context. */
 export const ALL_SHAPES: readonly ShapeDescriptor[] = [
+  ADD_ACTIVITY_V1,
   AGENT_V1,
   ANSWER_V1,
   CARD_V1,
@@ -816,10 +872,12 @@ export const ALL_SHAPES: readonly ShapeDescriptor[] = [
   LIBRARY_DECK_SERIES_V1,
   LIBRARY_DECK_SERIES_V2,
   LIBRARY_DECK_SERIES_V3,
+  LIKE_ACTIVITY_V1,
   PREFERENCES_V1,
   PREFERENCES_V2,
   PREFERENCES_V3,
   PREFERENCES_V4,
   REVIEW_STATE_V1,
   REVIEW_STATE_V2,
+  UNDO_ACTIVITY_V1,
 ];
