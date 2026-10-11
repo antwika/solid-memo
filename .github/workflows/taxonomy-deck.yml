@@ -38,7 +38,7 @@ jobs:
       # first release was made with.
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.14"
+          python-version: "3.15"
       - id: check
         run: python3 "$GENERATOR" -o "packages/deck-library/decks/$DECK.ttl" --check >> "$GITHUB_OUTPUT"
       - if: steps.check.outputs.update == 'true'
@@ -75,7 +75,7 @@ jobs:
       - if: steps.check.outputs.update == 'true'
         uses: actions/setup-python@v7
         with:
-          python-version: "3.14"
+          python-version: "3.15"
           cache: pip
           cache-dependency-path: scripts/requirements-ci.txt
       - if: steps.check.outputs.update == 'true'
